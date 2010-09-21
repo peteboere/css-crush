@@ -45,6 +45,14 @@ class CSS_Crush {
 		self::$config->path = null;
 		self::$config->baseDir = null;
 		self::$config->baseURL = null;
+		if ( is_array( $_SERVER ) and in_array( 'DOCUMENT_ROOT', $_SERVER ) ) {
+			// Running on a server
+			self::$config->docRoot = $_SERVER[ 'DOCUMENT_ROOT' ];
+		} 
+		else {
+			// Command line
+			self::$config->docRoot = dirName( __FILE__ );
+		}
 		self::$regex = (object) self::$regex;
 	}
 	
@@ -67,7 +75,7 @@ class CSS_Crush {
 	}
 	
 	private static function setPath ( $new_dir ) {
-		$docRoot = $_SERVER[ 'DOCUMENT_ROOT' ];
+		$docRoot = self::$config->docRoot;
 		if ( strpos( $new_dir, $docRoot ) !== 0 ) {
 			$new_dir = realpath( "{$docRoot}/{$new_dir}" );
 		}
@@ -98,7 +106,7 @@ class CSS_Crush {
 		if ( !self::$initialized ) { self::init(); }
 		if ( strpos( $hostfile, '/' ) === 0 ) {
 			// Absolute path
-			self::setPath( dirname( $_SERVER[ 'DOCUMENT_ROOT' ] . $hostfile ) );
+			self::setPath( dirname( self::$config->docRoot . $hostfile ) );
 		} 
 		else {
 			// Relative path
@@ -550,6 +558,48 @@ TXT;
 		}
 	}
 	
+}
+
+################################################################################################
+#    Command line
+################################################################################################
+/*
+php CSS_Crush.php -f=css/screen.css -n
+>>> non-minified output
+*/
+
+if ( isset( $argc ) and isset( $argv ) ) {
+	$options = getopt( "f:m::cn", array(
+			'file:',
+			'macros::',
+			'comments',
+			'nominify',
+		));
+	
+	$file = null;
+	$params = array();
+	if ( isset( $options[ 'f' ] ) ) {
+		$file = $options[ 'f' ];
+	}
+	else if ( isset( $options[ 'file' ] ) ) {
+		$file = $options[ 'file' ];
+	}
+	if ( !$file or !file_exists( $file ) ) {
+		return;
+	} 
+	if ( isset( $options[ 'm' ] ) ) {
+		$params[ 'macros' ] = explode( ',', $options[ 'm' ] );
+	}
+	else if ( isset( $options[ 'macros' ] ) ) {
+		$params[ 'macros' ] = explode( ',', $options[ 'macros' ] );
+	}
+	if ( isset( $options[ 'c' ] ) or isset( $options[ 'comments' ] ) ) {
+		$params[ 'comments' ] = true;
+	}
+	if ( isset( $options[ 'n' ] ) or isset( $options[ 'nominify' ] ) ) {
+		$params[ 'minify' ] = false;
+	}
+	echo CSS_Crush::file( $file, $params ) . PHP_EOL;
 }
 
 
