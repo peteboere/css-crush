@@ -21,7 +21,8 @@ class CSS_Crush {
 
 	// Properties available to each 'file' process 
 	private static $options;
-	private static $compiledname;
+	private static $compileName;
+	private static $compileSuffix;
 	private static $variables;
 	private static $literals;
 	private static $literalCount;
@@ -37,12 +38,14 @@ class CSS_Crush {
 	private static $initialized = false;
 	private static function init () {
 		self::$initialized = true;
+		self::$compileSuffix = '.crush.css';
 		self::$config = new stdClass;
 		self::$config->file = '.' . __CLASS__;
 		self::$config->data = null;
+		self::$config->path = null;
+		self::$config->baseDir = null;
+		self::$config->baseURL = null;
 		self::$regex = (object) self::$regex;
-		// We set to current directory by default
-		self::setPath( dirname( __FILE__ ) );
 	}
 	
 	// Initialize config data, create config file if needed
@@ -64,7 +67,6 @@ class CSS_Crush {
 	}
 	
 	private static function setPath ( $new_dir ) {
-		if ( !self::$initialized ) { self::init(); }
 		$docRoot = $_SERVER[ 'DOCUMENT_ROOT' ];
 		if ( strpos( $new_dir, $docRoot ) !== 0 ) {
 			$new_dir = realpath( "{$docRoot}/{$new_dir}" );
@@ -78,7 +80,7 @@ class CSS_Crush {
 				chmod( $new_dir, 0755 );
 			}
 			catch ( Exception $e ) {
-				throw new Exception( __METHOD__ . ': Directory unwritable' );
+				throw new Exception( __METHOD__ . ': Directory un-writable' );
 			}
 			self::log( 'Permissions updated' );
 		} 
@@ -95,14 +97,18 @@ class CSS_Crush {
 	public static function file ( $hostfile, $options = null ) {
 		if ( !self::$initialized ) { self::init(); }
 		if ( strpos( $hostfile, '/' ) === 0 ) {
-			// Absolute path, so call set path to change setting 
+			// Absolute path
 			self::setPath( dirname( $_SERVER[ 'DOCUMENT_ROOT' ] . $hostfile ) );
-			// Also just use filename since 
-			$hostfile = basename( $hostfile );
 		} 
-
+		else {
+			// Relative path
+			self::setPath( dirname( dirname( __FILE__ ) . '/' . $hostfile ) );
+		}
+		$hostfile = basename( $hostfile );
+		
+		//self::log( self::$config );
 		self::loadConfig();
-		$config =& self::$config;
+		$config = self::$config;
 		
 		// Create default options for those not set
 		$option_defaults = array(
@@ -124,12 +130,11 @@ class CSS_Crush {
 		}
 		
 		// File we're looking for
-		self::$compiledname = 
-			basename( str_replace( '/', '-', $hostfile->name ), '.css' ) . '.crush.css';
+		self::$compileName = basename( $hostfile->name, '.css' ) . self::$compileSuffix;
 		
 		// Search base directory for an existing compiled file
 		foreach ( scandir( $config->baseDir ) as $filename ) {
-			if ( self::$compiledname == $filename ) {
+			if ( self::$compileName == $filename ) {
 				// Cached file exists
 				self::log( 'Cached file exists' );
 				$existingfile = new stdClass;
@@ -140,7 +145,7 @@ class CSS_Crush {
 				// Start off with the host file then add imported files
 				$all_files = array( $hostfile->mtime );
 				
-				if ( file_exists( $existingfile->path ) and isset( $config->data[ self::$compiledname ] ) ) {
+				if ( file_exists( $existingfile->path ) and isset( $config->data[ self::$compileName ] ) ) {
 					// File exists and has config
 					foreach ( $config->data[ $existingfile->name ][ 'imports' ] as $import_file ) {
 						$import_filepath = "{$config->baseDir}/{$import_file}";
@@ -209,7 +214,7 @@ class CSS_Crush {
 			self::applyMacros( &$output );
 		}
 		
-		// Optionally minify
+		// Optionally minify (after macros since macros may introduce un-wanted whitespace) 
 		if ( $options[ 'minify' ] !== false ) {
 			self::minify( &$output );
 		}
@@ -236,23 +241,30 @@ class CSS_Crush {
 {$output}
 TXT;
 		// Create file and return path. Return empty string on failure
-		return file_put_contents( "{$config->baseDir}/" . self::$compiledname, $output ) ? 
-					"{$config->baseURL}/" . self::$compiledname : '';
+		return file_put_contents( "{$config->baseDir}/" . self::$compileName, $output ) ? 
+					"{$config->baseURL}/" . self::$compileName : '';
 	}
 	
 	
-	static public function clearCache () {
+	static public function clearCache ( $dir = '' ) {
 		if ( !self::$initialized ) { self::init(); }
-		if ( file_exists( self::$config->path ) ) {
-			unlink( self::$config->path );
+		if ( empty( $dir ) ) { 
+			$dir = dirname( __FILE__ );
+		}
+		else if ( !file_exists( $dir ) ) {
+			return;
+		}
+		$configPath = $dir . '/' . self::$config->file;
+		if ( file_exists( $configPath ) ) {
+			unlink( $configPath );
 		}
 		// Remove any compiled files
-		$suffix = '.crush.css';
+		$suffix = self::$compileSuffix;
 		$suffixLength = strlen( $suffix );
-		foreach ( scandir( self::$config->baseDir ) as $file ) {
+		foreach ( scandir( $dir ) as $file ) {
 			$expectedPos = strlen( $file ) - $suffixLength;
 			if ( strpos( $file, $suffix ) === $expectedPos ) {
-				unlink( self::$config->baseDir . "/{$file}" );
+				unlink( $dir . "/{$file}" );
 			}
 		}
 	}
@@ -264,14 +276,14 @@ TXT;
 	static private function collateImports ( &$hostfile ) {
 		$str = file_get_contents( $hostfile->path );
 		$config =& self::$config;
-		$compiledname = self::$compiledname;
+		$compileName = self::$compileName;
 		$regex = self::$regex;
 		
 		// Obfuscate any directives within comment blocks
 		$str = preg_replace_callback( $regex->comments, "self::cb_obfuscateDirectives", $str );
 		
 		// Initialize config object
-		$config->data[ $compiledname ] = array();
+		$config->data[ $compileName ] = array();
 		
 		// Keep track of relative paths with nested imports
 		$relativeContext = '';
@@ -327,9 +339,9 @@ TXT;
 			}
 		}
 		
-		$config->data[ $compiledname ][ 'imports' ] = $imports_filenames;
-		$config->data[ $compiledname ][ 'datem_sum' ] = array_sum( $imports_mtimes ) + $hostfile->mtime;
-		$config->data[ $compiledname ][ 'options' ] = self::$options;
+		$config->data[ $compileName ][ 'imports' ] = $imports_filenames;
+		$config->data[ $compileName ][ 'datem_sum' ] = array_sum( $imports_mtimes ) + $hostfile->mtime;
+		$config->data[ $compileName ][ 'options' ] = self::$options;
 
 		// Save config changes
 		file_put_contents( $config->path, serialize( $config->data ) );
@@ -510,7 +522,7 @@ TXT;
 #    Logging / debugging
 ################################################################################################
 
-	public static $debug = true;
+	public static $debug = false;
 	
 	public static function log () {
 		if ( !self::$debug ) {
