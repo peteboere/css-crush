@@ -26,6 +26,7 @@ class CSS_Crush {
 	private static $variables;
 	private static $literals;
 	private static $literalCount;
+	private static $cli;
 	
 	// Pattern matching 
 	static private $regex = array( 
@@ -48,10 +49,12 @@ class CSS_Crush {
 		if ( is_array( $_SERVER ) and in_array( 'DOCUMENT_ROOT', $_SERVER ) ) {
 			// Running on a server
 			self::$config->docRoot = $_SERVER[ 'DOCUMENT_ROOT' ];
+			self::$cli = false;
 		} 
 		else {
 			// Command line
 			self::$config->docRoot = dirName( __FILE__ );
+			self::$cli = true;
 		}
 		self::$regex = (object) self::$regex;
 	}
@@ -112,23 +115,14 @@ class CSS_Crush {
 			// Relative path
 			self::setPath( dirname( dirname( __FILE__ ) . '/' . $hostfile ) );
 		}
-		$hostfile = basename( $hostfile );
+		$hostfileName = basename( $hostfile );
 		
-		//self::log( self::$config );
 		self::loadConfig();
 		$config = self::$config;
 		
-		// Create default options for those not set
-		$option_defaults = array(
-			'macros'   => true,
-			'comments' => false,
-			'minify'   => true,
-		);
-		self::$options = $options = is_array( $options ) ? 
-			array_merge( $option_defaults, $options ) : $option_defaults;
-		
 		// Make basic information about the hostfile accessible
-		$hostfile = (object) array( 'name' => $hostfile );
+		$hostfile = new stdClass;
+		$hostfile->name = $hostfileName;
 		$hostfile->path = "{$config->baseDir}/{$hostfile->name}";
 		$hostfile->mtime = filemtime( $hostfile->path );
 		
@@ -137,122 +131,41 @@ class CSS_Crush {
 			return '';
 		}
 		
-		// File we're looking for
+		self::parseOptions( $options );
+		
+		// Compiled filename we're searching for
 		self::$compileName = basename( $hostfile->name, '.css' ) . self::$compileSuffix;
 		
-		// Search base directory for an existing compiled file
-		foreach ( scandir( $config->baseDir ) as $filename ) {
-			if ( self::$compileName == $filename ) {
-				// Cached file exists
-				self::log( 'Cached file exists' );
-				$existingfile = new stdClass;
-				$existingfile->name = $filename;
-				$existingfile->path = "{$config->baseDir}/{$existingfile->name}";
-				$existingfile->URL = "{$config->baseURL}/{$existingfile->name}";
-
-				// Start off with the host file then add imported files
-				$all_files = array( $hostfile->mtime );
-				
-				if ( file_exists( $existingfile->path ) and isset( $config->data[ self::$compileName ] ) ) {
-					// File exists and has config
-					foreach ( $config->data[ $existingfile->name ][ 'imports' ] as $import_file ) {
-						$import_filepath = "{$config->baseDir}/{$import_file}";
-						if ( file_exists( $import_filepath ) ) {
-							$all_files[] = filemtime( $import_filepath );
-						}
-						else {
-							// File has been moved, remove old file and skip to compile
-							self::log( 'Import file has been moved, removing existing file' );
-							unlink( $existingfile->path );
-							break 2;
-						}
-					} 
-					if ( 
-							$config->data[ $existingfile->name ][ 'options' ] == self::$options and
-							array_sum( $all_files ) == $config->data[ $existingfile->name ][ 'datem_sum' ] 
-					) {						
-						// Files have not been modified and config is the same: return the old file
-						self::log( 'Files have not been modified, returning existing file' );
-						return $existingfile->URL;
-					}
-					else {
-						// Remove old file and continue making a new one...
-						self::log( 'Files has been modified, removing existing file' );
-						unlink( $existingfile->path );
-					}
-				}
-				else if ( file_exists( $existingfile_path ) ) {
-					// File exists but has no config
-					self::log( 'File exists but no config, removing existing file' );
-					unlink( $existingfile->path );
-				}
-				break;
-			} 
+		// Check for a valid compiled file
+		$validCompliledFile = self::validateCache( &$hostfile );
+		if ( is_string( $validCompliledFile ) ) {
+			return $validCompliledFile;
 		}
 		
-		/////////////////////////////////
 		// Compile
-		
-		// Reset properties for current process
-		self::$literals = array();
-		self::$variables = array();
-		self::$literalCount = 0;
-		$regex = self::$regex;
-		
-		// Collate hostfile and imports
-		$output = self::collateImports( &$hostfile );
-		
-		// Extract literals
-		$re = '#(\'|")(?:\\1|[^\1])*?\1#';
-		$output = preg_replace_callback( $re, "self::cb_extractStrings", $output );
-		
-		// Extract comments
-		$output = preg_replace_callback( $regex->comments, "self::cb_extractComments", $output );
-			
-		// Extract variables
-		$output = preg_replace_callback( $regex->variables, "self::cb_extractVariables", $output );
-		//self::log( self::$variables );
-		
-		// Search and replace variables
-		$re = '#var\(\s*([A-Z0-9_-]+)\s*\)#i';
-		$output = preg_replace_callback( $re, "self::cb_placeVariables", $output);
-		
-		// Optionally apply macros
-		if ( $options[ 'macros' ] !== false ) {
-			self::applyMacros( &$output );
-		}
-		
-		// Optionally minify (after macros since macros may introduce un-wanted whitespace) 
-		if ( $options[ 'minify' ] !== false ) {
-			self::minify( &$output );
-		}
-		
-		// Expand selectors
-		$re = '#([^}{]+){#s';
-		$output = preg_replace_callback( $re, "self::cb_expandSelector", $output);
-		
-		// Restore all comments
-		$output = preg_replace_callback( '#(___c\d+___)#', "self::cb_restoreLiteral", $output);
-		
-		// Restore all literals
-		$output = preg_replace_callback( '#(___\d+___)#', "self::cb_restoreLiteral", $output);
-	
-		// Release un-needed memory 
-		self::$literals = self::$variables = null;
+		$output = self::compile( &$hostfile );
 	
 		// Add in boilerplate
-		$output = <<<TXT
-/* 
- *  File created by CSS Crush
- *  http://github.com/peteboere/css-crush
- */
-{$output}
-TXT;
+		$output = self::getBoilerplate() . "\n{$output}";
+		
 		// Create file and return path. Return empty string on failure
 		return file_put_contents( "{$config->baseDir}/" . self::$compileName, $output ) ? 
 					"{$config->baseURL}/" . self::$compileName : '';
 	}
 	
+	public static function cli ( $file, $options = null ) {
+		if ( !self::$initialized ) { self::init(); }
+		
+		// Make basic information about the hostfile accessible
+		$hostfile = new stdClass;
+		$hostfile->name = basename( $file );
+		$hostfile->path = realpath( $file );
+		$hostfile->mtime = filemtime( $hostfile->path );
+		
+		self::setPath( dirname( $hostfile->path ) );
+		self::parseOptions( $options );
+		return self::compile( &$hostfile );
+	}
 	
 	static public function clearCache ( $dir = '' ) {
 		if ( !self::$initialized ) { self::init(); }
@@ -280,6 +193,131 @@ TXT;
 ################################################################################################
 #    Internal functions
 ################################################################################################
+
+	static public function getBoilerplate () {
+		return <<<TXT
+/* 
+ *  File created by CSS Crush
+ *  http://github.com/peteboere/css-crush
+ */
+TXT;
+	}
+	
+	static private function parseOptions ( &$options ) {
+		// Create default options for those not set
+		$option_defaults = array(
+			'macros'   => true,
+			'comments' => false,
+			'minify'   => true,
+		);
+		self::$options = $options = is_array( $options ) ? 
+			array_merge( $option_defaults, $options ) : $option_defaults;	
+	}
+
+	static private function compile ( &$hostfile ) {
+		// Reset properties for current process
+		self::$literals = array();
+		self::$variables = array();
+		self::$literalCount = 0;
+		$regex = self::$regex;
+		
+		// Collate hostfile and imports
+		$output = self::collateImports( &$hostfile );
+		
+		// Extract literals
+		$re = '#(\'|")(?:\\1|[^\1])*?\1#';
+		$output = preg_replace_callback( $re, "self::cb_extractStrings", $output );
+		
+		// Extract comments
+		$output = preg_replace_callback( $regex->comments, "self::cb_extractComments", $output );
+			
+		// Extract variables
+		$output = preg_replace_callback( $regex->variables, "self::cb_extractVariables", $output );
+		//self::log( self::$variables );
+		
+		// Search and replace variables
+		$re = '#var\(\s*([A-Z0-9_-]+)\s*\)#i';
+		$output = preg_replace_callback( $re, "self::cb_placeVariables", $output);
+		
+		// Optionally apply macros
+		if ( self::$options[ 'macros' ] !== false ) {
+			self::applyMacros( &$output );
+		}
+		
+		// Optionally minify (after macros since macros may introduce un-wanted whitespace) 
+		if ( self::$options[ 'minify' ] !== false ) {
+			self::minify( &$output );
+		}
+		
+		// Expand selectors
+		$re = '#([^}{]+){#s';
+		$output = preg_replace_callback( $re, "self::cb_expandSelector", $output);
+		
+		// Restore all comments
+		$output = preg_replace_callback( '#(___c\d+___)#', "self::cb_restoreLiteral", $output);
+		
+		// Restore all literals
+		$output = preg_replace_callback( '#(___\d+___)#', "self::cb_restoreLiteral", $output);
+	
+		// Release un-needed memory 
+		self::$literals = self::$variables = null;
+		
+		return $output;
+	}
+
+	static private function validateCache ( &$hostfile ) {
+		$config = self::$config;
+		// Search base directory for an existing compiled file
+		foreach ( scandir( $config->baseDir ) as $filename ) {
+			if ( self::$compileName == $filename ) {
+				// Cached file exists
+				self::log( 'Cached file exists' );
+				$existingfile = new stdClass;
+				$existingfile->name = $filename;
+				$existingfile->path = "{$config->baseDir}/{$existingfile->name}";
+				$existingfile->URL = "{$config->baseURL}/{$existingfile->name}";
+
+				// Start off with the host file then add imported files
+				$all_files = array( $hostfile->mtime );
+
+				if ( file_exists( $existingfile->path ) and isset( $config->data[ self::$compileName ] ) ) {
+					// File exists and has config
+					foreach ( $config->data[ $existingfile->name ][ 'imports' ] as $import_file ) {
+						$import_filepath = "{$config->baseDir}/{$import_file}";
+						if ( file_exists( $import_filepath ) ) {
+							$all_files[] = filemtime( $import_filepath );
+						}
+						else {
+							// File has been moved, remove old file and skip to compile
+							self::log( 'Import file has been moved, removing existing file' );
+							unlink( $existingfile->path );
+							return false;
+						}
+					} 
+					if ( 
+							$config->data[ $existingfile->name ][ 'options' ] == self::$options and
+							array_sum( $all_files ) == $config->data[ $existingfile->name ][ 'datem_sum' ] 
+					) {						
+						// Files have not been modified and config is the same: return the old file
+						self::log( 'Files have not been modified, returning existing file' );
+						return $existingfile->URL;
+					}
+					else {
+						// Remove old file and continue making a new one...
+						self::log( 'Files has been modified, removing existing file' );
+						unlink( $existingfile->path );
+					}
+				}
+				else if ( file_exists( $existingfile_path ) ) {
+					// File exists but has no config
+					self::log( 'File exists but no config, removing existing file' );
+					unlink( $existingfile->path );
+				}
+				return false;
+			} 
+		}
+		return false;
+	}
 
 	static private function collateImports ( &$hostfile ) {
 		$str = file_get_contents( $hostfile->path );
@@ -351,8 +389,10 @@ TXT;
 		$config->data[ $compileName ][ 'datem_sum' ] = array_sum( $imports_mtimes ) + $hostfile->mtime;
 		$config->data[ $compileName ][ 'options' ] = self::$options;
 
-		// Save config changes
-		file_put_contents( $config->path, serialize( $config->data ) );
+		if ( !self::$cli ) { 
+			// Save config changes
+			file_put_contents( $config->path, serialize( $config->data ) );
+		}
 		self::log( $config->data );
 		
 		return $str;
@@ -514,7 +554,7 @@ TXT;
 			}
 		}
 		//self::log( $stack);
-		return implode( ",", $stack ) . '{';
+		return implode( ',', $stack ) . '{';
 	}
 	
 	static private function cb_obfuscateDirectives ( $match ) {
@@ -569,10 +609,11 @@ php CSS_Crush.php -f=css/screen.css -n
 */
 
 if ( isset( $argc ) and isset( $argv ) ) {
-	$options = getopt( "f:m::cn", array(
-			'file:',
-			'macros::',
-			'comments',
+	$options = getopt( "f:o::m::cn", array(
+			'file:',    // Input file
+			'output::', // Output file
+			'macros::', // Comma seperated list of macro groups
+			'comments', // (flag) Leave comments intact
 			'nominify',
 		));
 	
@@ -599,9 +640,25 @@ if ( isset( $argc ) and isset( $argv ) ) {
 	if ( isset( $options[ 'n' ] ) or isset( $options[ 'nominify' ] ) ) {
 		$params[ 'minify' ] = false;
 	}
-	echo CSS_Crush::file( $file, $params ) . PHP_EOL;
+	
+	$output = CSS_Crush::cli( $file, $params );
+	
+	$outputFile = isset( $options[ 'o' ] );
+	if ( $outputFile ) {
+		$outputFile = $options[ 'o' ];
+	}
+	else {
+		$outputFile = isset( $options[ 'output' ] ) ? $options[ 'output' ] : false;
+	}
+		
+	if ( $outputFile ) {
+		$output = CSS_Crush::getBoilerplate() . "\n{$output}";
+		file_put_contents( $outputFile, $output );
+	}
+	else {
+		echo $output . PHP_EOL;
+	}
 }
-
 
 ################################################################################################
 #    Macro callbacks ( user functions )
