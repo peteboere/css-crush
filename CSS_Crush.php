@@ -26,7 +26,7 @@ class CSS_Crush {
 	private static $variables;
 	private static $literals;
 	private static $literalCount;
-	private static $cli;
+	public static $cli;
 	
 	// Pattern matching 
 	static private $regex = array( 
@@ -35,9 +35,9 @@ class CSS_Crush {
 		'comments' => '#/\*(.*?)\*/#s',
 	);
 	
-	// Init gets called at the top of any public methods
+	// Init gets called manually post class definition
 	private static $initialized = false;
-	private static function init () {
+	public static function init () {
 		self::$initialized = true;
 		self::$compileSuffix = '.crush.css';
 		self::$config = new stdClass;
@@ -46,15 +46,17 @@ class CSS_Crush {
 		self::$config->path = null;
 		self::$config->baseDir = null;
 		self::$config->baseURL = null;
-		if ( is_array( $_SERVER ) and in_array( 'DOCUMENT_ROOT', $_SERVER ) ) {
-			// Running on a server
-			self::$config->docRoot = $_SERVER[ 'DOCUMENT_ROOT' ];
-			self::$cli = false;
+		$docRoot = $_SERVER[ 'DOCUMENT_ROOT' ];
+		if ( defined( 'STDIN' ) and $_SERVER[ 'argc' ] > 0 ) {
+			// Command line
+			self::log( 'Command line mode' );
+			self::$cli = true;
 		} 
 		else {
-			// Command line
-			self::$config->docRoot = dirName( __FILE__ );
-			self::$cli = true;
+			// Running on a server
+			self::log( 'Server mode' );
+			self::$config->docRoot = $docRoot;
+			self::$cli = false;
 		}
 		self::$regex = (object) self::$regex;
 	}
@@ -106,7 +108,6 @@ class CSS_Crush {
 ################################################################################################
 
 	public static function file ( $hostfile, $options = null ) {
-		if ( !self::$initialized ) { self::init(); }
 		if ( strpos( $hostfile, '/' ) === 0 ) {
 			// Absolute path
 			self::setPath( dirname( self::$config->docRoot . $hostfile ) );
@@ -154,21 +155,19 @@ class CSS_Crush {
 	}
 	
 	public static function cli ( $file, $options = null ) {
-		if ( !self::$initialized ) { self::init(); }
-		
 		// Make basic information about the hostfile accessible
 		$hostfile = new stdClass;
 		$hostfile->name = basename( $file );
 		$hostfile->path = realpath( $file );
 		$hostfile->mtime = filemtime( $hostfile->path );
-		
-		self::setPath( dirname( $hostfile->path ) );
+
+		self::$config->baseDir = dirname( $hostfile->path );
+
 		self::parseOptions( $options );
 		return self::compile( &$hostfile );
 	}
 	
 	static public function clearCache ( $dir = '' ) {
-		if ( !self::$initialized ) { self::init(); }
 		if ( empty( $dir ) ) { 
 			$dir = dirname( __FILE__ );
 		}
@@ -600,6 +599,9 @@ TXT;
 	
 }
 
+// Initialize manually since it's static
+CSS_Crush::init();
+
 ################################################################################################
 #    Command line
 ################################################################################################
@@ -608,7 +610,7 @@ php CSS_Crush.php -f=css/screen.css -n
 >>> non-minified output
 */
 
-if ( isset( $argc ) and isset( $argv ) ) {
+if ( CSS_Crush::$cli ) {
 	$options = getopt( "f:o::m::cn", array(
 			'file:',    // Input file
 			'output::', // Output file
@@ -616,7 +618,6 @@ if ( isset( $argc ) and isset( $argv ) ) {
 			'comments', // (flag) Leave comments intact
 			'nominify',
 		));
-	
 	$file = null;
 	$params = array();
 	if ( isset( $options[ 'f' ] ) ) {
