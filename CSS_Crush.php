@@ -402,22 +402,26 @@ TXT;
 		$csscrushs = array();
 		foreach ( $user_funcs[ 'user' ] as $func ) {
 			if ( strpos( $func, 'csscrush_' ) === 0 ) {
-				// Put functions into groups
 				$parts = explode( '_', $func );
-				$property = implode( '-', array_slice( $parts, 2 ) );
-				$csscrushs[ $parts[1] ][ $property ] = $func;
+				array_shift( $parts );
+				$property = implode( '-', $parts );
+				$csscrushs[ $property ] = $func;
 			} 
 		}
-		// Discriminate which groups to apply 
-		// Then merge all enabled groups
+		// Determine which macros to apply 
 		$opts = self::$options[ 'macros' ];
 		$maclist = array();
-		foreach ( $csscrushs as $group ) {
-			if ( $opts === true or in_array( $group, $opts ) ) {
-				$maclist = array_merge( $maclist, $group );
+		if ( $opts === true ) {
+			$maclist = $csscrushs;
+		}
+		else {
+			foreach ( $csscrushs as $property => $callback ) {
+				if ( in_array( $property, $opts ) ) {
+					$maclist[ $property ] = $callback;
+				}
 			}
 		}
-		// Loop macrolop list and apply callbacks
+		// Loop macro list and apply callbacks
 		foreach ( $maclist as $property => $callback ) {
 			$wrapper = '$prop = "' . $property . '";' .
 					'$result = ' . $callback . '( $prop, $match[2] );' .
@@ -438,14 +442,16 @@ TXT;
 		$str = preg_replace_callback( '#\{[^}]+\}#s', $innerbrace, trim( $str ) );
 				
 		$replacements = array(
-			'#\s{2,}#'                          => ' ',      // Double spaces
-			'#[^}{]+\{\s*}#'                    => '',       // Empty statements
-			'#\s*(;|,|\{)\s*#'                  => '$1',
-			'#\s*;?\s*\}\s*#'                   => '}',
-			'#([^0-9])0[a-zA-Z]{2}#'            => '${1}0',  // unnecessary units on zeros
-			'#:(0 0|0 0 0|0 0 0 0)([;}])#'      => ':0${2}', // unnecessary zeros
-			'#(\[)\s*|\s*(\])|(\()\s*|\s*(\))#' => '${1}${2}${3}${4}',  // Bracket internal space
-			'#\s*([>~+=])\s*#'                  => '$1',     // Combinators
+			'#\s{2,}#'                          => ' ',      // Remove double spaces
+			'#\s*(;|,|\{)\s*#'                  => '$1',     // Clean-up around delimiters
+			'#\s*;*\s*\}\s*#'                   => '}',      // Clean-up closing braces
+			'#[^}{]+\{\s*}#'                    => '',       // Strip empty statements
+			'#([^0-9])0[a-zA-Z%]{2}#'           => '${1}0',  // Strip unnecessary units on zeros
+			'#:(0 0|0 0 0|0 0 0 0)([;}])#'      => ':0${2}', // Collapse zero lists
+			'#(background-position):0([;}])#'   => '$1:0 0$2', // Restore any overshoot
+			'#([^/d])0(\.\d+)#'                 => '$1$2',   // Strip leading zeros on floats
+			'#(\[)\s*|\s*(\])|(\()\s*|\s*(\))#' => '${1}${2}${3}${4}',  // Clean-up bracket internal space
+			'#\s*([>~+=])\s*#'                  => '$1',     // Clean-up around combinators
 		);
 
 		$str = preg_replace( 
@@ -468,8 +474,8 @@ TXT;
 		$flagged = strpos( $comment, '/*!' ) === 0;
 		if ( self::$options[ 'comments' ] or $flagged ) {
 			$label = "___c" . ++self::$literalCount . "___";
-			self::$literals[ $label ] = $flagged ? '/*' . substr( $match[1], 1 ) . '*/' : $comment;
-			return $label;			
+			self::$literals[ $label ] = $flagged ? '/*!' . substr( $match[1], 1 ) . '*/' : $comment;
+			return $label;
 		}
 		return '';
 	}
@@ -478,7 +484,15 @@ TXT;
 		$vars = preg_split( '#\s*;\s*#', $match[1], null, PREG_SPLIT_NO_EMPTY );
 		foreach ( $vars as $var ) {
 			$parts = preg_split( '#\s*:\s*#', $var, null, PREG_SPLIT_NO_EMPTY );
-			self::$variables[ $parts[0] ] = $parts[1];
+			if ( count( $parts ) == 2 ) {
+				list( $property, $value ) = $parts;
+			} 
+			else {
+				continue;
+			}
+			// Remove any comment markers around variable names
+			$property = preg_replace( '#___c\d+___\s*#', '', $property );
+			self::$variables[ $property ] = $value;
 		}
 		return '';
 	}
@@ -614,7 +628,7 @@ if ( CSS_Crush::$cli ) {
 	$options = getopt( "f:o::m::cn", array(
 			'file:',    // Input file
 			'output::', // Output file
-			'macros::', // Comma seperated list of macro groups
+			'macros::', // Comma seperated list of macro properties
 			'comments', // (flag) Leave comments intact
 			'nominify',
 		));
@@ -667,62 +681,79 @@ if ( CSS_Crush::$cli ) {
 
 ///////////// IELegacy /////////////
 
-// Fix opacity in ie6/7/8
-function csscrush_ielegacy_Opacity ( $prop, $val ) {
-	$msval = round( $val*100 );
-	return "-ms-filter: \"progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval})\";
-			filter: progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval});
-			zoom:1;
-			{$prop}: {$val}";	
+// Fix opacity in ie6/7/8§
+if ( !function_exists( 'csscrush_Opacity' ) ) {
+	function csscrush_Opacity ( $prop, $val ) {
+		$msval = round( $val*100 );
+		return "-ms-filter: \"progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval})\";
+				filter: progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval});
+				zoom:1;
+				{$prop}: {$val}";	
+	}
 }
 // Fix display:inline-block in ie6/7
-function csscrush_ielegacy_Display ( $prop, $val ) {
-	if ( $val == 'inline-block' ) { 
-		return "{$prop}:{$val};*{$prop}:inline;*zoom:1";
+if ( !function_exists( 'csscrush_Display' ) ) { 
+	function csscrush_Display ( $prop, $val ) {
+		if ( $val == 'inline-block' ) { 
+			return "{$prop}:{$val};*{$prop}:inline;*zoom:1";
+		}
+		return "{$prop}:{$val}";
 	}
-	return "{$prop}:{$val}";
 }
 // Fix min-height in ie6
-function csscrush_ielegacy_Min_Height ( $prop, $val ) {
-	return "{$prop}:{$val};_height:{$val}";
+if ( !function_exists( 'csscrush_Min_Height' ) ) { 
+	function csscrush_Min_Height ( $prop, $val ) {return "{$prop}:{$val};_height:{$val}";}
 }
 
 ///////////// CSS3 /////////////
 
-// Border radius
-function csscrush_css3_Border_Radius ( $prop, $val ) {
-	return "-moz-{$prop}:{$val};{$prop}:{$val}";
+if ( !function_exists( 'csscrush_Border_Radius' ) ) { 
+	function csscrush_Border_Radius ( $prop, $val ) {
+		return "-moz-{$prop}:{$val};{$prop}:{$val}";
+	}
 }
-function csscrush_css3_Border_Top_Left_Radius ( $prop, $val ) {
-	return "-moz-border-radius-topleft:{$val};{$prop}:{$val}";
+if ( !function_exists( 'csscrush_Border_Top_Left_Radius' ) ) { 
+	function csscrush_Border_Top_Left_Radius ( $prop, $val ) {
+		return "-moz-border-radius-topleft:{$val};{$prop}:{$val}";
+	}
 }
-function csscrush_css3_Border_Top_Right_Radius ( $prop, $val ) {
-	return "-moz-border-radius-topright:{$val};{$prop}:{$val}";
+if ( !function_exists( 'csscrush_Border_Top_Right_Radius' ) ) { 
+	function csscrush_Border_Top_Right_Radius ( $prop, $val ) {
+		return "-moz-border-radius-topright:{$val};{$prop}:{$val}";
+	}
 }
-function csscrush_css3_Border_Bottom_Right_Radius ( $prop, $val ) {
-	return "-moz-border-radius-bottomright:{$val};{$prop}:{$val}";
+if ( !function_exists( 'csscrush_Border_Bottom_Right_Radius' ) ) { 
+	function csscrush_Border_Bottom_Right_Radius ( $prop, $val ) {
+		return "-moz-border-radius-bottomright:{$val};{$prop}:{$val}";
+	}
 }
-function csscrush_css3_Border_Bottom_Left_Radius ( $prop, $val ) {
-	return "-moz-border-radius-bottomleft:{$val};{$prop}:{$val}";
+if ( !function_exists( 'csscrush_Border_Bottom_Left_Radius' ) ) { 
+	function csscrush_Border_Bottom_Left_Radius ( $prop, $val ) {
+		return "-moz-border-radius-bottomleft:{$val};{$prop}:{$val}";
+	}
 }
-// Box shadow
-function csscrush_css3_Box_Shadow ( $prop, $val ) {
-	return "-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
+if ( !function_exists( 'csscrush_Box_Shadow' ) ) { 
+	function csscrush_Box_Shadow ( $prop, $val ) {
+		return "-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
+	}
 }
-// Transform
-function csscrush_css3_Transform ( $prop, $val ) {
-	return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
+if ( !function_exists( 'csscrush_Transform' ) ) { 
+	function csscrush_Transform ( $prop, $val ) {
+		return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
+	}
 }
-// Transition
-function csscrush_css3_Transition ( $prop, $val ) {
-	return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
+if ( !function_exists( 'csscrush_Transition' ) ) { 
+	function csscrush_Transition ( $prop, $val ) {
+		return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
+	}
 }
-// Background size
-function csscrush_css3_Background_Size ( $prop, $val ) {
-	return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
+if ( !function_exists( 'csscrush_Background_Size' ) ) { 
+	function csscrush_Background_Size ( $prop, $val ) {
+		return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
+	}
 }
-// Box sizing
-function csscrush_css3_Box_Sizing ( $prop, $val ) {
-	return "-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
+if ( !function_exists( 'csscrush_Box_Sizing' ) ) { 
+	function csscrush_Box_Sizing ( $prop, $val ) {
+		return "-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
+	}
 }
-
