@@ -282,7 +282,9 @@ TXT;
 				if ( file_exists( $existingfile->path ) and isset( $config->data[ self::$compileName ] ) ) {
 					// File exists and has config
 					foreach ( $config->data[ $existingfile->name ][ 'imports' ] as $import_file ) {
-						$import_filepath = "{$config->baseDir}/{$import_file}";
+						// Check if this is docroot relative or hostfile relative
+						$root = strpos( $import_file, '/' ) === 0 ? $config->docRoot : $config->baseDir;
+						$import_filepath = realpath( $root ) . "/{$import_file}";
 						if ( file_exists( $import_filepath ) ) {
 							$all_files[] = filemtime( $import_filepath );
 						}
@@ -332,20 +334,38 @@ TXT;
 		
 		// Keep track of relative paths with nested imports
 		$relativeContext = '';
+		// Detect whether we're leading from an absolute filepath
+		$absoluteFlag = false; 
 		$imports_mtimes = array();
 		$imports_filenames = array();
-		
+		$import = new stdClass;
+				
 		while ( preg_match( $regex->imports, $str, $match, PREG_OFFSET_CAPTURE ) ) {
 			// Matched a file import statement
 			self::log( $match );
 			$text = $match[0][0]; // Full match
 			$offset = $match[0][1]; // Full match offset
-			$import = new stdClass;
 			$import->name = $match[2][0];
-			$segments = array_filter( array( $config->baseDir, $relativeContext, $import->name ) );
-			$import->path = implode( '/', $segments );
-			
-			self::log( $relativeContext );
+			if ( strpos( $import->name, '/' ) === 0 ) {
+				// Absolute path
+				self::log('Absolute path');
+				$segments = array( $config->docRoot, $import->name );
+				$relativeContext = '';
+				$absoluteFlag = true; 
+			}
+			else {
+				// Relative path
+				self::log('Relative path');
+				$root = $absoluteFlag ? $config->docRoot : $config->baseDir;
+				$segments = array_filter( array( $root, $relativeContext, $import->name ) );
+				if ( $absoluteFlag ) {
+					$relativeContext = dirname( substr( $import->path, strlen( $config->baseDir ) + 1 ) );
+				} 
+				$absoluteFlag = false; 
+			}
+			$import->path = realpath( implode( '/', $segments ) );
+						
+			self::log( 'Relative context: ' .  $relativeContext );
 			self::log( 'Import filepath: ' . $import->path );
 			
 			$preStatement  = substr( $str, 0, $offset );
