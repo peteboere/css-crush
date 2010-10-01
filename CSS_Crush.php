@@ -63,19 +63,24 @@ class CSS_Crush {
 	
 	// Initialize config data, create config file if needed
 	private static function loadConfig () {
-		if ( self::$config->data and file_exists( self::$config->path ) ) {
+		$config =& self::$config;
+		if ( 
+			file_exists( $config->path ) and 
+			$config->data  and
+			$config->data[ 'originPath' ] == $config->path
+		) {
 			// Already loaded and config file exists in the current directory
 			return;
 		}
-		else if ( file_exists( self::$config->path ) ) {
+		else if ( file_exists( $config->path ) ) {
 			// Load from file
-			self::$config->data = unserialize( file_get_contents( self::$config->path ) );
+			$config->data = unserialize( file_get_contents( $config->path ) );
 		}
 		else {
 			// Create
 			self::log( 'Creating config file' );
-			file_put_contents( self::$config->path, serialize( array() ) );
-			self::$config->data = array();
+			file_put_contents( $config->path, serialize( array() ) );
+			$config->data = array();
 		}
 	}
 	
@@ -107,23 +112,22 @@ class CSS_Crush {
 #    Public API
 ################################################################################################
 
-	public static function file ( $hostfile, $options = null ) {
-		if ( strpos( $hostfile, '/' ) === 0 ) {
+	public static function file ( $file, $options = null ) {
+		if ( strpos( $file, '/' ) === 0 ) {
 			// Absolute path
-			self::setPath( dirname( self::$config->docRoot . $hostfile ) );
+			self::setPath( dirname( self::$config->docRoot . $file ) );
 		} 
 		else {
 			// Relative path
-			self::setPath( dirname( dirname( __FILE__ ) . '/' . $hostfile ) );
+			self::setPath( dirname( dirname( __FILE__ ) . '/' . $file ) );
 		}
-		$hostfileName = basename( $hostfile );
 		
 		self::loadConfig();
 		$config = self::$config;
 		
 		// Make basic information about the hostfile accessible
 		$hostfile = new stdClass;
-		$hostfile->name = $hostfileName;
+		$hostfile->name = basename( $file );
 		$hostfile->path = "{$config->baseDir}/{$hostfile->name}";
 		$hostfile->mtime = filemtime( $hostfile->path );
 		
@@ -266,57 +270,64 @@ TXT;
 
 	static private function validateCache ( &$hostfile ) {
 		$config = self::$config;
+		
 		// Search base directory for an existing compiled file
 		foreach ( scandir( $config->baseDir ) as $filename ) {
-			if ( self::$compileName == $filename ) {
-				// Cached file exists
-				self::log( 'Cached file exists' );
-				$existingfile = new stdClass;
-				$existingfile->name = $filename;
-				$existingfile->path = "{$config->baseDir}/{$existingfile->name}";
-				$existingfile->URL = "{$config->baseURL}/{$existingfile->name}";
+		
+			if ( self::$compileName != $filename ) {
+				continue;
+			}
+			// Cached file exists
+			self::log( 'Cached file exists' );
+		
+			$existingfile = new stdClass;
+			$existingfile->name = $filename;
+			$existingfile->path = "{$config->baseDir}/{$existingfile->name}";
+			$existingfile->URL = "{$config->baseURL}/{$existingfile->name}";
+						
+			// Start off with the host file then add imported files
+			$all_files = array( $hostfile->mtime );
 
-				// Start off with the host file then add imported files
-				$all_files = array( $hostfile->mtime );
-
-				if ( file_exists( $existingfile->path ) and isset( $config->data[ self::$compileName ] ) ) {
-					// File exists and has config
-					foreach ( $config->data[ $existingfile->name ][ 'imports' ] as $import_file ) {
-						// Check if this is docroot relative or hostfile relative
-						$root = strpos( $import_file, '/' ) === 0 ? $config->docRoot : $config->baseDir;
-						$import_filepath = realpath( $root ) . "/{$import_file}";
-						if ( file_exists( $import_filepath ) ) {
-							$all_files[] = filemtime( $import_filepath );
-						}
-						else {
-							// File has been moved, remove old file and skip to compile
-							self::log( 'Import file has been moved, removing existing file' );
-							unlink( $existingfile->path );
-							return false;
-						}
-					} 
-					if ( 
-							$config->data[ $existingfile->name ][ 'options' ] == self::$options and
-							array_sum( $all_files ) == $config->data[ $existingfile->name ][ 'datem_sum' ] 
-					) {						
-						// Files have not been modified and config is the same: return the old file
-						self::log( 'Files have not been modified, returning existing file' );
-						return $existingfile->URL;
+			if ( file_exists( $existingfile->path ) and isset( $config->data[ self::$compileName ] ) ) {
+				// File exists and has config
+				self::log( 'has config' );
+				foreach ( $config->data[ $existingfile->name ][ 'imports' ] as $import_file ) {
+					// Check if this is docroot relative or hostfile relative
+					$root = strpos( $import_file, '/' ) === 0 ? $config->docRoot : $config->baseDir;
+					$import_filepath = realpath( $root ) . "/{$import_file}";
+					if ( file_exists( $import_filepath ) ) {
+						$all_files[] = filemtime( $import_filepath );
 					}
 					else {
-						// Remove old file and continue making a new one...
-						self::log( 'Files has been modified, removing existing file' );
+						// File has been moved, remove old file and skip to compile
+						self::log( 'Import file has been moved, removing existing file' );
 						unlink( $existingfile->path );
+						return false;
 					}
+				} 
+				if ( 
+						$config->data[ $existingfile->name ][ 'options' ] == self::$options and
+						array_sum( $all_files ) == $config->data[ $existingfile->name ][ 'datem_sum' ] 
+				) {						
+					// Files have not been modified and config is the same: return the old file
+					self::log( 'Files have not been modified, returning existing file <br><br><br>' );
+					return $existingfile->URL;
 				}
-				else if ( file_exists( $existingfile_path ) ) {
-					// File exists but has no config
-					self::log( 'File exists but no config, removing existing file' );
+				else {
+					// Remove old file and continue making a new one...
+					self::log( 'Files has been modified, removing existing file' );
 					unlink( $existingfile->path );
 				}
-				return false;
-			} 
-		}
+			}
+			else if ( file_exists( $existingfile->path ) ) {
+				// File exists but has no config
+				self::log( $config );
+				self::log( 'File exists but no config, removing existing file' );
+				unlink( $existingfile->path );
+			}
+			return false;
+
+		} // foreach
 		return false;
 	}
 
@@ -342,7 +353,6 @@ TXT;
 				
 		while ( preg_match( $regex->imports, $str, $match, PREG_OFFSET_CAPTURE ) ) {
 			// Matched a file import statement
-			self::log( $match );
 			$text = $match[0][0]; // Full match
 			$offset = $match[0][1]; // Full match offset
 			$import->name = $match[2][0];
@@ -365,8 +375,8 @@ TXT;
 			}
 			$import->path = realpath( implode( '/', $segments ) );
 						
-			self::log( 'Relative context: ' .  $relativeContext );
-			self::log( 'Import filepath: ' . $import->path );
+			//self::log( 'Relative context: ' .  $relativeContext );
+			//self::log( 'Import filepath: ' . $import->path );
 			
 			$preStatement  = substr( $str, 0, $offset );
 			$postStatement = substr( $str, $offset + strlen( $text ) );
@@ -407,6 +417,9 @@ TXT;
 		$config->data[ $compileName ][ 'imports' ] = $imports_filenames;
 		$config->data[ $compileName ][ 'datem_sum' ] = array_sum( $imports_mtimes ) + $hostfile->mtime;
 		$config->data[ $compileName ][ 'options' ] = self::$options;
+		
+		// Need to store the current path so we can check we're using the right config path later
+		$config->data[ 'originPath' ] = $config->path;
 
 		if ( !self::$cli ) { 
 			// Save config changes
@@ -544,7 +557,7 @@ TXT;
 			'#:any\(([^)]*)\)#', "self::cb_expandSelector_braces", $between );
 		
 		// Strip any comment labels, whoops
-		$between = preg_replace( '#___c\d+___#', '', $between );
+		$between = preg_replace( '#\s*___c\d+___\s*#', '', $between );
 		
 		$re_comma = '#\s*,\s*#';
 		$matched_statements = preg_split( $re_comma, $between );
@@ -586,7 +599,6 @@ TXT;
 				$stack[] = $matched_statement;
 			}
 		}
-		//self::log( $stack);
 		return implode( ',', $stack ) . '{';
 	}
 	
