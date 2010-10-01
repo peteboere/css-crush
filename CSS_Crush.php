@@ -85,7 +85,8 @@ class CSS_Crush {
 	}
 	
 	private static function setPath ( $new_dir ) {
-		$docRoot = self::$config->docRoot;
+		$config =& self::$config;
+		$docRoot = $config->docRoot;
 		if ( strpos( $new_dir, $docRoot ) !== 0 ) {
 			$new_dir = realpath( "{$docRoot}/{$new_dir}" );
 		}
@@ -102,9 +103,9 @@ class CSS_Crush {
 			}
 			self::log( 'Permissions updated' );
 		} 
-		self::$config->path = "{$new_dir}/" . self::$config->file;
-		self::$config->baseDir = $new_dir;
-		self::$config->baseURL = substr( $new_dir, strlen( $docRoot ) );
+		$config->path = "{$new_dir}/" . $config->file;
+		$config->baseDir = $new_dir;
+		$config->baseURL = substr( $new_dir, strlen( $docRoot ) );
 	}
 	
 	
@@ -123,7 +124,7 @@ class CSS_Crush {
 		}
 		
 		self::loadConfig();
-		$config = self::$config;
+		$config =& self::$config;
 		
 		// Make basic information about the hostfile accessible
 		$hostfile = new stdClass;
@@ -310,7 +311,8 @@ TXT;
 						array_sum( $all_files ) == $config->data[ $existingfile->name ][ 'datem_sum' ] 
 				) {						
 					// Files have not been modified and config is the same: return the old file
-					self::log( 'Files have not been modified, returning existing file <br><br><br>' );
+					self::log( "Files have not been modified, returning existing
+						 file '{$existingfile->URL}'<br><br><br>" );
 					return $existingfile->URL;
 				}
 				else {
