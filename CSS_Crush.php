@@ -1,20 +1,28 @@
 <?php
-/*
-
-CSS Crush
-
-@example
-
-<?php 
-
-include 'CSS_Crush.php'; 
-$path_to_compiled_file = CSS_Crush::file( 'screen.css' );
-
-?>
-
-<link rel="stylesheet" type="text/css" href="<?php echo $path_to_compiled_file; ?>" media="screen" />
-
-*/
+/**
+ * 
+ * CSS Crush
+ * @version 1.0
+ * 
+ * 
+ * CSS pre-processor that recursively collates import files into one,
+ * applies specified CSS variables, applies search/replace macros, 
+ * minifies then outputs cached file.
+ * 
+ * Validates cached file by checking the host-file and all imported files
+ * and comparing the date-modified timestamps.
+ * 
+ * 
+ * Example usage:
+ * 
+ * <?php 
+ *   include 'CSS_Crush.php'; 
+ *   $path_to_compiled_file = CSS_Crush::file( '/css/screen.css' );
+ * ?>
+ * 
+ * <link rel="stylesheet" type="text/css" href="<?php echo $path_to_compiled_file; ?>" media="screen" />
+ * 
+ */
 class CSS_Crush {
 	
 	private static $config;
@@ -26,11 +34,10 @@ class CSS_Crush {
 	private static $variables;
 	private static $literals;
 	private static $literalCount;
-	public static $cli;
 	
 	// Pattern matching 
 	static private $regex = array( 
-		'imports'  => '#@import +url *\(? *([\'"])?(.+\.css)\1? *\)? *;?#',
+		'imports'  => '#@import +(?:url)? *\(? *([\'"])?(.+\.css)\1? *\)? *;?#',
 		'variables'=> '#@variables\s+\{\s*(.*?)\s*\};?#s',
 		'comments' => '#/\*(.*?)\*/#s',
 	);
@@ -109,10 +116,16 @@ class CSS_Crush {
 	}
 	
 	
-################################################################################################
-#    Public API
-################################################################################################
+	################################################################################################
+	#  Public API
 
+	/**
+	 * Process host CSS file and return a new compiled file
+	 * 
+	 * @param string $file  Absolute or relative path to the host CSS file
+	 * @param mixed $options  An array of options or null
+	 * @return string  The public path to the compiled file or an empty string
+	 */
 	public static function file ( $file, $options = null ) {
 		if ( strpos( $file, '/' ) === 0 ) {
 			// Absolute path
@@ -159,19 +172,11 @@ class CSS_Crush {
 					"{$config->baseURL}/" . self::$compileName : '';
 	}
 	
-	public static function cli ( $file, $options = null ) {
-		// Make basic information about the hostfile accessible
-		$hostfile = new stdClass;
-		$hostfile->name = basename( $file );
-		$hostfile->path = realpath( $file );
-		$hostfile->mtime = filemtime( $hostfile->path );
-
-		self::$config->baseDir = dirname( $hostfile->path );
-
-		self::parseOptions( $options );
-		return self::compile( &$hostfile );
-	}
-	
+	/**
+	 * Clear config file and compiled files for the specified directory
+	 * 
+	 * @param string  System path to the directory
+	 */
 	static public function clearCache ( $dir = '' ) {
 		if ( empty( $dir ) ) { 
 			$dir = dirname( __FILE__ );
@@ -193,10 +198,60 @@ class CSS_Crush {
 			}
 		}
 	}
+	
+	public static $cli;
+		
+	public static function cli ( $file, $options = null ) {
+		// Make basic information about the hostfile accessible
+		$hostfile = new stdClass;
+		$hostfile->name = basename( $file );
+		$hostfile->path = realpath( $file );
+		$hostfile->mtime = filemtime( $hostfile->path );
 
-################################################################################################
-#    Internal functions
-################################################################################################
+		self::$config->baseDir = dirname( $hostfile->path );
+
+		self::parseOptions( $options );
+		return self::compile( &$hostfile );
+	}
+	
+	/**
+	 * Flag for enabling debug mode
+	 * 
+	 * @var boolean
+	 */
+	public static $debug = false;
+
+	/**
+	 * Print the log
+	 */
+	public static function log () {
+		if ( !self::$debug ) {
+			return;
+		} 
+		static $log = '';
+		$args = func_get_args();
+		if ( !count( $args ) ) { 
+			// No arguments, return the log
+			return $log;
+		}
+		else {
+			$arg = $args[0];
+		}
+		if ( is_string( $arg ) ) {
+			$log .= $arg . '<hr>';
+		}
+		else {
+			$out = '<pre>'; 
+			ob_start();
+			print_r( $arg );
+			$out .= ob_get_clean();
+			$out .= '</pre>';
+			$log .= $out . '<hr>';
+		}
+	}
+
+	################################################################################################
+	#  Internal functions
 
 	static public function getBoilerplate () {
 		return <<<TXT
@@ -312,7 +367,7 @@ TXT;
 				) {						
 					// Files have not been modified and config is the same: return the old file
 					self::log( "Files have not been modified, returning existing
-						 file '{$existingfile->URL}'<br><br><br>" );
+						 file '{$existingfile->URL}'" );
 					return $existingfile->URL;
 				}
 				else {
@@ -493,10 +548,8 @@ TXT;
 			array_keys( $replacements ), array_values( $replacements ), $str );
 	}
 
-
-################################################################################################
-#    Search / replace callbacks
-################################################################################################
+	################################################################################################
+	#  Search / replace callbacks
 
 	static private function cb_extractStrings ( $match ) {
 		$label = "___" . ++self::$literalCount . "___";
@@ -612,47 +665,21 @@ TXT;
 		return self::$literals[ $match[0] ];
 	}
 	
-	
+}
+
 ################################################################################################
-#    Logging / debugging
+#  End class definition
 ################################################################################################
 
-	public static $debug = false;
-	
-	public static function log () {
-		if ( !self::$debug ) {
-			return;
-		} 
-		static $log = '';
-		$args = func_get_args();
-		if ( !count( $args ) ) { 
-			// No arguments, return the log
-			return $log;
-		}
-		else {
-			$arg = $args[0];
-		}
-		if ( is_string( $arg ) ) {
-			$log .= $arg . '<hr>';
-		}
-		else {
-			$out = '<pre>'; 
-			ob_start();
-			print_r( $arg );
-			$out .= ob_get_clean();
-			$out .= '</pre>';
-			$log .= $out . '<hr>';
-		}
-	}
-	
-}
 
 // Initialize manually since it's static
 CSS_Crush::init();
 
+
+
 ################################################################################################
-#    Command line
-################################################################################################
+#  Command line API
+
 /*
 php CSS_Crush.php -f=css/screen.css -n
 >>> non-minified output
@@ -710,8 +737,7 @@ if ( CSS_Crush::$cli ) {
 }
 
 ################################################################################################
-#    Macro callbacks ( user functions )
-################################################################################################
+#  Macro callbacks ( user functions )
 
 ///////////// IELegacy /////////////
 
