@@ -146,7 +146,7 @@ class CSS_Crush {
 		$hostfile->mtime = filemtime( $hostfile->path );
 		
 		if ( !file_exists( $hostfile->path ) ) {
-			// If host file doesn't exist simply return an empty string 
+			// If host file doesn't exist return an empty string 
 			return '';
 		}
 		
@@ -156,13 +156,13 @@ class CSS_Crush {
 		self::$compileName = basename( $hostfile->name, '.css' ) . self::$compileSuffix;
 		
 		// Check for a valid compiled file
-		$validCompliledFile = self::validateCache( &$hostfile );
+		$validCompliledFile = self::validateCache( $hostfile );
 		if ( is_string( $validCompliledFile ) ) {
 			return $validCompliledFile;
 		}
 		
 		// Compile
-		$output = self::compile( &$hostfile );
+		$output = self::compile( $hostfile );
 	
 		// Add in boilerplate
 		$output = self::getBoilerplate() . "\n{$output}";
@@ -211,7 +211,7 @@ class CSS_Crush {
 		self::$config->baseDir = dirname( $hostfile->path );
 
 		self::parseOptions( $options );
-		return self::compile( &$hostfile );
+		return self::compile( $hostfile );
 	}
 	
 	/**
@@ -281,42 +281,48 @@ TXT;
 		$regex = self::$regex;
 		
 		// Collate hostfile and imports
-		$output = self::collateImports( &$hostfile );
+		$output = self::collateImports( $hostfile );
 		
 		// Extract literals
 		$re = '#(\'|")(?:\\1|[^\1])*?\1#';
-		$output = preg_replace_callback( $re, "self::cb_extractStrings", $output );
+		$cb_extractStrings = self::createCallback( 'cb_extractStrings' );
+		$output = preg_replace_callback( $re, $cb_extractStrings, $output );
 		
 		// Extract comments
-		$output = preg_replace_callback( $regex->comments, "self::cb_extractComments", $output );
+		$cb_extractComments = self::createCallback( 'cb_extractComments' );
+		$output = preg_replace_callback( $regex->comments, $cb_extractComments, $output );
 			
 		// Extract variables
-		$output = preg_replace_callback( $regex->variables, "self::cb_extractVariables", $output );
-		//self::log( self::$variables );
+		$cb_extractVariables = self::createCallback( 'cb_extractVariables' );
+		$output = preg_replace_callback( $regex->variables, $cb_extractVariables, $output );
 		
 		// Search and replace variables
 		$re = '#var\(\s*([A-Z0-9_-]+)\s*\)#i';
-		$output = preg_replace_callback( $re, "self::cb_placeVariables", $output);
+		$cb_placeVariables = self::createCallback( 'cb_placeVariables' );
+		$output = preg_replace_callback( $re, $cb_placeVariables, $output);
 		
 		// Optionally apply macros
 		if ( self::$options[ 'macros' ] !== false ) {
-			self::applyMacros( &$output );
+			self::applyMacros( $output );
 		}
 		
 		// Optionally minify (after macros since macros may introduce un-wanted whitespace) 
 		if ( self::$options[ 'minify' ] !== false ) {
-			self::minify( &$output );
+			self::minify( $output );
 		}
 		
 		// Expand selectors
 		$re = '#([^}{]+){#s';
-		$output = preg_replace_callback( $re, "self::cb_expandSelector", $output);
+		$cb_expandSelector = self::createCallback( 'cb_expandSelector' );
+		$output = preg_replace_callback( $re, $cb_expandSelector, $output);
 		
 		// Restore all comments
-		$output = preg_replace_callback( '#(___c\d+___)#', "self::cb_restoreLiteral", $output);
+		$cb_restoreLiteral = self::createCallback( 'cb_restoreLiteral' );
+		$output = preg_replace_callback( '#(___c\d+___)#', $cb_restoreLiteral, $output);
 		
 		// Restore all literals
-		$output = preg_replace_callback( '#(___\d+___)#', "self::cb_restoreLiteral", $output);
+		$cb_restoreLiteral = self::createCallback( 'cb_restoreLiteral' );
+		$output = preg_replace_callback( '#(___\d+___)#', $cb_restoreLiteral, $output);
 	
 		// Release un-needed memory 
 		self::$literals = self::$variables = null;
@@ -378,7 +384,6 @@ TXT;
 			}
 			else if ( file_exists( $existingfile->path ) ) {
 				// File exists but has no config
-				self::log( $config );
 				self::log( 'File exists but no config, removing existing file' );
 				unlink( $existingfile->path );
 			}
@@ -395,7 +400,8 @@ TXT;
 		$regex = self::$regex;
 		
 		// Obfuscate any directives within comment blocks
-		$str = preg_replace_callback( $regex->comments, "self::cb_obfuscateDirectives", $str );
+		$cb_obfuscateDirectives = self::createCallback( 'cb_obfuscateDirectives' );
+		$str = preg_replace_callback( $regex->comments, $cb_obfuscateDirectives, $str );
 		
 		// Initialize config object
 		$config->data[ $compileName ] = array();
@@ -448,7 +454,7 @@ TXT;
 				
 				// Obfuscate any directives within comment blocks
 				$import_content = preg_replace_callback( 
-					$regex->imports, "self::cb_obfuscateDirectives", $import->content );
+					$regex->imports, $cb_obfuscateDirectives, $import->content );
 				
 				// Set relative context if there is a nested import statement
 				if ( preg_match( $regex->imports, $import->content ) ) {
@@ -553,13 +559,18 @@ TXT;
 	################################################################################################
 	#  Search / replace callbacks
 
-	static private function cb_extractStrings ( $match ) {
+	static private function createCallback ( $name ) {
+		return create_function( '$m', 
+			'return call_user_func( array( "' . __CLASS__ . '", "' . $name . '" ), $m );' );
+	}
+	
+	static public function cb_extractStrings ( $match ) {
 		$label = "___" . ++self::$literalCount . "___";
 		self::$literals[ $label ] = $match[0];
 		return $label;
 	}
 	
-	static private function cb_extractComments ( $match ) {
+	static public function cb_extractComments ( $match ) {
 		$comment = $match[0];
 		$flagged = strpos( $comment, '/*!' ) === 0;
 		if ( self::$options[ 'comments' ] or $flagged ) {
@@ -570,7 +581,7 @@ TXT;
 		return '';
 	}
 	
-	static private function cb_extractVariables ( $match ) {
+	static public function cb_extractVariables ( $match ) {
 		$vars = preg_split( '#\s*;\s*#', $match[1], null, PREG_SPLIT_NO_EMPTY );
 		foreach ( $vars as $var ) {
 			$parts = preg_split( '#\s*:\s*#', $var, null, PREG_SPLIT_NO_EMPTY );
@@ -587,7 +598,7 @@ TXT;
 		return '';
 	}
 	
-	static private function cb_placeVariables ( $match ) {
+	static public function cb_placeVariables ( $match ) {
 		$key = $match[1];
 		if ( isset( self::$variables[ $key ] ) ) {
 			return self::$variables[ $key ];
@@ -597,23 +608,25 @@ TXT;
 		}
 	}
 	
-	static private function cb_expandSelector_braces ( $match ) {
+	static public function cb_expandSelector_braces ( $match ) {
 		$label = "__any" . ++self::$literalCount . "__";
 		self::$literals[ $label ] = $match[1];
 		return $label;
 	}
 	
-	static private function cb_expandSelector ( $match ) {
+	static public function cb_expandSelector ( $match ) {
 		/* http://dbaron.org/log/20100424-any */
 		$text = $match[0];
 		$between = $match[1];
 		if ( strpos( $between, ':any' ) === false ) {
 			return $text;
 		}
+
+		$cb_expandSelector_braces = self::createCallback( 'cb_expandSelector_braces' );
 		$between = preg_replace_callback( 
-			'#:any\(([^)]*)\)#', "self::cb_expandSelector_braces", $between );
+			'#:any\(([^)]*)\)#', $cb_expandSelector_braces, $between );
 		
-		// Strip any comment labels, whoops
+		// Strip any comment labels
 		$between = preg_replace( '#\s*___c\d+___\s*#', '', $between );
 		
 		$re_comma = '#\s*,\s*#';
@@ -665,11 +678,11 @@ TXT;
 		return implode( ',', $finish ) . '{';
 	}
 	
-	static private function cb_obfuscateDirectives ( $match ) {
+	static public function cb_obfuscateDirectives ( $match ) {
 		return str_replace( '@', '(at)', $match[0] );
 	}
 	
-	static private function cb_restoreLiteral ( $match ) {
+	static public function cb_restoreLiteral ( $match ) {
 		return self::$literals[ $match[0] ];
 	}
 	
