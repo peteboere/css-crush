@@ -5,7 +5,7 @@
  * @version 1.0
  * 
  * 
- * CSS pre-processor that recursively collates import files into one,
+ * CSS pre-processor that collates a host CSS file and its imports into one,
  * applies specified CSS variables, applies search/replace macros, 
  * minifies then outputs cached file.
  * 
@@ -462,12 +462,12 @@ TXT;
 					$relativeContext = '';
 				}
 				// Reconstruct the main string
-				$str = "{$preStatement}\n{$import->content}\n{$postStatement}";
+				$str = $preStatement . $import->content . $postStatement;
 			}
 			else {
 				// Failed to open import, just continue with the import line removed
 				self::log( 'File not found' );
-				$str = "{$preStatement}\n{$postStatement}";
+				$str = $preStatement . $postStatement;
 			}
 		}
 		
@@ -515,7 +515,7 @@ TXT;
 		foreach ( $maclist as $property => $callback ) {
 			$wrapper = '$prop = "' . $property . '";' .
 					'$result = ' . $callback . '( $prop, $match[2] );' .
-					'return $match[1] . "\n" . $result . $match[3];';
+					'return $result ? $match[1] . $result . $match[3] : $match[0];';
 			$str = preg_replace_callback( 
 					'#([\{\s;]+)' . $property . '\s*:\s*' . '([^;\}]+)' . '([;\}])#', 
 					create_function ( '$match', $wrapper ),
@@ -542,6 +542,8 @@ TXT;
 			'#([^/d])0(\.\d+)#'                 => '$1$2',   // Strip leading zeros on floats
 			'#(\[)\s*|\s*(\])|(\()\s*|\s*(\))#' => '${1}${2}${3}${4}',  // Clean-up bracket internal space
 			'#\s*([>~+=])\s*#'                  => '$1',     // Clean-up around combinators
+			'#\#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3#i'                  
+			                                    => '#$1$2$3', // Reduce Hex codes
 		);
 
 		$str = preg_replace( 
@@ -627,6 +629,7 @@ TXT;
 					if ( $pos === 0 ) {
 						preg_match( '#__any\d+__#', $matched_statement, $m );
 						$parts = preg_split( $re_comma, self::$literals[ $m[0] ] );
+						$parts = array_map( 'trim', $parts );
 						$tmp = array();
 						foreach ( $chain as $rowCopy ) {
 							foreach ( $parts as $part ) {
@@ -654,7 +657,12 @@ TXT;
 				$stack[] = $matched_statement;
 			}
 		}
-		return implode( ',', $stack ) . '{';
+		
+		// Preserving the original whitespace for easier debugging
+		$first = rtrim( array_shift( $stack ) );
+		$finish = array_map( 'trim', $stack );
+		array_unshift( $finish, $first );
+		return implode( ',', $finish ) . '{';
 	}
 	
 	static private function cb_obfuscateDirectives ( $match ) {
@@ -741,14 +749,15 @@ if ( CSS_Crush::$cli ) {
 
 ///////////// IELegacy /////////////
 
-// Fix opacity in ie6/7/8§
+// Fix opacity in ie6/7/8
 if ( !function_exists( 'csscrush_Opacity' ) ) {
 	function csscrush_Opacity ( $prop, $val ) {
 		$msval = round( $val*100 );
-		return "-ms-filter: \"progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval})\";
+		$out = "-ms-filter: \"progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval})\";
 				filter: progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval});
 				zoom:1;
-				{$prop}: {$val}";	
+				{$prop}: {$val}";
+		return preg_replace( "#\s+#", ' ', $out ); 
 	}
 }
 // Fix display:inline-block in ie6/7
@@ -817,3 +826,31 @@ if ( !function_exists( 'csscrush_Box_Sizing' ) ) {
 		return "-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
 	}
 }
+if ( !function_exists( 'csscrush_Background_Image' ) ) { 
+	function csscrush_Background_Image ( $prop, $val ) {
+		if ( strpos( $val, 'linear-gradient' ) !== false ) {
+			$val = substr( $val, strpos( $val, '(' ) + 1 );
+			$args = preg_split( '#\s*,\s*#', str_replace( ')', '', $val ) );
+			$args = array_map( 'trim', $args );
+
+			// top, #444444, #999999
+			foreach ( $args as &$arg ) {
+				$re = '!^#([a-z0-9])([a-z0-9])([a-z0-9])$!i';
+				if ( preg_match( $re, $arg ) ) {
+					$arg = preg_replace( $re, '#$1$1$2$2$3$3', $arg );
+				}
+			}
+			list( $dir, $col1, $col2 ) = $args;
+			// Dropped support for IE since the IE filter spoils text rendering
+			$out = "
+				background-color:{$col1};
+				background-image: -webkit-gradient(
+					linear, left top, left bottom, color-stop( 0, {$col1} ), color-stop( 1, {$col2} ));
+				background-image:-moz-linear-gradient(top, {$col1}, {$col2});
+				background-image:linear-gradient(top, {$col1}, {$col2});"; 
+			return preg_replace( "#\s+#", ' ', $out ); 
+		} 
+		return false;
+	}
+}
+
