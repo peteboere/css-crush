@@ -95,6 +95,7 @@ class CSS_Crush {
 		$config =& self::$config;
 		$docRoot = $config->docRoot;
 		if ( strpos( $new_dir, $docRoot ) !== 0 ) {
+			// Not a system path
 			$new_dir = realpath( "{$docRoot}/{$new_dir}" );
 		}
 		if ( !file_exists( $new_dir ) ) {
@@ -127,8 +128,12 @@ class CSS_Crush {
 	 * @return string  The public path to the compiled file or an empty string
 	 */
 	public static function file ( $file, $options = null ) {
-		if ( strpos( $file, '/' ) === 0 ) {
-			// Absolute path
+		if ( strpos( $file, self::$config->docRoot ) === 0 ) {
+			// System path
+			self::setPath( dirname( $file ) );
+		}
+		else if ( strpos( $file, '/' ) === 0 ) {
+			// WWW root path
 			self::setPath( dirname( self::$config->docRoot . $file ) );
 		} 
 		else {
