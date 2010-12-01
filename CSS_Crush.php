@@ -36,7 +36,7 @@ class CSS_Crush {
 	private static $literalCount;
 	
 	// Pattern matching 
-	static private $regex = array( 
+	private static $regex = array( 
 		'imports'  => '#@import +(?:url)? *\(? *([\'"])?(.+\.css)\1? *\)? *;?#',
 		'variables'=> '#@variables\s+\{\s*(.*?)\s*\};?#s',
 		'comments' => '#/\*(.*?)\*/#s',
@@ -53,7 +53,11 @@ class CSS_Crush {
 		self::$config->path = null;
 		self::$config->baseDir = null;
 		self::$config->baseURL = null;
+		
 		$docRoot = $_SERVER[ 'DOCUMENT_ROOT' ];
+		// workaround trailing slash issues
+		$docRoot = ( substr( $docRoot, -1 ) == '/' ) ? substr( $docRoot, 0, -1 ) : $docRoot;
+		
 		if ( defined( 'STDIN' ) and $_SERVER[ 'argc' ] > 0 ) {
 			// Command line
 			self::log( 'Command line mode' );
@@ -171,10 +175,14 @@ class CSS_Crush {
 	
 		// Add in boilerplate
 		$output = self::getBoilerplate() . "\n{$output}";
-		
+
 		// Create file and return path. Return empty string on failure
-		return file_put_contents( "{$config->baseDir}/" . self::$compileName, $output ) ? 
-					"{$config->baseURL}/" . self::$compileName : '';
+		if ( file_put_contents( "{$config->baseDir}/" . self::$compileName, $output ) ) {
+			return "{$config->baseURL}/" . self::$compileName;
+		}
+		else {
+			return '';
+		}
 	}
 	
 	/**
@@ -182,7 +190,7 @@ class CSS_Crush {
 	 * 
 	 * @param string  System path to the directory
 	 */
-	static public function clearCache ( $dir = '' ) {
+	public static function clearCache ( $dir = '' ) {
 		if ( empty( $dir ) ) { 
 			$dir = dirname( __FILE__ );
 		}
@@ -258,7 +266,7 @@ class CSS_Crush {
 	################################################################################################
 	#  Internal functions
 
-	static public function getBoilerplate () {
+	public static function getBoilerplate () {
 		return <<<TXT
 /* 
  *  File created by CSS Crush
@@ -267,18 +275,19 @@ class CSS_Crush {
 TXT;
 	}
 	
-	static private function parseOptions ( &$options ) {
+	private static function parseOptions ( &$options ) {
 		// Create default options for those not set
 		$option_defaults = array(
 			'macros'   => true,
 			'comments' => false,
 			'minify'   => true,
+			'versioning' => true,
 		);
-		self::$options = $options = is_array( $options ) ? 
-			array_merge( $option_defaults, $options ) : $option_defaults;	
+		self::$options = is_array( $options ) ? 
+			array_merge( $option_defaults, $options ) : $option_defaults;
 	}
 
-	static private function compile ( &$hostfile ) {
+	private static function compile ( &$hostfile ) {
 		// Reset properties for current process
 		self::$literals = array();
 		self::$variables = array();
@@ -335,7 +344,7 @@ TXT;
 		return $output;
 	}
 
-	static private function validateCache ( &$hostfile ) {
+	private static function validateCache ( &$hostfile ) {
 		$config = self::$config;
 		
 		// Search base directory for an existing compiled file
@@ -372,14 +381,17 @@ TXT;
 						return false;
 					}
 				} 
+
+				$existing_options = $config->data[ $existingfile->name ][ 'options' ];
+				$existing_datesum = $config->data[ $existingfile->name ][ 'datem_sum' ];
 				if ( 
-						$config->data[ $existingfile->name ][ 'options' ] == self::$options and
-						array_sum( $all_files ) == $config->data[ $existingfile->name ][ 'datem_sum' ] 
+						$existing_options == self::$options and
+						$existing_datesum == array_sum( $all_files )
 				) {						
 					// Files have not been modified and config is the same: return the old file
 					self::log( "Files have not been modified, returning existing
 						 file '{$existingfile->URL}'" );
-					return $existingfile->URL;
+					return $existingfile->URL .	( self::$options[ 'versioning' ] !== false  ? "?{$existing_datesum}" : '' );
 				}
 				else {
 					// Remove old file and continue making a new one...
@@ -398,7 +410,7 @@ TXT;
 		return false;
 	}
 
-	static private function collateImports ( &$hostfile ) {
+	private static function collateImports ( &$hostfile ) {
 		$str = file_get_contents( $hostfile->path );
 		$config =& self::$config;
 		$compileName = self::$compileName;
@@ -498,7 +510,7 @@ TXT;
 		return $str;
 	}
 
-	static private function applyMacros ( &$str ) {
+	private static function applyMacros ( &$str ) {
 		$user_funcs = get_defined_functions();
 		$csscrushs = array();
 		foreach ( $user_funcs[ 'user' ] as $func ) {
@@ -532,9 +544,12 @@ TXT;
 					create_function ( '$match', $wrapper ),
 					$str );
 		} 
+		
+		// Backwards compatable double-colon syntax
+		$str = str_replace( '::', ':', $str ); 
 	}
 	
-	static private function minify ( &$str ) {
+	private static function minify ( &$str ) {
 		// Colons cannot be globally matched safely because of pseudo-selectors etc.
 		$innerbrace = create_function(
 			'$match',
@@ -564,18 +579,18 @@ TXT;
 	################################################################################################
 	#  Search / replace callbacks
 
-	static private function createCallback ( $name ) {
+	private static function createCallback ( $name ) {
 		return create_function( '$m', 
 			'return call_user_func( array( "' . __CLASS__ . '", "' . $name . '" ), $m );' );
 	}
 	
-	static public function cb_extractStrings ( $match ) {
+	public static function cb_extractStrings ( $match ) {
 		$label = "___" . ++self::$literalCount . "___";
 		self::$literals[ $label ] = $match[0];
 		return $label;
 	}
 	
-	static public function cb_extractComments ( $match ) {
+	public static function cb_extractComments ( $match ) {
 		$comment = $match[0];
 		$flagged = strpos( $comment, '/*!' ) === 0;
 		if ( self::$options[ 'comments' ] or $flagged ) {
@@ -586,7 +601,7 @@ TXT;
 		return '';
 	}
 	
-	static public function cb_extractVariables ( $match ) {
+	public static function cb_extractVariables ( $match ) {
 		$vars = preg_split( '#\s*;\s*#', $match[1], null, PREG_SPLIT_NO_EMPTY );
 		foreach ( $vars as $var ) {
 			$parts = preg_split( '#\s*:\s*#', $var, null, PREG_SPLIT_NO_EMPTY );
@@ -603,7 +618,7 @@ TXT;
 		return '';
 	}
 	
-	static public function cb_placeVariables ( $match ) {
+	public static function cb_placeVariables ( $match ) {
 		$key = $match[1];
 		if ( isset( self::$variables[ $key ] ) ) {
 			return self::$variables[ $key ];
@@ -613,14 +628,14 @@ TXT;
 		}
 	}
 	
-	static public function cb_expandSelector_braces ( $match ) {
+	public static function cb_expandSelector_braces ( $match ) {
 		$label = "__any" . ++self::$literalCount . "__";
 		self::$literals[ $label ] = $match[1];
 		return $label;
 	}
 	
-	static public function cb_expandSelector ( $match ) {
-		/* http://dbaron.org/log/20100424-any */
+	public static function cb_expandSelector ( $match ) {
+		 // http://dbaron.org/log/20100424-any 
 		$text = $match[0];
 		$between = $match[1];
 		if ( strpos( $between, ':any' ) === false ) {
@@ -683,11 +698,11 @@ TXT;
 		return implode( ',', $finish ) . '{';
 	}
 	
-	static public function cb_obfuscateDirectives ( $match ) {
+	public static function cb_obfuscateDirectives ( $match ) {
 		return str_replace( '@', '(at)', $match[0] );
 	}
 	
-	static public function cb_restoreLiteral ( $match ) {
+	public static function cb_restoreLiteral ( $match ) {
 		return self::$literals[ $match[0] ];
 	}
 	
