@@ -108,7 +108,7 @@ class CSS_Crush {
 		else if ( !is_writable( $new_dir ) ) {
 			self::log( 'Attempting to change permissions' );
 			try {
-				chmod( $new_dir, 0755 );
+				@chmod( $new_dir, 0755 );
 			}
 			catch ( Exception $e ) {
 				throw new Exception( __METHOD__ . ': Directory un-writable' );
