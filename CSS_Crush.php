@@ -2,7 +2,6 @@
 /**
  *
  * CSS Crush
- * @version 1.0
  *
  *
  * CSS pre-processor that collates a host CSS file and its imports into one,
@@ -16,14 +15,14 @@
  * Example usage:
  *
  * <?php
- *   include 'CSS_Crush.php';
- *   $path_to_compiled_file = CSS_Crush::file( '/css/screen.css' );
+ *   include 'css_crush.php';
+ *   $path_to_compiled_file = css_crush::file( '/css/screen.css' );
  * ?>
  *
  * <link rel="stylesheet" type="text/css" href="<?php echo $path_to_compiled_file; ?>" media="screen" />
  *
  */
-class CSS_Crush {
+class css_crush {
 
 	private static $config;
 
@@ -31,6 +30,7 @@ class CSS_Crush {
 	private static $options;
 	private static $compileName;
 	private static $compileSuffix;
+	private static $compileRevisionedSuffix;
 	private static $variables;
 	private static $literals;
 	private static $literalCount;
@@ -47,34 +47,23 @@ class CSS_Crush {
 	public static function init () {
 		self::$initialized = true;
 		self::$compileSuffix = '.crush.css';
-		self::$config = new stdClass;
-		self::$config->file = '.' . __CLASS__;
-		self::$config->data = null;
-		self::$config->path = null;
-		self::$config->baseDir = null;
-		self::$config->baseURL = null;
-
-		$docRoot = $_SERVER[ 'DOCUMENT_ROOT' ];
+		self::$compileRevisionedSuffix = '.crush.r.css';
+		self::$config = $config = new stdClass;
+		
+		$config->file = '.' . __CLASS__;
+		$config->data = null;
+		$config->path = null;
+		$config->baseDir = null;
+		$config->baseURL = null;
 		// workaround trailing slash issues
-		$docRoot = ( substr( $docRoot, -1 ) == '/' ) ? substr( $docRoot, 0, -1 ) : $docRoot;
-
-		if ( defined( 'STDIN' ) and $_SERVER[ 'argc' ] > 0 ) {
-			// Command line
-			self::log( 'Command line mode' );
-			self::$cli = true;
-		}
-		else {
-			// Running on a server
-			self::log( 'Server mode' );
-			self::$config->docRoot = $docRoot;
-			self::$cli = false;
-		}
+		$config->docRoot = rtrim( $_SERVER[ 'DOCUMENT_ROOT' ], DIRECTORY_SEPARATOR );
+		
 		self::$regex = (object) self::$regex;
 	}
 
 	// Initialize config data, create config file if needed
 	private static function loadConfig () {
-		$config =& self::$config;
+		$config = self::$config;
 		if (
 			file_exists( $config->path ) and
 			$config->data  and
@@ -96,7 +85,7 @@ class CSS_Crush {
 	}
 
 	private static function setPath ( $new_dir ) {
-		$config =& self::$config;
+		$config = self::$config;
 		$docRoot = $config->docRoot;
 		if ( strpos( $new_dir, $docRoot ) !== 0 ) {
 			// Not a system path
@@ -132,13 +121,20 @@ class CSS_Crush {
 	 * @return string  The public path to the compiled file or an empty string
 	 */
 	public static function file ( $file, $options = null ) {
-		if ( strpos( $file, self::$config->docRoot ) === 0 ) {
+
+		$config = self::$config;
+
+		// Since we're comparing strings, we need to iron out OS differences
+		$file = str_replace( '\\', '/', $file );
+		$docRoot = $config->docRoot = str_replace( '\\', '/', $config->docRoot );
+
+		if ( strpos( $file, $docRoot ) === 0 ) {
 			// System path
 			self::setPath( dirname( $file ) );
 		}
 		else if ( strpos( $file, '/' ) === 0 ) {
 			// WWW root path
-			self::setPath( dirname( self::$config->docRoot . $file ) );
+			self::setPath( dirname( $docRoot . $file ) );
 		}
 		else {
 			// Relative path
@@ -146,7 +142,6 @@ class CSS_Crush {
 		}
 
 		self::loadConfig();
-		$config =& self::$config;
 
 		// Make basic information about the hostfile accessible
 		$hostfile = new stdClass;
@@ -162,7 +157,8 @@ class CSS_Crush {
 		self::parseOptions( $options );
 
 		// Compiled filename we're searching for
-		self::$compileName = basename( $hostfile->name, '.css' ) . self::$compileSuffix;
+		self::$compileName = basename( $hostfile->name, '.css' ) .
+			( self::$options[ 'versioning' ] ? self::$compileRevisionedSuffix : self::$compileSuffix );
 
 		// Check for a valid compiled file
 		$validCompliledFile = self::validateCache( $hostfile );
@@ -203,28 +199,17 @@ class CSS_Crush {
 		}
 		// Remove any compiled files
 		$suffix = self::$compileSuffix;
+		$suffixRev = self::$compileRevisionedSuffix;
 		$suffixLength = strlen( $suffix );
+		$suffixRevLength = strlen( $suffixRev );
 		foreach ( scandir( $dir ) as $file ) {
-			$expectedPos = strlen( $file ) - $suffixLength;
-			if ( strpos( $file, $suffix ) === $expectedPos ) {
+			if (
+				strpos( $file, $suffix ) === strlen( $file ) - $suffixLength or
+				strpos( $file, $suffixRev ) === strlen( $file ) - $suffixRevLength
+			) {
 				unlink( $dir . "/{$file}" );
 			}
 		}
-	}
-
-	public static $cli;
-
-	public static function cli ( $file, $options = null ) {
-		// Make basic information about the hostfile accessible
-		$hostfile = new stdClass;
-		$hostfile->name = basename( $file );
-		$hostfile->path = realpath( $file );
-		$hostfile->mtime = filemtime( $hostfile->path );
-
-		self::$config->baseDir = dirname( $hostfile->path );
-
-		self::parseOptions( $options );
-		return self::compile( $hostfile );
 	}
 
 	/**
@@ -395,7 +380,7 @@ TXT;
 				}
 				else {
 					// Remove old file and continue making a new one...
-					self::log( 'Files has been modified, removing existing file' );
+					self::log( 'Files have been modified, removing existing file' );
 					unlink( $existingfile->path );
 				}
 			}
@@ -412,7 +397,7 @@ TXT;
 
 	private static function collateImports ( &$hostfile ) {
 		$str = file_get_contents( $hostfile->path );
-		$config =& self::$config;
+		$config = self::$config;
 		$compileName = self::$compileName;
 		$regex = self::$regex;
 
@@ -501,10 +486,10 @@ TXT;
 		// Need to store the current path so we can check we're using the right config path later
 		$config->data[ 'originPath' ] = $config->path;
 
-		if ( !self::$cli ) {
+		// if ( !self::$cli ) {
 			// Save config changes
 			file_put_contents( $config->path, serialize( $config->data ) );
-		}
+		// }
 		self::log( $config->data );
 
 		return $str;
@@ -537,8 +522,14 @@ TXT;
 		// Loop macro list and apply callbacks
 		foreach ( $maclist as $property => $callback ) {
 			$wrapper = '$prop = "' . $property . '";' .
-					'$result = ' . $callback . '( $prop, $match[2] );' .
-					'return $result ? $match[1] . $result . $match[3] : $match[0];';
+						'$result = ' . $callback . '( $prop, $match[2] );' .
+						'return $result ? $match[1] . $result . $match[3] : $match[0];';
+// 			$wrapper = <<<TPL
+// 				\$prop = '$property';
+// 				echo \$match[0];
+// 				\$result = $callback( \$prop, \$match[2] );
+// 				return \$result ? \$match[1] . \$result . \$match[3] : \$match[0];
+// TPL;
 			$str = preg_replace_callback(
 					'#([\{\s;]+)' . $property . '\s*:\s*' . '([^;\}]+)' . '([;\}])#',
 					create_function ( '$match', $wrapper ),
@@ -566,7 +557,7 @@ TXT;
 			'#([^0-9])0[a-zA-Z%]{2}#'           => '${1}0',  // Strip unnecessary units on zeros
 			'#:(0 0|0 0 0|0 0 0 0)([;}])#'      => ':0${2}', // Collapse zero lists
 			'#(background-position):0([;}])#'   => '$1:0 0$2', // Restore any overshoot
-			'#([^/d])0(\.\d+)#'                 => '$1$2',   // Strip leading zeros on floats
+			'#([^\d])0(\.\d+)#'                 => '$1$2',   // Strip leading zeros on floats
 			'#(\[)\s*|\s*(\])|(\()\s*|\s*(\))#' => '${1}${2}${3}${4}',  // Clean-up bracket internal space
 			'#\s*([>~+=])\s*#'                  => '$1',     // Clean-up around combinators
 			'#\#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3#i'
@@ -717,174 +708,10 @@ TXT;
 // Initialize manually since it's static
 CSS_Crush::init();
 
-
-
-################################################################################################
-#  Command line API
-
-/*
-php CSS_Crush.php -f=css/screen.css -n
->>> non-minified output
-*/
-
-if ( CSS_Crush::$cli ) {
-	$options = getopt( "f:o::m::cn", array(
-			'file:',    // Input file
-			'output::', // Output file
-			'macros::', // Comma seperated list of macro properties
-			'comments', // (flag) Leave comments intact
-			'nominify',
-		));
-	$file = null;
-	$params = array();
-	if ( isset( $options[ 'f' ] ) ) {
-		$file = $options[ 'f' ];
-	}
-	else if ( isset( $options[ 'file' ] ) ) {
-		$file = $options[ 'file' ];
-	}
-	if ( !$file or !file_exists( $file ) ) {
-		return;
-	}
-	if ( isset( $options[ 'm' ] ) ) {
-		$params[ 'macros' ] = explode( ',', $options[ 'm' ] );
-	}
-	else if ( isset( $options[ 'macros' ] ) ) {
-		$params[ 'macros' ] = explode( ',', $options[ 'macros' ] );
-	}
-	if ( isset( $options[ 'c' ] ) or isset( $options[ 'comments' ] ) ) {
-		$params[ 'comments' ] = true;
-	}
-	if ( isset( $options[ 'n' ] ) or isset( $options[ 'nominify' ] ) ) {
-		$params[ 'minify' ] = false;
-	}
-
-	$output = CSS_Crush::cli( $file, $params );
-
-	$outputFile = isset( $options[ 'o' ] );
-	if ( $outputFile ) {
-		$outputFile = $options[ 'o' ];
-	}
-	else {
-		$outputFile = isset( $options[ 'output' ] ) ? $options[ 'output' ] : false;
-	}
-
-	if ( $outputFile ) {
-		$output = CSS_Crush::getBoilerplate() . "\n{$output}";
-		file_put_contents( $outputFile, $output );
-	}
-	else {
-		echo $output . PHP_EOL;
-	}
+// Pull in macros file if it is present
+if ( file_exists( 'css_crush.macros.php' ) ) {
+	require_once 'css_crush.macros.php';
 }
 
-################################################################################################
-#  Macro callbacks ( user functions )
 
-///////////// IELegacy /////////////
-
-// Fix opacity in ie6/7/8
-if ( !function_exists( 'csscrush_Opacity' ) ) {
-	function csscrush_Opacity ( $prop, $val ) {
-		$msval = round( $val*100 );
-		$out = "-ms-filter: \"progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval})\";
-				filter: progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval});
-				zoom:1;
-				{$prop}: {$val}";
-		return preg_replace( "#\s+#", ' ', $out );
-	}
-}
-// Fix display:inline-block in ie6/7
-if ( !function_exists( 'csscrush_Display' ) ) {
-	function csscrush_Display ( $prop, $val ) {
-		if ( $val == 'inline-block' ) {
-			return "{$prop}:{$val};*{$prop}:inline;*zoom:1";
-		}
-		return "{$prop}:{$val}";
-	}
-}
-// Fix min-height in ie6
-if ( !function_exists( 'csscrush_Min_Height' ) ) {
-	function csscrush_Min_Height ( $prop, $val ) {return "{$prop}:{$val};_height:{$val}";}
-}
-
-///////////// CSS3 /////////////
-
-if ( !function_exists( 'csscrush_Border_Radius' ) ) {
-	function csscrush_Border_Radius ( $prop, $val ) {
-		return "-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Border_Top_Left_Radius' ) ) {
-	function csscrush_Border_Top_Left_Radius ( $prop, $val ) {
-		return "-moz-border-radius-topleft:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Border_Top_Right_Radius' ) ) {
-	function csscrush_Border_Top_Right_Radius ( $prop, $val ) {
-		return "-moz-border-radius-topright:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Border_Bottom_Right_Radius' ) ) {
-	function csscrush_Border_Bottom_Right_Radius ( $prop, $val ) {
-		return "-moz-border-radius-bottomright:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Border_Bottom_Left_Radius' ) ) {
-	function csscrush_Border_Bottom_Left_Radius ( $prop, $val ) {
-		return "-moz-border-radius-bottomleft:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Box_Shadow' ) ) {
-	function csscrush_Box_Shadow ( $prop, $val ) {
-		return "-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Transform' ) ) {
-	function csscrush_Transform ( $prop, $val ) {
-		return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Transition' ) ) {
-	function csscrush_Transition ( $prop, $val ) {
-		return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Background_Size' ) ) {
-	function csscrush_Background_Size ( $prop, $val ) {
-		return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Box_Sizing' ) ) {
-	function csscrush_Box_Sizing ( $prop, $val ) {
-		return "-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Background_Image' ) ) {
-	function csscrush_Background_Image ( $prop, $val ) {
-		if ( strpos( $val, 'linear-gradient' ) !== false ) {
-			$val = substr( $val, strpos( $val, '(' ) + 1 );
-			$args = preg_split( '#\s*,\s*#', str_replace( ')', '', $val ) );
-			$args = array_map( 'trim', $args );
-
-			// top, #444444, #999999
-			foreach ( $args as &$arg ) {
-				$re = '!^#([a-z0-9])([a-z0-9])([a-z0-9])$!i';
-				if ( preg_match( $re, $arg ) ) {
-					$arg = preg_replace( $re, '#$1$1$2$2$3$3', $arg );
-				}
-			}
-			list( $dir, $col1, $col2 ) = $args;
-			// Dropped support for IE since the IE filter spoils text rendering
-			$out = "
-				background-color:{$col1};
-				background-image: -webkit-gradient(
-					linear, left top, left bottom, color-stop( 0, {$col1} ), color-stop( 1, {$col2} ));
-				background-image:-moz-linear-gradient(top, {$col1}, {$col2});
-				background-image:linear-gradient(top, {$col1}, {$col2});";
-			return preg_replace( "#\s+#", ' ', $out );
-		}
-		return false;
-	}
-}
 
