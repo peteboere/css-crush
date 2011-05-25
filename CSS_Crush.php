@@ -170,7 +170,9 @@ class css_crush {
 		$output = self::compile( $hostfile );
 
 		// Add in boilerplate
-		$output = self::getBoilerplate() . "\n{$output}";
+                if (self::options['boilerplate']) {		
+                        $output = self::getBoilerplate() . "\n{$output}";
+                }
 
 		// Create file and return path. Return empty string on failure
 		if ( file_put_contents( "{$config->baseDir}/" . self::$compileName, $output ) ) {
@@ -267,6 +269,7 @@ TXT;
 			'comments' => false,
 			'minify'   => true,
 			'versioning' => true,
+                        'boilerplate' => true
 		);
 		self::$options = is_array( $options ) ?
 			array_merge( $option_defaults, $options ) : $option_defaults;
