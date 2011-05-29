@@ -49,7 +49,7 @@ class css_crush {
 		self::$compileSuffix = '.crush.css';
 		self::$compileRevisionedSuffix = '.crush.r.css';
 		self::$config = $config = new stdClass;
-		
+
 		$config->file = '.' . __CLASS__;
 		$config->data = null;
 		$config->path = null;
@@ -57,7 +57,7 @@ class css_crush {
 		$config->baseURL = null;
 		// workaround trailing slash issues
 		$config->docRoot = rtrim( $_SERVER[ 'DOCUMENT_ROOT' ], DIRECTORY_SEPARATOR );
-		
+
 		self::$regex = (object) self::$regex;
 	}
 
@@ -170,9 +170,9 @@ class css_crush {
 		$output = self::compile( $hostfile );
 
 		// Add in boilerplate
-                if (self::options['boilerplate']) {		
-                        $output = self::getBoilerplate() . "\n{$output}";
-                }
+		if ( self::$options['boilerplate'] ) {
+			$output = self::getBoilerplate() . "\n{$output}";
+		}
 
 		// Create file and return path. Return empty string on failure
 		if ( file_put_contents( "{$config->baseDir}/" . self::$compileName, $output ) ) {
