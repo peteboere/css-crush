@@ -1,0 +1,128 @@
+
+;----------------------------------------------------------------------------
+;-- Property aliases
+
+[properties]
+
+	; Border radius
+	border-radius[] = -webkit-border-radius
+	border-radius[] = -moz-border-radius
+	border-top-left-radius[] = -moz-border-radius-topleft
+	border-top-left-radius[] = -webkit-border-top-left-radius
+	border-top-right-radius[] = -moz-border-radius-topright
+	border-top-right-radius[] = -webkit-border-top-right-radius
+	border-bottom-left-radius[] = -moz-border-radius-bottomleft
+	border-bottom-left-radius[] = -webkit-border-bottom-left-radius
+	border-bottom-right-radius[] = -moz-border-radius-bottomright
+	border-bottom-right-radius[] = -webkit-border-bottom-right-radius
+
+	; Box shadow
+	box-shadow[] = -webkit-box-shadow
+	box-shadow[] = -moz-box-shadow
+
+	; Transforms
+	transform[] = -webkit-transform
+	transform[] = -moz-transform
+	transform[] = -ms-transform
+	transform[] = -o-transform
+
+	; Transitions
+	transition[] = -webkit-transition
+	transition[] = -moz-transition
+	transition[] = -o-transition
+	transition-delay[] = -webkit-transition-delay
+	transition-delay[] = -moz-transition-delay
+	transition-delay[] = -o-transition-delay
+	transition-property[] = -webkit-transition-property
+	transition-property[] = -moz-transition-property
+	transition-property[] = -o-transition-property
+	transition-timing-function[] = -webkit-transition-timing-function
+	transition-timing-function[] = -moz-transition-timing-function
+	transition-timing-function[] = -o-transition-timing-function
+	transition-duration[] = -webkit-transition-duration
+	transition-duration[] = -moz-transition-duration
+	transition-duration[] = -o-transition-duration
+
+	; Animations
+	animation-delay[] = -webkit-animation-delay
+	animation-delay[] = -moz-animation-delay
+	animation-direction[] = -webkit-animation-direction
+	animation-direction[] = -moz-animation-direction
+	animation-duration[] = -webkit-animation-duration
+	animation-duration[] = -moz-animation-duration
+	animation-iteration-count[] = -webkit-animation-iteration-count
+	animation-iteration-count[] = -moz-animation-iteration-count
+	animation-name[] = -webkit-animation-name
+	animation-name[] = -moz-animation-name
+	animation-play-state[] = -webkit-animation-play-state
+	animation-play-state[] = -moz-animation-play-state
+	animation-timing-function[] = -webkit-animation-timing-function
+	animation-timing-function[] = -moz-animation-timing-function
+	animation-fill-mode[] = -webkit-animation-fill-mode
+	animation-fill-mode[] = -moz-animation-fill-mode
+
+	; Background size
+	background-size[] = -webkit-background-size
+	background-size[] = -moz-background-size
+
+	; Box sizing
+	box-sizing[] = -webkit-box-sizing
+	box-sizing[] = -moz-box-sizing
+
+	; Columns
+	column-count[] = -webkit-column-count
+	column-count[] = -moz-column-count
+	column-gap[] = -webkit-column-gap
+	column-gap[] = -moz-column-gap
+
+	; Border-image
+	border-image[] = -webkit-border-image
+	border-image[] = -moz-border-image
+	border-image[] = -o-border-image
+
+	; Flexbox
+	box-pack[] = -webkit-box-pack
+	box-pack[] = -moz-box-pack
+	box-align[] = -webkit-box-align
+	box-align[] = -moz-box-align
+	box-flex[] = -webkit-box-flex
+	box-flex[] = -moz-box-flex
+
+
+;----------------------------------------------------------------------------
+;-- Function aliases
+
+[functions]
+
+	; Gradients
+	linear-gradient[] = -webkit-linear-gradient
+	linear-gradient[] = -moz-linear-gradient
+	linear-gradient[] = -ms-linear-gradient
+	linear-gradient[] = -o-linear-gradient
+	radial-gradient[] = -webkit-radial-gradient
+	radial-gradient[] = -moz-radial-gradient
+	radial-gradient[] = -ms-radial-gradient
+	radial-gradient[] = -o-radial-gradient
+
+	; Repeating gradients
+	repeating-linear-gradient[] = -webkit-repeating-linear-gradient
+	repeating-linear-gradient[] = -moz-repeating-linear-gradient
+	repeating-linear-gradient[] = -ms-repeating-linear-gradient
+	repeating-linear-gradient[] = -o-repeating-linear-gradient
+	repeating-radial-gradient[] = -webkit-repeating-radial-gradient
+	repeating-radial-gradient[] = -moz-repeating-radial-gradient
+	repeating-radial-gradient[] = -ms-repeating-radial-gradient
+	repeating-radial-gradient[] = -o-repeating-radial-gradient
+
+	; Calc
+	calc[] = -moz-calc
+
+
+;----------------------------------------------------------------------------
+;-- @rule aliases
+
+[at-rules]
+	keyframes[] = -webkit-keyframes
+	keyframes[] = -moz-keyframes
+
+
