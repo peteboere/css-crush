@@ -3,66 +3,113 @@
  *
  * CSS Crush
  *
+ * MIT License (http://www.opensource.org/licenses/mit-license.php)
+ * Copyright 2010-2011 Pete Boere
  *
- * CSS pre-processor that collates a host CSS file and its imports into one,
- * applies specified CSS variables, applies search/replace macros,
- * minifies then outputs cached file.
- *
- * Validates cached file by checking the host-file and all imported files
- * and comparing the date-modified timestamps.
- *
- *
- * Example usage:
+ * Example use:
  *
  * <?php
- *   include 'css_crush.php';
- *   $path_to_compiled_file = css_crush::file( '/css/screen.css' );
+ *   require_once 'CssCrush.php';
+ *   $global_css = CssCrush::file( '/css/global.css' );
  * ?>
  *
- * <link rel="stylesheet" type="text/css" href="<?php echo $path_to_compiled_file; ?>" media="screen" />
+ * <link rel="stylesheet" type="text/css" href="<?php echo $global_css; ?>" />
  *
  */
-class css_crush {
+class CssCrush {
 
-	private static $config;
+	protected static $config;
+	protected static $location;
+	public static $aliases;
+	public static $macros;
+
+	public static $COMPILE_SUFFIX = '.crush.css';
+	protected static $assetsLoaded = false;
 
 	// Properties available to each 'file' process
-	private static $options;
-	private static $compileName;
-	private static $compileSuffix;
-	private static $compileRevisionedSuffix;
-	private static $variables;
-	private static $literals;
-	private static $literalCount;
+	protected static $options;
+	protected static $compileName;
+	protected static $storage;
+	protected static $tokenUID;
 
 	// Pattern matching
-	private static $regex = array(
-		'imports'  => '#@import +(?:url)? *\(? *([\'"])?(.+\.css)\1? *\)? *;?#',
-		'variables'=> '#@variables\s+\{\s*(.*?)\s*\};?#s',
-		'comments' => '#/\*(.*?)\*/#s',
+	public static $regex = array(
+		'import'      => '!
+			@import\s+    # import at-rule
+			(?:url)?\s*\(?\s*[\'"]?([^\'"\);]+)[\'"]?\s*\)?  # url or quoted string
+			\s*([^;]*);?  # media argument
+		!x',
+		'variables'   => '!@variables\s*([^\{]*)\{\s*(.*?)\s*\};?!s',
+		'atRule'      => '!@([-a-z_]+)\s*([^\{]*)\{\s*(.*?)\s*\};?!s',
+		'comment'     => '!/\*(.*?)\*/!s',
+		'string'      => '!(\'|"|`)(?:\\1|[^\1])*?\1!',
+		// As an exception we treat @font-face and @page rules like standard rules
+		'rule'        => '!
+			(\n(?:[^@{}]+|@(?:font-face|page)[^{]*)) # The selector
+			\{([^{}]*)\}  # The declaration block
+		!x',
+		'token'       => array(
+			'comment' => '!___c\d+___!',
+			'string'  => '!___s\d+___!',
+			'rule'    => '!___r\d+___!',
+			'paren'   => '!___p\d+___!',
+		),
+		'function'    => array(
+			'var'     => '!([^a-z0-9_-])var\(\s*([a-z0-9_-]+)\s*\)!i',
+			'custom'  => '!(^|[^a-z0-9_-])(math|floor|round|ceil|percent|pc)?(___p\d+___)!i',
+			'match'   => '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i',
+		),
+		'vendorPrefix' => '!^-([a-z]+)-([a-z-]+)!',
 	);
 
 	// Init gets called manually post class definition
-	private static $initialized = false;
 	public static function init () {
-		self::$initialized = true;
-		self::$compileSuffix = '.crush.css';
-		self::$compileRevisionedSuffix = '.crush.r.css';
-		self::$config = $config = new stdClass;
 
+		self::$location = dirname( __FILE__ );
+
+		self::$config = $config = new stdClass;
 		$config->file = '.' . __CLASS__;
 		$config->data = null;
 		$config->path = null;
 		$config->baseDir = null;
 		$config->baseURL = null;
+
 		// workaround trailing slash issues
 		$config->docRoot = rtrim( $_SERVER[ 'DOCUMENT_ROOT' ], DIRECTORY_SEPARATOR );
 
+		// Convert to objects for ease of use
 		self::$regex = (object) self::$regex;
+		self::$regex->token = (object) self::$regex->token;
+		self::$regex->function = (object) self::$regex->function;
+	}
+
+	// Aliases and macros loader
+	protected static function loadAssets () {
+
+		// Load aliases file if it exists
+		$aliases_file = self::$location . '/' . __CLASS__ . '.aliases';
+		if ( file_exists( $aliases_file ) ) {
+			if ( $result = parse_ini_file( $aliases_file, true ) ) {
+				self::$aliases = $result;
+			}
+			else {
+				self::triggerNotice( 'Aliases file was not parsed correctly', __METHOD__ );
+			}
+		}
+		else {
+			self::triggerNotice( 'Aliases file not found', __METHOD__ );
+		}
+
+		// Load macros file if it exists
+		self::$macros = array();
+		$macros_file = self::$location . '/' . __CLASS__ . '.macros.php';
+		if ( file_exists( $macros_file ) ) {
+			require_once $macros_file;
+		}
 	}
 
 	// Initialize config data, create config file if needed
-	private static function loadConfig () {
+	protected static function loadConfig () {
 		$config = self::$config;
 		if (
 			file_exists( $config->path ) and
@@ -84,7 +131,7 @@ class css_crush {
 		}
 	}
 
-	private static function setPath ( $new_dir ) {
+	protected static function setPath ( $new_dir ) {
 		$config = self::$config;
 		$docRoot = $config->docRoot;
 		if ( strpos( $new_dir, $docRoot ) !== 0 ) {
@@ -92,15 +139,15 @@ class css_crush {
 			$new_dir = realpath( "{$docRoot}/{$new_dir}" );
 		}
 		if ( !file_exists( $new_dir ) ) {
-			throw new Exception( __METHOD__ . ': Path "' . $new_dir . '" doesn\'t exist' );
+			self::triggerError( 'Path "' . $new_dir . '" doesn\'t exist', __METHOD__ );
 		}
 		else if ( !is_writable( $new_dir ) ) {
 			self::log( 'Attempting to change permissions' );
 			try {
-				@chmod( $new_dir, 0755 );
+				@chmod( $new_dir, 0777 );
 			}
-			catch ( Exception $e ) {
-				throw new Exception( __METHOD__ . ': Directory un-writable' );
+			catch ( Exception $ex ) {
+				self::triggerError( 'Directory un-writable', __METHOD__ );
 			}
 			self::log( 'Permissions updated' );
 		}
@@ -110,7 +157,7 @@ class css_crush {
 	}
 
 
-	################################################################################################
+	#############
 	#  Public API
 
 	/**
@@ -123,6 +170,17 @@ class css_crush {
 	public static function file ( $file, $options = null ) {
 
 		$config = self::$config;
+
+		// Reset properties for current process
+		self::$tokenUID = 0;
+		self::$storage = new stdClass;
+		self::$storage->tokens = (object) array(
+			'strings'  => array(),
+			'comments' => array(),
+			'rules'    => array(),
+			'parens'   => array(),
+		);
+		self::$storage->variables = array();
 
 		// Since we're comparing strings, we need to iron out OS differences
 		$file = str_replace( '\\', '/', $file );
@@ -157,8 +215,7 @@ class css_crush {
 		self::parseOptions( $options );
 
 		// Compiled filename we're searching for
-		self::$compileName = basename( $hostfile->name, '.css' ) .
-			( self::$options[ 'versioning' ] ? self::$compileRevisionedSuffix : self::$compileSuffix );
+		self::$compileName = basename( $hostfile->name, '.css' ) . self::$COMPILE_SUFFIX;
 
 		// Check for a valid compiled file
 		$validCompliledFile = self::validateCache( $hostfile );
@@ -166,17 +223,22 @@ class css_crush {
 			return $validCompliledFile;
 		}
 
+		// Load in aliases and macros
+		if ( !self::$assetsLoaded ) {
+			self::loadAssets();
+			self::$assetsLoaded = true;
+		}
 		// Compile
 		$output = self::compile( $hostfile );
 
 		// Add in boilerplate
-		if ( self::$options['boilerplate'] ) {
+		if ( self::$options[ 'boilerplate' ] ) {
 			$output = self::getBoilerplate() . "\n{$output}";
 		}
 
 		// Create file and return path. Return empty string on failure
 		if ( file_put_contents( "{$config->baseDir}/" . self::$compileName, $output ) ) {
-			return "{$config->baseURL}/" . self::$compileName;
+			return "{$config->baseURL}/" . self::$compileName . ( self::$options[ 'versioning' ] ? '?' . time() : '' );
 		}
 		else {
 			return '';
@@ -200,14 +262,11 @@ class css_crush {
 			unlink( $configPath );
 		}
 		// Remove any compiled files
-		$suffix = self::$compileSuffix;
-		$suffixRev = self::$compileRevisionedSuffix;
+		$suffix = self::$COMPILE_SUFFIX;
 		$suffixLength = strlen( $suffix );
-		$suffixRevLength = strlen( $suffixRev );
 		foreach ( scandir( $dir ) as $file ) {
 			if (
-				strpos( $file, $suffix ) === strlen( $file ) - $suffixLength or
-				strpos( $file, $suffixRev ) === strlen( $file ) - $suffixRevLength
+				strpos( $file, $suffix ) === strlen( $file ) - $suffixLength
 			) {
 				unlink( $dir . "/{$file}" );
 			}
@@ -215,17 +274,17 @@ class css_crush {
 	}
 
 	/**
-	 * Flag for enabling debug mode
+	 * Flag for enabling logging
 	 *
 	 * @var boolean
 	 */
-	public static $debug = false;
+	public static $logging = false;
 
 	/**
 	 * Print the log
 	 */
 	public static function log () {
-		if ( !self::$debug ) {
+		if ( !self::$logging ) {
 			return;
 		}
 		static $log = '';
@@ -250,89 +309,147 @@ class css_crush {
 		}
 	}
 
-	################################################################################################
+	#####################
 	#  Internal functions
 
-	public static function getBoilerplate () {
-		return <<<TXT
+	protected static function getBoilerplate () {
+		if (
+			!( $boilerplate = file_get_contents( self::$location . "/CssCrush.boilerplate" ) ) or
+			!self::$options[ 'boilerplate' ]
+		) {
+			return '';
+		}
+		// Process any tags, currently only '{{datetime}}' is supported
+		if ( preg_match_all( '!\{\{([^}]+)\}\}!', $boilerplate, $boilerplate_matches ) ) {
+			$replacements = array();
+			foreach ( $boilerplate_matches[0] as $index => $tag ) {
+				if ( $boilerplate_matches[1][$index] === 'datetime' ) {
+					$replacements[] = date( 'Y-m-d H:i:s O' );
+				}
+				else {
+					$replacements[] = '?';
+				}
+			}
+			$boilerplate = str_replace( $boilerplate_matches[0], $replacements, $boilerplate );
+		}
+		// Pretty print
+		$boilerplate = explode( PHP_EOL, $boilerplate );
+		$boilerplate = array_map( 'trim', $boilerplate );
+		$boilerplate = array_map( create_function( '$it', 'return !empty($it) ? " $it" : $it;' ), $boilerplate );
+		$boilerplate = implode( PHP_EOL . ' *', $boilerplate );
+		return <<<TPL
 /*
- *  File created by CSS Crush
- *  http://github.com/peteboere/css-crush
+ *$boilerplate
  */
-TXT;
+TPL;
 	}
 
-	private static function parseOptions ( &$options ) {
+	protected static function parseOptions ( $options ) {
 		// Create default options for those not set
 		$option_defaults = array(
-			'macros'   => true,
-			'comments' => false,
-			'minify'   => true,
-			'versioning' => true,
-                        'boilerplate' => true
+			'debug'       => false,
+			'versioning'  => true,
+			'boilerplate' => true,
 		);
 		self::$options = is_array( $options ) ?
 			array_merge( $option_defaults, $options ) : $option_defaults;
 	}
 
-	private static function compile ( &$hostfile ) {
-		// Reset properties for current process
-		self::$literals = array();
-		self::$variables = array();
-		self::$literalCount = 0;
+	protected static function compile ( $hostfile ) {
+
 		$regex = self::$regex;
 
 		// Collate hostfile and imports
 		$output = self::collateImports( $hostfile );
 
-		// Extract literals
-		$re = '#(\'|")(?:\\1|[^\1])*?\1#';
-		$cb_extractStrings = self::createCallback( 'cb_extractStrings' );
-		$output = preg_replace_callback( $re, $cb_extractStrings, $output );
-
 		// Extract comments
-		$cb_extractComments = self::createCallback( 'cb_extractComments' );
-		$output = preg_replace_callback( $regex->comments, $cb_extractComments, $output );
+		$output = preg_replace_callback( $regex->comment, array( 'self', 'cb_extractComments' ), $output );
 
-		// Extract variables
-		$cb_extractVariables = self::createCallback( 'cb_extractVariables' );
-		$output = preg_replace_callback( $regex->variables, $cb_extractVariables, $output );
+		// Extract literals
+		$output = preg_replace_callback( $regex->string, array( 'self', 'cb_extractStrings' ), $output );
 
-		// Search and replace variables
-		$re = '#var\(\s*([A-Z0-9_-]+)\s*\)#i';
-		$cb_placeVariables = self::createCallback( 'cb_placeVariables' );
-		$output = preg_replace_callback( $re, $cb_placeVariables, $output);
+		// Parse variables
+		$output = preg_replace_callback( $regex->variables, array( 'self', 'cb_extractVariables' ), $output );
 
-		// Optionally apply macros
-		if ( self::$options[ 'macros' ] !== false ) {
-			self::applyMacros( $output );
-		}
+		// self::log( self::$storage->variables );
 
-		// Optionally minify (after macros since macros may introduce un-wanted whitespace)
-		if ( self::$options[ 'minify' ] !== false ) {
-			self::minify( $output );
-		}
+		// Place variables
+		$output = preg_replace_callback( $regex->function->var, array( 'self', 'cb_placeVariables' ), $output );
 
-		// Expand selectors
-		$re = '#([^}{]+){#s';
-		$cb_expandSelector = self::createCallback( 'cb_expandSelector' );
-		$output = preg_replace_callback( $re, $cb_expandSelector, $output);
+		// Normalize whitespace
+		$output = self::normalize( $output );
 
-		// Restore all comments
-		$cb_restoreLiteral = self::createCallback( 'cb_restoreLiteral' );
-		$output = preg_replace_callback( '#(___c\d+___)#', $cb_restoreLiteral, $output);
+		// Measure to ensure we can extract the rules correctly
+		$output = "\n" . str_replace( array( '@', '}', '{' ), array( "\n@", "}\n", "{\n" ), $output );
 
-		// Restore all literals
-		$cb_restoreLiteral = self::createCallback( 'cb_restoreLiteral' );
-		$output = preg_replace_callback( '#(___\d+___)#', $cb_restoreLiteral, $output);
+		// Extract rules
+		$output = preg_replace_callback( $regex->rule, array( 'self', 'cb_extractRules' ), $output );
 
-		// Release un-needed memory
-		self::$literals = self::$variables = null;
+		// Alias at-rules (if there are any)
+		$output = self::aliasAtRules( $output );
+
+		// print it all back
+		$output = self::display( $output );
+
+		self::log( self::$storage->tokens );
+
+		// Release memory
+		self::$storage = null;
 
 		return $output;
 	}
 
-	private static function validateCache ( &$hostfile ) {
+	protected static function display ( $output ) {
+		$minify = !self::$options[ 'debug' ];
+		$regex = self::$regex;
+
+		if ( $minify ) {
+			$output = preg_replace( $regex->token->comment, '', $output );
+		}
+		else {
+			// Create newlines after tokens
+			$output = preg_replace( '!([{}])!', "$1\n", $output );
+			$output = preg_replace( '!([@])!', "\n$1", $output );
+			$output = preg_replace( '!(___[a-z0-9]+___)!', "$1\n", $output );
+
+			// Kill double spaces
+			$output = ltrim( preg_replace( '!\n+!', "\n", $output ) );
+		}
+
+		// Kill leading space
+		$output = preg_replace( '!\n\s+!', "\n", $output );
+
+		// Print out rules
+		$output = preg_replace_callback( $regex->token->rule, array( 'self', 'cb_printRule' ), $output );
+
+		// Insert parens
+		$paren_labels = array_keys( self::$storage->tokens->parens );
+		$paren_values = array_values( self::$storage->tokens->parens );
+		$output = str_replace( $paren_labels, $paren_values, $output );
+
+		if ( $minify ) {
+			$output = self::minify( $output );
+		}
+		else {
+			// Insert comments
+			$comment_labels = array_keys( self::$storage->tokens->comments );
+			$comment_values = array_values( self::$storage->tokens->comments );
+			foreach ( $comment_values as &$comment ) {
+				$comment = "$comment\n";
+			}
+			$output = str_replace( $comment_labels, $comment_values, $output );
+		}
+
+		// Insert literals
+		$string_labels = array_keys( self::$storage->tokens->strings );
+		$string_values = array_values( self::$storage->tokens->strings );
+		$output = str_replace( $string_labels, $string_values, $output );
+
+		// I think we're done
+		return $output;
+	}
+
+	protected static function validateCache ( $hostfile ) {
 		$config = self::$config;
 
 		// Search base directory for an existing compiled file
@@ -398,15 +515,17 @@ TXT;
 		return false;
 	}
 
-	private static function collateImports ( &$hostfile ) {
-		$str = file_get_contents( $hostfile->path );
+	protected static function collateImports ( $hostfile ) {
+
 		$config = self::$config;
 		$compileName = self::$compileName;
 		$regex = self::$regex;
 
-		// Obfuscate any directives within comment blocks
-		$cb_obfuscateDirectives = self::createCallback( 'cb_obfuscateDirectives' );
-		$str = preg_replace_callback( $regex->comments, $cb_obfuscateDirectives, $str );
+		$str = file_get_contents( $hostfile->path );
+
+		// Obfuscate any import at-rules within comment blocks
+		$cb_obfuscateDirectives = array( 'self', 'cb_obfuscateDirectives' );
+		$str = preg_replace_callback( $regex->comment, $cb_obfuscateDirectives, $str );
 
 		// Initialize config object
 		$config->data[ $compileName ] = array();
@@ -417,23 +536,38 @@ TXT;
 		$absoluteFlag = false;
 		$imports_mtimes = array();
 		$imports_filenames = array();
+		$imports_urls = array();
 		$import = new stdClass;
 
-		while ( preg_match( $regex->imports, $str, $match, PREG_OFFSET_CAPTURE ) ) {
+		while ( preg_match( $regex->import, $str, $match, PREG_OFFSET_CAPTURE ) ) {
+			self::log( $match );
+
 			// Matched a file import statement
 			$text = $match[0][0]; // Full match
 			$offset = $match[0][1]; // Full match offset
-			$import->name = $match[2][0];
+			$import->name = trim( $match[1][0] ); // The url
+			$import->mediaContext = trim( $match[2][0] ); // The media context if specified
+			$import->isExternalURL = false;
+
 			if ( strpos( $import->name, '/' ) === 0 ) {
 				// Absolute path
-				self::log('Absolute path');
+				self::log( 'Absolute path import' );
 				$segments = array( $config->docRoot, $import->name );
 				$relativeContext = '';
 				$absoluteFlag = true;
 			}
+			elseif (
+				strpos( $import->name, 'http://' ) === 0 or
+				strpos( $import->name, 'https://' ) === 0
+			) {
+				// External URL import
+				self::log( 'External URL import' );
+				$import->isExternalURL = true;
+				$absoluteFlag = false;
+			}
 			else {
 				// Relative path
-				self::log('Relative path');
+				self::log( 'Relative path' );
 				$root = $absoluteFlag ? $config->docRoot : $config->baseDir;
 				$segments = array_filter( array( $root, $relativeContext, $import->name ) );
 				if ( $absoluteFlag ) {
@@ -441,7 +575,7 @@ TXT;
 				}
 				$absoluteFlag = false;
 			}
-			$import->path = realpath( implode( '/', $segments ) );
+			$import->path = !$import->isExternalURL ? realpath( implode( '/', $segments ) ) : $import->name;
 
 			//self::log( 'Relative context: ' .  $relativeContext );
 			//self::log( 'Import filepath: ' . $import->path );
@@ -449,215 +583,733 @@ TXT;
 			$preStatement  = substr( $str, 0, $offset );
 			$postStatement = substr( $str, $offset + strlen( $text ) );
 
-			if ( $import->content = @file_get_contents( $import->path ) ) {
+			// Try to fetch the import
+			$import->content = @file_get_contents( $import->path );
+
+			if ( $import->content ) {
 				// Imported file exists, so construct new content
 
 				// Add import details to config
-				$imports_mtimes[] = filemtime( $import->path );
-				$imports_filenames[] = $relativeContext ?
-					"{$relativeContext}/{$import->name}" : $import->name;
+				if ( !$import->isExternalURL ) {
 
-				// Obfuscate any directives within comment blocks
-				$import_content = preg_replace_callback(
-					$regex->imports, $cb_obfuscateDirectives, $import->content );
+					// We only validate modified times of local files
+					$imports_mtimes[] = filemtime( $import->path );
+
+					// Obfuscate any import at-rules within comment blocks
+					$import->content = preg_replace_callback(
+						$regex->comment, $cb_obfuscateDirectives, $import->content );
+
+					$imports_filenames[] = $relativeContext ?
+						"{$relativeContext}/{$import->name}" : $import->name;
+				}
 
 				// Set relative context if there is a nested import statement
-				if ( preg_match( $regex->imports, $import->content ) ) {
-					$dirName = dirname( $import->name );
-					if ( $dirName != '.' ) {
-						$relativeContext =
-							!empty( $relativeContext ) ? "{$relativeContext}/{$dirName}" : $dirName;
+				if ( !$import->isExternalURL and preg_match( $regex->import, $import->content ) ) {
+					if ( $import->mediaContext ) {
+						// Strip nested imports since we can't support nested media blocks
+						$message = "Cannot import nested files within '$import->name' due to mediaContext";
+						self::log( $message );
+						//self::triggerWarning( $message, __METHOD__ );
+						$import->content = preg_replace( $regex->import, '', $import->content );
+					}
+					else {
+						$dirName = dirname( $import->name );
+						if ( $dirName != '.' ) {
+							$relativeContext =
+								!empty( $relativeContext ) ? "{$relativeContext}/{$dirName}" : $dirName;
+						}
 					}
 				}
 				else {
 					$relativeContext = '';
 				}
+
 				// Reconstruct the main string
-				$str = $preStatement . $import->content . $postStatement;
+				$str = $preStatement;
+				if ( $import->mediaContext ) {
+					$str .= "@media $import->mediaContext {" . $import->content . '}';
+				}
+				else {
+					$str .= $import->content;
+				}
+				$str .= $postStatement;
 			}
 			else {
 				// Failed to open import, just continue with the import line removed
 				self::log( 'File not found' );
 				$str = $preStatement . $postStatement;
+
+				if ( $import->isExternalURL ) {
+					self::triggerNotice( "Unable to import external URL: {$import->path}", __METHOD__ );
+				}
 			}
 		}
 
 		$config->data[ $compileName ][ 'imports' ] = $imports_filenames;
+		$config->data[ $compileName ][ 'imports_urls' ] = $imports_urls;
 		$config->data[ $compileName ][ 'datem_sum' ] = array_sum( $imports_mtimes ) + $hostfile->mtime;
 		$config->data[ $compileName ][ 'options' ] = self::$options;
 
 		// Need to store the current path so we can check we're using the right config path later
 		$config->data[ 'originPath' ] = $config->path;
 
-		// if ( !self::$cli ) {
-			// Save config changes
-			file_put_contents( $config->path, serialize( $config->data ) );
-		// }
+		// Save config changes
+		file_put_contents( $config->path, serialize( $config->data ) );
+
 		self::log( $config->data );
 
 		return $str;
 	}
 
-	private static function applyMacros ( &$str ) {
-		$user_funcs = get_defined_functions();
-		$csscrushs = array();
-		foreach ( $user_funcs[ 'user' ] as $func ) {
-			if ( strpos( $func, 'csscrush_' ) === 0 ) {
-				$parts = explode( '_', $func );
-				array_shift( $parts );
-				$property = implode( '-', $parts );
-				$csscrushs[ $property ] = $func;
-			}
-		}
-		// Determine which macros to apply
-		$opts = self::$options[ 'macros' ];
-		$maclist = array();
-		if ( $opts === true ) {
-			$maclist = $csscrushs;
-		}
-		else {
-			foreach ( $csscrushs as $property => $callback ) {
-				if ( in_array( $property, $opts ) ) {
-					$maclist[ $property ] = $callback;
-				}
-			}
-		}
-		// Loop macro list and apply callbacks
-		foreach ( $maclist as $property => $callback ) {
-			$wrapper = '$prop = "' . $property . '";' .
-						'$result = ' . $callback . '( $prop, $match[2] );' .
-						'return $result ? $match[1] . $result . $match[3] : $match[0];';
-// 			$wrapper = <<<TPL
-// 				\$prop = '$property';
-// 				echo \$match[0];
-// 				\$result = $callback( \$prop, \$match[2] );
-// 				return \$result ? \$match[1] . \$result . \$match[3] : \$match[0];
-// TPL;
-			$str = preg_replace_callback(
-					'#([\{\s;]+)' . $property . '\s*:\s*' . '([^;\}]+)' . '([;\}])#',
-					create_function ( '$match', $wrapper ),
-					$str );
-		}
-
-		// Backwards compatable double-colon syntax for pseudo elements
-		$str = preg_replace( '#\:\:(after|before|first-letter|first-line)#', ':$1', $str );
-
-	}
-
-	private static function minify ( &$str ) {
-		// Colons cannot be globally matched safely because of pseudo-selectors etc.
-		$innerbrace = create_function(
-			'$match',
-			'return preg_replace( \'#\s*:\s*#\', \':\', $match[0] );'
-		);
-		$str = preg_replace_callback( '#\{[^}]+\}#s', $innerbrace, trim( $str ) );
-
+	protected static function minify ( $str ) {
 		$replacements = array(
-			'#\s{2,}#'                          => ' ',      // Remove double spaces
-			'#\s*(;|,|\{)\s*#'                  => '$1',     // Clean-up around delimiters
-			'#\s*;*\s*\}\s*#'                   => '}',      // Clean-up closing braces
-			'#[^}{]+\{\s*}#'                    => '',       // Strip empty statements
-			'#([^0-9])0[a-zA-Z%]{2}#'           => '${1}0',  // Strip unnecessary units on zeros
-			'#:(0 0|0 0 0|0 0 0 0)([;}])#'      => ':0${2}', // Collapse zero lists
-			'#(background-position):0([;}])#'   => '$1:0 0$2', // Restore any overshoot
-			'#([^\d])0(\.\d+)#'                 => '$1$2',   // Strip leading zeros on floats
-			'#(\[)\s*|\s*(\])|(\()\s*|\s*(\))#' => '${1}${2}${3}${4}',  // Clean-up bracket internal space
-			'#\s*([>~+=])\s*#'                  => '$1',     // Clean-up around combinators
-			'#\#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3#i'
-			                                    => '#$1$2$3', // Reduce Hex codes
+			'!\n+| (\{)!'                     => '$1',    // Trim whitespace
+			'!(^|[: \(,])0(\.\d+)!'             => '$1$2',  // Strip leading zeros on floats
+			'!(^|[: \(,])\.?0[a-zA-Z%]{1,5}!i'  => '${1}0', // Strip unnecessary units on zero values
+			'!(^|\:) *(0 0 0|0 0 0 0) *(;|\})!' => '${1}0${3}', // Collapse zero lists
+			'!(padding|margin) ?\: *0 0 *(;|\})!' => '${1}:0${2}', // Collapse zero lists continued
+			'!\s*([>~+=])\s*!'                  => '$1',     // Clean-up around combinators
+			'!\#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3!i'
+			                                    => '#$1$2$3', // Compress hex codes
+			'!rgba\([0-9]+,[0-9]+,[0-9]+,0\)!'  => 'transparent', // Compress rgba
 		);
-
-		$str = preg_replace(
+		return preg_replace(
 			array_keys( $replacements ), array_values( $replacements ), $str );
 	}
 
-	################################################################################################
-	#  Search / replace callbacks
-
-	private static function createCallback ( $name ) {
-		return create_function( '$m',
-			'return call_user_func( array( "' . __CLASS__ . '", "' . $name . '" ), $m );' );
+	protected static function normalize ( $str ) {
+		$replacements = array(
+			'!\s+!'                             => ' ',
+			'!(\[)\s*|\s*(\])|(\()\s*|\s*(\))!' => '${1}${2}${3}${4}',  // Trim internal bracket WS
+			'!\s*(;|,|\/|\!)\s*!'               => '$1',     // Trim WS around delimiters and special characters
+		);
+		return preg_replace(
+			array_keys( $replacements ), array_values( $replacements ), $str );
 	}
 
-	public static function cb_extractStrings ( $match ) {
-		$label = "___" . ++self::$literalCount . "___";
-		self::$literals[ $label ] = $match[0];
+	protected static function aliasAtRules ( $output ) {
+		if ( empty( self::$aliases[ 'at-rules' ] ) ) {
+			return $output;
+		}
+
+		$aliases = self::$aliases[ 'at-rules' ];
+
+		foreach ( $aliases as $at_rule => $at_rule_aliases ) {
+			if (
+				strpos( $output, "@$at_rule " ) === -1 or
+				strpos( $output, "@$at_rule{" ) === -1
+			) {
+				// Nothing to see here
+				continue;
+			}
+			$scan_pos = 0;
+
+			// Find at-rules that we want to alias
+			while ( preg_match( "!@$at_rule" . '[\s{]!', $output, $match, PREG_OFFSET_CAPTURE, $scan_pos ) ) {
+
+				// Store the match position
+				$block_start_pos = $match[0][1];
+				// Capture the curly bracketed block
+				$curly_match = self::matchBrackets( $output, $brackets = array( '{', '}' ), $block_start_pos );
+
+				if ( !$curly_match ) {
+					// Couldn't match the block
+					break;
+				}
+
+				// The end of the block
+				$block_end_pos = $curly_match->end;
+
+				// Build up string with aliased blocks for splicing
+				$original_block = substr( $output, $block_start_pos, $block_end_pos - $block_start_pos );
+				$blocks = array();
+				foreach ( $at_rule_aliases as $alias ) {
+					// Copy original block, replacing at-rule with alias name
+					$copy_block = str_replace( "@$at_rule", "@$alias", $original_block );
+
+					// Aliases are nearly always prefixed, capture the current vendor name
+					preg_match( self::$regex->vendorPrefix, $alias, $vendor );
+
+					$vendor = $vendor ? $vendor[1] : null;
+
+					// Duplicate rules
+					if ( preg_match_all( self::$regex->token->rule, $copy_block, $copy_matches ) ) {
+						$originals = array();
+						$replacements = array();
+
+						foreach ( $copy_matches[0] as $copy_match ) {
+							// Clone the matched rule
+							$originals[] = $rule_label = $copy_match;
+							$cloneRule = clone self::$storage->tokens->rules[ $rule_label ];
+
+							// Set the vendor context
+							$cloneRule->vendorContext = $vendor;
+
+							// Filter out declarations that have different vendor context
+							$new_set = array();
+							foreach ( $cloneRule as $declaration ) {
+								if ( !$declaration->vendor or $declaration->vendor === $vendor ) {
+									$new_set[] = $declaration;
+								}
+							}
+							$cloneRule->declarations = $new_set;
+
+							// Store the clone
+							$replacements[] = $clone_rule_label = self::createTokenLabel( 'r' );
+							self::$storage->tokens->rules[ $clone_rule_label ] = $cloneRule;
+						}
+						// Finally replace the original labels with the cloned rule labels
+						$copy_block = str_replace( $originals, $replacements, $copy_block );
+					}
+					$blocks[] = $copy_block;
+				}
+
+				// The original version is always last in the list
+				$blocks[] = $original_block;
+				$blocks = implode( "\n", $blocks );
+
+				// Glue back together
+				$output =
+					substr( $output, 0, $block_start_pos ) .
+					$blocks .
+					substr( $output, $block_end_pos );
+
+				// Move the regex pointer forward
+				$scan_pos = $block_start_pos + strlen( $blocks );
+
+			} // while
+		} // foreach
+		return $output;
+	}
+
+
+	#############################
+	#  preg_replace callbacks
+
+	protected static function cb_extractStrings ( $match ) {
+		$label = self::createTokenLabel( 's' );
+		self::$storage->tokens->strings[ $label ] = $match[0];
 		return $label;
 	}
 
-	public static function cb_extractComments ( $match ) {
+	protected static function cb_restoreStrings ( $match ) {
+		return self::$storage->tokens->strings[ $match[0] ];
+	}
+
+	protected static function cb_extractComments ( $match ) {
 		$comment = $match[0];
 		$flagged = strpos( $comment, '/*!' ) === 0;
-		if ( self::$options[ 'comments' ] or $flagged ) {
-			$label = "___c" . ++self::$literalCount . "___";
-			self::$literals[ $label ] = $flagged ? '/*!' . substr( $match[1], 1 ) . '*/' : $comment;
-			return $label;
-		}
-		return '';
+		$label = self::createTokenLabel( 'c' );
+		self::$storage->tokens->comments[ $label ] = $flagged ? '/*!' . substr( $match[1], 1 ) . '*/' : $comment;
+		return $label;
 	}
 
-	public static function cb_extractVariables ( $match ) {
-		$vars = preg_split( '#\s*;\s*#', $match[1], null, PREG_SPLIT_NO_EMPTY );
-		foreach ( $vars as $var ) {
-			$parts = preg_split( '#\s*:\s*#', $var, null, PREG_SPLIT_NO_EMPTY );
-			if ( count( $parts ) == 2 ) {
-				list( $property, $value ) = $parts;
-			}
-			else {
-				continue;
-			}
-			// Remove any comment markers around variable names
-			$property = preg_replace( '#___c\d+___\s*#', '', $property );
-			self::$variables[ $property ] = $value;
-		}
-		return '';
+	protected static function cb_restoreComments ( $match ) {
+		return self::$storage->tokens->comments[ $match[0] ];
 	}
 
-	public static function cb_placeVariables ( $match ) {
-		$key = $match[1];
-		if ( isset( self::$variables[ $key ] ) ) {
-			return self::$variables[ $key ];
+	protected static function cb_extractRules ( $match ) {
+
+		$rule = new CssCrush_rule( $match[1], $match[2] );
+
+		// Only store rules with declarations
+		if ( !empty( $rule->declarations ) ) {
+
+			$rule->expandSelectors();
+			$rule->addPropertyAliases();
+			$rule->addFunctionAliases();
+			$rule->applyMacros();
+
+			$label = self::createTokenLabel( 'r' );
+			self::$storage->tokens->rules[ $label ] = $rule;
+			return $label . "\n";
 		}
 		else {
 			return '';
 		}
 	}
 
-	public static function cb_expandSelector_braces ( $match ) {
-		$label = "__any" . ++self::$literalCount . "__";
-		self::$literals[ $label ] = $match[1];
-		return $label;
-	}
+	protected static function cb_extractVariables ( $match ) {
+		$regex = self::$regex;
 
-	public static function cb_expandSelector ( $match ) {
-		 // http://dbaron.org/log/20100424-any
-		$text = $match[0];
-		$between = $match[1];
-		if ( strpos( $between, ':any' ) === false ) {
-			return $text;
+		$block = $match[2];
+
+		// Strip comment markers
+		$block = preg_replace( $regex->token->comment, '', $block );
+
+		// Exceute any custom functions - involves dipping into CssCrush_rule
+		$parens = self::matchAllParens( $block );
+		if ( count( $parens->matches ) ) {
+			CssCrush_rule::$storage->tmpParens = $parens->matches;
+			$block = preg_replace_callback( $regex->function->custom, array( 'CssCrush_rule', 'css_fn' ), $parens->string );
+			// Fold matches back in
+			$block = str_replace( array_keys( $parens->matches ), array_values( $parens->matches ), $block );
 		}
 
-		$cb_expandSelector_braces = self::createCallback( 'cb_expandSelector_braces' );
-		$between = preg_replace_callback(
-			'#:any\(([^)]*)\)#', $cb_expandSelector_braces, $between );
+		$variables_match = self::splitDelimList( $block, ';', true );
 
-		// Strip any comment labels
-		$between = preg_replace( '#\s*___c\d+___\s*#', '', $between );
+		// $match_keys = array_keys( $variables_match->matches );
+		// $match_values = array_values( $variables_match->matches );
 
-		$re_comma = '#\s*,\s*#';
-		$matched_statements = preg_split( $re_comma, $between );
+		// Loop through the pairs, restore parens
+		foreach ( $variables_match->list as $var ) {
+			$colon = strpos( $var, ':' );
+			if ( $colon === -1 ) {
+				continue;
+			}
+			$name = trim( substr( $var, 0, $colon ) );
+			$value = trim( substr( $var, $colon + 1 ) );
+			self::$storage->variables[ trim( $name ) ] = $value;
+		}
+		return '';
+	}
 
-		$stack = array();
-		foreach ( $matched_statements as $matched_statement ) {
-			$pos = strpos( $matched_statement, '__any' );
+	protected static function cb_placeVariables ( $match ) {
+		$before_char = $match[1];
+		$variable_name = $match[2];
+		if ( isset( self::$storage->variables[ $variable_name ] ) ) {
+			return $before_char . self::$storage->variables[ $variable_name ];
+		}
+		else {
+			return $before_char;
+		}
+	}
+
+	protected static function cb_restoreLiteral ( $match ) {
+		return self::$storage->tokens[ $match[0] ];
+	}
+
+	protected static function cb_obfuscateDirectives ( $match ) {
+		return str_replace( '@', '(at)', $match[0] );
+	}
+
+	protected static function cb_printRule ( $match ) {
+		$minify = !self::$options[ 'debug' ];
+		$ruleLabel = $match[0];
+		if ( !isset( self::$storage->tokens->rules[ $ruleLabel ] ) ) {
+			return '';
+		}
+		$rule = self::$storage->tokens->rules[ $ruleLabel ];
+
+		// Build the selector
+		$selectors = implode( ',', $rule->selectors );
+
+		// Build the block
+		$block = array();
+		$colon = $minify ? ':' : ': ';
+		foreach ( $rule as $declaration ) {
+			$block[] = "{$declaration->property}$colon{$declaration->value}";
+		}
+
+		// Return whole rule
+		if ( $minify ) {
+			$block = implode( ';', $block );
+			return "$selectors{{$block}}";
+		}
+		else {
+			$block = implode( ";\n\t", $block );
+			// Include pre rule comments
+			$comments = implode( "\n", $rule->comments );
+			return "$comments\n$selectors {\n\t$block;\n}\n";
+		}
+	}
+
+
+	############
+	#  Utilities
+
+	public static function splitDelimList ( $str, $delim, $fold_in = false ) {
+		$match_obj = self::matchAllParens( $str );
+		$match_obj->list = array_filter( explode( $delim, $match_obj->string ) );
+		if ( $fold_in ) {
+			$match_keys = array_keys( $match_obj->matches );
+			$match_values = array_values( $match_obj->matches );
+			foreach ( $match_obj->list as &$item ) {
+				$item = str_replace( $match_keys, $match_values, $item );
+			}
+		}
+		return $match_obj;
+	}
+
+	public static function createTokenLabel ( $prefix, $counter = null ) {
+		$counter = !is_null( $counter ) ? $counter : ++self::$tokenUID;
+		return "___$prefix{$counter}___";
+	}
+
+	public static function normalizeWhiteSpace ( $str ) {
+		$str = trim( preg_replace( '!\s+!', ' ', $str ) );
+		// spaces around commas and inside parens
+		$str = str_replace(
+			array( ', ', ' ,', '( ', ' )' ),
+			array( ',' , ',' , '(' , ')'  ),
+			$str );
+		return $str;
+	}
+
+	public static function matchBrackets ( $str, $brackets = array( '(', ')' ), $search_pos = 0 ) {
+		$open_token = $brackets[0];
+		$close_token = $brackets[1];
+		$openings = array();
+		$closings = array();
+		$brake = 50; // Set a limit in the case of errors
+
+		$match = new stdClass;
+
+		$start_index = strpos( $str, $open_token, $search_pos );
+		$close_index = strpos( $str, $close_token, $search_pos );
+
+		if ( $start_index === false ) {
+			return false;
+		}
+		if ( substr_count( $str, $open_token ) !== substr_count( $str, $close_token ) ) {
+			self::triggerWarning( 'Unmatched token near: ' . substr( $str, 0, 15 ), __METHOD__  );
+			return false;
+		}
+
+		while (
+			( $start_index !== false or $close_index !== false ) and $brake--
+		) {
+			if ( $start_index !== false and $close_index !== false ) {
+				$search_pos = min( $start_index, $close_index );
+				if ( $start_index < $close_index ) {
+					$openings[] = $start_index;
+				}
+				else {
+					$closings[] = $close_index;
+				}
+			}
+			elseif ( $start_index !== false ) {
+				$search_pos = $start_index;
+				$openings[] = $start_index;
+			}
+			else {
+				$search_pos = $close_index;
+				$closings[] = $close_index;
+			}
+			$search_pos += 1; // Advance
+
+			if ( count( $closings ) === count( $openings ) ) {
+				$match->openings = $openings;
+				$match->closings = $closings;
+				$match->start = $openings[0];
+				$match->end = $closings[ count( $closings ) - 1 ] + 1;
+				return $match;
+			}
+			$start_index = strpos( $str, $open_token, $search_pos );
+			$close_index = strpos( $str, $close_token, $search_pos );
+		}
+
+		self::triggerWarning( "Reached brake limit of '$brake'. Exiting.", __METHOD__ );
+		return false;
+	}
+
+	public static function matchAllParens ( $str ) {
+		$storage = array();
+		$brackets = array( '(', ')' );
+		$match = self::matchBrackets( $str );
+		$matches = array();
+		while ( $match ) {
+			$label = self::createTokenLabel( 'p' );
+			$capture = substr( $str, $match->start, $match->end - $match->start );
+			self::$storage->tokens->parens[ $label ] = $capture;
+			$matches[ $label ] = $capture;
+			$str =
+				substr( $str, 0, $match->start ) .
+				$label .
+				substr( $str, $match->end );
+			$match = self::matchBrackets( $str, $brackets );
+		}
+		return (object) array(
+			'matches' => $matches,
+			'string'  => str_replace( $brackets, '', $str ),
+		);
+	}
+
+	public static function addRuleMacro ( $fn ) {
+		if ( !function_exists( $fn ) ) {
+			self::triggerWarning( "Function '$fn' not defined", __METHOD__ );
+			return;
+		}
+		if ( !in_array( $fn, self::$macros ) ) {
+			self::$macros[] = $fn;
+		}
+	}
+
+
+	#########
+	#  Errors
+
+	public static function triggerWarning ( $message, $method = 'unspecified' ) {
+		trigger_error( "$method : $message", E_USER_WARNING );
+	}
+
+	public static function triggerNotice ( $message, $method = 'unspecified' ) {
+		trigger_error( "$method : $message", E_USER_NOTICE );
+	}
+
+	public static function triggerError ( $message, $method = 'unspecified' ) {
+		trigger_error( "$method : $message", E_USER_ERROR );
+	}
+
+}
+
+# Initialize manually
+CssCrush::init();
+
+
+
+class CssCrush_rule implements IteratorAggregate {
+
+	public static $storage = array();
+
+	public static function init () {
+		self::$storage = (object) self::$storage;
+	}
+
+	public $vendorContext = null;
+	public $properties = array();
+	public $selectors = null;
+	public $parens = array();
+	public $declarations = array();
+	public $comments = array();
+
+	public function __construct ( $selector_string = null, $declarations_string ) {
+
+		$regex = CssCrush::$regex;
+
+		// Parse the selectors chunk
+		if ( !empty( $selector_string ) ) {
+			$selectors_match = CssCrush::splitDelimList( $selector_string, ',' );
+			$this->parens += $selectors_match->matches;
+
+			// Remove and store comments that sit above the first selector
+			// remove all comments between the other selectors
+			preg_match_all( $regex->token->comment, $selectors_match->list[0], $m );
+			$this->comments = $m[0];
+			foreach ( $selectors_match->list as &$selector ) {
+				$selector = preg_replace( $regex->token->comment, '', $selector );
+				$selector = trim( $selector );
+			}
+			$this->selectors = $selectors_match->list;
+		}
+
+		// Parse the declarations chunk
+		$declarations_match = CssCrush::splitDelimList( $declarations_string, ';' );
+		$this->parens += $declarations_match->matches;
+
+		// Parse declarations in to property/value pairs
+		foreach ( $declarations_match->list as $declaration ) {
+
+			// Strip comments around the property
+			$declaration = preg_replace( $regex->token->comment, '', $declaration );
+
+			// Store the property
+			$colonPos = strpos( $declaration, ':' );
+			if ( $colonPos === false ) {
+				// If there is no colon it's malformed
+				continue;
+			}
+			else {
+				$prop = trim( substr( $declaration, 0, $colonPos ) );
+				// Store the property name
+				$this->addProperty( $prop );
+			}
+
+			// Extract the value part of the declaration
+			$value = substr( $declaration, $colonPos + 1 );
+			$value = $value !== false ? trim( $value ) : $value;
+			if ( $value === false or $value === '' ) {
+				// We'll ignore declarations with empty values
+				continue;
+			}
+
+			// If are parenthesised expressions in the value
+			// Search for any custom functions so we can apply them
+			if ( count( $declarations_match->matches ) ) {
+				self::$storage->tmpParens = $declarations_match->matches;
+				$value = preg_replace_callback( $regex->function->custom, array( 'self', 'css_fn' ), $value );
+			}
+
+			// Store the property family
+			// Store the vendor id, if one is present
+			if ( preg_match( $regex->vendorPrefix, $prop, $vendor ) ) {
+				$family = $vendor[2];
+				$vendor = $vendor[1];
+			}
+			else {
+				$vendor = null;
+				$family = $prop;
+			}
+
+			// Create an index of all functions in the current declaration
+			if ( preg_match_all( $regex->function->match, $value, $functions ) > 0 ) {
+				$out = array();
+				foreach ( $functions[2] as $index => $fn_name ) {
+					$out[] = $fn_name;
+				}
+				$functions = array_unique( $out );
+			}
+			else {
+				$functions = array();
+			}
+
+			// Store the declaration
+			$_declaration = (object) array(
+				'property'  => $prop,
+				'family'    => $family,
+				'vendor'    => $vendor,
+				'functions' => $functions,
+				'value'     => $value,
+			);
+			$this->declarations[] = $_declaration;
+		}
+	}
+
+	public function addPropertyAliases () {
+
+		$regex = CssCrush::$regex;
+		$aliasedProperties =& CssCrush::$aliases[ 'properties' ];
+
+		// First test for the existence of any aliased properties
+		$intersect = array_intersect( array_keys( $aliasedProperties ), array_keys( $this->properties ) );
+		if ( empty( $intersect ) ) {
+			return $this;
+		}
+
+		// Shim in aliased properties
+		$new_set = array();
+		foreach ( $this->declarations as $declaration ) {
+			$prop = $declaration->property;
+			if ( isset( $aliasedProperties[ $prop ] ) ) {
+				// There are aliases for the current property
+				foreach ( $aliasedProperties[ $prop ] as $prop_alias ) {
+					if ( $this->hasProperty( $prop_alias ) ) {
+						continue;
+					}
+					// If the aliased property hasn't been set manually, we create it
+					$copy = clone $declaration;
+					$copy->family = $copy->property;
+					$copy->property = $prop_alias;
+					// Remembering to set the vendor property
+					$copy->vendor = null;
+					$this->addProperty( $prop_alias );
+					if ( preg_match( $regex->vendorPrefix, $prop_alias, $vendor ) ) {
+						$copy->vendor = $vendor[1];
+					}
+					$new_set[] = $copy;
+				}
+			}
+			// Un-aliased property or a property alias that has been manually set
+			$new_set[] = $declaration;
+		}
+		// Re-assign
+		$this->declarations = $new_set;
+
+		return $this;
+	}
+
+	public function addFunctionAliases () {
+
+		$function_aliases =& CssCrush::$aliases[ 'functions' ];
+		$aliased_functions = array_keys( $function_aliases );
+
+		if ( empty( $aliased_functions ) ) {
+			return $this;
+		}
+
+		$new_set = array();
+
+		// Keep track of the function aliases we apply and to which property 'family'
+		// they belong, so we can avoid un-unecessary duplications
+		$used_fn_aliases = array();
+
+		// Shim in aliased functions
+		foreach ( $this->declarations as $declaration ) {
+
+			// No functions, skip
+			if ( empty( $declaration->functions ) ) {
+				$new_set[] = $declaration;
+				continue;
+			}
+			// Get list of functions used in declaration that are alias-able, if none skip
+			$intersect = array_intersect( $declaration->functions, $aliased_functions );
+			if ( empty( $intersect ) ) {
+				$new_set[] = $declaration;
+				continue;
+			}
+			// CssCrush::log($intersect);
+			// Loop the aliasable functions
+			foreach ( $intersect as $fn_name ) {
+				if ( $declaration->vendor ) {
+					// If the property is vendor prefixed we use the vendor prefixed version
+					// of the function if it exists.
+					// Else we just skip and use the unprefixed version
+					$fn_search = "-{$declaration->vendor}-$fn_name";
+					if ( in_array( $fn_search, $function_aliases[ $fn_name ] ) ) {
+						$declaration->value = preg_replace(
+							'!(^| )' . $fn_name . '!',
+							'${1}' . $fn_search,
+							$declaration->value
+						);
+						$used_fn_aliases[ $declaration->family ][] = $fn_search;
+					}
+				}
+				else {
+
+					// Duplicate the rule for each alias
+					foreach ( $function_aliases[ $fn_name ] as $fn_alias ) {
+
+						if (
+							isset( $used_fn_aliases[ $declaration->family ] ) and
+							in_array( $fn_alias, $used_fn_aliases[ $declaration->family ] )
+						) {
+							// If the function alias has already been applied in a vendor property
+							// for the same declaration property assume all is good
+							continue;
+						}
+						$copy = clone $declaration;
+						$copy->value = preg_replace(
+							'!(^| )' . $fn_name . '!',
+							'${1}' . $fn_alias,
+							$copy->value
+						);
+						$new_set[] = $copy;
+					}
+				}
+			}
+			$new_set[] = $declaration;
+		}
+
+		// Re-assign
+		$this->declarations = $new_set;
+
+		return $this;
+	}
+
+	public function applyMacros () {
+		foreach ( CssCrush::$macros as $fn ) {
+			call_user_func( $fn, $this );
+		}
+	}
+
+	public function expandSelectors () {
+
+		$new_set = array();
+		$reg_comma = '!\s*,\s*!';
+
+		foreach ( $this->selectors as $selector ) {
+			$pos = strpos( $selector, ':any___' );
 			if ( $pos !== false ) {
 				// Contains an :any statement so we expand
 				$chain = array( '' );
 				do {
 					if ( $pos === 0 ) {
-						preg_match( '#__any\d+__#', $matched_statement, $m );
-						$parts = preg_split( $re_comma, self::$literals[ $m[0] ] );
-						$parts = array_map( 'trim', $parts );
+						preg_match( '!:any(___p\d+___)!', $selector, $m );
+
+						// Parse the arguments
+						$expression = trim( $this->parens[ $m[1] ], '()' );
+						$parts = preg_split( $reg_comma, $expression, null, PREG_SPLIT_NO_EMPTY );
+
 						$tmp = array();
 						foreach ( $chain as $rowCopy ) {
 							foreach ( $parts as $part ) {
@@ -665,56 +1317,128 @@ TXT;
 							}
 						}
 						$chain = $tmp;
-						$matched_statement = substr( $matched_statement, strlen( $m[0] ) );
+						$selector = substr( $selector, strlen( $m[0] ) );
 					}
 					else {
 						foreach ( $chain as &$row ) {
-							$row .= substr( $matched_statement, 0, $pos );
+							$row .= substr( $selector, 0, $pos );
 						}
-						$matched_statement = substr( $matched_statement, $pos );
+						$selector = substr( $selector, $pos );
 					}
-				} while ( ( $pos = strpos( $matched_statement, '__any' ) ) !== false );
+				} while ( ( $pos = strpos( $selector, ':any___' ) ) !== false );
 
 				// Finish off
 				foreach ( $chain as &$row ) {
-					$stack[] = $row . $matched_statement;
+					$new_set[] = $row . $selector;
 				}
 			}
 			else {
 				// Nothing special
-				$stack[] = $matched_statement;
+				$new_set[] = $selector;
 			}
 		}
-
-		// Preserving the original whitespace for easier debugging
-		$first = rtrim( array_shift( $stack ) );
-		$finish = array_map( 'trim', $stack );
-		array_unshift( $finish, $first );
-		return implode( ',', $finish ) . '{';
+		$this->selectors = $new_set;
 	}
 
-	public static function cb_obfuscateDirectives ( $match ) {
-		return str_replace( '@', '(at)', $match[0] );
+
+	############
+	#  IteratorAggregate
+
+	public function getIterator () {
+		return new ArrayIterator( $this->declarations );
 	}
 
-	public static function cb_restoreLiteral ( $match ) {
-		return self::$literals[ $match[0] ];
+
+	############
+	#  Rule API
+
+	public function hasProperty ( $prop ) {
+		return array_key_exists( $prop, $this->properties );
+	}
+
+	public function addProperty ( $prop ) {
+		$this->properties[ $prop ] = true;
+	}
+
+	public function createDeclaration ( $property, $value, $options = array() ) {
+		$_declaration = array(
+			'property'  => $property,
+			'family'    => null,
+			'vendor'    => null,
+			'value'     => $value,
+		);
+		$this->addProperty( $property );
+		return (object) array_merge( $_declaration, $options );
+	}
+
+
+	############
+	#  Custom functions
+
+	public static function css_fn ( $match ) {
+
+		$before_char = $match[1];
+		$fn_name = $match[2];
+		$paren_id = $match[3];
+
+		if ( !isset( self::$storage->tmpParens[ $paren_id ] ) ) {
+			return $before_char;
+		}
+		// Get input value and trim parens
+		$input = self::$storage->tmpParens[ $paren_id ];
+		$input = substr( $input, 1, strlen( $input ) - 2 );
+		
+		// An empty function name defaults to math
+		if ( empty( $fn_name ) ) {
+			$fn_name = 'math';
+		}
+		return $before_char . call_user_func( array( 'self', "css_fn_$fn_name" ), $input );
+	}
+
+	protected static function css_fn_math ( $input ) {
+		// Whitelist allowed characters
+		$input = preg_replace( '![^\.0-9\*\/\+\-\(\)]!', '', $input );
+		$result = 0;
+		try {
+			$result = eval( "return $input;" );
+		}
+		catch ( Exception $e ) {};
+		return round( $result, 10 );
+	}
+	
+	protected static function css_fn_percent ( $input ) {
+		// Whitelist allowed characters
+		$input = preg_replace( '![^\.0-9,]!', '', $input );
+		$parts = array_map( 'trim', explode( ',', $input ) );
+		$parts = array_filter( $parts, 'is_numeric' );
+		
+		$result = 0;
+		if ( count( $parts ) > 1 ) {
+			$result = ( $parts[0] / $parts[1] ) * 100;
+		}
+		return $result . '%';
+	}
+	
+	// Percent function alias
+	protected static function css_fn_pc ( $input ) {
+		return self::css_fn_percent( $input );
+	}
+
+	protected static function css_fn_floor ( $input ) {
+		return floor( self::css_fn_math( $input ) );
+	}
+
+	protected static function css_fn_ceil ( $input ) {
+		return ceil( self::css_fn_math( $input ) );
+	}
+
+	protected static function css_fn_round ( $input ) {
+		return round( self::css_fn_math( $input ) );
 	}
 
 }
 
-################################################################################################
-#  End class definition
-################################################################################################
-
-
-// Initialize manually since it's static
-CSS_Crush::init();
-
-// Pull in macros file if it is present
-if ( file_exists( 'css_crush.macros.php' ) ) {
-	require_once 'css_crush.macros.php';
-}
-
+# Initialize manually
+CssCrush_rule::init();
 
 

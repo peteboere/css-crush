@@ -1,111 +1,102 @@
 <?php 
 
 ################################################################################################
-#  Macro callbacks ( user functions )
+########  IE Legacy
 
-///////////// IELegacy /////////////
+CssCrush::addRuleMacro( 'csscrush_display_inlineblock' );
+CssCrush::addRuleMacro( 'csscrush_minheight' );
+CssCrush::addRuleMacro( 'csscrush_filter' );
 
-// Fix opacity in ie6/7/8
-if ( !function_exists( 'csscrush_Opacity' ) ) {
-	function csscrush_Opacity ( $prop, $val ) {
-		$msval = round( $val*100 );
-		$out = "-ms-filter: \"progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval})\";
-				filter: progid:DXImageTransform.Microsoft.Alpha(Opacity={$msval});
-				zoom:1;
-				{$prop}: {$val}";
-		return preg_replace( "#\s+#", ' ', $out );
+########
+
+function csscrush_display_inlineblock ( $rule ) {
+	if ( !$rule->hasProperty( 'display' ) ) {
+		return;
 	}
-}
-// Fix display:inline-block in ie6/7
-if ( !function_exists( 'csscrush_Display' ) ) {
-	function csscrush_Display ( $prop, $val ) {
-		if ( $val == 'inline-block' ) {
-			return "{$prop}:{$val};*{$prop}:inline;*zoom:1";
+	$new_set = array();
+	foreach ( $rule as $declaration ) {
+		$new_set[] = $declaration;
+		$is_display = $declaration->property === 'display';
+		if ( !$is_display or $is_display and $declaration->value !== 'inline-block' ) {
+			continue;
 		}
-		return "{$prop}:{$val}";
+		$new_set[] = $rule->createDeclaration( '*display', 'inline' );
+		if ( !$rule->hasProperty( '*zoom' ) ) {
+			$new_set[] = $rule->createDeclaration( '*zoom', 1 );
+		}
 	}
-}
-// Fix min-height in ie6
-if ( !function_exists( 'csscrush_Min_Height' ) ) {
-	function csscrush_Min_Height ( $prop, $val ) {return "{$prop}:{$val};_height:{$val}";}
+	$rule->declarations = $new_set;
 }
 
-///////////// CSS3 /////////////
+function csscrush_minheight ( $rule ) {
+	if ( !$rule->hasProperty( 'min-height' ) ) {
+		return;
+	}
+	$new_set = array();
+	foreach ( $rule as $declaration ) {
+		$new_set[] = $declaration;
+		if ( $declaration->property !== 'min-height' ) {
+			continue;
+		}
+		$new_set[] = $rule->createDeclaration( '_height', $declaration->value );
+	}
+	$rule->declarations = $new_set;
+}
 
-if ( !function_exists( 'csscrush_Border_Radius' ) ) {
-	function csscrush_Border_Radius ( $prop, $val ) {
-		return "-moz-{$prop}:{$val};{$prop}:{$val}";
+function csscrush_filter ( $rule ) {
+	if ( !$rule->hasProperty( 'filter' ) ) {
+		return;
 	}
-}
-if ( !function_exists( 'csscrush_Border_Top_Left_Radius' ) ) {
-	function csscrush_Border_Top_Left_Radius ( $prop, $val ) {
-		return "-moz-border-radius-topleft:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Border_Top_Right_Radius' ) ) {
-	function csscrush_Border_Top_Right_Radius ( $prop, $val ) {
-		return "-moz-border-radius-topright:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Border_Bottom_Right_Radius' ) ) {
-	function csscrush_Border_Bottom_Right_Radius ( $prop, $val ) {
-		return "-moz-border-radius-bottomright:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Border_Bottom_Left_Radius' ) ) {
-	function csscrush_Border_Bottom_Left_Radius ( $prop, $val ) {
-		return "-moz-border-radius-bottomleft:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Box_Shadow' ) ) {
-	function csscrush_Box_Shadow ( $prop, $val ) {
-		return "-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Transform' ) ) {
-	function csscrush_Transform ( $prop, $val ) {
-		return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Transition' ) ) {
-	function csscrush_Transition ( $prop, $val ) {
-		return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Background_Size' ) ) {
-	function csscrush_Background_Size ( $prop, $val ) {
-		return "-o-{$prop}:{$val};-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Box_Sizing' ) ) {
-	function csscrush_Box_Sizing ( $prop, $val ) {
-		return "-webkit-{$prop}:{$val};-moz-{$prop}:{$val};{$prop}:{$val}";
-	}
-}
-if ( !function_exists( 'csscrush_Background_Image' ) ) {
-	function csscrush_Background_Image ( $prop, $val ) {
-		if ( strpos( $val, 'linear-gradient' ) !== false ) {
-			$val = substr( $val, strpos( $val, '(' ) + 1 );
-			$args = preg_split( '#\s*,\s*#', str_replace( ')', '', $val ) );
-			$args = array_map( 'trim', $args );
-
-			// top, #444444, #999999
-			foreach ( $args as &$arg ) {
-				$re = '!^#([a-z0-9])([a-z0-9])([a-z0-9])$!i';
-				if ( preg_match( $re, $arg ) ) {
-					$arg = preg_replace( $re, '#$1$1$2$2$3$3', $arg );
-				}
+	$filter_prefix = 'progid:DXImageTransform.Microsoft.';
+	$new_set = array();
+	foreach ( $rule as $declaration ) {
+		if ( $declaration->property !== 'filter' ) {
+			$new_set[] = $declaration;
+			continue;
+		}
+		$list = array_map( 'trim', explode( ',', $declaration->value ) );
+		foreach ( $list as &$item ) {
+			if ( 
+				strpos( $item, $filter_prefix ) !== 0 and 
+				strpos( $item, 'alpha' ) !== 0 // Shortcut syntax permissable on alpha
+			) {
+				$item = $filter_prefix . ucfirst( $item );
 			}
-			list( $dir, $col1, $col2 ) = $args;
-			// Dropped support for IE since the IE filter spoils text rendering
-			$out = "
-				background-color:{$col1};
-				background-image: -webkit-gradient(
-					linear, left top, left bottom, color-stop( 0, {$col1} ), color-stop( 1, {$col2} ));
-				background-image:-moz-linear-gradient(top, {$col1}, {$col2});
-				background-image:linear-gradient(top, {$col1}, {$col2});";
-			return preg_replace( "#\s+#", ' ', $out );
 		}
-		return false;
+		$declaration->value = implode( ',', $list );
+		if ( !$rule->hasProperty( 'zoom' ) ) {
+			// Filters need hazLayout
+			$new_set[] = $rule->createDeclaration( 'zoom', 1 );
+		}
+		$new_set[] = $declaration;
+		$new_set[] = $rule->createDeclaration( '-ms-filter', "\"$declaration->value\"" );
 	}
+	$rule->declarations = $new_set;
 }
+
+
+################################################################################################
+########  Display:box
+
+CssCrush::addRuleMacro( 'csscrush_display_box' );
+
+########
+
+function csscrush_display_box ( $rule ) {
+	if ( !$rule->hasProperty( 'display' ) ) {
+		return;
+	}
+	$new_set = array();
+	foreach ( $rule as $declaration ) {
+		$is_display = $declaration->property === 'display';
+		if ( !$is_display or ( $is_display and $declaration->value !== 'box' ) ) {
+			$new_set[] = $declaration;
+			continue;
+		}
+		$new_set[] = $rule->createDeclaration( 'display', '-webkit-box' );
+		$new_set[] = $rule->createDeclaration( 'display', '-moz-box' );
+		$new_set[] = $declaration;
+	}
+	$rule->declarations = $new_set;
+}
+
