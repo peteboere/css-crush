@@ -22,7 +22,7 @@ Quick start
 Submitting bugs
 ===================================
 
-If you think you've found a bug, please visit the Issue tracker (https://github.com/peteboere/css-crush/issues) and create an issue explaining the problem and expected result.
+If you think you've found a bug, please visit the Issue tracker — https://github.com/peteboere/css-crush/issues — and create an issue explaining the problem and expected result.
 
 
 Submitting patches

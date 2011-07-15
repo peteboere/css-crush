@@ -18,8 +18,8 @@
  */
 class CssCrush {
 
-	protected static $config;
-	protected static $location;
+	public static $config;
+	public static $location;
 	public static $aliases;
 	public static $macros;
 
@@ -27,9 +27,9 @@ class CssCrush {
 	protected static $assetsLoaded = false;
 
 	// Properties available to each 'file' process
+	public static $storage;
 	protected static $options;
 	protected static $compileName;
-	protected static $storage;
 	protected static $tokenUID;
 
 	// Pattern matching
@@ -56,7 +56,7 @@ class CssCrush {
 		),
 		'function'    => array(
 			'var'     => '!([^a-z0-9_-])var\(\s*([a-z0-9_-]+)\s*\)!i',
-			'custom'  => '!(^|[^a-z0-9_-])(math|floor|round|ceil|percent|pc)?(___p\d+___)!i',
+			'custom'  => '!(^|[^a-z0-9_-])(math|floor|round|ceil|percent|pc|data-uri)?(___p\d+___)!i',
 			'match'   => '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i',
 		),
 		'vendorPrefix' => '!^-([a-z]+)-([a-z-]+)!',
@@ -815,10 +815,10 @@ TPL;
 		// Only store rules with declarations
 		if ( !empty( $rule->declarations ) ) {
 
-			$rule->expandSelectors();
 			$rule->addPropertyAliases();
 			$rule->addFunctionAliases();
 			$rule->applyMacros();
+			$rule->expandSelectors();
 
 			$label = self::createTokenLabel( 'r' );
 			self::$storage->tokens->rules[ $label ] = $rule;
@@ -1079,6 +1079,16 @@ class CssCrush_rule implements IteratorAggregate {
 
 		// Parse the selectors chunk
 		if ( !empty( $selector_string ) ) {
+			
+			$selector_adjustments = array(
+				// 'Hocus' pseudo class shorthand 
+				'!:hocus([^a-z0-9_-])!' => ':any(:hover,:focus)$1',
+				// Reduce double colon syntax for backwards compatability
+				'!::(after|before|first-letter|first-line)!' => ':$1',
+			);
+			$selector_string = preg_replace( 
+				array_keys( $selector_adjustments ), array_values( $selector_adjustments ), $selector_string );
+			
 			$selectors_match = CssCrush::splitDelimList( $selector_string, ',' );
 			$this->parens += $selectors_match->matches;
 
@@ -1378,7 +1388,7 @@ class CssCrush_rule implements IteratorAggregate {
 	public static function css_fn ( $match ) {
 
 		$before_char = $match[1];
-		$fn_name = $match[2];
+		$fn_name = str_replace( '-', '', $match[2] );
 		$paren_id = $match[3];
 
 		if ( !isset( self::$storage->tmpParens[ $paren_id ] ) ) {
@@ -1386,7 +1396,7 @@ class CssCrush_rule implements IteratorAggregate {
 		}
 		// Get input value and trim parens
 		$input = self::$storage->tmpParens[ $paren_id ];
-		$input = substr( $input, 1, strlen( $input ) - 2 );
+		$input = trim( substr( $input, 1, strlen( $input ) - 2 ) );
 		
 		// An empty function name defaults to math
 		if ( empty( $fn_name ) ) {
@@ -1434,6 +1444,65 @@ class CssCrush_rule implements IteratorAggregate {
 
 	protected static function css_fn_round ( $input ) {
 		return round( self::css_fn_math( $input ) );
+	}
+
+	protected static function css_fn_datauri ( $input ) {
+		
+		// Normalize, since argument might be a string token
+		if ( strpos( $input, '___s' ) === 0 ) {
+			$string_labels = array_keys( CssCrush::$storage->tokens->strings );
+			$string_values = array_values( CssCrush::$storage->tokens->strings );
+			$input = trim( str_replace( $string_labels, $string_values, $input ), '\'"`' );
+		}
+		
+		// Default return value
+		$result = "url($input)";
+		
+		// No attempt to process absolute urls
+		if ( 
+			strpos( $input, 'http://' ) === 0 or
+			strpos( $input, 'https://' ) === 0
+		) {
+			return $result;
+		}
+		
+		// Get system file path
+		if ( strpos( $input, '/' ) === 0 ) {
+			$file = CssCrush::$config->docRoot . $input;
+		}
+		else {
+			$baseDir = CssCrush::$config->baseDir;
+			$file = "$baseDir/$input";
+		}
+		// csscrush::log($file);
+		
+		// File not found
+		if ( !file_exists( $file ) ) {
+			return $result;
+		}
+
+		$file_ext = pathinfo( $file, PATHINFO_EXTENSION );
+
+		// Only allow certain extensions
+		$allowed_file_extensions = array(
+			'woff' => 'font/woff;charset=utf-8',
+			'ttf'  => 'font/truetype;charset=utf-8',
+			'gif'  => 'image/gif',
+			'jpeg' => 'image/jpg',
+			'jpg'  => 'image/jpg',
+			'png'  => 'image/png',
+		);
+		if ( !array_key_exists( $file_ext, $allowed_file_extensions ) ) {
+			return $result;
+		}
+
+		$mime_type = $allowed_file_extensions[ $file_ext ];
+		$base64 = base64_encode( file_get_contents( $file ) );
+		$data_uri = "data:{$mime_type};base64,$base64";
+		if ( strlen( $data_uri ) > 32000 ) {
+			// Too big for IE
+		}
+		return "url($data_uri)";
 	}
 
 }
