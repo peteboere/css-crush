@@ -3,7 +3,11 @@ CSS Crush
 
 CSS Crush is an extensible PHP based CSS pre-processor that aims to alleviate many of the hacks and workarounds necessary in modern CSS development.
 
-http://peteboere.github.com/css-crush/
+
+Overview
+===================================
+
+http://the-echoplex.net/csscrush
 
 
 Quick start
