@@ -438,6 +438,8 @@ TPL;
 				$comment = "$comment\n";
 			}
 			$output = str_replace( $comment_labels, $comment_values, $output );
+			// Normalize line breaks
+			$output = preg_replace( '!\n{3,}!', "\n\n", $output );
 		}
 
 		// Insert literals
@@ -1193,7 +1195,7 @@ class CssCrush_rule implements IteratorAggregate {
 			if ( isset( $aliasedProperties[ $prop ] ) ) {
 				// There are aliases for the current property
 				foreach ( $aliasedProperties[ $prop ] as $prop_alias ) {
-					if ( $this->hasProperty( $prop_alias ) ) {
+					if ( $this->propertyCount( $prop_alias ) ) {
 						continue;
 					}
 					// If the aliased property hasn't been set manually, we create it
@@ -1362,12 +1364,17 @@ class CssCrush_rule implements IteratorAggregate {
 	############
 	#  Rule API
 
-	public function hasProperty ( $prop ) {
-		return array_key_exists( $prop, $this->properties );
+	public function propertyCount ( $prop ) {
+		if ( array_key_exists( $prop, $this->properties ) ) {
+			return $this->properties[ $prop ];
+		}
+		return 0;
 	}
-
+	
+	// Add property to the rule index keeping track of the count
 	public function addProperty ( $prop ) {
-		$this->properties[ $prop ] = true;
+		$this->properties[ $prop ] = 
+			isset( $this->properties[ $prop ] ) ? $this->properties[ $prop ]++ : 1;
 	}
 
 	public function createDeclaration ( $property, $value, $options = array() ) {
@@ -1381,6 +1388,12 @@ class CssCrush_rule implements IteratorAggregate {
 		return (object) array_merge( $_declaration, $options );
 	}
 
+	// Get a declaration value without paren tokens
+	public function getDeclarationValue ( $declaration ) {
+		$paren_keys = array_keys( $this->parens );
+		$paren_values = array_values( $this->parens );
+		return str_replace( $paren_keys, $paren_values, $declaration->value );
+	}
 
 	############
 	#  Custom functions

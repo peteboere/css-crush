@@ -5,12 +5,24 @@
 
 CssCrush::addRuleMacro( 'csscrush_display_inlineblock' );
 CssCrush::addRuleMacro( 'csscrush_minheight' );
+CssCrush::addRuleMacro( 'csscrush_clip' );
 CssCrush::addRuleMacro( 'csscrush_filter' );
 
 ########
 
+/**
+ * Fix inline-block in IE < 8
+ * 
+ * Before: 
+ *     display: inline-block;
+ * 
+ * After:
+ *     display: inline-block;
+ *     display: inline;
+ *     zoom: 1;
+ */
 function csscrush_display_inlineblock ( $rule ) {
-	if ( !$rule->hasProperty( 'display' ) ) {
+	if ( $rule->propertyCount( 'display' ) < 1 ) {
 		return;
 	}
 	$new_set = array();
@@ -21,15 +33,25 @@ function csscrush_display_inlineblock ( $rule ) {
 			continue;
 		}
 		$new_set[] = $rule->createDeclaration( '*display', 'inline' );
-		if ( !$rule->hasProperty( '*zoom' ) ) {
+		if ( !$rule->propertyCount( '*zoom' ) ) {
 			$new_set[] = $rule->createDeclaration( '*zoom', 1 );
 		}
 	}
 	$rule->declarations = $new_set;
 }
 
+/**
+ * Fix min-height in IE 6
+ * 
+ * Before: 
+ *     min-height: 100px;
+ * 
+ * After:
+ *     min-height: 100px;
+ *     _height: 100px;
+ */
 function csscrush_minheight ( $rule ) {
-	if ( !$rule->hasProperty( 'min-height' ) ) {
+	if ( $rule->propertyCount( 'min-height' ) < 1 ) {
 		return;
 	}
 	$new_set = array();
@@ -43,8 +65,38 @@ function csscrush_minheight ( $rule ) {
 	$rule->declarations = $new_set;
 }
 
+/**
+ * Fix clip syntax for IE < 8
+ * 
+ * Before: 
+ *     clip: rect(1px,1px,1px,1px);
+ * 
+ * After:
+ *     clip: rect(1px,1px,1px,1px);
+ *     *clip: rect(1px 1px 1px 1px);
+ */
+function csscrush_clip ( $rule ) {
+	// Assume it's been dealt with if the property occurs more than once 
+	if ( $rule->propertyCount( 'clip' ) !== 1 ) {
+		return;
+	}
+	$new_set = array();
+	foreach ( $rule as $declaration ) {
+		$new_set[] = $declaration;
+		if ( $declaration->property !== 'clip' ) {
+			continue;
+		}
+		$new_set[] = $rule->createDeclaration( 
+						'*clip', str_replace( ',', ' ', $rule->getDeclarationValue( $declaration ) ) );
+	}
+	$rule->declarations = $new_set;
+}
+
+/**
+ * IE filter without the cruft
+ */
 function csscrush_filter ( $rule ) {
-	if ( !$rule->hasProperty( 'filter' ) ) {
+	if ( $rule->propertyCount( 'filter' ) < 1 ) {
 		return;
 	}
 	$filter_prefix = 'progid:DXImageTransform.Microsoft.';
@@ -64,7 +116,7 @@ function csscrush_filter ( $rule ) {
 			}
 		}
 		$declaration->value = implode( ',', $list );
-		if ( !$rule->hasProperty( 'zoom' ) ) {
+		if ( !$rule->propertyCount( 'zoom' ) ) {
 			// Filters need hazLayout
 			$new_set[] = $rule->createDeclaration( 'zoom', 1 );
 		}
@@ -82,8 +134,11 @@ CssCrush::addRuleMacro( 'csscrush_display_box' );
 
 ########
 
+/**
+ * Prefixed values on `display:box`
+ */
 function csscrush_display_box ( $rule ) {
-	if ( !$rule->hasProperty( 'display' ) ) {
+	if ( $rule->propertyCount( 'display' ) < 1 ) {
 		return;
 	}
 	$new_set = array();
