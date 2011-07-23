@@ -821,6 +821,7 @@ TPL;
 			$rule->addFunctionAliases();
 			$rule->applyMacros();
 			$rule->expandSelectors();
+			self::log( $rule->properties );
 
 			$label = self::createTokenLabel( 'r' );
 			self::$storage->tokens->rules[ $label ] = $rule;
@@ -1373,8 +1374,12 @@ class CssCrush_rule implements IteratorAggregate {
 	
 	// Add property to the rule index keeping track of the count
 	public function addProperty ( $prop ) {
-		$this->properties[ $prop ] = 
-			isset( $this->properties[ $prop ] ) ? $this->properties[ $prop ]++ : 1;
+		if ( isset( $this->properties[ $prop ] ) ) {
+			$this->properties[ $prop ]++;
+		}
+		else {
+			$this->properties[ $prop ] = 1;
+		}
 	}
 
 	public function createDeclaration ( $property, $value, $options = array() ) {
