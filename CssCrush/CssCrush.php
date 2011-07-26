@@ -55,7 +55,7 @@ class CssCrush {
 			'paren'   => '!___p\d+___!',
 		),
 		'function'    => array(
-			'var'     => '!([^a-z0-9_-])var\(\s*([a-z0-9_-]+)\s*\)!i',
+			'var'     => '!([^a-z0-9_-])(?:var\(\s*([a-z0-9_-]+)\s*\)|\$([a-z0-9_-]+))!i',
 			'custom'  => '!(^|[^a-z0-9_-])(math|floor|round|ceil|percent|pc|data-uri)?(___p\d+___)!i',
 			'match'   => '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i',
 		),
@@ -821,7 +821,6 @@ TPL;
 			$rule->addFunctionAliases();
 			$rule->applyMacros();
 			$rule->expandSelectors();
-			self::log( $rule->properties );
 
 			$label = self::createTokenLabel( 'r' );
 			self::$storage->tokens->rules[ $label ] = $rule;
@@ -869,7 +868,16 @@ TPL;
 
 	protected static function cb_placeVariables ( $match ) {
 		$before_char = $match[1];
-		$variable_name = $match[2];
+		
+		// Check for dollar shorthand
+		if ( empty( $match[2] ) and isset( $match[3] ) and strpos( $match[0], '$' ) !== false ) {
+			$variable_name = $match[3];
+		}
+		else {
+			$variable_name = $match[2];
+		}
+		
+		self::log( $match );
 		if ( isset( self::$storage->variables[ $variable_name ] ) ) {
 			return $before_char . self::$storage->variables[ $variable_name ];
 		}
@@ -1440,9 +1448,18 @@ class CssCrush_rule implements IteratorAggregate {
 		$parts = array_map( 'trim', explode( ',', $input ) );
 		$parts = array_filter( $parts, 'is_numeric' );
 		
+		// Use precision argument if it exists, default to 7
+		$precision = isset( $parts[2] ) ? $parts[2] : 7;
+		
 		$result = 0;
 		if ( count( $parts ) > 1 ) {
-			$result = ( $parts[0] / $parts[1] ) * 100;
+			// Arbitary high precision division
+			$div = (string) bcdiv( $parts[0], $parts[1], 25 );
+			// Set precision percentage value
+			$result = (string) bcmul( $div, '100', $precision );
+			// Trim unnecessary zeros and decimals
+			$result = trim( $result, '0' );
+			$result = rtrim( $result, '.' );
 		}
 		return $result . '%';
 	}
