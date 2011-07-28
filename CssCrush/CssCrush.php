@@ -205,13 +205,17 @@ class CssCrush {
 		$hostfile = new stdClass;
 		$hostfile->name = basename( $file );
 		$hostfile->path = "{$config->baseDir}/{$hostfile->name}";
-		$hostfile->mtime = filemtime( $hostfile->path );
 
 		if ( !file_exists( $hostfile->path ) ) {
-			// If host file doesn't exist return an empty string
+			// If host file is not found return an empty string
+			self::triggerWarning( "File \"$hostfile->name\" not found", __METHOD__ );
 			return '';
 		}
-
+		else {
+			// Capture the modified time
+			$hostfile->mtime = filemtime( $hostfile->path );
+		}
+		
 		self::parseOptions( $options );
 
 		// Compiled filename we're searching for
