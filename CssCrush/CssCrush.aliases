@@ -101,6 +101,10 @@
 	box-flex[] = -webkit-box-flex
 	box-flex[] = -moz-box-flex
 
+	; Hyphens
+	hyphens[] = -webkit-hyphens
+	hyphens[] = -moz-hyphens
+
 
 ;----------------------------------------------------------------------------
 ;-- Function aliases
