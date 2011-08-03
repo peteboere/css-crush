@@ -74,8 +74,9 @@ class CssCrush {
 		$config->baseDir = null;
 		$config->baseURL = null;
 
-		// workaround trailing slash issues
-		$config->docRoot = rtrim( $_SERVER[ 'DOCUMENT_ROOT' ], DIRECTORY_SEPARATOR );
+		// Normalized document root reference to workaround trailing slash issues and OS differences
+		$docRoot = str_replace( '\\', '/', $_SERVER[ 'DOCUMENT_ROOT' ] );
+		$config->docRoot = $docRoot = rtrim( $docRoot, '/' );
 
 		// Convert to objects for ease of use
 		self::$regex = (object) self::$regex;
@@ -184,7 +185,7 @@ class CssCrush {
 
 		// Since we're comparing strings, we need to iron out OS differences
 		$file = str_replace( '\\', '/', $file );
-		$docRoot = $config->docRoot = str_replace( '\\', '/', $config->docRoot );
+		$docRoot = $config->docRoot;
 
 		if ( strpos( $file, $docRoot ) === 0 ) {
 			// System path
