@@ -73,9 +73,11 @@ class CssCrush {
 		$config->path = null;
 		$config->baseDir = null;
 		$config->baseURL = null;
-
-		// Normalized document root reference to workaround trailing slash issues and OS differences
-		$docRoot = str_replace( '\\', '/', $_SERVER[ 'DOCUMENT_ROOT' ] );
+		
+		// TODO: document_root fallback for IIS
+		
+		// Normalized document root reference: no symlink, forward slashes, no trailing slashes
+		$docRoot = str_replace( '\\', '/', realpath( $_SERVER[ 'DOCUMENT_ROOT' ] ) );
 		$config->docRoot = $docRoot = rtrim( $docRoot, '/' );
 
 		// Convert to objects for ease of use
