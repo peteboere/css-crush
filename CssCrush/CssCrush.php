@@ -13,7 +13,7 @@
  *   $global_css = CssCrush::file( '/css/global.css' );
  * ?>
  *
- * <link rel="stylesheet" type="text/css" href="<?php echo $global_css; ?>" />
+ * <link rel="stylesheet" href="<?php echo $global_css; ?>" />
  *
  */
 class CssCrush {
@@ -62,7 +62,7 @@ class CssCrush {
 		'vendorPrefix' => '!^-([a-z]+)-([a-z-]+)!',
 	);
 
-	// Init gets called manually post class definition
+	// Init called once manually post class definition
 	public static function init () {
 
 		self::$location = dirname( __FILE__ );
@@ -73,12 +73,19 @@ class CssCrush {
 		$config->path = null;
 		$config->baseDir = null;
 		$config->baseURL = null;
-		
-		// TODO: document_root fallback for IIS
-		
-		// Normalized document root reference: no symlink, forward slashes, no trailing slashes
-		$docRoot = str_replace( '\\', '/', realpath( $_SERVER[ 'DOCUMENT_ROOT' ] ) );
-		$config->docRoot = $docRoot = rtrim( $docRoot, '/' );
+
+		// Get normalized document root reference: no symlink, forward slashes, no trailing slashes
+		$docRoot = null;
+		if ( isset( $_SERVER[ 'DOCUMENT_ROOT' ] ) ) {
+			$docRoot = realpath( $_SERVER[ 'DOCUMENT_ROOT' ] );
+		}
+		else {
+			// Probably IIS
+			$scriptname = $_SERVER[ 'SCRIPT_NAME' ];
+			$fullpath = realpath( basename( $scriptname ) );
+			$docRoot = substr( $fullpath, 0, stripos( $fullpath, $scriptname ) );
+		}
+		$config->docRoot = rtrim( str_replace( '\\', '/', $docRoot ), '/' );
 
 		// Convert to objects for ease of use
 		self::$regex = (object) self::$regex;
@@ -96,11 +103,11 @@ class CssCrush {
 				self::$aliases = $result;
 			}
 			else {
-				self::triggerNotice( 'Aliases file was not parsed correctly', __METHOD__ );
+				trigger_error( __METHOD__ . ": Aliases file was not parsed correctly (syntax error).\n", E_USER_NOTICE );
 			}
 		}
 		else {
-			self::triggerNotice( 'Aliases file not found', __METHOD__ );
+			trigger_error( __METHOD__ . ": Aliases file not found.\n", E_USER_NOTICE );
 		}
 
 		// Load macros file if it exists
@@ -134,29 +141,36 @@ class CssCrush {
 		}
 	}
 
+	// Establish the host file directory and ensure it's writable
 	protected static function setPath ( $new_dir ) {
 		$config = self::$config;
 		$docRoot = $config->docRoot;
 		if ( strpos( $new_dir, $docRoot ) !== 0 ) {
 			// Not a system path
-			$new_dir = realpath( "{$docRoot}/{$new_dir}" );
+			$new_dir = realpath( "$docRoot/$new_dir" );
 		}
+
+		$pathtest = true;
 		if ( !file_exists( $new_dir ) ) {
-			self::triggerError( 'Path "' . $new_dir . '" doesn\'t exist', __METHOD__ );
+			trigger_error( __METHOD__ . ": directory '$new_dir' doesn't exist.\n", E_USER_WARNING );
+			$pathtest = false;
 		}
 		else if ( !is_writable( $new_dir ) ) {
 			self::log( 'Attempting to change permissions' );
-			try {
-				@chmod( $new_dir, 0777 );
+			if ( !chmod( $new_dir, 0777 ) ) {
+				trigger_error( __METHOD__ . ": directory '$new_dir' is unwritable.\n", E_USER_WARNING );
+				self::log( 'Unable to update permissions' );
+				$pathtest = false;
 			}
-			catch ( Exception $ex ) {
-				self::triggerError( 'Directory un-writable', __METHOD__ );
+			else {
+				self::log( 'Permissions updated' );
 			}
-			self::log( 'Permissions updated' );
 		}
-		$config->path = "{$new_dir}/" . $config->file;
+
+		$config->path = "$new_dir/$config->file";
 		$config->baseDir = $new_dir;
 		$config->baseURL = substr( $new_dir, strlen( $docRoot ) );
+		return $pathtest;
 	}
 
 
@@ -189,17 +203,24 @@ class CssCrush {
 		$file = str_replace( '\\', '/', $file );
 		$docRoot = $config->docRoot;
 
+		$pathtest = true;
 		if ( strpos( $file, $docRoot ) === 0 ) {
 			// System path
-			self::setPath( dirname( $file ) );
+			$pathtest = self::setPath( dirname( $file ) );
 		}
 		else if ( strpos( $file, '/' ) === 0 ) {
 			// WWW root path
-			self::setPath( dirname( $docRoot . $file ) );
+			$pathtest = self::setPath( dirname( $docRoot . $file ) );
 		}
 		else {
 			// Relative path
-			self::setPath( dirname( dirname( __FILE__ ) . '/' . $file ) );
+			$pathtest = self::setPath( dirname( dirname( __FILE__ ) . '/' . $file ) );
+		}
+
+		if ( !$pathtest ) {
+			// Main directory not found or is not writable
+			// Return an empty string
+			return '';
 		}
 
 		self::loadConfig();
@@ -207,18 +228,18 @@ class CssCrush {
 		// Make basic information about the hostfile accessible
 		$hostfile = new stdClass;
 		$hostfile->name = basename( $file );
-		$hostfile->path = "{$config->baseDir}/{$hostfile->name}";
+		$hostfile->path = "$config->baseDir/$hostfile->name";
 
 		if ( !file_exists( $hostfile->path ) ) {
 			// If host file is not found return an empty string
-			self::triggerWarning( "File \"$hostfile->name\" not found", __METHOD__ );
+			trigger_error( __METHOD__ . ": File '$hostfile->name' not found.\n", E_USER_WARNING );
 			return '';
 		}
 		else {
 			// Capture the modified time
 			$hostfile->mtime = filemtime( $hostfile->path );
 		}
-		
+
 		self::parseOptions( $options );
 
 		// Compiled filename we're searching for
@@ -240,12 +261,12 @@ class CssCrush {
 
 		// Add in boilerplate
 		if ( self::$options[ 'boilerplate' ] ) {
-			$output = self::getBoilerplate() . "\n{$output}";
+			$output = self::getBoilerplate() . "\n$output";
 		}
 
 		// Create file and return path. Return empty string on failure
-		if ( file_put_contents( "{$config->baseDir}/" . self::$compileName, $output ) ) {
-			return "{$config->baseURL}/" . self::$compileName . ( self::$options[ 'versioning' ] ? '?' . time() : '' );
+		if ( file_put_contents( "$config->baseDir/" . self::$compileName, $output ) ) {
+			return "$config->baseURL/" . self::$compileName . ( self::$options[ 'versioning' ] ? '?' . time() : '' );
 		}
 		else {
 			return '';
@@ -823,9 +844,10 @@ TPL;
 
 		// Only store rules with declarations
 		if ( !empty( $rule->declarations ) ) {
-
-			$rule->addPropertyAliases();
-			$rule->addFunctionAliases();
+			if ( !empty( self::$aliases ) ) {
+				$rule->addPropertyAliases();
+				$rule->addFunctionAliases();
+			}
 			$rule->applyMacros();
 			$rule->expandSelectors();
 
@@ -875,7 +897,7 @@ TPL;
 
 	protected static function cb_placeVariables ( $match ) {
 		$before_char = $match[1];
-		
+
 		// Check for dollar shorthand
 		if ( empty( $match[2] ) and isset( $match[3] ) and strpos( $match[0], '$' ) !== false ) {
 			$variable_name = $match[3];
@@ -883,7 +905,7 @@ TPL;
 		else {
 			$variable_name = $match[2];
 		}
-		
+
 		self::log( $match );
 		if ( isset( self::$storage->variables[ $variable_name ] ) ) {
 			return $before_char . self::$storage->variables[ $variable_name ];
@@ -980,7 +1002,8 @@ TPL;
 			return false;
 		}
 		if ( substr_count( $str, $open_token ) !== substr_count( $str, $close_token ) ) {
-			self::triggerWarning( 'Unmatched token near: ' . substr( $str, 0, 15 ), __METHOD__  );
+		 	$sample = substr( $str, 0, 15 );
+			trigger_error( __METHOD__ . ": Unmatched token near '$sample'.\n", E_USER_WARNING );
 			return false;
 		}
 
@@ -1017,7 +1040,7 @@ TPL;
 			$close_index = strpos( $str, $close_token, $search_pos );
 		}
 
-		self::triggerWarning( "Reached brake limit of '$brake'. Exiting.", __METHOD__ );
+		trigger_error( __METHOD__ . ": Reached brake limit of '$brake'. Exiting.\n", E_USER_WARNING );
 		return false;
 	}
 
@@ -1045,28 +1068,12 @@ TPL;
 
 	public static function addRuleMacro ( $fn ) {
 		if ( !function_exists( $fn ) ) {
-			self::triggerWarning( "Function '$fn' not defined", __METHOD__ );
+			trigger_error( __METHOD__ . ": Function '$fn' not defined.\n", E_USER_WARNING );
 			return;
 		}
 		if ( !in_array( $fn, self::$macros ) ) {
 			self::$macros[] = $fn;
 		}
-	}
-
-
-	#########
-	#  Errors
-
-	public static function triggerWarning ( $message, $method = 'unspecified' ) {
-		trigger_error( "$method : $message", E_USER_WARNING );
-	}
-
-	public static function triggerNotice ( $message, $method = 'unspecified' ) {
-		trigger_error( "$method : $message", E_USER_NOTICE );
-	}
-
-	public static function triggerError ( $message, $method = 'unspecified' ) {
-		trigger_error( "$method : $message", E_USER_ERROR );
 	}
 
 }
@@ -1097,16 +1104,16 @@ class CssCrush_rule implements IteratorAggregate {
 
 		// Parse the selectors chunk
 		if ( !empty( $selector_string ) ) {
-			
+
 			$selector_adjustments = array(
-				// 'Hocus' pseudo class shorthand 
+				// 'Hocus' pseudo class shorthand
 				'!:hocus([^a-z0-9_-])!' => ':any(:hover,:focus)$1',
 				// Reduce double colon syntax for backwards compatability
 				'!::(after|before|first-letter|first-line)!' => ':$1',
 			);
-			$selector_string = preg_replace( 
+			$selector_string = preg_replace(
 				array_keys( $selector_adjustments ), array_values( $selector_adjustments ), $selector_string );
-			
+
 			$selectors_match = CssCrush::splitDelimList( $selector_string, ',' );
 			$this->parens += $selectors_match->matches;
 
@@ -1386,7 +1393,7 @@ class CssCrush_rule implements IteratorAggregate {
 		}
 		return 0;
 	}
-	
+
 	// Add property to the rule index keeping track of the count
 	public function addProperty ( $prop ) {
 		if ( isset( $this->properties[ $prop ] ) ) {
@@ -1430,7 +1437,7 @@ class CssCrush_rule implements IteratorAggregate {
 		// Get input value and trim parens
 		$input = self::$storage->tmpParens[ $paren_id ];
 		$input = trim( substr( $input, 1, strlen( $input ) - 2 ) );
-		
+
 		// An empty function name defaults to math
 		if ( empty( $fn_name ) ) {
 			$fn_name = 'math';
@@ -1448,16 +1455,16 @@ class CssCrush_rule implements IteratorAggregate {
 		catch ( Exception $e ) {};
 		return round( $result, 10 );
 	}
-	
+
 	protected static function css_fn_percent ( $input ) {
 		// Whitelist allowed characters
 		$input = preg_replace( '![^\.0-9,]!', '', $input );
 		$parts = array_map( 'trim', explode( ',', $input ) );
 		$parts = array_filter( $parts, 'is_numeric' );
-		
+
 		// Use precision argument if it exists, default to 7
 		$precision = isset( $parts[2] ) ? $parts[2] : 7;
-		
+
 		$result = 0;
 		if ( count( $parts ) > 1 ) {
 			// Arbitary high precision division
@@ -1470,7 +1477,7 @@ class CssCrush_rule implements IteratorAggregate {
 		}
 		return $result . '%';
 	}
-	
+
 	// Percent function alias
 	protected static function css_fn_pc ( $input ) {
 		return self::css_fn_percent( $input );
@@ -1489,25 +1496,25 @@ class CssCrush_rule implements IteratorAggregate {
 	}
 
 	protected static function css_fn_datauri ( $input ) {
-		
+
 		// Normalize, since argument might be a string token
 		if ( strpos( $input, '___s' ) === 0 ) {
 			$string_labels = array_keys( CssCrush::$storage->tokens->strings );
 			$string_values = array_values( CssCrush::$storage->tokens->strings );
 			$input = trim( str_replace( $string_labels, $string_values, $input ), '\'"`' );
 		}
-		
+
 		// Default return value
 		$result = "url($input)";
-		
+
 		// No attempt to process absolute urls
-		if ( 
+		if (
 			strpos( $input, 'http://' ) === 0 or
 			strpos( $input, 'https://' ) === 0
 		) {
 			return $result;
 		}
-		
+
 		// Get system file path
 		if ( strpos( $input, '/' ) === 0 ) {
 			$file = CssCrush::$config->docRoot . $input;
@@ -1517,7 +1524,7 @@ class CssCrush_rule implements IteratorAggregate {
 			$file = "$baseDir/$input";
 		}
 		// csscrush::log($file);
-		
+
 		// File not found
 		if ( !file_exists( $file ) ) {
 			return $result;
