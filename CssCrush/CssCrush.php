@@ -1227,6 +1227,7 @@ class CssCrush_rule implements IteratorAggregate {
 					$copy->property = $prop_alias;
 					// Remembering to set the vendor property
 					$copy->vendor = null;
+					// Increment the property count
 					$this->addProperty( $prop_alias );
 					if ( preg_match( $regex->vendorPrefix, $prop_alias, $vendor ) ) {
 						$copy->vendor = $vendor[1];
@@ -1309,6 +1310,8 @@ class CssCrush_rule implements IteratorAggregate {
 							$copy->value
 						);
 						$new_set[] = $copy;
+						// Increment the property count
+						$this->addProperty( $copy->property );
 					}
 				}
 			}
@@ -1422,8 +1425,22 @@ class CssCrush_rule implements IteratorAggregate {
 		return str_replace( $paren_keys, $paren_values, $declaration->value );
 	}
 
+
 	############
 	#  Custom functions
+
+	protected static function css_parse_math_args ( $argument_string ) {
+		// Split on comma, trim, and remove empties
+		$args = array_filter( array_map( 'trim', explode( ',', $argument_string ) ) );
+
+		// Pass anything non-numeric through math
+		foreach ( $args as &$arg ) {
+			if ( preg_match( '![^\.0-9]!', $arg ) ) {
+				$arg = self::css_fn_math( $arg );
+			}
+		}
+		return $args;
+	}
 
 	public static function css_fn ( $match ) {
 
@@ -1457,18 +1474,16 @@ class CssCrush_rule implements IteratorAggregate {
 	}
 
 	protected static function css_fn_percent ( $input ) {
-		// Whitelist allowed characters
-		$input = preg_replace( '![^\.0-9,]!', '', $input );
-		$parts = array_map( 'trim', explode( ',', $input ) );
-		$parts = array_filter( $parts, 'is_numeric' );
+
+		$args = self::css_parse_math_args( $input );
 
 		// Use precision argument if it exists, default to 7
-		$precision = isset( $parts[2] ) ? $parts[2] : 7;
+		$precision = isset( $args[2] ) ? $args[2] : 7;
 
 		$result = 0;
-		if ( count( $parts ) > 1 ) {
+		if ( count( $args ) > 1 ) {
 			// Arbitary high precision division
-			$div = (string) bcdiv( $parts[0], $parts[1], 25 );
+			$div = (string) bcdiv( $args[0], $args[1], 25 );
 			// Set precision percentage value
 			$result = (string) bcmul( $div, '100', $precision );
 			// Trim unnecessary zeros and decimals
