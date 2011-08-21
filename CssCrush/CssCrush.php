@@ -56,7 +56,7 @@ class CssCrush {
 		),
 		'function'    => array(
 			'var'     => '!([^a-z0-9_-])(?:var\(\s*([a-z0-9_-]+)\s*\)|\$([a-z0-9_-]+))!i',
-			'custom'  => '!(^|[^a-z0-9_-])(math|floor|round|ceil|percent|pc|data-uri)?(___p\d+___)!i',
+			'custom'  => '!(^|[^a-z0-9_-])(math|floor|round|ceil|percent|pc|data-uri|-)?(___p\d+___)!i',
 			'match'   => '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i',
 		),
 		'vendorPrefix' => '!^-([a-z]+)-([a-z-]+)!',
@@ -1429,13 +1429,13 @@ class CssCrush_rule implements IteratorAggregate {
 	############
 	#  Custom functions
 
-	protected static function css_parse_math_args ( $argument_string ) {
+	protected static function parseMathArgs ( $argument_string ) {
 		// Split on comma, trim, and remove empties
 		$args = array_filter( array_map( 'trim', explode( ',', $argument_string ) ) );
 
 		// Pass anything non-numeric through math
 		foreach ( $args as &$arg ) {
-			if ( preg_match( '![^\.0-9]!', $arg ) ) {
+			if ( !preg_match( '!^-?[\.0-9]+$!', $arg ) ) {
 				$arg = self::css_fn_math( $arg );
 			}
 		}
@@ -1445,7 +1445,8 @@ class CssCrush_rule implements IteratorAggregate {
 	public static function css_fn ( $match ) {
 
 		$before_char = $match[1];
-		$fn_name = str_replace( '-', '', $match[2] );
+		$fn_name = $match[2];
+		$fn_name_clean = str_replace( '-', '', $fn_name );
 		$paren_id = $match[3];
 
 		if ( !isset( self::$storage->tmpParens[ $paren_id ] ) ) {
@@ -1456,10 +1457,14 @@ class CssCrush_rule implements IteratorAggregate {
 		$input = trim( substr( $input, 1, strlen( $input ) - 2 ) );
 
 		// An empty function name defaults to math
-		if ( empty( $fn_name ) ) {
-			$fn_name = 'math';
+		if ( empty( $fn_name_clean ) ) {
+			$fn_name_clean = 'math';
 		}
-		return $before_char . call_user_func( array( 'self', "css_fn_$fn_name" ), $input );
+		// Capture a negative sign e.g -( 20 * 2 )
+		if ( $fn_name === '-' ) {
+			$before_char .= '-';
+		}
+		return $before_char . call_user_func( array( 'self', "css_fn_$fn_name_clean" ), $input );
 	}
 
 	protected static function css_fn_math ( $input ) {
@@ -1475,7 +1480,7 @@ class CssCrush_rule implements IteratorAggregate {
 
 	protected static function css_fn_percent ( $input ) {
 
-		$args = self::css_parse_math_args( $input );
+		$args = self::parseMathArgs( $input );
 
 		// Use precision argument if it exists, default to 7
 		$precision = isset( $args[2] ) ? $args[2] : 7;
