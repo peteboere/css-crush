@@ -18,10 +18,17 @@
  */
 class CssCrush {
 
+	// Path information, global settings
 	public static $config;
+	
+	// The path of this script
 	public static $location;
-	public static $aliases;
-	public static $macros;
+	
+	// Aliases from the aliases file
+	public static $aliases = array();
+	
+	// Macro function names
+	public static $macros = array();
 
 	public static $COMPILE_SUFFIX = '.crush.css';
 	protected static $assetsLoaded = false;
@@ -32,7 +39,7 @@ class CssCrush {
 	protected static $compileName;
 	protected static $tokenUID;
 
-	// Pattern matching
+	// Regular expressions
 	public static $regex = array(
 		'import'      => '!
 			@import\s+    # import at-rule
@@ -87,7 +94,7 @@ class CssCrush {
 		}
 		$config->docRoot = rtrim( str_replace( '\\', '/', $docRoot ), '/' );
 
-		// Convert to objects for ease of use
+		// Casting to objects for ease of use
 		self::$regex = (object) self::$regex;
 		self::$regex->token = (object) self::$regex->token;
 		self::$regex->function = (object) self::$regex->function;
@@ -101,6 +108,17 @@ class CssCrush {
 		if ( file_exists( $aliases_file ) ) {
 			if ( $result = parse_ini_file( $aliases_file, true ) ) {
 				self::$aliases = $result;
+				
+				// Value aliases require a little preprocessing
+				if ( isset( self::$aliases[ 'values' ] ) ) {
+					$store = array();
+					foreach ( self::$aliases[ 'values' ] as $prop_val => $aliases ) {
+						list( $prop, $value ) = array_map( 'trim', explode( ':', $prop_val ) );
+						$store[ $prop ][ $value ] = $aliases;
+					}
+					self::$aliases[ 'values' ] = $store;
+					self::log( $store );
+				}
 			}
 			else {
 				trigger_error( __METHOD__ . ": Aliases file was not parsed correctly (syntax error).\n", E_USER_NOTICE );
@@ -111,7 +129,6 @@ class CssCrush {
 		}
 
 		// Load macros file if it exists
-		self::$macros = array();
 		$macros_file = self::$location . '/' . __CLASS__ . '.macros.php';
 		if ( file_exists( $macros_file ) ) {
 			require_once $macros_file;
@@ -375,9 +392,14 @@ TPL;
 	protected static function parseOptions ( $options ) {
 		// Create default options for those not set
 		$option_defaults = array(
+			// Minify. Set true for formatting and comments
 			'debug'       => false,
+			// Append 'checksum' to output file name
 			'versioning'  => true,
+			// Use the template boilerplate
 			'boilerplate' => true,
+			// Variables passed in at runtime
+			'vars'        => array(),
 		);
 		self::$options = is_array( $options ) ?
 			array_merge( $option_defaults, $options ) : $option_defaults;
@@ -399,7 +421,11 @@ TPL;
 		// Parse variables
 		$output = preg_replace_callback( $regex->variables, array( 'self', 'cb_extractVariables' ), $output );
 
-		// self::log( self::$storage->variables );
+		// Overriding variables
+		if ( !empty( self::$options[ 'vars' ] ) ) {
+			self::$storage->variables = array_merge(
+				self::$storage->variables, self::$options[ 'vars' ] );
+		}
 
 		// Place variables
 		$output = preg_replace_callback( $regex->function->var, array( 'self', 'cb_placeVariables' ), $output );
@@ -493,8 +519,8 @@ TPL;
 
 			$existingfile = new stdClass;
 			$existingfile->name = $filename;
-			$existingfile->path = "{$config->baseDir}/{$existingfile->name}";
-			$existingfile->URL = "{$config->baseURL}/{$existingfile->name}";
+			$existingfile->path = "$config->baseDir/$existingfile->name";
+			$existingfile->URL = "$config->baseURL/$existingfile->name";
 
 			// Start off with the host file then add imported files
 			$all_files = array( $hostfile->mtime );
@@ -525,7 +551,7 @@ TPL;
 				) {
 					// Files have not been modified and config is the same: return the old file
 					self::log( "Files have not been modified, returning existing
-						 file '{$existingfile->URL}'" );
+						 file '$existingfile->URL'" );
 					return $existingfile->URL .	( self::$options[ 'versioning' ] !== false  ? "?{$existing_datesum}" : '' );
 				}
 				else {
@@ -847,6 +873,7 @@ TPL;
 			if ( !empty( self::$aliases ) ) {
 				$rule->addPropertyAliases();
 				$rule->addFunctionAliases();
+				$rule->addValueAliases();
 			}
 			$rule->applyMacros();
 			$rule->expandSelectors();
@@ -1106,8 +1133,9 @@ class CssCrush_rule implements IteratorAggregate {
 		if ( !empty( $selector_string ) ) {
 
 			$selector_adjustments = array(
-				// 'Hocus' pseudo class shorthand
+				// 'hocus' and 'pocus' pseudo class shorthand
 				'!:hocus([^a-z0-9_-])!' => ':any(:hover,:focus)$1',
+				'!:pocus([^a-z0-9_-])!' => ':any(:hover,:focus,:active)$1',
 				// Reduce double colon syntax for backwards compatability
 				'!::(after|before|first-letter|first-line)!' => ':$1',
 			);
@@ -1208,7 +1236,7 @@ class CssCrush_rule implements IteratorAggregate {
 		// First test for the existence of any aliased properties
 		$intersect = array_intersect( array_keys( $aliasedProperties ), array_keys( $this->properties ) );
 		if ( empty( $intersect ) ) {
-			return $this;
+			return;
 		}
 
 		// Shim in aliased properties
@@ -1240,8 +1268,6 @@ class CssCrush_rule implements IteratorAggregate {
 		}
 		// Re-assign
 		$this->declarations = $new_set;
-
-		return $this;
 	}
 
 	public function addFunctionAliases () {
@@ -1250,7 +1276,7 @@ class CssCrush_rule implements IteratorAggregate {
 		$aliased_functions = array_keys( $function_aliases );
 
 		if ( empty( $aliased_functions ) ) {
-			return $this;
+			return;
 		}
 
 		$new_set = array();
@@ -1320,8 +1346,39 @@ class CssCrush_rule implements IteratorAggregate {
 
 		// Re-assign
 		$this->declarations = $new_set;
+	}
 
-		return $this;
+	public function addValueAliases () {
+
+		$aliasedValues =& CssCrush::$aliases[ 'values' ];
+		
+		// First test for the existence of any aliased properties
+		$intersect = array_intersect( array_keys( $aliasedValues ), array_keys( $this->properties ) );
+		
+		if ( empty( $intersect ) ) {
+			return;
+		}
+
+		$new_set = array();
+		foreach ( $this->declarations as $declaration ) {
+			foreach ( $aliasedValues as $value_prop => $value_aliases ) {
+				if ( $this->propertyCount( $value_prop ) < 1 ) {
+					continue;
+				}
+				foreach ( $value_aliases as $value => $aliases ) {
+					if ( $declaration->value === $value ) {
+						foreach ( $aliases as $alias ) {
+							$copy = clone $declaration;
+							$copy->value = $alias;
+							$new_set[] = $copy;
+						}
+					}
+				}
+			}
+			$new_set[] = $declaration;
+		}
+		// Re-assign
+		$this->declarations = $new_set;
 	}
 
 	public function applyMacros () {

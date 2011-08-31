@@ -1,25 +1,34 @@
-<?php 
+<?php
 
 ################################################################################################
-########  IE Legacy
+# Comment out/in as required
 
-CssCrush::addRuleMacro( 'csscrush_display_inlineblock' );
+// IE 6 shims
 CssCrush::addRuleMacro( 'csscrush_minheight' );
+
+// IE 6/7 shims
 CssCrush::addRuleMacro( 'csscrush_clip' );
+CssCrush::addRuleMacro( 'csscrush_display_inlineblock' );
+
+// IE filter
 CssCrush::addRuleMacro( 'csscrush_filter' );
 
-########
+// RGBA fallback
+CssCrush::addRuleMacro( 'csscrush_rgba' );
+
+
+################################################################################################
 
 /**
- * Fix inline-block in IE < 8
+ * Simulate inline-block in IE < 8
  * 
  * Before: 
  *     display: inline-block;
  * 
  * After:
  *     display: inline-block;
- *     display: inline;
- *     zoom: 1;
+ *     *display: inline;
+ *     *zoom: 1;
  */
 function csscrush_display_inlineblock ( $rule ) {
 	if ( $rule->propertyCount( 'display' ) < 1 ) {
@@ -33,9 +42,7 @@ function csscrush_display_inlineblock ( $rule ) {
 			continue;
 		}
 		$new_set[] = $rule->createDeclaration( '*display', 'inline' );
-		if ( !$rule->propertyCount( '*zoom' ) ) {
-			$new_set[] = $rule->createDeclaration( '*zoom', 1 );
-		}
+		$new_set[] = $rule->createDeclaration( '*zoom', 1 );
 	}
 	$rule->declarations = $new_set;
 }
@@ -126,30 +133,49 @@ function csscrush_filter ( $rule ) {
 	$rule->declarations = $new_set;
 }
 
-
-################################################################################################
-########  Display:box
-
-CssCrush::addRuleMacro( 'csscrush_display_box' );
-
-########
-
 /**
- * Prefixed values on `display:box`
+ * RGBA fallback
+ * Only works with background shorthand IE < 8 
+ * (http://css-tricks.com/2151-rgba-browser-support/)
+ * 
+ * Before: 
+ *     background: rgba(0,0,0,.5);
+ * 
+ * After:
+ *     background: rgb(0,0,0);
+ *     background: rgba(0,0,0,.5);
  */
-function csscrush_display_box ( $rule ) {
-	if ( $rule->propertyCount( 'display' ) < 1 ) {
+function csscrush_rgba ( $rule ) {
+	$props = array_keys( $rule->properties );
+
+	// Determine which properties apply
+	$rgba_props = array();
+	foreach ( $props as $prop ) {
+		if ( $prop === 'background' or strpos( $prop, 'color' ) !== false ) {
+			$rgba_props[] = $prop;
+		}
+	}
+	if ( empty( $rgba_props ) ) {
 		return;
 	}
+
 	$new_set = array();
 	foreach ( $rule as $declaration ) {
-		$is_display = $declaration->property === 'display';
-		if ( !$is_display or ( $is_display and $declaration->value !== 'box' ) ) {
+		$is_viable = in_array( $declaration->property, $rgba_props );
+		if ( 
+			!$is_viable or 
+			$is_viable and !preg_match( '!^rgba___p\d+___$!', $declaration->value )
+		) {
 			$new_set[] = $declaration;
 			continue;
 		}
-		$new_set[] = $rule->createDeclaration( 'display', '-webkit-box' );
-		$new_set[] = $rule->createDeclaration( 'display', '-moz-box' );
+		// Create rgb value from rgba
+		$raw_value = $rule->getDeclarationValue( $declaration );
+		$raw_value = substr( $raw_value, 5, strlen( $raw_value ) - 1 );
+		list( $r, $g, $b, $a ) = explode( ',', $raw_value );
+		
+		// Add rgb value to the stack, followed by rgba 
+		$new_set[] = $rule->createDeclaration( $declaration->property, "rgb($r,$g,$b)" );
 		$new_set[] = $declaration;
 	}
 	$rule->declarations = $new_set;
