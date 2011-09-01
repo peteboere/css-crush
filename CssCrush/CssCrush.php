@@ -62,7 +62,12 @@ class CssCrush {
 			'paren'   => '!___p\d+___!',
 		),
 		'function'    => array(
-			'var'     => '!([^a-z0-9_-])(?:var\(\s*([a-z0-9_-]+)\s*\)|\$([a-z0-9_-]+))!i',
+			'var'     => '!(?:
+				([^a-z0-9_-])
+				var\(\s*([a-z0-9_-]+)\s*\)
+				|
+				\$\{?([a-z0-9_-]+)\}? # Dollar syntax, optional curly braces
+			)!ix',
 			'custom'  => '!(^|[^a-z0-9_-])(math|floor|round|ceil|percent|pc|data-uri|-)?(___p\d+___)!i',
 			'match'   => '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i',
 		),
