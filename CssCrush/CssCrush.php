@@ -9,8 +9,10 @@
  * Example use:
  *
  * <?php
- *   require_once 'CssCrush.php';
- *   $global_css = CssCrush::file( '/css/global.css' );
+ * 
+ * require_once 'CssCrush.php';
+ * $global_css = CssCrush::file( '/css/global.css' );
+ * 
  * ?>
  *
  * <link rel="stylesheet" href="<?php echo $global_css; ?>" />
@@ -20,17 +22,21 @@ class CssCrush {
 
 	// Path information, global settings
 	public static $config;
-	
+
 	// The path of this script
 	public static $location;
-	
+
 	// Aliases from the aliases file
 	public static $aliases = array();
-	
+
 	// Macro function names
 	public static $macros = array();
 
 	public static $COMPILE_SUFFIX = '.crush.css';
+
+	// Global variable storage
+	protected static $globalVars = array();
+
 	protected static $assetsLoaded = false;
 
 	// Properties available to each 'file' process
@@ -66,7 +72,7 @@ class CssCrush {
 				([^a-z0-9_-])
 				var\(\s*([a-z0-9_-]+)\s*\)
 				|
-				\$\{?([a-z0-9_-]+)\}? # Dollar syntax, optional curly braces
+				\{?\$([a-z0-9_-]+)\}? # Dollar syntax, optional curly braces
 			)!ix',
 			'custom'  => '!(^|[^a-z0-9_-])(math|floor|round|ceil|percent|pc|data-uri|-)?(___p\d+___)!i',
 			'match'   => '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i',
@@ -113,7 +119,7 @@ class CssCrush {
 		if ( file_exists( $aliases_file ) ) {
 			if ( $result = parse_ini_file( $aliases_file, true ) ) {
 				self::$aliases = $result;
-				
+
 				// Value aliases require a little preprocessing
 				if ( isset( self::$aliases[ 'values' ] ) ) {
 					$store = array();
@@ -296,6 +302,53 @@ class CssCrush {
 	}
 
 	/**
+	 * Process host CSS file and return an HTML link tag with populated href
+	 *
+	 * @param string $file  Absolute or relative path to the host CSS file
+	 * @param mixed $options  An array of options or null
+	 * @return string  HTML link tag or error message inside HTML comment
+	 */
+	public static function tag ( $file, $options = null, $attributes = array() ) {
+		$file = self::file( $file, $options );
+		if ( !empty( $file ) ) {
+			// On success return the tag with any custom attributes
+			$attr_string = '';
+			foreach ( $attributes as $name => $value ) {
+				$value = htmlspecialchars( $value, ENT_COMPAT, 'UTF-8', false );
+				$attr_string .= " $name=\"$value\"";
+			}
+			return "<link rel=\"stylesheet\" href=\"$file\"$attr_string />\n";
+		}
+		else {
+			// Return an HTML comment with message on failure
+			$class = __CLASS__;
+			return "<!-- $class: File $file not found -->\n";
+		}
+	}
+
+	/**
+	 * Add variables globally
+	 *
+	 * @param mixed  Assoc array of variable names and values, a php ini filename or null
+	 */
+	public static function globalVars ( $vars ) {
+		// Merge into the stack, overrides existing variables of the same name
+		if ( is_array( $vars ) ) {
+			self::$globalVars = array_merge( self::$globalVars, $vars );
+		}
+		// Is it a file? If yes attempt to parse it
+		elseif ( is_string( $vars ) and file_exists( $vars ) ) {
+			if ( $result = parse_ini_file( $vars ) ) {
+				self::$globalVars = array_merge( self::$globalVars, $result );
+			}
+		}
+		// Clear the stack if the argument is explicitly null
+		elseif ( is_null( $vars ) ) {
+			self::$globalVars = array();
+		}
+	}
+
+	/**
 	 * Clear config file and compiled files for the specified directory
 	 *
 	 * @param string  System path to the directory
@@ -405,7 +458,10 @@ TPL;
 			'boilerplate' => true,
 			// Variables passed in at runtime
 			'vars'        => array(),
+			// Keeping track of global vars internally
+			'_globalVars' => self::$globalVars,
 		);
+		
 		self::$options = is_array( $options ) ?
 			array_merge( $option_defaults, $options ) : $option_defaults;
 	}
@@ -420,21 +476,34 @@ TPL;
 		// Extract comments
 		$output = preg_replace_callback( $regex->comment, array( 'self', 'cb_extractComments' ), $output );
 
-		// Extract literals
+		// Extract strings
 		$output = preg_replace_callback( $regex->string, array( 'self', 'cb_extractStrings' ), $output );
 
 		// Parse variables
 		$output = preg_replace_callback( $regex->variables, array( 'self', 'cb_extractVariables' ), $output );
 
-		// Overriding variables
+		// Calculate the variable stack:
+		//   In-file variables override global variables
+		//   Runtime variables override in-file variables
+		self::$storage->variables = array_merge(
+			self::$globalVars, self::$storage->variables );
 		if ( !empty( self::$options[ 'vars' ] ) ) {
 			self::$storage->variables = array_merge(
 				self::$storage->variables, self::$options[ 'vars' ] );
 		}
+		self::log( self::$storage->variables );
 
 		// Place variables
 		$output = preg_replace_callback( $regex->function->var, array( 'self', 'cb_placeVariables' ), $output );
-
+		
+		// Place variables in any string tokens
+		foreach ( self::$storage->tokens->strings as $label => &$_string ) {
+			if ( strpos( $_string, '$' ) !== false ) {
+				$_string = preg_replace_callback( 
+					$regex->function->var, array( 'self', 'cb_placeVariables' ), $_string );
+			}
+		}
+		
 		// Normalize whitespace
 		$output = self::normalize( $output );
 
@@ -450,7 +519,7 @@ TPL;
 		// print it all back
 		$output = self::display( $output );
 
-		self::log( self::$storage->tokens );
+		//self::log( self::$storage->tokens );
 
 		// Release memory
 		self::$storage = null;
@@ -900,7 +969,7 @@ TPL;
 		// Strip comment markers
 		$block = preg_replace( $regex->token->comment, '', $block );
 
-		// Exceute any custom functions - involves dipping into CssCrush_rule
+		// Excecute any custom functions
 		$parens = self::matchAllParens( $block );
 		if ( count( $parens->matches ) ) {
 			CssCrush_rule::$storage->tmpParens = $parens->matches;
@@ -910,9 +979,6 @@ TPL;
 		}
 
 		$variables_match = self::splitDelimList( $block, ';', true );
-
-		// $match_keys = array_keys( $variables_match->matches );
-		// $match_values = array_values( $variables_match->matches );
 
 		// Loop through the pairs, restore parens
 		foreach ( $variables_match->list as $var ) {
@@ -938,7 +1004,7 @@ TPL;
 			$variable_name = $match[2];
 		}
 
-		self::log( $match );
+		//self::log( $match );
 		if ( isset( self::$storage->variables[ $variable_name ] ) ) {
 			return $before_char . self::$storage->variables[ $variable_name ];
 		}
@@ -1356,10 +1422,10 @@ class CssCrush_rule implements IteratorAggregate {
 	public function addValueAliases () {
 
 		$aliasedValues =& CssCrush::$aliases[ 'values' ];
-		
+
 		// First test for the existence of any aliased properties
 		$intersect = array_intersect( array_keys( $aliasedValues ), array_keys( $this->properties ) );
-		
+
 		if ( empty( $intersect ) ) {
 			return;
 		}
