@@ -9,10 +9,10 @@
  * Example use:
  *
  * <?php
- * 
+ *
  * require_once 'CssCrush.php';
  * $global_css = CssCrush::file( '/css/global.css' );
- * 
+ *
  * ?>
  *
  * <link rel="stylesheet" href="<?php echo $global_css; ?>" />
@@ -41,8 +41,8 @@ class CssCrush {
 
 	// Properties available to each 'file' process
 	public static $storage;
-	protected static $options;
-	protected static $compileName;
+	public static $compileName;
+	public static $options;
 	protected static $tokenUID;
 
 	// Regular expressions
@@ -128,7 +128,6 @@ class CssCrush {
 						$store[ $prop ][ $value ] = $aliases;
 					}
 					self::$aliases[ 'values' ] = $store;
-					self::log( $store );
 				}
 			}
 			else {
@@ -256,6 +255,7 @@ class CssCrush {
 		// Make basic information about the hostfile accessible
 		$hostfile = new stdClass;
 		$hostfile->name = basename( $file );
+		$hostfile->dir = $config->baseDir;
 		$hostfile->path = "$config->baseDir/$hostfile->name";
 
 		if ( !file_exists( $hostfile->path ) ) {
@@ -294,7 +294,8 @@ class CssCrush {
 
 		// Create file and return path. Return empty string on failure
 		if ( file_put_contents( "$config->baseDir/" . self::$compileName, $output ) ) {
-			return "$config->baseURL/" . self::$compileName . ( self::$options[ 'versioning' ] ? '?' . time() : '' );
+			return "$config->baseURL/" . self::$compileName .
+				( self::$options[ 'versioning' ] ? '?' . time() : '' );
 		}
 		else {
 			return '';
@@ -412,6 +413,7 @@ class CssCrush {
 		}
 	}
 
+
 	#####################
 	#  Internal functions
 
@@ -461,7 +463,7 @@ TPL;
 			// Keeping track of global vars internally
 			'_globalVars' => self::$globalVars,
 		);
-		
+
 		self::$options = is_array( $options ) ?
 			array_merge( $option_defaults, $options ) : $option_defaults;
 	}
@@ -471,7 +473,7 @@ TPL;
 		$regex = self::$regex;
 
 		// Collate hostfile and imports
-		$output = self::collateImports( $hostfile );
+		$output = CssCrush_importer::hostfile( $hostfile );
 
 		// Extract comments
 		$output = preg_replace_callback( $regex->comment, array( 'self', 'cb_extractComments' ), $output );
@@ -483,27 +485,27 @@ TPL;
 		$output = preg_replace_callback( $regex->variables, array( 'self', 'cb_extractVariables' ), $output );
 
 		// Calculate the variable stack:
-		//   In-file variables override global variables
-		//   Runtime variables override in-file variables
+		// In-file variables override global variables
+		// Runtime variables override in-file variables
 		self::$storage->variables = array_merge(
 			self::$globalVars, self::$storage->variables );
 		if ( !empty( self::$options[ 'vars' ] ) ) {
 			self::$storage->variables = array_merge(
 				self::$storage->variables, self::$options[ 'vars' ] );
 		}
-		self::log( self::$storage->variables );
+		// self::log( self::$storage->variables );
 
 		// Place variables
 		$output = preg_replace_callback( $regex->function->var, array( 'self', 'cb_placeVariables' ), $output );
-		
+
 		// Place variables in any string tokens
 		foreach ( self::$storage->tokens->strings as $label => &$_string ) {
 			if ( strpos( $_string, '$' ) !== false ) {
-				$_string = preg_replace_callback( 
+				$_string = preg_replace_callback(
 					$regex->function->var, array( 'self', 'cb_placeVariables' ), $_string );
 			}
 		}
-		
+
 		// Normalize whitespace
 		$output = self::normalize( $output );
 
@@ -520,6 +522,7 @@ TPL;
 		$output = self::display( $output );
 
 		//self::log( self::$storage->tokens );
+		self::log( self::$config->data );
 
 		// Release memory
 		self::$storage = null;
@@ -645,152 +648,6 @@ TPL;
 		return false;
 	}
 
-	protected static function collateImports ( $hostfile ) {
-
-		$config = self::$config;
-		$compileName = self::$compileName;
-		$regex = self::$regex;
-
-		$str = file_get_contents( $hostfile->path );
-
-		// Obfuscate any import at-rules within comment blocks
-		$cb_obfuscateDirectives = array( 'self', 'cb_obfuscateDirectives' );
-		$str = preg_replace_callback( $regex->comment, $cb_obfuscateDirectives, $str );
-
-		// Initialize config object
-		$config->data[ $compileName ] = array();
-
-		// Keep track of relative paths with nested imports
-		$relativeContext = '';
-		// Detect whether we're leading from an absolute filepath
-		$absoluteFlag = false;
-		$imports_mtimes = array();
-		$imports_filenames = array();
-		$imports_urls = array();
-		$import = new stdClass;
-
-		while ( preg_match( $regex->import, $str, $match, PREG_OFFSET_CAPTURE ) ) {
-			self::log( $match );
-
-			// Matched a file import statement
-			$text = $match[0][0]; // Full match
-			$offset = $match[0][1]; // Full match offset
-			$import->name = trim( $match[1][0] ); // The url
-			$import->mediaContext = trim( $match[2][0] ); // The media context if specified
-			$import->isExternalURL = false;
-
-			if ( strpos( $import->name, '/' ) === 0 ) {
-				// Absolute path
-				self::log( 'Absolute path import' );
-				$segments = array( $config->docRoot, $import->name );
-				$relativeContext = '';
-				$absoluteFlag = true;
-			}
-			elseif (
-				strpos( $import->name, 'http://' ) === 0 or
-				strpos( $import->name, 'https://' ) === 0
-			) {
-				// External URL import
-				self::log( 'External URL import' );
-				$import->isExternalURL = true;
-				$absoluteFlag = false;
-			}
-			else {
-				// Relative path
-				self::log( 'Relative path' );
-				$root = $absoluteFlag ? $config->docRoot : $config->baseDir;
-				$segments = array_filter( array( $root, $relativeContext, $import->name ) );
-				if ( $absoluteFlag ) {
-					$relativeContext = dirname( substr( $import->path, strlen( $config->baseDir ) + 1 ) );
-				}
-				$absoluteFlag = false;
-			}
-			$import->path = !$import->isExternalURL ? realpath( implode( '/', $segments ) ) : $import->name;
-
-			//self::log( 'Relative context: ' .  $relativeContext );
-			//self::log( 'Import filepath: ' . $import->path );
-
-			$preStatement  = substr( $str, 0, $offset );
-			$postStatement = substr( $str, $offset + strlen( $text ) );
-
-			// Try to fetch the import
-			$import->content = @file_get_contents( $import->path );
-
-			if ( $import->content ) {
-				// Imported file exists, so construct new content
-
-				// Add import details to config
-				if ( !$import->isExternalURL ) {
-
-					// We only validate modified times of local files
-					$imports_mtimes[] = filemtime( $import->path );
-
-					// Obfuscate any import at-rules within comment blocks
-					$import->content = preg_replace_callback(
-						$regex->comment, $cb_obfuscateDirectives, $import->content );
-
-					$imports_filenames[] = $relativeContext ?
-						"{$relativeContext}/{$import->name}" : $import->name;
-				}
-
-				// Set relative context if there is a nested import statement
-				if ( !$import->isExternalURL and preg_match( $regex->import, $import->content ) ) {
-					if ( $import->mediaContext ) {
-						// Strip nested imports since we can't support nested media blocks
-						$message = "Cannot import nested files within '$import->name' due to mediaContext";
-						self::log( $message );
-						//self::triggerWarning( $message, __METHOD__ );
-						$import->content = preg_replace( $regex->import, '', $import->content );
-					}
-					else {
-						$dirName = dirname( $import->name );
-						if ( $dirName != '.' ) {
-							$relativeContext =
-								!empty( $relativeContext ) ? "{$relativeContext}/{$dirName}" : $dirName;
-						}
-					}
-				}
-				else {
-					$relativeContext = '';
-				}
-
-				// Reconstruct the main string
-				$str = $preStatement;
-				if ( $import->mediaContext ) {
-					$str .= "@media $import->mediaContext {" . $import->content . '}';
-				}
-				else {
-					$str .= $import->content;
-				}
-				$str .= $postStatement;
-			}
-			else {
-				// Failed to open import, just continue with the import line removed
-				self::log( 'File not found' );
-				$str = $preStatement . $postStatement;
-
-				if ( $import->isExternalURL ) {
-					self::triggerNotice( "Unable to import external URL: {$import->path}", __METHOD__ );
-				}
-			}
-		}
-
-		$config->data[ $compileName ][ 'imports' ] = $imports_filenames;
-		$config->data[ $compileName ][ 'imports_urls' ] = $imports_urls;
-		$config->data[ $compileName ][ 'datem_sum' ] = array_sum( $imports_mtimes ) + $hostfile->mtime;
-		$config->data[ $compileName ][ 'options' ] = self::$options;
-
-		// Need to store the current path so we can check we're using the right config path later
-		$config->data[ 'originPath' ] = $config->path;
-
-		// Save config changes
-		file_put_contents( $config->path, serialize( $config->data ) );
-
-		self::log( $config->data );
-
-		return $str;
-	}
-
 	protected static function minify ( $str ) {
 		$replacements = array(
 			'!\n+| (\{)!'                     => '$1',    // Trim whitespace
@@ -908,6 +765,7 @@ TPL;
 				$scan_pos = $block_start_pos + strlen( $blocks );
 
 			} // while
+
 		} // foreach
 		return $output;
 	}
@@ -1015,10 +873,6 @@ TPL;
 
 	protected static function cb_restoreLiteral ( $match ) {
 		return self::$storage->tokens[ $match[0] ];
-	}
-
-	protected static function cb_obfuscateDirectives ( $match ) {
-		return str_replace( '@', '(at)', $match[0] );
 	}
 
 	protected static function cb_printRule ( $match ) {
@@ -1178,7 +1032,6 @@ TPL;
 
 # Initialize manually
 CssCrush::init();
-
 
 
 class CssCrush_rule implements IteratorAggregate {
@@ -1707,4 +1560,150 @@ class CssCrush_rule implements IteratorAggregate {
 # Initialize manually
 CssCrush_rule::init();
 
+
+class CssCrush_importer {
+
+	public static function save ( $data ) {
+
+		$config = CssCrush::$config;
+
+		// Write to config
+		$config->data[ CssCrush::$compileName ] = $data;
+
+		// Need to store the current path so we can check we're using the right config path later
+		$config->data[ 'originPath' ] = $config->path;
+
+		// Save config changes
+		file_put_contents( $config->path, serialize( $config->data ) );
+	}
+
+	public static function hostfile ( $hostfile ) {
+
+		$config = CssCrush::$config;
+		$regex = CssCrush::$regex;
+
+		// Keep track of all import file info for later logging
+		$mtimes = array();
+		$filenames = array();
+
+		// Get the hostfile contents and obfuscate commented imports
+		$str = self::obfuscateComments( file_get_contents( $hostfile->path ) );
+
+		// This may be set non-zero if an absoulte URL is encountered
+		$searchOffset = 0;
+
+		// Recurses until the nesting heirarchy is flattened and all files are combined
+		while ( preg_match( $regex->import, $str, $match, PREG_OFFSET_CAPTURE, $searchOffset ) ) {
+
+			$fullMatch     = $match[0][0];         // Full match
+			$matchStart    = $match[0][1];         // Full match offset
+			$matchEnd      = $matchStart + strlen( $fullMatch );
+			$url           = trim( $match[1][0] ); // The url
+			$mediaContext  = trim( $match[2][0] ); // The media context if specified
+			$preStatement  = substr( $str, 0, $matchStart );
+			$postStatement = substr( $str, $matchEnd );
+
+			// Pass over absolute urls
+			// Move the search pointer forward
+			if ( preg_match( '!^https?://!', $url ) ) {
+				$searchOffset = $matchEnd;
+				continue;
+			}
+
+			$import = new stdClass;
+			$import->name         = $url;
+			$import->mediaContext = $mediaContext;
+			$import->path         = "$hostfile->dir/$import->name";
+			$import->content      = @file_get_contents( $import->path );
+
+			// Failed to open import, just continue with the import line removed
+			if ( !$import->content ) {
+				CssCrush::log( "Import file '$import->name' not found" );
+				$str = $preStatement . $postStatement;
+				continue;
+
+			}
+			// Import file opened successfully so we process it
+			else {
+				$import->content = self::obfuscateComments( $import->content );
+				if ( $import->mediaContext ) {
+					$import->content = "@media $import->mediaContext {" . $import->content . '}';
+				}
+				$import->dir = dirname( $import->name );
+
+				// Store import file info
+				$mtimes[] = filemtime( $import->path );
+				$filenames[] = $import->name;
+
+				// Store the replacements we might find
+				$replacements = array();
+
+				// Match all @import statements in the import content
+				// Alter all the url strings to be paths relative to the hostfile
+				$matchCount = preg_match_all( $regex->import, $import->content, $matchAll, PREG_OFFSET_CAPTURE );
+				for ( $index = 0; $index < $matchCount; $index++ ) {
+
+					$fullMatch = $matchAll[0][ $index ][0];
+					$urlMatch  = $matchAll[1][ $index ][0];
+
+					$search = $urlMatch;
+					$replace = "$import->dir/$urlMatch";
+
+					// Try to resolve absolute paths
+					// On failure strip the @import statement
+					if ( strpos( $urlMatch, '/' ) === 0 ) {
+						$replace = self::resolveAbsolutePath( $urlMatch );
+						if ( !$replace ) {
+							$search = $fullMatch;
+							$replace = '';
+						}
+					}
+					$replacements[ $fullMatch ] =  str_replace( $search, $replace, $fullMatch );
+				}
+
+				// If we've stored any altered @import strings then we need to apply them
+				if ( count( $replacements ) ) {
+					$import->content = str_replace(
+						array_keys( $replacements ),
+						array_values( $replacements ),
+						$import->content );
+				}
+				// CssCrush::log( $replacements );
+
+				$str = $preStatement . $import->content . $postStatement;
+			}
+
+		} // End while
+
+		self::save( array(
+			'imports'      => $filenames,
+			'datem_sum'    => array_sum( $mtimes ) + $hostfile->mtime,
+			'options'      => CssCrush::$options,
+		));
+
+		return $str;
+	}
+
+	protected static function resolveAbsolutePath ( $url ) {
+		$config = CssCrush::$config;
+
+		if ( !file_exists ( $config->docRoot . $url ) ) {
+			return false;
+		}
+		// Move upwards '..' by the number of slashes in baseURL to get a relative path
+		$url = str_repeat( '../', substr_count( $config->baseURL, '/' ) ) . substr( $url, 1 );
+		return $url;
+	}
+
+	// Obfuscate any import at-rules within comment blocks
+	public static function obfuscateComments ( $str ) {
+		$obfuscateDirectives = array( 'self', 'cb_obfuscateDirectives' );
+		return preg_replace_callback( CssCrush::$regex->comment, $obfuscateDirectives, $str );
+	}
+
+	protected static function cb_obfuscateDirectives ( $match ) {
+		return str_replace( '@', '(a)', $match[0] );
+	}
+
+}
 
