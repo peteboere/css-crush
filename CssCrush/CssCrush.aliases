@@ -51,20 +51,28 @@
 	; Animations
 	animation-delay[] = -webkit-animation-delay
 	animation-delay[] = -moz-animation-delay
+	animation-delay[] = -ms-animation-delay
 	animation-direction[] = -webkit-animation-direction
 	animation-direction[] = -moz-animation-direction
+	animation-direction[] = -ms-animation-direction
 	animation-duration[] = -webkit-animation-duration
 	animation-duration[] = -moz-animation-duration
+	animation-duration[] = -ms-animation-duration
 	animation-iteration-count[] = -webkit-animation-iteration-count
 	animation-iteration-count[] = -moz-animation-iteration-count
+	animation-iteration-count[] = -ms-animation-iteration-count
 	animation-name[] = -webkit-animation-name
 	animation-name[] = -moz-animation-name
+	animation-name[] = -ms-animation-name
 	animation-play-state[] = -webkit-animation-play-state
 	animation-play-state[] = -moz-animation-play-state
+	animation-play-state[] = -ms-animation-play-state
 	animation-timing-function[] = -webkit-animation-timing-function
 	animation-timing-function[] = -moz-animation-timing-function
+	animation-timing-function[] = -ms-animation-timing-function
 	animation-fill-mode[] = -webkit-animation-fill-mode
 	animation-fill-mode[] = -moz-animation-fill-mode
+	animation-fill-mode[] = -ms-animation-fill-mode
 
 	; Background size
 	background-size[] = -webkit-background-size
@@ -93,17 +101,27 @@
 	border-image[] = -moz-border-image
 	border-image[] = -o-border-image
 
-	; Flexbox
-	box-pack[] = -webkit-box-pack
-	box-pack[] = -moz-box-pack
+	; Flexbox (old, but supported implementation)
 	box-align[] = -webkit-box-align
 	box-align[] = -moz-box-align
+	box-align[] = -ms-box-align
+	box-direction[] = -webkit-box-direction
+	box-direction[] = -moz-box-direction
+	box-direction[] = -ms-box-direction
 	box-flex[] = -webkit-box-flex
 	box-flex[] = -moz-box-flex
+	box-flex[] = -ms-box-flex
+	box-orient[] = -webkit-box-orient
+	box-orient[] = -moz-box-orient
+	box-orient[] = -ms-box-orient
+	box-pack[] = -webkit-box-pack
+	box-pack[] = -moz-box-pack
+	box-pack[] = -ms-box-pack
 
 	; Hyphens
 	hyphens[] = -webkit-hyphens
 	hyphens[] = -moz-hyphens
+	hyphens[] = -ms-hyphens
 
 	; Text decoration
 	text-decoration-color[] = -moz-text-decoration-color
@@ -117,6 +135,7 @@
 [values]
 	display:box[] = -webkit-box
 	display:box[] = -moz-box
+	display:box[] = -ms-box
 
 
 ;----------------------------------------------------------------------------
@@ -154,5 +173,6 @@
 [at-rules]
 	keyframes[] = -webkit-keyframes
 	keyframes[] = -moz-keyframes
+	keyframes[] = -ms-keyframes
 
 
