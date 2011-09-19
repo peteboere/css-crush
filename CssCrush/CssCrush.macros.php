@@ -33,7 +33,7 @@ CssCrush::addRuleMacro( 'csscrush_hsl' );
  *     *display: inline;
  *     *zoom: 1;
  */
-function csscrush_display_inlineblock ( $rule ) {
+function csscrush_display_inlineblock ( CssCrush_Rule $rule ) {
 	if ( $rule->propertyCount( 'display' ) < 1 ) {
 		return;
 	}
@@ -60,7 +60,7 @@ function csscrush_display_inlineblock ( $rule ) {
  *     min-height: 100px;
  *     _height: 100px;
  */
-function csscrush_minheight ( $rule ) {
+function csscrush_minheight ( CssCrush_Rule $rule ) {
 	if ( $rule->propertyCount( 'min-height' ) < 1 ) {
 		return;
 	}
@@ -85,7 +85,7 @@ function csscrush_minheight ( $rule ) {
  *     clip: rect(1px,1px,1px,1px);
  *     *clip: rect(1px 1px 1px 1px);
  */
-function csscrush_clip ( $rule ) {
+function csscrush_clip ( CssCrush_Rule $rule ) {
 	// Assume it's been dealt with if the property occurs more than once 
 	if ( $rule->propertyCount( 'clip' ) !== 1 ) {
 		return;
@@ -105,7 +105,7 @@ function csscrush_clip ( $rule ) {
 /**
  * IE filter without the cruft
  */
-function csscrush_filter ( $rule ) {
+function csscrush_filter ( CssCrush_Rule $rule ) {
 	if ( $rule->propertyCount( 'filter' ) < 1 ) {
 		return;
 	}
@@ -148,7 +148,7 @@ function csscrush_filter ( $rule ) {
  *     background: rgb(0,0,0);
  *     background: rgba(0,0,0,.5);
  */
-function csscrush_rgba ( $rule ) {
+function csscrush_rgba ( CssCrush_Rule $rule ) {
 	$props = array_keys( $rule->properties );
 
 	// Determine which properties apply
@@ -194,7 +194,7 @@ function csscrush_rgba ( $rule ) {
  * After:
  *    color: #6abf40
  */
-function csscrush_hsl ( $rule ) {
+function csscrush_hsl ( CssCrush_Rule $rule ) {
 	foreach ( $rule as &$declaration ) {
 		if ( !empty( $declaration->functions ) and in_array( 'hsl', $declaration->functions ) ) {
 			while ( preg_match( '!hsl(___p\d+___)!', $declaration->value, $m ) ) {

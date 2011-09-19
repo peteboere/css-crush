@@ -197,17 +197,6 @@ class CssCrush {
 
 		$config = self::$config;
 
-		// Reset properties for current process
-		self::$tokenUID = 0;
-		self::$storage = new stdClass;
-		self::$storage->tokens = (object) array(
-			'strings'  => array(),
-			'comments' => array(),
-			'rules'    => array(),
-			'parens'   => array(),
-		);
-		self::$storage->variables = array();
-
 		// Since we're comparing strings, we need to iron out OS differences
 		$file = str_replace( '\\', '/', $file );
 		$docRoot = $config->docRoot;
@@ -233,6 +222,7 @@ class CssCrush {
 		}
 
 		self::loadConfig();
+		self::parseOptions( $options );
 
 		// Make basic information about the hostfile accessible
 		$hostfile = new stdClass;
@@ -250,24 +240,22 @@ class CssCrush {
 			$hostfile->mtime = filemtime( $hostfile->path );
 		}
 
-		self::parseOptions( $options );
-
 		// Compiled filename we're searching for
 		self::$compileName = basename( $hostfile->name, '.css' ) . self::$COMPILE_SUFFIX;
 
-		// Check for a valid compiled file
-		$validCompliledFile = self::validateCache( $hostfile );
-		if ( is_string( $validCompliledFile ) ) {
-			return $validCompliledFile;
+		// If cache is enabled check for a valid compiled file
+		if ( self::$options[ 'cache' ] === true ) {
+			$validCompliledFile = self::validateCache( $hostfile );
+			if ( is_string( $validCompliledFile ) ) {
+				return $validCompliledFile;
+			}
 		}
 
-		// Load in aliases and macros
-		if ( !self::$assetsLoaded ) {
-			self::loadAssets();
-			self::$assetsLoaded = true;
-		}
+		// Collate hostfile and imports
+		$stream = CssCrush_Importer::hostfile( $hostfile );
+		
 		// Compile
-		$stream = self::compile( $hostfile );
+		$stream = self::compile( $stream );
 
 		// Add in boilerplate
 		if ( self::$options[ 'boilerplate' ] ) {
@@ -307,6 +295,18 @@ class CssCrush {
 			$class = __CLASS__;
 			return "<!-- $class: File $file not found -->\n";
 		}
+	}
+
+	/**
+	 * Compile a raw string of CSS string and return it
+	 *
+	 * @param string $string  CSS text
+	 * @param mixed $options  An array of options or null
+	 * @return string  CSS text
+	 */
+	public static function string ( $string, $options = null ) {
+		self::parseOptions( $options );
+		return self::compile( $string );
 	}
 
 	/**
@@ -442,6 +442,8 @@ TPL;
 			'boilerplate' => true,
 			// Variables passed in at runtime
 			'vars'        => array(),
+			// Enable/disable the cache
+			'cache'       => true,
 			// Keeping track of global vars internally
 			'_globalVars' => self::$globalVars,
 		);
@@ -497,17 +499,31 @@ TPL;
 		return $stream;
 	}
 
-	protected static function compile ( $hostfile ) {
+	protected static function compile ( $stream ) {
 
 		$regex = self::$regex;
+
+		// Reset properties for current process
+		self::$tokenUID = 0;
+		self::$storage = new stdClass;
+		self::$storage->tokens = (object) array(
+			'strings'  => array(),
+			'comments' => array(),
+			'rules'    => array(),
+			'parens'   => array(),
+		);
+		self::$storage->variables = array();
+
+		// Load in aliases and macros
+		if ( !self::$assetsLoaded ) {
+			self::loadAssets();
+			self::$assetsLoaded = true;
+		}
 
 		// Set the custom function regular expression
 		$css_functions = CssCrush_Function::getFunctions();
 		$regex->function->custom = str_replace(
 			'<functions>', implode( '|', $css_functions ), $regex->function->custom );
-
-		// Collate hostfile and imports
-		$stream = CssCrush_Importer::hostfile( $hostfile );
 
 		// Extract comments
 		$stream = preg_replace_callback( $regex->comment, array( 'self', 'cb_extractComments' ), $stream );
@@ -528,8 +544,14 @@ TPL;
 		// Normalize whitespace
 		$stream = self::normalize( $stream );
 
-		// Measure to ensure we can extract the rules correctly
-		$stream = "\n" . str_replace( array( '@', '}', '{' ), array( "\n@", "}\n", "{\n" ), $stream );
+		// Adjust the stream so we can extract the rules cleanly
+		$map = array(
+			'@' => "\n@",
+			'}' => "}\n",
+			'{' => "{\n",
+			';' => ";\n",
+		);
+		$stream = "\n" . str_replace( array_keys( $map ), array_values( $map ), $stream );
 
 		// Extract rules
 		$stream = preg_replace_callback( $regex->rule, array( 'self', 'cb_extractRules' ), $stream );
@@ -647,13 +669,13 @@ TPL;
 						$existing_datesum == array_sum( $all_files )
 				) {
 					// Files have not been modified and config is the same: return the old file
-					self::log( "Files have not been modified, returning existing
+					self::log( "Files and options have not been modified, returning existing
 						 file '$existingfile->URL'" );
 					return $existingfile->URL .	( self::$options[ 'versioning' ] !== false  ? "?{$existing_datesum}" : '' );
 				}
 				else {
 					// Remove old file and continue making a new one...
-					self::log( 'Files have been modified, removing existing file' );
+					self::log( 'Files or options have been modified, removing existing file' );
 					unlink( $existingfile->path );
 				}
 			}
