@@ -2,14 +2,15 @@
 /**
  *
  * CSS Crush
- *
- * MIT License (http://www.opensource.org/licenses/mit-license.php)
- * Copyright 2010-2011 Pete Boere
- *
- * Example use:
- *
+ * 
+ * @version    1.3
+ * @license    http://www.opensource.org/licenses/mit-license.php (MIT)
+ * @copyright  Copyright 2010-2011 Pete Boere
+ * 
+ * @example
  * <?php
  *
+ * // Basic usage
  * require_once 'CssCrush.php';
  * $global_css = CssCrush::file( '/css/global.css' );
  *

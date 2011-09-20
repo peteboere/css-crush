@@ -189,7 +189,7 @@ class CssCrush {
 	/**
 	 * Process host CSS file and return a new compiled file
 	 *
-	 * @param string $file  Absolute or relative path to the host CSS file
+	 * @param string $file  URL or System path to the host CSS file
 	 * @param mixed $options  An array of options or null
 	 * @return string  The public path to the compiled file or an empty string
 	 */
@@ -277,6 +277,7 @@ class CssCrush {
 	 *
 	 * @param string $file  Absolute or relative path to the host CSS file
 	 * @param mixed $options  An array of options or null
+	 * @param array $attributes  An array of HTML attributes
 	 * @return string  HTML link tag or error message inside HTML comment
 	 */
 	public static function tag ( $file, $options = null, $attributes = array() ) {
@@ -312,7 +313,7 @@ class CssCrush {
 	/**
 	 * Add variables globally
 	 *
-	 * @param mixed  Assoc array of variable names and values, a php ini filename or null
+	 * @param mixed $var  Assoc array of variable names and values, a php ini filename or null
 	 */
 	public static function globalVars ( $vars ) {
 		// Merge into the stack, overrides existing variables of the same name
@@ -334,7 +335,7 @@ class CssCrush {
 	/**
 	 * Clear config file and compiled files for the specified directory
 	 *
-	 * @param string  System path to the directory
+	 * @param string $dir  System path to the directory
 	 */
 	public static function clearCache ( $dir = '' ) {
 		if ( empty( $dir ) ) {
@@ -359,16 +360,14 @@ class CssCrush {
 		}
 	}
 
-	/**
-	 * Flag for enabling logging
-	 *
-	 * @var boolean
-	 */
+
+	#####################
+	#  Developer
+	
+	// Enable logging
 	public static $logging = false;
 
-	/**
-	 * Print the log
-	 */
+	// Print the log
 	public static function log () {
 		if ( !self::$logging ) {
 			return;
