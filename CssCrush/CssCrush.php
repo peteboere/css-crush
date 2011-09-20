@@ -27,6 +27,7 @@ require_once 'lib/Rule.php';
 require_once 'lib/Function.php';
 require_once 'lib/Importer.php';
 require_once 'lib/Color.php';
+require_once 'lib/Doc.php';
 
 
 
