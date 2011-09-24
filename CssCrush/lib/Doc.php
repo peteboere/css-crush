@@ -2,6 +2,13 @@
 
 class CssCrush_Doc {
 	
+	// An include path for auto docs if they are not accessible at a public URL
+	public static $docIncludePath;
+
+	public static function init () {
+		self::$docIncludePath = CssCrush::$location . "/docs/index.php";
+	}
+
 	public static function parseDocComment ( $docComment ) {
 
 		$doc = new stdClass;
@@ -24,37 +31,37 @@ class CssCrush_Doc {
 		}
 		$doc->desc = trim( $doc->desc );
 
-		// Loop through the attributes
-		// storing them as objects
+		// Loop through the tags
+		// store them as objects
 		while ( count( $docComment ) and strpos( ltrim( $docComment[0] ), '@' ) === 0 ) {
 
-			$attr = new stdClass;
+			$tag = new stdClass;
 			$first = ltrim( array_shift( $docComment ), ' ' );
 			$tokens = preg_split( '!\s+!', $first, null, PREG_SPLIT_NO_EMPTY );
 
 			// First argument will always be present
-			$attr->kind = substr( array_shift( $tokens ), 1 );
+			$tag->name = substr( array_shift( $tokens ), 1 );
 
 			// Cat any multiline examples or descriptions
-			$attr->body = '';
+			$tag->body = '';
 			while ( count( $docComment ) and strpos( ltrim( $docComment[0] ), '@' ) !== 0 ) {
-				$attr->body .= array_shift( $docComment ) . "\n";
+				$tag->body .= array_shift( $docComment ) . "\n";
 			}
 
-			if ( $attr->kind == 'param' ) {
-				$attr->value = array_shift( $tokens );
-				$attr->arg = array_shift( $tokens );
-				$attr->argClean = ltrim( $attr->arg, '&$' );
-				$attr->desc = implode( ' ', $tokens );
-				$doc->param[ $attr->argClean ] = $attr;
-			}
-			elseif ( $attr->kind == 'return' ) {
-				$attr->value = array_shift( $tokens );
-				$attr->desc = implode( ' ', $tokens );
-				$doc->return = $attr;
-			}
-			else {
-				$doc->{ $attr->kind }[] = $attr;
+			switch ( $tag->name ) {
+				case 'param':
+					$tag->value = array_shift( $tokens );
+					$tag->arg = array_shift( $tokens );
+					$tag->argClean = ltrim( $tag->arg, '&$' );
+					$tag->desc = implode( ' ', $tokens );
+					$doc->param[ $tag->argClean ] = $tag;
+					break;
+				case 'return':
+					$tag->value = array_shift( $tokens );
+					$tag->desc = implode( ' ', $tokens );
+					$doc->return = $tag;
+				default:
+					$doc->{ $tag->kind }[] = $tag;
 			}
 		}
 		return $doc;
@@ -106,4 +113,8 @@ class CssCrush_Doc {
 	}
 
 }
+
+CssCrush_Doc::init();
+
+
 
