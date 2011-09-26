@@ -7,14 +7,14 @@
 	; Border radius
 	border-radius[] = -webkit-border-radius
 	border-radius[] = -moz-border-radius
-	border-top-left-radius[] = -moz-border-radius-topleft
 	border-top-left-radius[] = -webkit-border-top-left-radius
-	border-top-right-radius[] = -moz-border-radius-topright
+	border-top-left-radius[] = -moz-border-radius-topleft
 	border-top-right-radius[] = -webkit-border-top-right-radius
-	border-bottom-left-radius[] = -moz-border-radius-bottomleft
+	border-top-right-radius[] = -moz-border-radius-topright
 	border-bottom-left-radius[] = -webkit-border-bottom-left-radius
-	border-bottom-right-radius[] = -moz-border-radius-bottomright
+	border-bottom-left-radius[] = -moz-border-radius-bottomleft
 	border-bottom-right-radius[] = -webkit-border-bottom-right-radius
+	border-bottom-right-radius[] = -moz-border-radius-bottomright
 
 	; Box shadow
 	box-shadow[] = -webkit-box-shadow
@@ -49,6 +49,9 @@
 	transition-duration[] = -o-transition-duration
 
 	; Animations
+	animation[] = -webkit-animation
+	animation[] = -moz-animation
+	animation[] = -ms-animation
 	animation-delay[] = -webkit-animation-delay
 	animation-delay[] = -moz-animation-delay
 	animation-delay[] = -ms-animation-delay
