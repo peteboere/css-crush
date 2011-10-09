@@ -128,6 +128,12 @@
 	text-decoration-line[] = -moz-text-decoration-line
 	text-decoration-style[] = -moz-text-decoration-style
 
+	; User Select
+	user-select[] = -webkit-user-select
+	user-select[] = -khtml-user-select
+	user-select[] = -moz-user-select
+	user-select[] = -o-user-select
+	user-select[] = user-select
 
 ;----------------------------------------------------------------------------
 ;-- Value aliases
