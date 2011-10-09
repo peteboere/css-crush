@@ -213,6 +213,8 @@ class CssCrush_Function {
 		$allowed_file_extensions = array(
 			'woff' => 'font/woff;charset=utf-8',
 			'ttf'  => 'font/truetype;charset=utf-8',
+			'svg'  => 'image/svg+xml',
+			'svgz' => 'image/svg+xml',
 			'gif'  => 'image/gif',
 			'jpeg' => 'image/jpg',
 			'jpg'  => 'image/jpg',
