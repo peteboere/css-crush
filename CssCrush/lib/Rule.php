@@ -1,4 +1,9 @@
 <?php
+/**
+ * 
+ * CSS rule API
+ * 
+ */
 
 class CssCrush_Rule implements IteratorAggregate {
 

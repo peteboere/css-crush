@@ -1,4 +1,9 @@
 <?php
+/**
+ * 
+ * Custom CSS functions
+ * 
+ */
 
 class CssCrush_Function {
 
