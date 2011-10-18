@@ -1,4 +1,9 @@
 <?php
+/**
+ * 
+ * Main script. Includes core public API
+ * 
+ */
 
 class CssCrush {
 
@@ -54,7 +59,7 @@ class CssCrush {
 				([^a-z0-9_-])
 				var\(\s*([a-z0-9_-]+)\s*\)
 				|
-				\{?\$([a-z0-9_-]+)\}?  # Dollar syntax, optional curly braces
+				\$\(\s*([a-z0-9_-]+)\s*\)  # Dollar syntax
 			)!ix',
 			'custom'  => '!(^|[^a-z0-9_-])(<functions>)?(___p\d+___)!i',
 			'match'   => '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i',
@@ -691,9 +696,9 @@ TPL;
 
 	protected static function minify ( $str ) {
 		$replacements = array(
-			'!\n+| (\{)!'                     => '$1',    // Trim whitespace
+			'!\n+| (\{)!'                       => '$1',    // Trim whitespace
 			'!(^|[: \(,])0(\.\d+)!'             => '$1$2',  // Strip leading zeros on floats
-			'!(^|[: \(,])\.?0[a-zA-Z%]{1,5}!i'  => '${1}0', // Strip unnecessary units on zero values
+			'!(^|[: \(,])\.?0[a-zA-Z]{1,5}!i'   => '${1}0', // Strip unnecessary units on zero values
 			'!(^|\:) *(0 0 0|0 0 0 0) *(;|\})!' => '${1}0${3}', // Collapse zero lists
 			'!(padding|margin) ?\: *0 0 *(;|\})!' => '${1}:0${2}', // Collapse zero lists continued
 			'!\s*([>~+=])\s*!'                  => '$1',     // Clean-up around combinators

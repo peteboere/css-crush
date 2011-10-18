@@ -1,4 +1,9 @@
 <?php
+/**
+ * 
+ * Colour parsing and conversion
+ * 
+ */
 
 class CssCrush_Color {
 

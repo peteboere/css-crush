@@ -3,7 +3,7 @@
  *
  * CSS Crush
  * 
- * @version    1.3.1
+ * @version    1.3.2
  * @license    http://www.opensource.org/licenses/mit-license.php (MIT)
  * @copyright  Copyright 2010-2011 Pete Boere
  * 

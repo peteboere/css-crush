@@ -1,4 +1,9 @@
 <?php
+/**
+ * 
+ * Recursive file importing
+ * 
+ */
 
 class CssCrush_Importer {
 
