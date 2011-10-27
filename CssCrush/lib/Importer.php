@@ -57,6 +57,8 @@ class CssCrush_Importer {
 			$import = new stdClass;
 			$import->name = $url;
 			$import->mediaContext = $mediaContext;
+
+			// Check to see if the url is root relative
 			if ( strpos( $import->name, '/' ) === 0 ) {
 				$import->path = $config->docRoot . $import->name;
 			}

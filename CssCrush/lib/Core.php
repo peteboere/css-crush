@@ -704,7 +704,6 @@ TPL;
 			'!\s*([>~+=])\s*!'                  => '$1',     // Clean-up around combinators
 			'!\#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3!i'
 			                                    => '#$1$2$3', // Compress hex codes
-			'!rgba\([0-9]+,[0-9]+,[0-9]+,0\)!'  => 'transparent', // Compress rgba
 		);
 		return preg_replace(
 			array_keys( $replacements ), array_values( $replacements ), $str );
