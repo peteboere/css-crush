@@ -55,10 +55,16 @@ class CssCrush_Importer {
 			}
 
 			$import = new stdClass;
-			$import->name         = $url;
+			$import->name = $url;
 			$import->mediaContext = $mediaContext;
-			$import->path         = "$hostfile->dir/$import->name";
-			$import->content      = @file_get_contents( $import->path );
+			if ( strpos( $import->name, '/' ) === 0 ) {
+				$import->path = $config->docRoot . $import->name;
+			}
+			else {
+				$import->path = "$hostfile->dir/$import->name";
+			}
+
+			$import->content = @file_get_contents( $import->path );
 
 			// Failed to open import, just continue with the import line removed
 			if ( !$import->content ) {
