@@ -2,8 +2,9 @@
 /**
  *
  * CSS Crush
+ * Extensible CSS preprocessor
  * 
- * @version    1.3.2
+ * @version    1.3.3
  * @license    http://www.opensource.org/licenses/mit-license.php (MIT)
  * @copyright  Copyright 2010-2011 Pete Boere
  * 
