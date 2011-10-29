@@ -15,6 +15,7 @@ class CssCrush {
 
 	// Aliases from the aliases file
 	public static $aliases = array();
+	public static $aliasesRaw = array();
 
 	// Macro function names
 	public static $macros = array();
@@ -105,16 +106,16 @@ class CssCrush {
 		$aliases_file = self::$location . '/' . __CLASS__ . '.aliases';
 		if ( file_exists( $aliases_file ) ) {
 			if ( $result = parse_ini_file( $aliases_file, true ) ) {
-				self::$aliases = $result;
+				self::$aliasesRaw = $result;
 
 				// Value aliases require a little preprocessing
-				if ( isset( self::$aliases[ 'values' ] ) ) {
+				if ( isset( self::$aliasesRaw[ 'values' ] ) ) {
 					$store = array();
-					foreach ( self::$aliases[ 'values' ] as $prop_val => $aliases ) {
+					foreach ( self::$aliasesRaw[ 'values' ] as $prop_val => $aliases ) {
 						list( $prop, $value ) = array_map( 'trim', explode( ':', $prop_val ) );
 						$store[ $prop ][ $value ] = $aliases;
 					}
-					self::$aliases[ 'values' ] = $store;
+					self::$aliasesRaw[ 'values' ] = $store;
 				}
 			}
 			else {
@@ -228,6 +229,7 @@ class CssCrush {
 
 		self::loadConfig();
 		self::parseOptions( $options );
+		$options = self::$options;
 
 		// Make basic information about the hostfile accessible
 		$hostfile = new stdClass;
@@ -246,10 +248,15 @@ class CssCrush {
 		}
 
 		// Compiled filename we're searching for
-		self::$compileName = basename( $hostfile->name, '.css' ) . self::$COMPILE_SUFFIX;
+		// This can be given as an option, uses the host-filename by default
+		$baseCompileName = basename( $hostfile->name, '.css' );
+		if ( !empty( $options[ 'output_file' ] ) ) {
+			$baseCompileName = basename( $options[ 'output_file' ], '.css' );
+		}
+		self::$compileName = $baseCompileName . self::$COMPILE_SUFFIX;
 
 		// If cache is enabled check for a valid compiled file
-		if ( self::$options[ 'cache' ] === true ) {
+		if ( $options[ 'cache' ] === true ) {
 			$validCompliledFile = self::validateCache( $hostfile );
 			if ( is_string( $validCompliledFile ) ) {
 				return $validCompliledFile;
@@ -263,14 +270,14 @@ class CssCrush {
 		$stream = self::compile( $stream );
 
 		// Add in boilerplate
-		if ( self::$options[ 'boilerplate' ] ) {
+		if ( $options[ 'boilerplate' ] ) {
 			$stream = self::getBoilerplate() . "\n$stream";
 		}
 
 		// Create file and return path. Return empty string on failure
 		if ( file_put_contents( "$config->baseDir/" . self::$compileName, $stream ) ) {
 			return "$config->baseURL/" . self::$compileName .
-				( self::$options[ 'versioning' ] ? '?' . time() : '' );
+				( $options[ 'versioning' ] ? '?' . time() : '' );
 		}
 		else {
 			return '';
@@ -448,12 +455,73 @@ TPL;
 			'vars'        => array(),
 			// Enable/disable the cache
 			'cache'       => true,
+			// Output file. Defaults the host-filename
+			'output_file' => null,
+			// Vendor target. Only apply prefixes for a specific vendor, set false for no prefixes
+			'vendor_target' => null,
 			// Keeping track of global vars internally
 			'_globalVars' => self::$globalVars,
 		);
 
 		self::$options = is_array( $options ) ?
 			array_merge( $option_defaults, $options ) : $option_defaults;
+
+	}
+
+	protected static function pruneAliases () {
+		
+		// If a vendor target is given, we prune the aliases array
+		$vendor = self::$options[ 'vendor_target' ];
+		
+		// For expicit false vendor argument turn off aliases
+		if ( $vendor === false ) {
+			self::$aliases = null;
+			return;
+		}
+		
+		// Null vendor argument, use all aliases as normal
+		if ( empty( $vendor )  ) {
+			return;
+		}
+
+		// Normalize vendor_target argument
+		$vendor = str_replace( '-', '', self::$options[ 'vendor_target' ] );
+		$vendor = "-$vendor-";
+		
+		// Loop the aliases array, filter down to the target vendor
+		foreach ( self::$aliases as $group_name => $group_array ) {
+			// Property/value aliases are a special case
+			if ( 'values' === $group_name ) {
+				foreach ( $group_array as $property => $values ) {
+					$result = array();
+					foreach ( $values as $value => $prefix_values ) {
+						foreach ( $prefix_values as $prefix ) {
+							if ( strpos( $prefix, $vendor ) === 0 ) {
+								$result[] = $prefix;
+							}
+						}
+					}
+					self::$aliases[ 'values' ][ $property ][ $value ] = $result;
+				}
+				continue;
+			}
+			foreach ( $group_array as $alias_keyword => $prefix_array ) {
+				$result = array();
+				foreach ( $prefix_array as $prefix ) {
+					if ( strpos( $prefix, $vendor ) === 0 ) {
+						$result[] = $prefix;
+					}
+				}
+				// Prune the whole alias keyword if there is no result
+				if ( empty( $result ) ) {
+					unset( self::$aliases[ $group_name ][ $alias_keyword ] );
+				}
+				else {
+					self::$aliases[ $group_name ][ $alias_keyword ] = $result;
+				}
+			}
+		}
+		// self::log( self::$aliases );
 	}
 
 	protected static function calculateVariables () {
@@ -523,6 +591,10 @@ TPL;
 			self::loadAssets();
 			self::$assetsLoaded = true;
 		}
+		
+		// Set aliases. May be pruned if a vendor target is set
+		self::$aliases = self::$aliasesRaw;
+		self::pruneAliases();
 
 		// Set the custom function regular expression
 		$css_functions = CssCrush_Function::getFunctions();
