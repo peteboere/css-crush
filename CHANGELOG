@@ -1,0 +1,66 @@
+1.3.4 (8d424ea)
+---------------
+Added output_filename option
+Added vendor_target option
+Renamed 'macros' to the more general 'plugins' and split them into their own files
+Removed superfluous outer containing directory (update your include paths)
+
+
+1.3.3 (c68012b)
+---------------
+Fixed regression with absolute URL file imports (issue #12)
+Fixed minification bug (issue #13)
+
+
+1.3.2 (c68012b)
+---------------
+Updated variable syntax
+Fixed minification bug
+
+
+1.3.1 (07fabec)
+---------------
+Added support for svg and svgz data uris
+Added animation shorthand alias
+Added user-select alias
+
+
+1.3 (07fabec)
+-------------
+Added the public function CssCrush::string for processing raw strings of CSS
+Added color functions
+Added aliases for IE10
+
+
+1.2 (b405f9e)
+-------------
+Rewritten the file importer
+
+
+1.1 (0d2463e)
+-------------
+Added global variables support
+Added support for variable interpolation within string literals
+Added 'tag' method for outputting an html link tag instead of returning a filename
+Added values aliases, dynamic 'runtime' variables
+Added RGBA macro
+Added IE clip macro
+Added data uri function
+Minor correction to WAMP support
+Minor fix to rule API
+
+
+1.0 (360f587)
+-------------
+Major refactoring
+Custom functions
+Optional boilerplate
+Double colon syntax shim
+Resolved document root issues
+Minification improvements
+
+
+0.9 (7de4a6c)
+-------------
+Initial commit
+

@@ -126,10 +126,23 @@ class CssCrush {
 			trigger_error( __METHOD__ . ": Aliases file not found.\n", E_USER_NOTICE );
 		}
 
-		// Load macros file if it exists
-		$macros_file = self::$location . '/' . __CLASS__ . '.macros.php';
-		if ( file_exists( $macros_file ) ) {
-			require_once $macros_file;
+		// Load plugins
+		$plugins_file = self::$location . '/' . __CLASS__ . '.plugins';
+		if ( file_exists( $plugins_file ) ) {
+			if ( $result = parse_ini_file( $plugins_file ) ) {
+				foreach ( $result[ 'plugins' ] as $plugin_file ) {
+					$path = self::$location . "/plugins/$plugin_file";
+					if ( file_exists( $path ) ) {
+						require_once $path;
+					}
+					else {
+						trigger_error( __METHOD__ . ": Plugin file $plugin_file not found.\n", E_USER_NOTICE );
+					}
+				}
+			}
+			else {
+				trigger_error( __METHOD__ . ": Plugins file was not parsed correctly (syntax error).\n", E_USER_NOTICE );
+			}
 		}
 	}
 
@@ -457,8 +470,8 @@ TPL;
 			'cache'       => true,
 			// Output file. Defaults the host-filename
 			'output_file' => null,
-			// Vendor target. Only apply prefixes for a specific vendor, set false for no prefixes
-			'vendor_target' => null,
+			// Vendor target. Only apply prefixes for a specific vendor, set to 'none' for no prefixes
+			'vendor_target' => 'all',
 			// Keeping track of global vars internally
 			'_globalVars' => self::$globalVars,
 		);
@@ -473,14 +486,14 @@ TPL;
 		// If a vendor target is given, we prune the aliases array
 		$vendor = self::$options[ 'vendor_target' ];
 		
-		// For expicit false vendor argument turn off aliases
-		if ( $vendor === false ) {
+		// For expicit 'none' argument turn off aliases
+		if ( 'none' === $vendor ) {
 			self::$aliases = null;
 			return;
 		}
 		
-		// Null vendor argument, use all aliases as normal
-		if ( empty( $vendor )  ) {
+		// Default vendor argument, use all aliases as normal
+		if ( 'all' === $vendor ) {
 			return;
 		}
 
@@ -1010,7 +1023,7 @@ TPL;
 			$block = implode( ";\n\t", $block );
 			// Include pre rule comments
 			$comments = implode( "\n", $rule->comments );
-			return "$comments\n$selectors {\n\t$block;\n}\n";
+			return "$comments\n$selectors {\n\t$block;\n\t}\n";
 		}
 	}
 
