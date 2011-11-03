@@ -14,8 +14,12 @@ plugins[] = ie-clip.php
 ; IE filter shorthand
 plugins[] = ie-filter.php
 
+; Add filter and other ie8/9 code for opacity 
+plugins[] = ie-opacity.php
+
 ; Opaque fallback colors for clients that don't support RGBA 
 plugins[] = rgba-fallback.php
 
 ; HSL shim - converts HSL values to hex codes  
 plugins[] = hsl-to-hex.php
+
