@@ -2,15 +2,15 @@
 /**
  * Fix clip syntax for IE < 8
  * 
- * Before: 
+ * @before
  *     clip: rect(1px,1px,1px,1px);
  * 
- * After:
+ * @after
  *     clip: rect(1px,1px,1px,1px);
  *     *clip: rect(1px 1px 1px 1px);
  */
 
-CssCrush::addRuleMacro( 'csscrush_clip' );
+CssCrush_Hook::add( 'rule_postalias', 'csscrush_clip' );
 
 function csscrush_clip ( CssCrush_Rule $rule ) {
 	// Assume it's been dealt with if the property occurs more than once 

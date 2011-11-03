@@ -1,11 +1,23 @@
 <?php
 /**
- * 
+ *
  * Custom CSS functions
- * 
+ *
  */
 
 class CssCrush_Function {
+
+	// Regex pattern for finding custom functions
+	public static $functionPatt;
+
+	// Cache for function names
+	public static $functionList;
+
+	public static function init () {
+		// Set the custom function regex pattern
+		self::$functionList = self::getFunctions();
+		self::$functionPatt = '!(^|[^a-z0-9_-])(' . implode( '|', self::$functionList ) . ')?\(!i';
+	}
 
 	public static function getFunctions () {
 
@@ -20,6 +32,89 @@ class CssCrush_Function {
 			}
 		}
 		return $fn_methods;
+	}
+
+	public static function parseAndExecuteValue ( $str ) {
+
+		$patt = self::$functionPatt;
+
+		// No bracketed expressions, early return
+		if ( false === strpos( $str, '(' ) ) {
+			return $str;
+		}
+
+		// No custom functions, early return
+		if ( !preg_match( $patt, $str ) ) {
+			return $str;
+		}
+
+		// Need a space inside the front function paren for the following match_all to be reliable
+		$str = preg_replace( '!\(([^\s])!', '( $1', $str, -1, $spacing_count );
+
+		// Find custom function matches
+		$match_count = preg_match_all( $patt, $str, $m, PREG_OFFSET_CAPTURE | PREG_SET_ORDER  );
+
+		// Step through the matches from last to first
+		while ( $match = array_pop( $m ) ) {
+
+			$offset = $match[0][1];
+			$before_char = $match[1][0];
+			$before_char_len = strlen( $before_char );
+
+			// No function name default to math expression
+			// Store the raw function name match
+			$raw_fn_name = isset( $match[2] ) ? $match[2][0] : '';
+			$fn_name = $raw_fn_name ? $raw_fn_name : 'math';
+			if ( '-' === $fn_name ) {
+				$fn_name = 'math';
+			}
+
+			// Loop throught the string
+			$first_paren_offset = strpos( $str, '(', $offset );
+			$paren_score = 0;
+
+			for ( $index = $first_paren_offset; $index < strlen( $str ); $index++ ) {
+				$char = $str[ $index ];
+				if ( '(' === $char ) {
+					$paren_score++;
+				}
+				elseif ( ')' === $char ) {
+					$paren_score--;
+				}
+
+				if ( 0 === $paren_score ) {
+					// Get the function inards
+					$content_start = $offset + strlen( $before_char ) + strlen( $raw_fn_name ) + 1;
+					$content_finish = $index;
+					$content = substr( $str, $content_start, $content_finish - $content_start );
+					$content = trim( $content );
+
+					// Calculate offsets
+					$func_start = $offset + strlen( $before_char );
+					$func_end = $index + 1;
+
+					// Workaround the minus
+					$minus_before = '-' === $raw_fn_name ? '-' : '';
+
+					$result = '';
+					if ( in_array( $fn_name, self::$functionList ) ) {
+						$fn_name_clean = str_replace( '-', '_', $fn_name );
+						$result = call_user_func( array( 'self', "css_fn__$fn_name_clean" ), $content );
+					}
+
+					// Join together the result
+					$str = substr( $str, 0, $func_start ) . $minus_before . $result . substr( $str, $func_end );
+					break;
+				}
+			}
+		} // while
+
+		// Restore the whitespace
+		if ( $spacing_count ) {
+			$str = str_replace( '( ', '(', $str );
+		}
+
+		return $str;
 	}
 
 
@@ -52,7 +147,7 @@ class CssCrush_Function {
 		// Support for Hex, RGB, RGBa and keywords
 		// HSL and HSLa are passed over
 		if ( $fn_matched or array_key_exists( $color, $keywords ) ) {
-			
+
 			$alpha = null;
 			$rgb = null;
 
@@ -77,7 +172,7 @@ class CssCrush_Function {
 			else {
 				$rgb = $keywords[ $color ];
 			}
-			
+
 			$hsl = CssCrush_Color::rgbToHsl( $rgb );
 
 			// Clean up adjustment parameters to floating point numbers
@@ -110,42 +205,12 @@ class CssCrush_Function {
 
 
 	############
-	
-	public static function css_fn ( $match ) {
-
-		$before_char = $match[1];
-		$fn_name_css = $match[2];
-		$fn_name_clean = str_replace( '-', '', $fn_name_css );
-		$fn_name = str_replace( '-', '_', $fn_name_css );
-	
-		$paren_id = $match[3];
-
-		if ( !isset( CssCrush::$storage->tmpParens[ $paren_id ] ) ) {
-			return $before_char;
-		}
-
-		// Get input value and trim parens
-		$input = CssCrush::$storage->tmpParens[ $paren_id ];
-		$input = trim( substr( $input, 1, strlen( $input ) - 2 ) );
-
-		// An empty function name defaults to math
-		if ( empty( $fn_name_clean ) ) {
-			$fn_name = 'math';
-		}
-
-		// Capture a negative sign e.g -( 20 * 2 )
-		if ( $fn_name_css === '-' ) {
-			$before_char .= '-';
-		}
-		return $before_char . call_user_func( array( 'self', "css_fn__$fn_name" ), $input );
-	}
 
 	public static function css_fn__math ( $input ) {
 		// Whitelist allowed characters
 		$input = preg_replace( '![^\.0-9\*\/\+\-\(\)]!', '', $input );
 		$result = 0;
 		try {
-			// CssCrush::log( $input )
 			$result = eval( "return $input;" );
 		}
 		catch ( Exception $e ) {};
@@ -259,3 +324,6 @@ class CssCrush_Function {
 	}
 
 }
+
+
+

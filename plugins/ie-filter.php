@@ -3,7 +3,7 @@
  * IE filter without the cruft
  */
 
-CssCrush::addRuleMacro( 'csscrush_filter' );
+CssCrush_Hook::add( 'rule_postalias', 'csscrush_filter' );
 
 function csscrush_filter ( CssCrush_Rule $rule ) {
 	if ( $rule->propertyCount( 'filter' ) < 1 ) {

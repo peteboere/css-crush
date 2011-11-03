@@ -3,14 +3,14 @@
  * HSL shim
  * Converts HSL values into hex code that works in all browsers
  * 
- * Before:
+ * @before
  *     color: hsl( 100, 50%, 50% )
  * 
- * After:
+ * @after
  *    color: #6abf40
  */
 
-CssCrush::addRuleMacro( 'csscrush_hsl' );
+CssCrush_Hook::add( 'rule_postalias', 'csscrush_hsl' );
 
 function csscrush_hsl ( CssCrush_Rule $rule ) {
 	foreach ( $rule as &$declaration ) {

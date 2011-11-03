@@ -21,16 +21,6 @@ class CssCrush_Rule implements IteratorAggregate {
 		// Parse the selectors chunk
 		if ( !empty( $selector_string ) ) {
 
-			$selector_adjustments = array(
-				// 'hocus' and 'pocus' pseudo class shorthand
-				'!:hocus([^a-z0-9_-])!' => ':any(:hover,:focus)$1',
-				'!:pocus([^a-z0-9_-])!' => ':any(:hover,:focus,:active)$1',
-				// Reduce double colon syntax for backwards compatability
-				'!::(after|before|first-letter|first-line)!' => ':$1',
-			);
-			$selector_string = preg_replace(
-				array_keys( $selector_adjustments ), array_values( $selector_adjustments ), $selector_string );
-
 			$selectors_match = CssCrush::splitDelimList( $selector_string, ',' );
 			$this->parens += $selectors_match->matches;
 
@@ -45,13 +35,16 @@ class CssCrush_Rule implements IteratorAggregate {
 			$this->selectors = $selectors_match->list;
 		}
 
+		// Apply any custom functions
+		$declarations_string = CssCrush_Function::parseAndExecuteValue( $declarations_string );
+
 		// Parse the declarations chunk
+		// Need to split safely as there are semi-colons in data-uris
 		$declarations_match = CssCrush::splitDelimList( $declarations_string, ';' );
 		$this->parens += $declarations_match->matches;
 
 		// Parse declarations in to property/value pairs
 		foreach ( $declarations_match->list as $declaration ) {
-
 			// Strip comments around the property
 			$declaration = preg_replace( $regex->token->comment, '', $declaration );
 
@@ -67,21 +60,6 @@ class CssCrush_Rule implements IteratorAggregate {
 				$this->addProperty( $prop );
 			}
 
-			// Extract the value part of the declaration
-			$value = substr( $declaration, $colonPos + 1 );
-			$value = $value !== false ? trim( $value ) : $value;
-			if ( $value === false or $value === '' ) {
-				// We'll ignore declarations with empty values
-				continue;
-			}
-
-			// If are parenthesised expressions in the value
-			// Search for any custom functions so we can apply them
-			if ( count( $declarations_match->matches ) ) {
-				CssCrush::$storage->tmpParens = $declarations_match->matches;
-				$value = preg_replace_callback( $regex->function->custom, array( 'CssCrush_Function', 'css_fn' ), $value );
-			}
-
 			// Store the property family
 			// Store the vendor id, if one is present
 			if ( preg_match( $regex->vendorPrefix, $prop, $vendor ) ) {
@@ -93,8 +71,17 @@ class CssCrush_Rule implements IteratorAggregate {
 				$family = $prop;
 			}
 
+			// Extract the value part of the declaration
+			$value = substr( $declaration, $colonPos + 1 );
+			$value = $value !== false ? trim( $value ) : $value;
+			if ( $value === false or $value === '' ) {
+				// We'll ignore declarations with empty values
+				continue;
+			}
+
 			// Create an index of all functions in the current declaration
 			if ( preg_match_all( $regex->function->match, $value, $functions ) > 0 ) {
+				// CssCrush::log( $functions );
 				$out = array();
 				foreach ( $functions[2] as $index => $fn_name ) {
 					$out[] = $fn_name;
@@ -269,12 +256,6 @@ class CssCrush_Rule implements IteratorAggregate {
 		}
 		// Re-assign
 		$this->declarations = $new_set;
-	}
-
-	public function applyMacros () {
-		foreach ( CssCrush::$macros as $fn ) {
-			call_user_func( $fn, $this );
-		}
 	}
 
 	public function expandSelectors () {

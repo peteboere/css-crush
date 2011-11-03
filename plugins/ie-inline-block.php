@@ -2,16 +2,16 @@
 /**
  * Simulate inline-block in IE < 8
  * 
- * Before: 
+ * @before 
  *     display: inline-block;
  * 
- * After:
+ * @after
  *     display: inline-block;
  *     *display: inline;
  *     *zoom: 1;
  */
 
-CssCrush::addRuleMacro( 'csscrush_display_inlineblock' );
+CssCrush_Hook::add( 'rule_postalias', 'csscrush_display_inlineblock' );
 
 function csscrush_display_inlineblock ( CssCrush_Rule $rule ) {
 	if ( $rule->propertyCount( 'display' ) < 1 ) {

@@ -12,7 +12,7 @@ class CssCrush_Color {
 	public static function getKeywords () {
 		// Load the keywords if necessary
 		if ( empty( self::$keywords ) ) {
-			$path = CssCrush::$location . '/misc/color.keywords';
+			$path = CssCrush::$location . '/misc/color-keywords.ini';
 			if ( $keywords = parse_ini_file( $path ) ) {
 				foreach ( $keywords as $word => $rgb ) {
 					$rgb = array_map( 'intval', explode( ',', $rgb ) );

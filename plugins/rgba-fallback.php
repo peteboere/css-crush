@@ -4,15 +4,15 @@
  * Only works with background shorthand IE < 8 
  * (http://css-tricks.com/2151-rgba-browser-support/)
  * 
- * Before: 
+ * @before
  *     background: rgba(0,0,0,.5);
  * 
- * After:
+ * @after
  *     background: rgb(0,0,0);
  *     background: rgba(0,0,0,.5);
  */
 
-CssCrush::addRuleMacro( 'csscrush_rgba' );
+CssCrush_Hook::add( 'rule_postalias', 'csscrush_rgba' );
 
 function csscrush_rgba ( CssCrush_Rule $rule ) {
 	$props = array_keys( $rule->properties );

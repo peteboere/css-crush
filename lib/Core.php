@@ -1,8 +1,8 @@
 <?php
 /**
- * 
+ *
  * Main script. Includes core public API
- * 
+ *
  */
 
 class CssCrush {
@@ -62,7 +62,6 @@ class CssCrush {
 				|
 				\$\(\s*([a-z0-9_-]+)\s*\)  # Dollar syntax
 			)!ix',
-			'custom'  => '!(^|[^a-z0-9_-])(<functions>)?(___p\d+___)!i',
 			'match'   => '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i',
 		),
 		'vendorPrefix' => '!^-([a-z]+)-([a-z-]+)!',
@@ -103,7 +102,7 @@ class CssCrush {
 	protected static function loadAssets () {
 
 		// Load aliases file if it exists
-		$aliases_file = self::$location . '/' . __CLASS__ . '.aliases';
+		$aliases_file = self::$location . '/Aliases.ini';
 		if ( file_exists( $aliases_file ) ) {
 			if ( $result = parse_ini_file( $aliases_file, true ) ) {
 				self::$aliasesRaw = $result;
@@ -127,7 +126,7 @@ class CssCrush {
 		}
 
 		// Load plugins
-		$plugins_file = self::$location . '/' . __CLASS__ . '.plugins';
+		$plugins_file = self::$location . '/Plugins.ini';
 		if ( file_exists( $plugins_file ) ) {
 			if ( $result = parse_ini_file( $plugins_file ) ) {
 				foreach ( $result[ 'plugins' ] as $plugin_file ) {
@@ -278,7 +277,7 @@ class CssCrush {
 
 		// Collate hostfile and imports
 		$stream = CssCrush_Importer::hostfile( $hostfile );
-		
+
 		// Compile
 		$stream = self::compile( $stream );
 
@@ -388,7 +387,7 @@ class CssCrush {
 
 	#####################
 	#  Developer
-	
+
 	// Enable logging
 	public static $logging = false;
 
@@ -482,16 +481,16 @@ TPL;
 	}
 
 	protected static function pruneAliases () {
-		
+
 		// If a vendor target is given, we prune the aliases array
 		$vendor = self::$options[ 'vendor_target' ];
-		
+
 		// For expicit 'none' argument turn off aliases
 		if ( 'none' === $vendor ) {
 			self::$aliases = null;
 			return;
 		}
-		
+
 		// Default vendor argument, use all aliases as normal
 		if ( 'all' === $vendor ) {
 			return;
@@ -500,7 +499,7 @@ TPL;
 		// Normalize vendor_target argument
 		$vendor = str_replace( '-', '', self::$options[ 'vendor_target' ] );
 		$vendor = "-$vendor-";
-		
+
 		// Loop the aliases array, filter down to the target vendor
 		foreach ( self::$aliases as $group_name => $group_array ) {
 			// Property/value aliases are a special case
@@ -538,9 +537,9 @@ TPL;
 	}
 
 	protected static function calculateVariables () {
-		
+
 		$regex = self::$regex;
-		
+
 		// In-file variables override global variables
 		// Runtime variables override in-file variables
 		self::$storage->variables = array_merge(
@@ -553,22 +552,14 @@ TPL;
 		// Place variables referenced inside variables
 		// Excecute any custom functions
 		foreach ( self::$storage->variables as $name => &$value ) {
-			
+
 			// Referenced variables
 			$value = preg_replace_callback(
 				$regex->function->var, array( 'self', 'cb_placeVariables' ), $value );
 
 			// Custom functions
-			$parens = self::matchAllParens( $value );
-			if ( count( $parens->matches ) ) {
-				CssCrush::$storage->tmpParens = $parens->matches;
-				$value = preg_replace_callback( 
-					$regex->function->custom, array( 'CssCrush_Function', 'css_fn' ), $parens->string );
-				// Fold matches back in
-				$value = str_replace( array_keys( $parens->matches ), array_values( $parens->matches ), $value );
-			}
+			$value = CssCrush_Function::parseAndExecuteValue( $value );
 		}
-
 	}
 
 	protected static function placeVariables ( $stream ) {
@@ -604,15 +595,10 @@ TPL;
 			self::loadAssets();
 			self::$assetsLoaded = true;
 		}
-		
+
 		// Set aliases. May be pruned if a vendor target is set
 		self::$aliases = self::$aliasesRaw;
 		self::pruneAliases();
-
-		// Set the custom function regular expression
-		$css_functions = CssCrush_Function::getFunctions();
-		$regex->function->custom = str_replace(
-			'<functions>', implode( '|', $css_functions ), $regex->function->custom );
 
 		// Extract comments
 		$stream = preg_replace_callback( $regex->comment, array( 'self', 'cb_extractComments' ), $stream );
@@ -928,17 +914,30 @@ TPL;
 
 	protected static function cb_extractRules ( $match ) {
 
-		$rule = new CssCrush_Rule( $match[1], $match[2] );
+		$rule = new stdClass;
+		$rule->selector_raw = $match[1];
+		$rule->declaration_raw = $match[2];
+
+		CssCrush_Hook::run( 'rule_preprocess', $rule );
+
+		$rule = new CssCrush_Rule( $rule->selector_raw, $rule->declaration_raw );
 
 		// Only store rules with declarations
 		if ( !empty( $rule->declarations ) ) {
+
+			CssCrush_Hook::run( 'rule_prealias', $rule );
+
 			if ( !empty( self::$aliases ) ) {
 				$rule->addPropertyAliases();
 				$rule->addFunctionAliases();
 				$rule->addValueAliases();
 			}
-			$rule->applyMacros();
+
+			CssCrush_Hook::run( 'rule_postalias', $rule );
+
 			$rule->expandSelectors();
+
+			CssCrush_Hook::run( 'rule_postprocess', $rule );
 
 			$label = self::createTokenLabel( 'r' );
 			self::$storage->tokens->rules[ $label ] = $rule;
@@ -957,6 +956,7 @@ TPL;
 		// Strip comment markers
 		$block = preg_replace( $regex->token->comment, '', $block );
 
+		// Need to split safely as there are semi-colons in data-uris
 		$variables_match = self::splitDelimList( $block, ';', true );
 
 		// Loop through the pairs, restore parens
@@ -1032,7 +1032,7 @@ TPL;
 	#  Utilities
 
 	public static function splitDelimList ( $str, $delim, $fold_in = false, $allow_empty = false ) {
-		$match_obj = self::matchAllParens( $str );
+		$match_obj = self::matchAllBrackets( $str );
 		$match_obj->list = explode( $delim, $match_obj->string );
 		if ( false === $allow_empty ) {
 			$match_obj->list = array_filter( $match_obj->list );
@@ -1063,21 +1063,21 @@ TPL;
 	}
 
 	public static function matchBrackets ( $str, $brackets = array( '(', ')' ), $search_pos = 0 ) {
-		$open_token = $brackets[0];
-		$close_token = $brackets[1];
+
+		list( $opener, $closer ) = $brackets;
 		$openings = array();
 		$closings = array();
 		$brake = 50; // Set a limit in the case of errors
 
 		$match = new stdClass;
 
-		$start_index = strpos( $str, $open_token, $search_pos );
-		$close_index = strpos( $str, $close_token, $search_pos );
+		$start_index = strpos( $str, $opener, $search_pos );
+		$close_index = strpos( $str, $closer, $search_pos );
 
 		if ( $start_index === false ) {
 			return false;
 		}
-		if ( substr_count( $str, $open_token ) !== substr_count( $str, $close_token ) ) {
+		if ( substr_count( $str, $opener ) !== substr_count( $str, $closer ) ) {
 		 	$sample = substr( $str, 0, 15 );
 			trigger_error( __METHOD__ . ": Unmatched token near '$sample'.\n", E_USER_WARNING );
 			return false;
@@ -1112,34 +1112,77 @@ TPL;
 				$match->end = $closings[ count( $closings ) - 1 ] + 1;
 				return $match;
 			}
-			$start_index = strpos( $str, $open_token, $search_pos );
-			$close_index = strpos( $str, $close_token, $search_pos );
+			$start_index = strpos( $str, $opener, $search_pos );
+			$close_index = strpos( $str, $closer, $search_pos );
 		}
 
 		trigger_error( __METHOD__ . ": Reached brake limit of '$brake'. Exiting.\n", E_USER_WARNING );
 		return false;
 	}
 
-	public static function matchAllParens ( $str ) {
-		$storage = array();
-		$brackets = array( '(', ')' );
-		$match = self::matchBrackets( $str );
-		$matches = array();
-		while ( $match ) {
-			$label = self::createTokenLabel( 'p' );
-			$capture = substr( $str, $match->start, $match->end - $match->start );
-			self::$storage->tokens->parens[ $label ] = $capture;
-			$matches[ $label ] = $capture;
-			$str =
-				substr( $str, 0, $match->start ) .
-				$label .
-				substr( $str, $match->end );
-			$match = self::matchBrackets( $str, $brackets );
+	public static function matchAllBrackets ( $str, $pair = '()', $offset = 0 ) {
+
+		$match_obj = new stdClass;
+		$match_obj->string = $str;
+		$match_obj->raw = $str;
+		$match_obj->matches = array();
+
+		list( $opener, $closer ) = str_split( $pair, 1 );
+
+		// Return early if there's no match
+		if ( false === ( $first_offset = strpos( $str, $opener, $offset ) ) ) {
+			return $match_obj;
 		}
-		return (object) array(
-			'matches' => $matches,
-			'string'  => str_replace( $brackets, '', $str ),
-		);
+
+		// Step through the string one character at a time storing offsets
+		$paren_score = -1;
+		$inside_paren = false;
+		$match_start = 0;
+		$offsets = array();
+
+		for ( $index = $first_offset; $index < strlen( $str ); $index++ ) {
+			$char = $str[ $index ];
+
+			if ( $opener === $char ) {
+				if ( !$inside_paren ) {
+					$paren_score = 1;
+					$match_start = $index;
+				}
+				else {
+					$paren_score++;
+				}
+				$inside_paren = true;
+			}
+			elseif ( $closer === $char ) {
+				$paren_score--;
+			}
+
+			if ( 0 === $paren_score ) {
+				$inside_paren = false;
+				$paren_score = -1;
+				$offsets[] = array( $match_start, $index + 1 );
+			}
+		}
+
+		// Step backwards through the matches
+		while ( $offset = array_pop( $offsets ) ) {
+			list( $start, $finish ) = $offset;
+
+			$before = substr( $str, 0, $start );
+			$content = substr( $str, $start, $finish - $start );
+			$after = substr( $str, $finish );
+
+			$label = self::createTokenLabel( 'p' );
+			$str = $before . $label . $after;
+			$match_obj->matches[ $label ] = $content;
+
+			// Parens will be folded in later
+			self::$storage->tokens->parens[ $label ] = $content;
+		}
+
+		$match_obj->string = $str;
+
+		return $match_obj;
 	}
 
 	public static function addRuleMacro ( $fn ) {

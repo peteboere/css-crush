@@ -4,7 +4,7 @@
  * CSS Crush
  * Extensible CSS preprocessor
  * 
- * @version    1.3.4
+ * @version    1.3.5
  * @license    http://www.opensource.org/licenses/mit-license.php (MIT)
  * @copyright  Copyright 2010-2011 Pete Boere
  * 
@@ -25,9 +25,13 @@ require_once 'lib/Core.php';
 CssCrush::init( dirname( __FILE__ ) );
 
 require_once 'lib/Rule.php';
+
 require_once 'lib/Function.php';
+CssCrush_Function::init();
+
 require_once 'lib/Importer.php';
 require_once 'lib/Color.php';
+require_once 'lib/Hook.php';
 
 
 
