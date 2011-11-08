@@ -1,3 +1,13 @@
+1.3.5 (797c8ae)
+---------------
+Added hook system for plugins
+Plugins split into seperate files
+Aliases and Plugins files renamed with '.ini' file extensions to be editor friendly
+Added opacity plugin
+Updated filter plugin
+Fixed nested custom function parsing (issue #14)
+
+
 1.3.4 (8d424ea)
 ---------------
 Added output_filename option
