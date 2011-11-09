@@ -3,6 +3,7 @@
 Improved color functions
 Added a-adjust function for altering a color's opacity
 Deprecated hsl-adjust function (you can use nested color functions instead)
+Added the ability to use local versions of alias and plugin files so pull updates don't clobber local settings
 
 
 1.3.5
@@ -36,7 +37,7 @@ Fixed minification bug
 
 
 1.3.1
----------------
+-----
 Added support for svg and svgz data uris
 Added animation shorthand alias
 Added user-select alias
