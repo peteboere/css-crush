@@ -105,7 +105,7 @@ class CssCrush_Color {
 		return $rgb;
 	}
 
-	public static function cssHslToHex ( array $hsl ) {
+	public static function cssHslToRgb ( array $hsl ) {
 
 		// Normalize the hue degree value then convert to float
 		$h = array_shift( $hsl );
@@ -125,7 +125,7 @@ class CssCrush_Color {
 		$hsl = array( $h, $s, $l );
 		$rgb = self::hslToRgb( $hsl );
 		
-		return self::rgbToHex( $rgb );
+		return $rgb;
 	}
 
 	public static function hueToRgb ( $p, $q, $t ) {

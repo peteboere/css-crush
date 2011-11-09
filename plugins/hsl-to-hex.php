@@ -20,7 +20,8 @@ function csscrush_hsl ( CssCrush_Rule $rule ) {
 				$token = $m[1];
 				$hsl = trim( $rule->parens[ $token ], '()' );
 				$hsl = array_map( 'trim', explode( ',', $hsl ) );
-				$hex = CssCrush_Color::cssHslToHex( $hsl );
+				$rgb = CssCrush_Color::cssHslToRgb( $hsl );
+				$hex = CssCrush_Color::rgbToHex( $rgb );
 				$declaration->value = str_replace( $full_match, $hex, $declaration->value );
 			}
 		}

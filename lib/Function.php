@@ -141,17 +141,17 @@ class CssCrush_Function {
 
 	protected static function colorAdjust ( $color, array $adjustments ) {
 
-		$fn_matched = preg_match( '!^(#|rgba?)!', $color, $m );
+		$fn_matched = preg_match( '!^(#|rgba?|hsla?)!', $color, $m );
 		$keywords = CssCrush_Color::getKeywords();
 
 		// Support for Hex, RGB, RGBa and keywords
 		// HSL and HSLa are passed over
 		if ( $fn_matched or array_key_exists( $color, $keywords ) ) {
 
-			$alpha = null;
+			$alpha = 1;
 			$rgb = null;
 
-			// Get an RGB value from the color argument
+			// Get an RGB array from the color argument
 			if ( $fn_matched ) {
 				switch ( $m[1] ) {
 					case '#':
@@ -160,12 +160,22 @@ class CssCrush_Function {
 
 					case 'rgb':
 					case 'rgba':
-						$rgba = $m[1] == 'rgba' ? true : false;
-						$rgb = substr( $color, $rgba ? 5 : 4 );
-						$rgb = substr( $rgb, 0, strlen( $rgb ) - 1 );
-						$rgb = array_map( 'trim', explode( ',', $rgb ) );
-						$alpha = $rgba ? array_pop( $rgb ) : null;
-						$rgb = CssCrush_Color::normalizeCssRgb( $rgb );
+					case 'hsl':
+					case 'hsla':
+						$function = $m[1];
+						$alpha_channel = 4 === strlen( $function ) ? true : false;
+						$vals = substr( $color, strlen( $function ) + 1 );  // Trim function name and start paren
+						$vals = substr( $vals, 0, strlen( $vals ) - 1 );    // Trim end paren
+						$vals = array_map( 'trim', explode( ',', $vals ) ); // Explode to array of arguments
+						if ( $alpha_channel ) {
+							$alpha = array_pop( $vals );
+						}
+						if ( 0 === strpos( $function, 'rgb' ) ) {
+							$rgb = CssCrush_Color::normalizeCssRgb( $vals );
+						}
+						else {
+							$rgb = CssCrush_Color::cssHslToRgb( $vals );
+						}
 						break;
 				}
 			}
@@ -175,24 +185,37 @@ class CssCrush_Function {
 
 			$hsl = CssCrush_Color::rgbToHsl( $rgb );
 
-			// Clean up adjustment parameters to floating point numbers
-			// Calculate the new HSL value
-			$counter = 0;
-			foreach ( $adjustments as &$_val ) {
-				$index = $counter++;
-				$_val = $_val ? trim( str_replace( '%', '', $_val ) ) : 0;
+			// Normalize adjustment parameters to floating point numbers
+			// then calculate the new HSL value
+			$index = 0;
+			foreach ( $adjustments as $val ) {
+				// Normalize argument
+				$_val = $val ? trim( str_replace( '%', '', $val ) ) : 0;
+				
 				// Reduce value to float
 				$_val /= 100;
-				// Calculate new HSL value
-				$hsl[ $index ] = max( 0, min( 1, $hsl[ $index ] + $_val ) );
+				
+				// Adjust alpha component if necessary
+				if ( 3 === $index ) {
+					if ( 0 != $val ) {
+						$alpha = max( 0, min( 1, $alpha + $_val ) );
+					}
+				}
+				// Adjust HSL component value if necessary
+				else {
+					if ( 0 != $val ) {
+						$hsl[ $index ] = max( 0, min( 1, $hsl[ $index ] + $_val ) );
+					}
+				}
+				$index++;
 			}
-
+			
 			// Finally convert new HSL value to RGB
 			$rgb = CssCrush_Color::hslToRgb( $hsl );
 
-			// Return as hex if there is no alpha channel
-			// Otherwise return RGBa string
-			if ( is_null( $alpha ) ) {
+			// Return as hex if there is no modified alpha channel
+			// Otherwise return RGBA string
+			if ( 1 === $alpha ) {
 				return CssCrush_Color::rgbToHex( $rgb );
 			}
 			$rgb[] = $alpha;
@@ -270,7 +293,6 @@ class CssCrush_Function {
 			$baseDir = CssCrush::$config->baseDir;
 			$file = "$baseDir/$input";
 		}
-		// csscrush::log($file);
 
 		// File not found
 		if ( !file_exists( $file ) ) {
@@ -303,24 +325,24 @@ class CssCrush_Function {
 		return "url($data_uri)";
 	}
 
-	public static function css_fn__hsl_adjust ( $input ) {
-		list( $color, $h, $s, $l ) = self::parseArgs( $input );
-		return self::colorAdjust( $color, array( $h, $s, $l ) );
-	}
-
 	public static function css_fn__h_adjust ( $input ) {
-		list( $color, $h ) = self::parseArgs( $input );
-		return self::colorAdjust( $color, array( $h, 0, 0 ) );
+		@list( $color, $h ) = self::parseArgs( $input );
+		return self::colorAdjust( $color, array( $h, 0, 0, 0 ) );
 	}
 
 	public static function css_fn__s_adjust ( $input ) {
-		list( $color, $s ) = self::parseArgs( $input );
-		return self::colorAdjust( $color, array( 0, $s, 0 ) );
+		@list( $color, $s ) = self::parseArgs( $input );
+		return self::colorAdjust( $color, array( 0, $s, 0, 0 ) );
 	}
 
 	public static function css_fn__l_adjust ( $input ) {
-		list( $color, $l ) = self::parseArgs( $input );
-		return self::colorAdjust( $color, array( 0, 0, $l ) );
+		@list( $color, $l ) = self::parseArgs( $input );
+		return self::colorAdjust( $color, array( 0, 0, $l, 0 ) );
+	}
+	
+	public static function css_fn__a_adjust ( $input ) {
+		@list( $color, $a ) = self::parseArgs( $input );
+		return self::colorAdjust( $color, array( 0, 0, 0, $a ) );
 	}
 
 }

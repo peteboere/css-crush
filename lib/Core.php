@@ -101,8 +101,14 @@ class CssCrush {
 	// Aliases and macros loader
 	protected static function loadAssets () {
 
-		// Load aliases file if it exists
+		// Find an aliases file in the root directory
+		// a local file will overrides the default
 		$aliases_file = self::$location . '/Aliases.ini';
+		if ( file_exists( self::$location . '/Aliases-local.ini' ) ) {
+			$aliases_file = self::$location . '/Aliases-local.ini';
+		}
+
+		// Load aliases file if it exists
 		if ( file_exists( $aliases_file ) ) {
 			if ( $result = parse_ini_file( $aliases_file, true ) ) {
 				self::$aliasesRaw = $result;
@@ -125,8 +131,14 @@ class CssCrush {
 			trigger_error( __METHOD__ . ": Aliases file not found.\n", E_USER_NOTICE );
 		}
 
-		// Load plugins
+		// Find a plugins file in the root directory
+		// a local file will overrides the default
 		$plugins_file = self::$location . '/Plugins.ini';
+		if ( file_exists( self::$location . '/Plugins-local.ini' ) ) {
+			$plugins_file = self::$location . '/Plugins-local.ini';
+		}
+
+		// Load plugins
 		if ( file_exists( $plugins_file ) ) {
 			if ( $result = parse_ini_file( $plugins_file ) ) {
 				foreach ( $result[ 'plugins' ] as $plugin_file ) {
