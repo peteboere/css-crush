@@ -1,44 +1,61 @@
-1.3.4 (8d424ea)
----------------
+1.3.6
+-----
+Improved color functions
+Added a-adjust function for altering a color's opacity
+Deprecated hsl-adjust function (you can use nested color functions instead)
+
+
+1.3.5
+-----
+Added hook system for plugins
+Plugins split into seperate files
+Aliases and Plugins files renamed with '.ini' file extensions to be editor friendly
+Added opacity plugin
+Updated filter plugin
+Fixed nested custom function parsing (issue #14)
+
+
+1.3.4
+-----
 Added output_filename option
 Added vendor_target option
 Renamed 'macros' to the more general 'plugins' and split them into their own files
 Removed superfluous outer containing directory (update your include paths)
 
 
-1.3.3 (c68012b)
----------------
+1.3.3
+-----
 Fixed regression with absolute URL file imports (issue #12)
 Fixed minification bug (issue #13)
 
 
-1.3.2 (c68012b)
----------------
+1.3.2
+-----
 Updated variable syntax
 Fixed minification bug
 
 
-1.3.1 (07fabec)
+1.3.1
 ---------------
 Added support for svg and svgz data uris
 Added animation shorthand alias
 Added user-select alias
 
 
-1.3 (07fabec)
--------------
+1.3
+---
 Added the public function CssCrush::string for processing raw strings of CSS
 Added color functions
 Added aliases for IE10
 
 
-1.2 (b405f9e)
--------------
+1.2
+---
 Rewritten the file importer
 
 
-1.1 (0d2463e)
--------------
+1.1
+---
 Added global variables support
 Added support for variable interpolation within string literals
 Added 'tag' method for outputting an html link tag instead of returning a filename
@@ -50,8 +67,8 @@ Minor correction to WAMP support
 Minor fix to rule API
 
 
-1.0 (360f587)
--------------
+1.0
+---
 Major refactoring
 Custom functions
 Optional boilerplate
@@ -60,7 +77,6 @@ Resolved document root issues
 Minification improvements
 
 
-0.9 (7de4a6c)
--------------
-Initial commit
-
+0.9
+---
+Initial release
