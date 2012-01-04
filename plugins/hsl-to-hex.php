@@ -14,7 +14,10 @@ CssCrush_Hook::add( 'rule_postalias', 'csscrush_hsl' );
 
 function csscrush_hsl ( CssCrush_Rule $rule ) {
 	foreach ( $rule as &$declaration ) {
-		if ( !empty( $declaration->functions ) and in_array( 'hsl', $declaration->functions ) ) {
+		if ( 
+			!$declaration->skip and
+			( !empty( $declaration->functions ) and in_array( 'hsl', $declaration->functions ) )
+		) {
 			while ( preg_match( '!hsl(___p\d+___)!', $declaration->value, $m ) ) {
 				$full_match = $m[0];
 				$token = $m[1];

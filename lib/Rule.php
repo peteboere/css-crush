@@ -54,11 +54,16 @@ class CssCrush_Rule implements IteratorAggregate {
 				// If there is no colon it's malformed
 				continue;
 			}
-			else {
-				$prop = trim( substr( $declaration, 0, $colonPos ) );
-				// Store the property name
-				$this->addProperty( $prop );
+
+			// The property name
+			$prop = trim( substr( $declaration, 0, $colonPos ) );
+
+			// Test for escape tilde
+			if ( $skip = strpos( $prop, '~' ) === 0 ) {
+				$prop = substr( $prop, 1 );
 			}
+			// Store the property name
+			$this->addProperty( $prop );
 
 			// Store the property family
 			// Store the vendor id, if one is present
@@ -99,6 +104,7 @@ class CssCrush_Rule implements IteratorAggregate {
 				'vendor'    => $vendor,
 				'functions' => $functions,
 				'value'     => $value,
+				'skip'      => $skip,
 			);
 			$this->declarations[] = $_declaration;
 		}
@@ -119,7 +125,10 @@ class CssCrush_Rule implements IteratorAggregate {
 		$new_set = array();
 		foreach ( $this->declarations as $declaration ) {
 			$prop = $declaration->property;
-			if ( isset( $aliasedProperties[ $prop ] ) ) {
+			if (
+				!$declaration->skip and
+				isset( $aliasedProperties[ $prop ] ) 
+			) {
 				// There are aliases for the current property
 				foreach ( $aliasedProperties[ $prop ] as $prop_alias ) {
 					if ( $this->propertyCount( $prop_alias ) ) {
@@ -165,7 +174,10 @@ class CssCrush_Rule implements IteratorAggregate {
 		foreach ( $this->declarations as $declaration ) {
 
 			// No functions, skip
-			if ( empty( $declaration->functions ) ) {
+			if (
+				$declaration->skip or
+				empty( $declaration->functions ) 
+			) {
 				$new_set[] = $declaration;
 				continue;
 			}
@@ -238,16 +250,18 @@ class CssCrush_Rule implements IteratorAggregate {
 
 		$new_set = array();
 		foreach ( $this->declarations as $declaration ) {
-			foreach ( $aliasedValues as $value_prop => $value_aliases ) {
-				if ( $this->propertyCount( $value_prop ) < 1 ) {
-					continue;
-				}
-				foreach ( $value_aliases as $value => $aliases ) {
-					if ( $declaration->value === $value ) {
-						foreach ( $aliases as $alias ) {
-							$copy = clone $declaration;
-							$copy->value = $alias;
-							$new_set[] = $copy;
+			if ( !$declaration->skip ) {
+				foreach ( $aliasedValues as $value_prop => $value_aliases ) {
+					if ( $this->propertyCount( $value_prop ) < 1 ) {
+						continue;
+					}
+					foreach ( $value_aliases as $value => $aliases ) {
+						if ( $declaration->value === $value ) {
+							foreach ( $aliases as $alias ) {
+								$copy = clone $declaration;
+								$copy->value = $alias;
+								$new_set[] = $copy;
+							}
 						}
 					}
 				}
@@ -336,11 +350,16 @@ class CssCrush_Rule implements IteratorAggregate {
 	}
 
 	public function createDeclaration ( $property, $value, $options = array() ) {
+		// Test for escape tilde
+		if ( $skip = strpos( $property, '~' ) === 0 ) {
+			$property = substr( $property, 1 );
+		}
 		$_declaration = array(
 			'property'  => $property,
 			'family'    => null,
 			'vendor'    => null,
 			'value'     => $value,
+			'skip'      => $skip,
 		);
 		$this->addProperty( $property );
 		return (object) array_merge( $_declaration, $options );

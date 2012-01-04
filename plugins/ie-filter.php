@@ -25,7 +25,10 @@ function csscrush_filter ( CssCrush_Rule $rule ) {
 	$filter_prefix = 'progid:DXImageTransform.Microsoft.';
 	$new_set = array();
 	foreach ( $rule as $declaration ) {
-		if ( $declaration->property !== '-ms-filter' ) {
+		if (
+			$declaration->skip or
+			$declaration->property !== '-ms-filter' 
+		) {
 			$new_set[] = $declaration;
 			continue;
 		}

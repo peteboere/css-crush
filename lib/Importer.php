@@ -1,8 +1,8 @@
 <?php
 /**
- * 
+ *
  * Recursive file importing
- * 
+ *
  */
 
 class CssCrush_Importer {
@@ -30,10 +30,10 @@ class CssCrush_Importer {
 		$mtimes = array();
 		$filenames = array();
 
-		// Get the hostfile contents and obfuscate commented imports
-		$str = self::obfuscateComments( file_get_contents( $hostfile->path ) );
+		// Get the hostfile with comments extracted
+		$str = CssCrush::extractComments( file_get_contents( $hostfile->path ) );
 
-		// This may be set non-zero if an absoulte URL is encountered
+		// This may be set non-zero if an absolute URL is encountered
 		$searchOffset = 0;
 
 		// Recurses until the nesting heirarchy is flattened and all files are combined
@@ -76,23 +76,23 @@ class CssCrush_Importer {
 
 			}
 			// Import file opened successfully so we process it
+			// We need to resolve relative urls in all imported files since they will be brought inline with the hostfile
 			else {
-				$import->content = self::obfuscateComments( $import->content );
-				if ( $import->mediaContext ) {
-					$import->content = "@media $import->mediaContext {" . $import->content . '}';
-				}
+
+				// Start with extracting comments in the import
+				$import->content = CssCrush::extractComments( $import->content );
+
 				$import->dir = dirname( $import->name );
 
 				// Store import file info
 				$mtimes[] = filemtime( $import->path );
 				$filenames[] = $import->name;
 
-				// Store the replacements we might find
-				$replacements = array();
-
 				// Match all @import statements in the import content
 				// Alter all the url strings to be paths relative to the hostfile
 				$matchCount = preg_match_all( $regex->import, $import->content, $matchAll, PREG_OFFSET_CAPTURE );
+				// Store the replacements we might find
+				$replacements = array();
 				for ( $index = 0; $index < $matchCount; $index++ ) {
 
 					$fullMatch = $matchAll[0][ $index ][0];
@@ -110,9 +110,37 @@ class CssCrush_Importer {
 							$replace = '';
 						}
 					}
-					$replacements[ $fullMatch ] =  str_replace( $search, $replace, $fullMatch );
-				}
 
+					$statement = trim( str_replace( $search, $replace, $fullMatch ) );
+
+					// TODO: Normalise import statement to be without url() syntax
+					// 
+					// $patt = '!^@import\s+url\(\s*[\'"]?!';
+					// if ( preg_match( $patt, $statement ) ) {
+					// 
+					// 	// @import url( "some_path_with_(parens).css") screen and ( max-width: 500px );
+					// 	// @import url( some_path_with_(parens).css );
+					// 
+					// 	$statement = preg_replace( '!^@import\s+url\(\s*!', '', $statement );
+					// 
+					// 	// 'some_path_with_(parens).css') screen and ( max-width: 500px );
+					// 	// some_path_with_(parens).css) screen and ( max-width: 500px );
+					// 
+					// 	// A url surrounded in quotes
+					// 	// if ( preg_match( '!^([\'"])!', $statement, $m ) ) {
+					// 	// 			if ( ( $closing_quote_index = strpos( $statement, $m[1], 1 ) ) === false ) {
+					// 	// 				// Mismatched quote
+					// 	// 			}
+					// 	// 			$closing_quote_index;
+					// 	//
+					// 	// 		}
+					// 	// 		else {
+					// 	//
+					// 	// 		}
+					// }
+					
+					$replacements[ $fullMatch ] = $statement;
+				}
 				// If we've stored any altered @import strings then we need to apply them
 				if ( count( $replacements ) ) {
 					$import->content = str_replace(
@@ -120,7 +148,13 @@ class CssCrush_Importer {
 						array_values( $replacements ),
 						$import->content );
 				}
-				// CssCrush::log( $replacements );
+
+				// TODO: Optionally resolve relative url and custom function data-uri references
+
+				// Add media context if it exists
+				if ( $import->mediaContext ) {
+					$import->content = "@media $import->mediaContext {" . $import->content . '}';
+				}
 
 				$str = $preStatement . $import->content . $postStatement;
 			}
@@ -145,16 +179,6 @@ class CssCrush_Importer {
 		// Move upwards '..' by the number of slashes in baseURL to get a relative path
 		$url = str_repeat( '../', substr_count( $config->baseURL, '/' ) ) . substr( $url, 1 );
 		return $url;
-	}
-
-	// Obfuscate any import at-rules within comment blocks
-	public static function obfuscateComments ( $str ) {
-		$obfuscateDirectives = array( 'self', 'cb_obfuscateDirectives' );
-		return preg_replace_callback( CssCrush::$regex->comment, $obfuscateDirectives, $str );
-	}
-
-	protected static function cb_obfuscateDirectives ( $match ) {
-		return str_replace( '@', '(a)', $match[0] );
 	}
 
 }
