@@ -29,10 +29,12 @@ function csscrush_initial ( CssCrush_Rule $rule ) {
 
 	foreach ( $rule as &$declaration ) {
 		if ( !$declaration->skip and 'initial' === $declaration->value ) {
-			// Default value is inherit
-			$initialVal = 'inherit';
 			if ( isset( $initialValues[ $declaration->property ] ) ) {
 				$declaration->value = $initialValues[ $declaration->property ];
+			}
+			else {
+				// Fallback to 'inherit'
+				$declaration->value = 'inherit';
 			}
 		}
 	}
