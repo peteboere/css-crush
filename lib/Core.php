@@ -347,7 +347,7 @@ class CssCrush {
 	}
 
 	/**
-	 * Process host CSS file and return CSS as text wrapped in html <style> tags
+	 * Process host CSS file and return CSS as text wrapped in html style tags
 	 *
 	 * @param string $file  Absolute or relative path to the host CSS file
 	 * @param mixed $options  An array of options or null
@@ -1109,7 +1109,16 @@ TPL;
 
 	public static function splitDelimList ( $str, $delim, $fold_in = false, $allow_empty = false ) {
 		$match_obj = self::matchAllBrackets( $str );
-		$match_obj->list = explode( $delim, $match_obj->string );
+		
+		// If the delimiter is one character do a simple split
+		// Otherwise do a regex split 
+		if ( 1 === strlen( $delim ) ) {
+			$match_obj->list = explode( $delim, $match_obj->string );
+		}
+		else {
+			$match_obj->list = preg_split( '!' . $delim . '!', $match_obj->string );
+		}
+		
 		if ( false === $allow_empty ) {
 			$match_obj->list = array_filter( $match_obj->list );
 		}
@@ -1252,3 +1261,28 @@ TPL;
 	}
 
 }
+
+
+#######################
+#  Procedural style API
+
+function csscrush_file ( $file, $options = null ) {
+	return CssCrush::file( $file, $options );
+}
+function csscrush_tag ( $file, $options = null, $attributes = array() ) {
+	return CssCrush::tag( $file, $options, $attributes );
+}
+function csscrush_inline ( $file, $options = null, $attributes = array() ) {
+	return CssCrush::inline( $file, $options, $attributes );
+}
+function csscrush_string ( $string, $options = null ) {
+	return CssCrush::string( $string, $options );
+}
+function csscrush_globalvars ( $vars ) {
+	return CssCrush::globalVars( $vars );
+}
+function csscrush_clearcache ( $dir = '' ) {
+	return CssCrush::clearcache( $dir );
+}
+
+
