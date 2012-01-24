@@ -1,11 +1,14 @@
-1.3.7
+1.4
 -----
 Added initial-keyword plugin (shim for the CSS3 keyword)
 Added inline method (Issue #18)
 Added ability to escape declarations from aliasing or plugins by prefixing with tilde
+Added procedural style public API to mirror the static class API
 Deprecated @variables syntax for @define. @variables still supported
+Adjusted color functions to accept a space delimiter (as well as comma) in the arguments list
 Surpressed some benign PHP warning messages
 Some internal cleaning up
+Disabled IE6 min-height plugin by default
 
 
 1.3.6
