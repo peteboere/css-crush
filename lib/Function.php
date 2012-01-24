@@ -134,8 +134,10 @@ class CssCrush_Function {
 		return $args;
 	}
 
-	protected static function parseArgs ( $input, $argCount = null ) {
-		$args = CssCrush::splitDelimList( $input, ',', true, true );
+	protected static function parseArgs ( $input, $allowSpaceDelim = false ) {
+		$args = CssCrush::splitDelimList( $input, 
+				( $allowSpaceDelim ? '\s*[,\s]\s*' : ',' ), 
+				true, true );
 		return array_map( 'trim', $args->list );
 	}
 
@@ -326,22 +328,22 @@ class CssCrush_Function {
 	}
 
 	public static function css_fn__h_adjust ( $input ) {
-		@list( $color, $h ) = self::parseArgs( $input );
+		@list( $color, $h ) = self::parseArgs( $input, true );
 		return self::colorAdjust( $color, array( $h, 0, 0, 0 ) );
 	}
 
 	public static function css_fn__s_adjust ( $input ) {
-		@list( $color, $s ) = self::parseArgs( $input );
+		@list( $color, $s ) = self::parseArgs( $input, true );
 		return self::colorAdjust( $color, array( 0, $s, 0, 0 ) );
 	}
 
 	public static function css_fn__l_adjust ( $input ) {
-		@list( $color, $l ) = self::parseArgs( $input );
+		@list( $color, $l ) = self::parseArgs( $input, true );
 		return self::colorAdjust( $color, array( 0, 0, $l, 0 ) );
 	}
 	
 	public static function css_fn__a_adjust ( $input ) {
-		@list( $color, $a ) = self::parseArgs( $input );
+		@list( $color, $a ) = self::parseArgs( $input, true );
 		return self::colorAdjust( $color, array( 0, 0, 0, $a ) );
 	}
 

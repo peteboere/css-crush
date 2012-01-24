@@ -20,7 +20,10 @@ function csscrush_clip ( CssCrush_Rule $rule ) {
 	$new_set = array();
 	foreach ( $rule as $declaration ) {
 		$new_set[] = $declaration;
-		if ( $declaration->property !== 'clip' ) {
+		if ( 
+			$declaration->skip or
+			$declaration->property !== 'clip' 
+		) {
 			continue;
 		}
 		$new_set[] = $rule->createDeclaration( 

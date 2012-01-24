@@ -32,6 +32,7 @@ function csscrush_rgba ( CssCrush_Rule $rule ) {
 	foreach ( $rule as $declaration ) {
 		$is_viable = in_array( $declaration->property, $rgba_props );
 		if ( 
+			$declaration->skip or
 			!$is_viable or 
 			$is_viable and !preg_match( '!^rgba___p\d+___$!', $declaration->value )
 		) {

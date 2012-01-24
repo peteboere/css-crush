@@ -21,7 +21,10 @@ function csscrush_opacity ( CssCrush_Rule $rule ) {
 	$new_set = array();
 	foreach ( $rule as $declaration ) {
 		$new_set[] = $declaration;
-		if ($declaration->property != 'opacity') {
+		if (
+			$declaration->skip or
+			$declaration->property != 'opacity'
+		) {
 			continue;
 		}
 

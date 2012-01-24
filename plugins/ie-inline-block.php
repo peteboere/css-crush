@@ -21,7 +21,10 @@ function csscrush_display_inlineblock ( CssCrush_Rule $rule ) {
 	foreach ( $rule as $declaration ) {
 		$new_set[] = $declaration;
 		$is_display = $declaration->property === 'display';
-		if ( !$is_display or $is_display and $declaration->value !== 'inline-block' ) {
+		if ( 
+			$declaration->skip or 
+			!$is_display or 
+			$is_display and $declaration->value !== 'inline-block' ) {
 			continue;
 		}
 		$new_set[] = $rule->createDeclaration( '*display', 'inline' );

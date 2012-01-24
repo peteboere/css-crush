@@ -19,7 +19,9 @@ function csscrush_minheight ( CssCrush_Rule $rule ) {
 	$new_set = array();
 	foreach ( $rule as $declaration ) {
 		$new_set[] = $declaration;
-		if ( $declaration->property !== 'min-height' ) {
+		if ( 
+			$declaration->skip or
+			$declaration->property !== 'min-height' ) {
 			continue;
 		}
 		$new_set[] = $rule->createDeclaration( '_height', $declaration->value );

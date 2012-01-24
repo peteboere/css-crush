@@ -40,7 +40,7 @@ class CssCrush {
 			(?:url)?\s*\(?\s*[\'"]?([^\'"\);]+)[\'"]?\s*\)?  # url or quoted string
 			\s*([^;]*);?  # media argument
 		!x',
-		'variables'   => '!@variables\s*([^\{]*)\{\s*(.*?)\s*\};?!s',
+		'variables'   => '!@(?:variables|define)\s*([^\{]*)\{\s*(.*?)\s*\};?!s',
 		'atRule'      => '!@([-a-z_]+)\s*([^\{]*)\{\s*(.*?)\s*\};?!s',
 		'comment'     => '!/\*(.*?)\*/!s',
 		'string'      => '!(\'|"|`)(?:\\1|[^\1])*?\1!',
@@ -52,6 +52,7 @@ class CssCrush {
 		'token'       => array(
 			'comment' => '!___c\d+___!',
 			'string'  => '!___s\d+___!',
+			'import'  => '!___i\d+___!',
 			'rule'    => '!___r\d+___!',
 			'paren'   => '!___p\d+___!',
 		),
@@ -110,7 +111,7 @@ class CssCrush {
 
 		// Load aliases file if it exists
 		if ( file_exists( $aliases_file ) ) {
-			if ( $result = parse_ini_file( $aliases_file, true ) ) {
+			if ( $result = @parse_ini_file( $aliases_file, true ) ) {
 				self::$aliasesRaw = $result;
 
 				// Value aliases require a little preprocessing
@@ -124,7 +125,7 @@ class CssCrush {
 				}
 			}
 			else {
-				trigger_error( __METHOD__ . ": Aliases file was not parsed correctly (syntax error).\n", E_USER_NOTICE );
+				trigger_error( __METHOD__ . ": Aliases file could not be parsed.\n", E_USER_NOTICE );
 			}
 		}
 		else {
@@ -140,7 +141,7 @@ class CssCrush {
 
 		// Load plugins
 		if ( file_exists( $plugins_file ) ) {
-			if ( $result = parse_ini_file( $plugins_file ) ) {
+			if ( $result = @parse_ini_file( $plugins_file ) ) {
 				foreach ( $result[ 'plugins' ] as $plugin_file ) {
 					$path = self::$location . "/plugins/$plugin_file";
 					if ( file_exists( $path ) ) {
@@ -152,7 +153,7 @@ class CssCrush {
 				}
 			}
 			else {
-				trigger_error( __METHOD__ . ": Plugins file was not parsed correctly (syntax error).\n", E_USER_NOTICE );
+				trigger_error( __METHOD__ . ": Plugin file could not be parsed.\n", E_USER_NOTICE );
 			}
 		}
 	}
@@ -168,11 +169,21 @@ class CssCrush {
 			// Already loaded and config file exists in the current directory
 			return;
 		}
-		else if ( file_exists( $config->path ) ) {
+
+		$configFileExists = file_exists( $config->path );
+		$configFileWritable = $configFileExists ? is_writable( $config->path ) : false;
+
+		if ( $configFileExists and $configFileWritable ) {
 			// Load from file
 			$config->data = unserialize( file_get_contents( $config->path ) );
 		}
 		else {
+			// Config file may exist but not be writable (may not be visible in some ftp situations?)
+			if ( $configFileExists ) {
+				if ( ! @unlink( $config->path ) ) {
+					trigger_error( __METHOD__ . ": Could not delete config file.\n", E_USER_NOTICE );
+				}
+			}
 			// Create
 			self::log( 'Creating config file' );
 			file_put_contents( $config->path, serialize( array() ) );
@@ -196,7 +207,7 @@ class CssCrush {
 		}
 		else if ( !is_writable( $new_dir ) ) {
 			self::log( 'Attempting to change permissions' );
-			if ( !chmod( $new_dir, 0777 ) ) {
+			if ( ! @chmod( $new_dir, 0755 ) ) {
 				trigger_error( __METHOD__ . ": directory '$new_dir' is unwritable.\n", E_USER_WARNING );
 				self::log( 'Unable to update permissions' );
 				$pathtest = false;
@@ -226,6 +237,9 @@ class CssCrush {
 	public static function file ( $file, $options = null ) {
 
 		$config = self::$config;
+
+		// Reset for current process
+		self::reset();
 
 		// Since we're comparing strings, we need to iron out OS differences
 		$file = str_replace( '\\', '/', $file );
@@ -291,7 +305,7 @@ class CssCrush {
 		$stream = CssCrush_Importer::hostfile( $hostfile );
 
 		// Compile
-		$stream = self::compile( $stream );
+		$stream = self::compile( $stream, true );
 
 		// Add in boilerplate
 		if ( $options[ 'boilerplate' ] ) {
@@ -320,12 +334,39 @@ class CssCrush {
 		$file = self::file( $file, $options );
 		if ( !empty( $file ) ) {
 			// On success return the tag with any custom attributes
-			$attr_string = '';
-			foreach ( $attributes as $name => $value ) {
-				$value = htmlspecialchars( $value, ENT_COMPAT, 'UTF-8', false );
-				$attr_string .= " $name=\"$value\"";
+			$attributes[ 'rel' ] = "stylesheet";
+			$attributes[ 'href' ] = $file;
+			$attr_string = CssCrush_Util::attributes( $attributes );
+			return "<link $attr_string />\n";
+		}
+		else {
+			// Return an HTML comment with message on failure
+			$class = __CLASS__;
+			return "<!-- $class: File $file not found -->\n";
+		}
+	}
+
+	/**
+	 * Process host CSS file and return CSS as text wrapped in html style tags
+	 *
+	 * @param string $file  Absolute or relative path to the host CSS file
+	 * @param mixed $options  An array of options or null
+	 * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag
+	 * @return string  HTML link tag or error message inside HTML comment
+	 */
+	public static function inline ( $file, $options = null, $attributes = array() ) {
+		$file = self::file( $file, $options );
+		if ( !empty( $file ) ) {
+			// On success fetch the CSS text
+			$content = file_get_contents( self::$config->baseDir . '/' . self::$compileName );
+			$tag_open = '';
+			$tag_close = '';
+			if ( is_array( $attributes ) ) {
+				$attr_string = CssCrush_Util::attributes( $attributes );
+				$tag_open = "<style$attr_string>";
+				$tag_close = '</style>';
 			}
-			return "<link rel=\"stylesheet\" href=\"$file\"$attr_string />\n";
+			return "$tag_open{$content}$tag_close\n";
 		}
 		else {
 			// Return an HTML comment with message on failure
@@ -342,6 +383,8 @@ class CssCrush {
 	 * @return string  CSS text
 	 */
 	public static function string ( $string, $options = null ) {
+		// Reset for current process
+		self::reset();
 		self::parseOptions( $options );
 		return self::compile( $string );
 	}
@@ -587,10 +630,7 @@ TPL;
 		return $stream;
 	}
 
-	protected static function compile ( $stream ) {
-
-		$regex = self::$regex;
-
+	protected static function reset () {
 		// Reset properties for current process
 		self::$tokenUID = 0;
 		self::$storage = new stdClass;
@@ -601,6 +641,11 @@ TPL;
 			'parens'   => array(),
 		);
 		self::$storage->variables = array();
+	}
+
+	protected static function compile ( $stream, $preprocessed = false ) {
+
+		$regex = self::$regex;
 
 		// Load in aliases and macros
 		if ( !self::$assetsLoaded ) {
@@ -612,14 +657,16 @@ TPL;
 		self::$aliases = self::$aliasesRaw;
 		self::pruneAliases();
 
-		// Extract comments
-		$stream = preg_replace_callback( $regex->comment, array( 'self', 'cb_extractComments' ), $stream );
+		if ( !$preprocessed ) {
+			// Extract comments
+			$stream = self::extractComments( $stream );
+		}
 
 		// Extract strings
-		$stream = preg_replace_callback( $regex->string, array( 'self', 'cb_extractStrings' ), $stream );
+		$stream = self::extractStrings( $stream );
 
 		// Parse variables
-		$stream = preg_replace_callback( $regex->variables, array( 'self', 'cb_extractVariables' ), $stream );
+		$stream = self::extractVariables( $stream );
 
 		// Calculate the variable stack
 		self::calculateVariables();
@@ -640,8 +687,8 @@ TPL;
 		);
 		$stream = "\n" . str_replace( array_keys( $map ), array_values( $map ), $stream );
 
-		// Extract rules
-		$stream = preg_replace_callback( $regex->rule, array( 'self', 'cb_extractRules' ), $stream );
+		// Rules
+		$stream = self::extractAndProcessRules( $stream );
 
 		// Alias at-rules (if there are any)
 		$stream = self::aliasAtRules( $stream );
@@ -649,8 +696,6 @@ TPL;
 		// print it all back
 		$stream = self::display( $stream );
 
-		// self::log( self::$storage->tokens->rules );
-		// self::log( self::$storage->tokens );
 		self::log( self::$config->data );
 
 		// Release memory
@@ -903,13 +948,13 @@ TPL;
 	#  preg_replace callbacks
 
 	protected static function cb_extractStrings ( $match ) {
-		$label = self::createTokenLabel( 's' );
-		self::$storage->tokens->strings[ $label ] = $match[0];
+		$label = CssCrush::createTokenLabel( 's' );
+		CssCrush::$storage->tokens->strings[ $label ] = $match[0];
 		return $label;
 	}
 
 	protected static function cb_restoreStrings ( $match ) {
-		return self::$storage->tokens->strings[ $match[0] ];
+		return CssCrush::$storage->tokens->strings[ $match[0] ];
 	}
 
 	protected static function cb_extractComments ( $match ) {
@@ -922,42 +967,6 @@ TPL;
 
 	protected static function cb_restoreComments ( $match ) {
 		return self::$storage->tokens->comments[ $match[0] ];
-	}
-
-	protected static function cb_extractRules ( $match ) {
-
-		$rule = new stdClass;
-		$rule->selector_raw = $match[1];
-		$rule->declaration_raw = $match[2];
-
-		CssCrush_Hook::run( 'rule_preprocess', $rule );
-
-		$rule = new CssCrush_Rule( $rule->selector_raw, $rule->declaration_raw );
-
-		// Only store rules with declarations
-		if ( !empty( $rule->declarations ) ) {
-
-			CssCrush_Hook::run( 'rule_prealias', $rule );
-
-			if ( !empty( self::$aliases ) ) {
-				$rule->addPropertyAliases();
-				$rule->addFunctionAliases();
-				$rule->addValueAliases();
-			}
-
-			CssCrush_Hook::run( 'rule_postalias', $rule );
-
-			$rule->expandSelectors();
-
-			CssCrush_Hook::run( 'rule_postprocess', $rule );
-
-			$label = self::createTokenLabel( 'r' );
-			self::$storage->tokens->rules[ $label ] = $rule;
-			return $label . "\n";
-		}
-		else {
-			return '';
-		}
 	}
 
 	protected static function cb_extractVariables ( $match ) {
@@ -1004,6 +1013,42 @@ TPL;
 		}
 	}
 
+	protected static function cb_extractAndProcessRules ( $match ) {
+
+		$rule = new stdClass;
+		$rule->selector_raw = $match[1];
+		$rule->declaration_raw = $match[2];
+
+		CssCrush_Hook::run( 'rule_preprocess', $rule );
+
+		$rule = new CssCrush_Rule( $rule->selector_raw, $rule->declaration_raw );
+
+		// Only store rules with declarations
+		if ( !empty( $rule->declarations ) ) {
+
+			CssCrush_Hook::run( 'rule_prealias', $rule );
+
+			if ( !empty( self::$aliases ) ) {
+				$rule->addPropertyAliases();
+				$rule->addFunctionAliases();
+				$rule->addValueAliases();
+			}
+
+			CssCrush_Hook::run( 'rule_postalias', $rule );
+
+			$rule->expandSelectors();
+
+			CssCrush_Hook::run( 'rule_postprocess', $rule );
+
+			$label = self::createTokenLabel( 'r' );
+			self::$storage->tokens->rules[ $label ] = $rule;
+			return $label . "\n";
+		}
+		else {
+			return '';
+		}
+	}
+
 	protected static function cb_restoreLiteral ( $match ) {
 		return self::$storage->tokens[ $match[0] ];
 	}
@@ -1039,13 +1084,41 @@ TPL;
 		}
 	}
 
+	############
+	#  Parsing methods
+
+	public static function extractAndProcessRules ( $stream ) {
+		return preg_replace_callback( self::$regex->rule, array( 'self', 'cb_extractAndProcessRules' ), $stream );
+	}
+
+	public static function extractVariables ( $stream ) {
+		return preg_replace_callback( self::$regex->variables, array( 'self', 'cb_extractVariables' ), $stream );
+	}
+
+	public static function extractComments ( $stream ) {
+		return preg_replace_callback( self::$regex->comment, array( 'self', 'cb_extractComments' ), $stream );
+	}
+
+	public static function extractStrings ( $stream ) {
+		return preg_replace_callback( self::$regex->string, array( 'self', 'cb_extractStrings' ), $stream );
+	}
+
 
 	############
 	#  Utilities
 
 	public static function splitDelimList ( $str, $delim, $fold_in = false, $allow_empty = false ) {
 		$match_obj = self::matchAllBrackets( $str );
-		$match_obj->list = explode( $delim, $match_obj->string );
+		
+		// If the delimiter is one character do a simple split
+		// Otherwise do a regex split 
+		if ( 1 === strlen( $delim ) ) {
+			$match_obj->list = explode( $delim, $match_obj->string );
+		}
+		else {
+			$match_obj->list = preg_split( '!' . $delim . '!', $match_obj->string );
+		}
+		
 		if ( false === $allow_empty ) {
 			$match_obj->list = array_filter( $match_obj->list );
 		}
@@ -1062,16 +1135,6 @@ TPL;
 	public static function createTokenLabel ( $prefix, $counter = null ) {
 		$counter = !is_null( $counter ) ? $counter : ++self::$tokenUID;
 		return "___$prefix{$counter}___";
-	}
-
-	public static function normalizeWhiteSpace ( $str ) {
-		$str = trim( preg_replace( '!\s+!', ' ', $str ) );
-		// spaces around commas and inside parens
-		$str = str_replace(
-			array( ', ', ' ,', '( ', ' )' ),
-			array( ',' , ',' , '(' , ')'  ),
-			$str );
-		return $str;
 	}
 
 	public static function matchBrackets ( $str, $brackets = array( '(', ')' ), $search_pos = 0 ) {
@@ -1197,14 +1260,29 @@ TPL;
 		return $match_obj;
 	}
 
-	public static function addRuleMacro ( $fn ) {
-		if ( !function_exists( $fn ) ) {
-			trigger_error( __METHOD__ . ": Function '$fn' not defined.\n", E_USER_WARNING );
-			return;
-		}
-		if ( !in_array( $fn, self::$macros ) ) {
-			self::$macros[] = $fn;
-		}
-	}
-
 }
+
+
+#######################
+#  Procedural style API
+
+function csscrush_file ( $file, $options = null ) {
+	return CssCrush::file( $file, $options );
+}
+function csscrush_tag ( $file, $options = null, $attributes = array() ) {
+	return CssCrush::tag( $file, $options, $attributes );
+}
+function csscrush_inline ( $file, $options = null, $attributes = array() ) {
+	return CssCrush::inline( $file, $options, $attributes );
+}
+function csscrush_string ( $string, $options = null ) {
+	return CssCrush::string( $string, $options );
+}
+function csscrush_globalvars ( $vars ) {
+	return CssCrush::globalVars( $vars );
+}
+function csscrush_clearcache ( $dir = '' ) {
+	return CssCrush::clearcache( $dir );
+}
+
+
