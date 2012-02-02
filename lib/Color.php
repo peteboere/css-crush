@@ -5,14 +5,14 @@
  * 
  */
 
-class CssCrush_Color {
+class csscrush_color {
 
 	protected static $keywords = array();
 	
 	public static function getKeywords () {
 		// Load the keywords if necessary
 		if ( empty( self::$keywords ) ) {
-			$path = CssCrush::$location . '/misc/color-keywords.ini';
+			$path = csscrush::$location . '/misc/color-keywords.ini';
 			if ( $keywords = parse_ini_file( $path ) ) {
 				foreach ( $keywords as $word => $rgb ) {
 					$rgb = array_map( 'intval', explode( ',', $rgb ) );

@@ -1,5 +1,16 @@
-1.4
+1.4.1
 -----
+Added command line application
+Added 'rewrite_import_urls' option - Ability to rewrite relative url references inside imported css files
+Added Prepend.css - Optionally prepend css to every input
+Fix for issue #21
+Reorganized aliases file with some additions
+Initial-values updated
+Updated csscrush::string method to correctly handle import statements
+
+
+1.4
+---
 Added initial-keyword plugin (shim for the CSS3 keyword)
 Added inline method (Issue #18)
 Added ability to escape declarations from aliasing or plugins by prefixing with tilde

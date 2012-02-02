@@ -1,0 +1,39 @@
+/*$!
+
+Prepend.css contains library variables by default, but it could also contain reset styles such as reset.css or normalize.css that you would need prepended to every css file.
+
+*/
+
+@define {
+
+	/*------------------------
+	Font stacks
+	------------------------*/
+
+	/* Serif */
+	georgia:    Georgia, Times, "Times New Roman", serif;
+	times:      Times, "Times New Roman", serif;
+	palatino:   Palatino, 'Palatino Linotype', "Hoefler Text", serif;
+	serif:      $( times );
+
+	/* Sans-serif */
+	helvetica:  "Helvetica Neue", Helvetica, Arial, sans-serif;
+	arial:      "Arial Unicode MS", Arial, Helvetica, sans-serif;
+	verdana:    Verdana, Tahoma, Arial, sans-serif;
+	lucida:     "Lucida Sans Unicode", "Lucida Sans", "Lucida Grande", Verdana, sans-serif;
+	sans-serif: $( arial );
+
+	/* Monospace */
+	courier:    "Courier New", Courier, mono;
+	consolas:   Consolas, "Lucida Console", Monaco, "Courier New", Courier, mono;
+	monaco:     Monaco, "Courier New", Courier, mono;
+	mono:       $( courier );
+
+	/* Unicode */
+	unicode:    "Arial Unicode MS", Arial, "Microsoft Sans Serif", "Lucida Grande", sans-serif;
+
+}
+
+
+
+

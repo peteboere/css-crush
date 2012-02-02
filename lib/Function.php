@@ -5,7 +5,7 @@
  *
  */
 
-class CssCrush_Function {
+class csscrush_function {
 
 	// Regex pattern for finding custom functions
 	public static $functionPatt;
@@ -135,7 +135,7 @@ class CssCrush_Function {
 	}
 
 	protected static function parseArgs ( $input, $allowSpaceDelim = false ) {
-		$args = CssCrush::splitDelimList( $input, 
+		$args = csscrush_util::splitDelimList( $input, 
 				( $allowSpaceDelim ? '\s*[,\s]\s*' : ',' ), 
 				true, true );
 		return array_map( 'trim', $args->list );
@@ -144,7 +144,7 @@ class CssCrush_Function {
 	protected static function colorAdjust ( $color, array $adjustments ) {
 
 		$fn_matched = preg_match( '!^(#|rgba?|hsla?)!', $color, $m );
-		$keywords = CssCrush_Color::getKeywords();
+		$keywords = csscrush_color::getKeywords();
 
 		// Support for Hex, RGB, RGBa and keywords
 		// HSL and HSLa are passed over
@@ -157,7 +157,7 @@ class CssCrush_Function {
 			if ( $fn_matched ) {
 				switch ( $m[1] ) {
 					case '#':
-						$rgb = CssCrush_Color::hexToRgb( $color );
+						$rgb = csscrush_color::hexToRgb( $color );
 						break;
 
 					case 'rgb':
@@ -173,10 +173,10 @@ class CssCrush_Function {
 							$alpha = array_pop( $vals );
 						}
 						if ( 0 === strpos( $function, 'rgb' ) ) {
-							$rgb = CssCrush_Color::normalizeCssRgb( $vals );
+							$rgb = csscrush_color::normalizeCssRgb( $vals );
 						}
 						else {
-							$rgb = CssCrush_Color::cssHslToRgb( $vals );
+							$rgb = csscrush_color::cssHslToRgb( $vals );
 						}
 						break;
 				}
@@ -185,7 +185,7 @@ class CssCrush_Function {
 				$rgb = $keywords[ $color ];
 			}
 
-			$hsl = CssCrush_Color::rgbToHsl( $rgb );
+			$hsl = csscrush_color::rgbToHsl( $rgb );
 
 			// Normalize adjustment parameters to floating point numbers
 			// then calculate the new HSL value
@@ -213,12 +213,12 @@ class CssCrush_Function {
 			}
 			
 			// Finally convert new HSL value to RGB
-			$rgb = CssCrush_Color::hslToRgb( $hsl );
+			$rgb = csscrush_color::hslToRgb( $hsl );
 
 			// Return as hex if there is no modified alpha channel
 			// Otherwise return RGBA string
 			if ( 1 === $alpha ) {
-				return CssCrush_Color::rgbToHex( $rgb );
+				return csscrush_color::rgbToHex( $rgb );
 			}
 			$rgb[] = $alpha;
 			return 'rgba(' . implode( ',', $rgb ) . ')';
@@ -234,31 +234,48 @@ class CssCrush_Function {
 	public static function css_fn__math ( $input ) {
 		// Whitelist allowed characters
 		$input = preg_replace( '![^\.0-9\*\/\+\-\(\)]!', '', $input );
-		$result = 0;
-		try {
-			$result = eval( "return $input;" );
-		}
-		catch ( Exception $e ) {};
-		return round( $result, 10 );
+
+		$result = @eval( "return $input;" );
+		
+		return $result === false ? 0 : round( $result, 10 );
 	}
 
 	public static function css_fn__percent ( $input ) {
 
 		$args = self::parseMathArgs( $input );
 
-		// Use precision argument if it exists, default to 7
-		$precision = isset( $args[2] ) ? $args[2] : 7;
+		// Use precision argument if it exists, use default otherwise
+		$precision = isset( $args[2] ) ? $args[2] : 5;
 
+		// Output zero on failure
 		$result = 0;
-		if ( count( $args ) > 1 ) {
+
+		// Need to check arguments or we may see divide by zero errors
+		if ( count( $args ) > 1 and !empty( $args[0] ) and !empty( $args[1] ) ) {
+
+			// Use bcmath if it's available for higher precision
+
 			// Arbitary high precision division
-			$div = (string) bcdiv( $args[0], $args[1], 25 );
+			if ( function_exists( 'bcdiv' ) ) {
+				$div = bcdiv( $args[0], $args[1], 25 );
+			}
+			else {
+				$div = $args[0] / $args[1];
+			}
+
 			// Set precision percentage value
-			$result = (string) bcmul( $div, '100', $precision );
+			if ( function_exists( 'bcmul' ) ) {
+				$result = bcmul( (string) $div, '100', $precision );
+			}
+			else {
+				$result = round( $div * 100, $precision );
+			}
+
 			// Trim unnecessary zeros and decimals
-			$result = trim( $result, '0' );
+			$result = trim( (string) $result, '0' );
 			$result = rtrim( $result, '.' );
 		}
+
 		return $result . '%';
 	}
 
@@ -271,8 +288,8 @@ class CssCrush_Function {
 
 		// Normalize, since argument might be a string token
 		if ( strpos( $input, '___s' ) === 0 ) {
-			$string_labels = array_keys( CssCrush::$storage->tokens->strings );
-			$string_values = array_values( CssCrush::$storage->tokens->strings );
+			$string_labels = array_keys( csscrush::$storage->tokens->strings );
+			$string_values = array_values( csscrush::$storage->tokens->strings );
 			$input = trim( str_replace( $string_labels, $string_values, $input ), '\'"`' );
 		}
 
@@ -280,19 +297,16 @@ class CssCrush_Function {
 		$result = "url($input)";
 
 		// No attempt to process absolute urls
-		if (
-			strpos( $input, 'http://' ) === 0 or
-			strpos( $input, 'https://' ) === 0
-		) {
+		if ( preg_match( csscrush::$regex->absoluteUrl, $input ) ) {
 			return $result;
 		}
 
 		// Get system file path
 		if ( strpos( $input, '/' ) === 0 ) {
-			$file = CssCrush::$config->docRoot . $input;
+			$file = csscrush::$config->docRoot . $input;
 		}
 		else {
-			$baseDir = CssCrush::$config->baseDir;
+			$baseDir = csscrush::$config->baseDir;
 			$file = "$baseDir/$input";
 		}
 
