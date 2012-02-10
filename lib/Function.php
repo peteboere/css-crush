@@ -335,10 +335,8 @@ class csscrush_function {
 		$mime_type = $allowed_file_extensions[ $file_ext ];
 		$base64 = base64_encode( file_get_contents( $file ) );
 		$data_uri = "data:{$mime_type};base64,$base64";
-		if ( strlen( $data_uri ) > 32000 ) {
-			// Too big for IE
-		}
-		return "url($data_uri)";
+
+		return "url(\"$data_uri\")";
 	}
 
 	public static function css_fn__h_adjust ( $input ) {

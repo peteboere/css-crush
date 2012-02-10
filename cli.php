@@ -133,14 +133,6 @@ else {
 	exit( 1 );
 }
 
-// Check if specified output file is valid before processing
-if ( $output_file ) {
-	if ( ! file_exists( $output_file ) ) {
-		fwrite( $stdout, "can't find output file\n\n" );
-		exit( 0 );
-	}
-}
-
 
 ##################################################################
 ##  Processing
@@ -159,17 +151,37 @@ $process_opts[ 'rewrite_import_urls' ] = true;
 
 $import_context = $input_file ? dirname( realpath( $input_file ) ) : null;
 
-$output = csscrush::string( $input, $process_opts, $import_context );
+// If there is an import context set it to the document root
+if ( $import_context ) {
+	$old_doc_root = csscrush::$config->docRoot;
+	csscrush::$config->docRoot = $import_context;
+	$process_opts[ 'import_context' ] = $import_context;
+}
+
+// Process the stream
+$output = csscrush::string( $input, $process_opts );
+
+// Reset the document root after processing
+if ( $import_context ) {
+	csscrush::$config->docRoot = $old_doc_root;
+}
 
 
 ##################################################################
 ##  Output
 
 if ( $output_file ) {
-	file_put_contents( $output_file, $output );
+	if ( ! @file_put_contents( $output_file, $output ) ) {
+		fwrite( $stdout, "Could not write to path '$output_file'\n" );
+		if ( strpos( $output_file, '~' ) === 0 ) {
+			fwrite( $stdout, "No tilde expansion\n" );
+		}
+		exit( 0 );
+	}
 }
 else {
-	fwrite( $stdout, $output . "\n" );
+	$output .= "\n";
+	fwrite( $stdout, $output );
 }
 exit( 1 );
 

@@ -64,6 +64,12 @@ class csscrush_importer {
 			$preStatement  = substr( $stream, 0, $matchStart );
 			$postStatement = substr( $stream, $matchEnd );
 
+			// If just stripping the import statements
+			if ( isset( $hostfile->importIgnore ) ) {
+				$stream = $preStatement . $postStatement;
+				continue;
+			}
+
 			$url = trim( $match[1][0] );
 
 			// Url may be a string token

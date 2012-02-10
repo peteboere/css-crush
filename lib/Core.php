@@ -361,17 +361,16 @@ class csscrush {
 	 *
 	 * @param string $string  CSS text
 	 * @param mixed $options  An array of options or null
-	 * @param string $import_context  A context path for imports
 	 * @return string  CSS text
 	 */
-	public static function string ( $string, $options = null, $import_context = null ) {
+	public static function string ( $string, $options = null ) {
 		// Reset for current process
 		self::reset();
 		self::getOptions( $options );
 
 		// Set the path context if one is given
-		if ( $import_context ) {
-			self::setPath( $import_context );
+		if ( isset( $options[ 'import_context' ] ) && ! empty( $options[ 'import_context' ] ) ) {
+			self::setPath( $options[ 'import_context' ] );
 		}
 
 		// It's not associated with a real file so we create an 'empty' hostfile object
@@ -379,6 +378,11 @@ class csscrush {
 
 		// Set the string on the object
 		$hostfile->string = $string;
+
+		// Import files may be ignored
+		if ( isset( $options[ 'no_import' ] ) ) {
+			$hostfile->importIgnore = true;
+		}
 
 		// Collate imports
 		$stream = csscrush_importer::hostfile( $hostfile );
