@@ -4,7 +4,8 @@
  *  Access to the execution flow for plugins
  * 
  */
-class CssCrush_Hook {
+
+class csscrush_hook {
 	
 	static public $record = array();
 	

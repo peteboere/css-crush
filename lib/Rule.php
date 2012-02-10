@@ -5,7 +5,7 @@
  * 
  */
 
-class CssCrush_Rule implements IteratorAggregate {
+class csscrush_rule implements IteratorAggregate {
 
 	public $vendorContext = null;
 	public $properties = array();
@@ -16,12 +16,12 @@ class CssCrush_Rule implements IteratorAggregate {
 
 	public function __construct ( $selector_string = null, $declarations_string ) {
 
-		$regex = CssCrush::$regex;
+		$regex = csscrush::$regex;
 
 		// Parse the selectors chunk
 		if ( !empty( $selector_string ) ) {
 
-			$selectors_match = CssCrush::splitDelimList( $selector_string, ',' );
+			$selectors_match = csscrush_util::splitDelimList( $selector_string, ',' );
 			$this->parens += $selectors_match->matches;
 
 			// Remove and store comments that sit above the first selector
@@ -36,11 +36,11 @@ class CssCrush_Rule implements IteratorAggregate {
 		}
 
 		// Apply any custom functions
-		$declarations_string = CssCrush_Function::parseAndExecuteValue( $declarations_string );
+		$declarations_string = csscrush_function::parseAndExecuteValue( $declarations_string );
 
 		// Parse the declarations chunk
 		// Need to split safely as there are semi-colons in data-uris
-		$declarations_match = CssCrush::splitDelimList( $declarations_string, ';' );
+		$declarations_match = csscrush_util::splitDelimList( $declarations_string, ';' );
 		$this->parens += $declarations_match->matches;
 
 		// Parse declarations in to property/value pairs
@@ -86,7 +86,7 @@ class CssCrush_Rule implements IteratorAggregate {
 
 			// Create an index of all functions in the current declaration
 			if ( preg_match_all( $regex->function->match, $value, $functions ) > 0 ) {
-				// CssCrush::log( $functions );
+				// csscrush::log( $functions );
 				$out = array();
 				foreach ( $functions[2] as $index => $fn_name ) {
 					$out[] = $fn_name;
@@ -112,8 +112,8 @@ class CssCrush_Rule implements IteratorAggregate {
 
 	public function addPropertyAliases () {
 
-		$regex = CssCrush::$regex;
-		$aliasedProperties =& CssCrush::$aliases[ 'properties' ];
+		$regex = csscrush::$regex;
+		$aliasedProperties =& csscrush::$aliases[ 'properties' ];
 
 		// First test for the existence of any aliased properties
 		$intersect = array_intersect( array_keys( $aliasedProperties ), array_keys( $this->properties ) );
@@ -157,7 +157,7 @@ class CssCrush_Rule implements IteratorAggregate {
 
 	public function addFunctionAliases () {
 
-		$function_aliases =& CssCrush::$aliases[ 'functions' ];
+		$function_aliases =& csscrush::$aliases[ 'functions' ];
 		$aliased_functions = array_keys( $function_aliases );
 
 		if ( empty( $aliased_functions ) ) {
@@ -187,7 +187,7 @@ class CssCrush_Rule implements IteratorAggregate {
 				$new_set[] = $declaration;
 				continue;
 			}
-			// CssCrush::log($intersect);
+			// csscrush::log($intersect);
 			// Loop the aliasable functions
 			foreach ( $intersect as $fn_name ) {
 				
@@ -239,7 +239,7 @@ class CssCrush_Rule implements IteratorAggregate {
 
 	public function addValueAliases () {
 
-		$aliasedValues =& CssCrush::$aliases[ 'values' ];
+		$aliasedValues =& csscrush::$aliases[ 'values' ];
 
 		// First test for the existence of any aliased properties
 		$intersect = array_intersect( array_keys( $aliasedValues ), array_keys( $this->properties ) );
