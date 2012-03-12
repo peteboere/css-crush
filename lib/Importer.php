@@ -57,10 +57,9 @@ class csscrush_importer {
 		// Recurses until the nesting heirarchy is flattened and all files are combined
 		while ( preg_match( $regex->import, $stream, $match, PREG_OFFSET_CAPTURE, $searchOffset ) ) {
 
-			$fullMatch     = $match[0][0];         // Full match
-			$matchStart    = $match[0][1];         // Full match offset
+			$fullMatch     = $match[0][0]; // Full match
+			$matchStart    = $match[0][1]; // Full match offset
 			$matchEnd      = $matchStart + strlen( $fullMatch );
-			$mediaContext  = trim( $match[2][0] ); // The media context if specified
 			$preStatement  = substr( $stream, 0, $matchStart );
 			$postStatement = substr( $stream, $matchEnd );
 
@@ -70,17 +69,22 @@ class csscrush_importer {
 				continue;
 			}
 
+			// The media context (if specified) at position 3 in the match
+			$mediaContext = trim( $match[3][0] );
+
+			// The url may be at position 1 or 2 in the match depending on the syntax used
 			$url = trim( $match[1][0] );
+			if ( ! $url ) {
+				$url = trim( $match[2][0] );
+			}
 
 			// Url may be a string token
 			if ( preg_match( $regex->token->string, $url ) ) {
 				$import_url_token = new csscrush_string( $url );
 				$url = $import_url_token->value;
-				// $import_url_token = csscrush::$storage->tokens->strings[ $url ];
-				// $url = trim( $import_url_token, '\'"' );
 			}
 
-			// csscrush::log( $url );
+			// csscrush::log( $match );
 
 			// Pass over absolute urls
 			// Move the search pointer forward

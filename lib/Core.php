@@ -37,7 +37,11 @@ class csscrush {
 	public static $regex = array(
 		'import'      => '!
 			@import\s+    # import at-rule
-			(?:url)?\s*\(?\s*[\'"]?([^\'"\);]+)[\'"]?\s*\)?  # url or quoted string
+			(?:
+			url\(\s*([^\)]+)\s*\) # url function
+			|                     # or
+			([_s\d]+)             # string token
+			)
 			\s*([^;]*);?  # media argument
 		!x',
 		'variables'   => '!@(?:variables|define)\s*([^\{]*)\{\s*(.*?)\s*\};?!s',

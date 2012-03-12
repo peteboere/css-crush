@@ -11,8 +11,8 @@ require_once 'CssCrush.php';
 
 // stdin
 $stdin = fopen( 'php://stdin', 'r' );
-stream_set_blocking( $stdin, false ) or die ( 'Failed to disable stdin blocking' );
 $stdin_contents = stream_get_contents( $stdin );
+fclose( $stdin );
 
 // stdout
 $stdout = fopen( 'php://stdout', 'w' );
