@@ -7,14 +7,12 @@
 
 require_once 'CssCrush.php';
 
-// error_reporting('-1');
-
-// stdin
+// Get stdin input
 $stdin = fopen( 'php://stdin', 'r' );
 $stdin_contents = stream_get_contents( $stdin );
 fclose( $stdin );
 
-// stdout
+// Open stdout handle
 $stdout = fopen( 'php://stdout', 'w' );
 
 

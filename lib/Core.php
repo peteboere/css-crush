@@ -321,7 +321,7 @@ class csscrush {
 			$attributes[ 'rel' ] = "stylesheet";
 			$attributes[ 'href' ] = $file;
 			$attr_string = csscrush_util::htmlAttributes( $attributes );
-			return "<link $attr_string />\n";
+			return "<link$attr_string />\n";
 		}
 		else {
 			// Return an HTML comment with message on failure
