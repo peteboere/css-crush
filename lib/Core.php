@@ -881,7 +881,7 @@ TPL;
 		$replacements = array(
 			'!\n+| (\{)!'                       => '$1',    // Trim whitespace
 			'!(^|[: \(,])0(\.\d+)!'             => '$1$2',  // Strip leading zeros on floats
-			'!(^|[: \(,])\.?0[a-zA-Z]{1,5}!i'   => '${1}0', // Strip unnecessary units on zero values
+			'!(^|[: \(,])\.?0(?:e[mx]|c[hm]|rem|v[hwm]|(?:moz)?mm|in|p[tcx])!i'   => '${1}0', // Strip unnecessary units on zero values for length types
 			'!(^|\:) *(0 0 0|0 0 0 0) *(;|\})!' => '${1}0${3}', // Collapse zero lists
 			'!(padding|margin) ?\: *0 0 *(;|\})!' => '${1}:0${2}', // Collapse zero lists continued
 			'!\s*([>~+=])\s*!'                  => '$1',     // Clean-up around combinators
