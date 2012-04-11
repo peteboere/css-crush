@@ -13,7 +13,7 @@
  * 
  */
 
-CssCrush_Hook::add( 'rule_preprocess', 'csscrush_hocuspocus' );
+csscrush_hook::add( 'rule_preprocess', 'csscrush_hocuspocus' );
 
 function csscrush_hocuspocus ( $rule ) {
 	$adjustments = array(

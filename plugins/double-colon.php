@@ -11,7 +11,7 @@
  * 
  */
 
-CssCrush_Hook::add( 'rule_preprocess', 'csscrush_doublecolon' );
+csscrush_hook::add( 'rule_preprocess', 'csscrush_doublecolon' );
 
 function csscrush_doublecolon ( $rule ) {
 	$rule->selector_raw = preg_replace( '!::(after|before|first-letter|first-line)!', ':$1', $rule->selector_raw );

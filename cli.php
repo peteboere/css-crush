@@ -7,8 +7,14 @@
 
 require_once 'CssCrush.php';
 
+
+// Exit status constants
+define( 'STATUS_OK', 0 );
+define( 'STATUS_ERROR', 1 );
+
 // Get stdin input
 $stdin = fopen( 'php://stdin', 'r' );
+stream_set_blocking( $stdin, false ) or die ( 'Failed to disable stdin blocking' );
 $stdin_contents = stream_get_contents( $stdin );
 fclose( $stdin );
 
@@ -23,7 +29,7 @@ $version = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
 $required_version = 5.3;
 if ( $version < $required_version ) {
 	fwrite( $stdout, "PHP version $required_version or higher is required to use this tool.\nYou are currently running PHP version $version\n\n" );
-	exit( 1 );
+	exit( STATUS_ERROR );
 }
 
 
@@ -107,7 +113,7 @@ TPL;
 
 if ( $help_flag ) {
 	fwrite( $stdout, $help );
-	exit( 1 );
+	exit( STATUS_OK );
 }
 
 
@@ -118,8 +124,8 @@ $input = null;
 
 if ( $input_file ) {
 	if ( ! file_exists( $input_file ) ) {
-		fwrite( $stdout, "can't find input file\n\n" );
-		exit( 0 );
+		fwrite( $stdout, "Input file not found\n\n" );
+		exit( STATUS_ERROR );
 	}
 	$input = file_get_contents( $input_file );
 }
@@ -128,7 +134,7 @@ elseif ( $stdin_contents ) {
 }
 else {
 	fwrite( $stdout, $help );
-	exit( 1 );
+	exit( STATUS_OK );
 }
 
 
@@ -170,18 +176,20 @@ if ( $import_context ) {
 
 if ( $output_file ) {
 	if ( ! @file_put_contents( $output_file, $output ) ) {
-		fwrite( $stdout, "Could not write to path '$output_file'\n" );
+		$message = "Could not write to path '$output_file'\n";
 		if ( strpos( $output_file, '~' ) === 0 ) {
-			fwrite( $stdout, "No tilde expansion\n" );
+			$message .= "Tilde expansion does not work\n";
 		}
-		exit( 0 );
+		fwrite( $stdout, $message );
+		exit( STATUS_ERROR );
 	}
 }
 else {
 	$output .= "\n";
 	fwrite( $stdout, $output );
 }
-exit( 1 );
+
+exit( STATUS_OK );
 
 
 

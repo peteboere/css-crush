@@ -10,7 +10,7 @@
  *     *clip: rect(1px 1px 1px 1px);
  */
 
-CssCrush_Hook::add( 'rule_postalias', 'csscrush_clip' );
+csscrush_hook::add( 'rule_postalias', 'csscrush_clip' );
 
 function csscrush_clip ( CssCrush_Rule $rule ) {
 	// Assume it's been dealt with if the property occurs more than once 
@@ -26,8 +26,7 @@ function csscrush_clip ( CssCrush_Rule $rule ) {
 		) {
 			continue;
 		}
-		$new_set[] = $rule->createDeclaration( 
-						'*clip', str_replace( ',', ' ', $rule->getDeclarationValue( $declaration ) ) );
+		$new_set[] = $rule->addDeclaration( '*clip', str_replace( ',', ' ', $declaration->getFullValue() ) );
 	}
 	$rule->declarations = $new_set;
 }

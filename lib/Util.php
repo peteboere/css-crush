@@ -31,7 +31,7 @@ class csscrush_util {
 	public static function find () {
 
 		foreach ( func_get_args() as $file ) {
-			$file_path = csscrush::$location . '/' . $file;
+			$file_path = csscrush::$config->location . '/' . $file;
 			if ( file_exists( $file_path ) ) {
 				return $file_path;
 			}
@@ -54,7 +54,7 @@ class csscrush_util {
 	public static function splitDelimList ( $str, $delim, $fold_in = false, $allow_empty = false ) {
 
 		$match_obj = self::matchAllBrackets( $str );
-		
+
 		// If the delimiter is one character do a simple split
 		// Otherwise do a regex split 
 		if ( 1 === strlen( $delim ) ) {
@@ -63,16 +63,21 @@ class csscrush_util {
 		else {
 			$match_obj->list = preg_split( '!' . $delim . '!', $match_obj->string );
 		}
-		
+
 		if ( false === $allow_empty ) {
 			$match_obj->list = array_filter( $match_obj->list );
 		}
 		if ( $fold_in ) {
-			$match_keys = array_keys( $match_obj->matches );
-			$match_values = array_values( $match_obj->matches );
+			// $match_keys = array_keys( $match_obj->matches );
+			// $match_values = array_values( $match_obj->matches );
+			// foreach ( $match_obj->list as &$item ) {
+			// 	$item = str_replace( $match_keys, $match_values, $item );
+			// }
+			
 			foreach ( $match_obj->list as &$item ) {
-				$item = str_replace( $match_keys, $match_values, $item );
+				$item = csscrush::tokenReplace( $item, $match_obj->matches );
 			}
+			
 		}
 		return $match_obj;
 	}
@@ -85,7 +90,7 @@ class csscrush_util {
 		$closings = array();
 		$brake = 50; // Set a limit in the case of errors
 
-		$match = new stdClass;
+		$match = new stdclass();
 
 		$start_index = strpos( $str, $opener, $search_pos );
 		$close_index = strpos( $str, $closer, $search_pos );
@@ -139,7 +144,7 @@ class csscrush_util {
 
 	public static function matchAllBrackets ( $str, $pair = '()', $offset = 0 ) {
 
-		$match_obj = new stdClass;
+		$match_obj = new stdclass();
 		$match_obj->string = $str;
 		$match_obj->raw = $str;
 		$match_obj->matches = array();
@@ -161,7 +166,7 @@ class csscrush_util {
 			$char = $str[ $index ];
 
 			if ( $opener === $char ) {
-				if ( !$inside_paren ) {
+				if ( ! $inside_paren ) {
 					$paren_score = 1;
 					$match_start = $index;
 				}
@@ -189,9 +194,10 @@ class csscrush_util {
 			$content = substr( $str, $start, $finish - $start );
 			$after = substr( $str, $finish );
 
-			$label = csscrush::createTokenLabel( 'p' );
+			$label = csscrush::tokenLabelCreate( 'p' );
 			$str = $before . $label . $after;
-			$match_obj->matches[ $label ] = $content;
+			// $match_obj->matches[ $label ] = $content;
+			$match_obj->matches[] = $label;
 
 			// Parens will be folded in later
 			csscrush::$storage->tokens->parens[ $label ] = $content;
@@ -225,7 +231,7 @@ class csscrush_string {
 	}
 	
 	public function update ( $newValue ) {
-		csscrush::$storage->tokens->strings = $newValue;
+		csscrush::$storage->tokens->strings[ $this->token ] = $newValue;
 	}
 }
 
