@@ -15,13 +15,13 @@
  * 
  */
 
-CssCrush_Hook::add( 'rule_prealias', 'csscrush_initial' );
+csscrush_hook::add( 'rule_prealias', 'csscrush_initial' );
 
 function csscrush_initial ( CssCrush_Rule $rule ) {
 
 	static $initialValues = null;
 	if ( ! $initialValues ) {
-		if ( ! ( $initialValues = @parse_ini_file( CssCrush::$location . '/misc/initial-values.ini' ) ) ) {
+		if ( ! ( $initialValues = @parse_ini_file( CssCrush::$config->location . '/misc/initial-values.ini' ) ) ) {
 			trigger_error( __METHOD__ . ": Initial keywords file could not be parsed.\n", E_USER_NOTICE );
 			return;
 		}

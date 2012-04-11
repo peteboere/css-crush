@@ -10,7 +10,7 @@
  *     _height: 100px;
  */
 
-CssCrush_Hook::add( 'rule_postalias', 'csscrush_minheight' );
+csscrush_hook::add( 'rule_postalias', 'csscrush_minheight' );
 
 function csscrush_minheight ( CssCrush_Rule $rule ) {
 	if ( $rule->propertyCount( 'min-height' ) < 1 ) {
@@ -24,7 +24,7 @@ function csscrush_minheight ( CssCrush_Rule $rule ) {
 			$declaration->property !== 'min-height' ) {
 			continue;
 		}
-		$new_set[] = $rule->createDeclaration( '_height', $declaration->value );
+		$new_set[] = $rule->addDeclaration( '_height', $declaration->value );
 	}
 	$rule->declarations = $new_set;
 }

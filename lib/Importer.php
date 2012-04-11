@@ -10,7 +10,7 @@ class csscrush_importer {
 
 	public static function save ( $data ) {
 
-		$config = csscrush::$config;
+		$process = csscrush::$process;
 		$options = csscrush::$options;
 
 		// No saving if caching is disabled, return early
@@ -19,21 +19,20 @@ class csscrush_importer {
 		}
 
 		// Write to config
-		$config->data[ csscrush::$compileName ] = $data;
-
-		// Need to store the current path so we can check we're using the right config path later
-		$config->data[ 'originPath' ] = $config->path;
+		$process->cacheData[ $process->outputFileName ] = $data;
 
 		// Save config changes
-		file_put_contents( $config->path, serialize( $config->data ) );
+		csscrush::io_call( 'saveCacheData' );
 	}
 
 
-	public static function hostfile ( $hostfile ) {
+	public static function hostfile () {
 
 		$config = csscrush::$config;
+		$process = csscrush::$process;
 		$options = csscrush::$options;
 		$regex = csscrush::$regex;
+		$hostfile = $process->input;
 
 		// Keep track of all import file info for later logging
 		$mtimes = array();
@@ -41,7 +40,12 @@ class csscrush_importer {
 
 		// Determine input; string or file
 		// Extract the comments then strings
-		$stream = isset( $hostfile->string ) ? $hostfile->string : file_get_contents( $hostfile->path );
+		if ( isset( $hostfile->string ) ) {
+			$stream = $hostfile->string;
+		}
+		else {
+			$stream = file_get_contents( $hostfile->path );
+		}
 
 		// If there's a prepend file, prepend it
 		if ( $prependFile = csscrush_util::find( 'Prepend-local.css', 'Prepend.css' ) ) {
@@ -84,8 +88,6 @@ class csscrush_importer {
 				$url = $import_url_token->value;
 			}
 
-			// csscrush::log( $match );
-
 			// Pass over absolute urls
 			// Move the search pointer forward
 			if ( preg_match( $regex->absoluteUrl, $url ) ) {
@@ -94,7 +96,7 @@ class csscrush_importer {
 			}
 
 			// Create import object
-			$import = new stdClass;
+			$import = new stdclass();
 			$import->url = $url;
 			$import->mediaContext = $mediaContext;
 			$import->hostDir = $hostfile->dir;
@@ -112,18 +114,19 @@ class csscrush_importer {
 
 			// Failed to open import, just continue with the import line removed
 			if ( ! $import->content ) {
-				csscrush::log( "Import file '$import->url' not found" );
+				csscrush::log( "Import file '$import->url' not found at '$import->path'" );
 				$stream = $preStatement . $postStatement;
 				continue;
 
 			}
-			// Import file opened successfully so we process it:
-			//   We need to resolve import statement urls in all imported files since
-			//   they will be brought inline with the hostfile
 			else {
+				// Import file opened successfully so we process it:
+				//   We need to resolve import statement urls in all imported files since
+				//   they will be brought inline with the hostfile
 
-				// Start with extracting comments in the import
+				// Start with extracting strings and comments in the import
 				$import->content = csscrush::extractComments( $import->content );
+				$import->content = csscrush::extractStrings( $import->content );
 
 				$import->dir = dirname( $import->url );
 
@@ -135,13 +138,30 @@ class csscrush_importer {
 				//   Match all @import statements in the import content
 				//   Store the replacements we might find
 				$matchCount = preg_match_all( $regex->import, $import->content, $matchAll,
-								PREG_OFFSET_CAPTURE );
+								PREG_OFFSET_CAPTURE | PREG_SET_ORDER );
 				$replacements = array();
+
 				for ( $index = 0; $index < $matchCount; $index++ ) {
 
-					$fullMatch = $matchAll[0][ $index ][0];
-					$urlMatch  = $matchAll[1][ $index ][0];
+					$fullMatch = $matchAll[ $index ][0][0];
+					
+					// Url match may be at one of 2 positions
+					if ( $matchAll[ $index ][1][1] == -1 ) {
+						$urlMatch  = $matchAll[ $index ][2][0];
+					}
+					else {
+						$urlMatch  = $matchAll[ $index ][1][0];
+					}
 
+					// Url may be a string token
+					if ( $urlMatchToken = preg_match( $regex->token->string, $urlMatch ) ) {
+						// Store the token
+						$urlMatchToken = new csscrush_string( $urlMatch );
+						// Set $urlMatch to the actual value
+						$urlMatch = $urlMatchToken->value;
+					}
+
+					// Search and replace on the statement url
 					$search = $urlMatch;
 					$replace = "$import->dir/$urlMatch";
 
@@ -155,26 +175,34 @@ class csscrush_importer {
 						}
 					}
 
-					// Trim the statement and set the resolved path
-					$statement = trim( str_replace( $search, $replace, $fullMatch ) );
+					// The full revised statement for replacement
+					$statement = $fullMatch;
+
+					if ( $urlMatchToken and ! empty( $replace ) ) {
+						// Alter the stored token on internal hash table
+						$urlMatchToken->update( $replace );
+					}
+					else {
+						// Trim the statement and set the resolved path
+						$statement = trim( str_replace( $search, $replace, $fullMatch ) );
+					}
 
 					// Normalise import statement to be without url() syntax:
 					//   This is so relative urls can easily be targeted later
 					$statement = self::normalizeImportStatement( $statement );
 
-					$replacements[ $fullMatch ] = $statement;
+					if ( $fullMatch !== $statement ) {
+						$replacements[ $fullMatch ] = $statement;
+					}
 				}
 
 				// If we've stored any altered @import strings then we need to apply them
-				if ( count( $replacements ) ) {
+				if ( $replacements ) {
 					$import->content = str_replace(
 						array_keys( $replacements ),
 						array_values( $replacements ),
 						$import->content );
 				}
-
-				// Now @import urls have been adjusted extract strings
-				$import->content = csscrush::extractStrings( $import->content );
 
 				// Optionally rewrite relative url and custom function data-uri references
 				if ( $options[ 'rewrite_import_urls' ] ) {
@@ -233,12 +261,13 @@ class csscrush_importer {
 	protected static function resolveAbsolutePath ( $url ) {
 
 		$config = csscrush::$config;
+		$process = csscrush::$process;
 
 		if ( ! file_exists ( $config->docRoot . $url ) ) {
 			return false;
 		}
 		// Move upwards '..' by the number of slashes in baseURL to get a relative path
-		$url = str_repeat( '../', substr_count( $config->baseURL, '/' ) ) . substr( $url, 1 );
+		$url = str_repeat( '../', substr_count( $process->inputDirUrl, '/' ) ) . substr( $url, 1 );
 
 		return $url;
 	}
@@ -252,7 +281,7 @@ class csscrush_importer {
 		$hostDir = csscrush_util::normalizeSystemPath( $import->hostDir, true );
 		$importDir = csscrush_util::normalizeSystemPath( dirname( $import->path ), true );
 
-		csscrush::$storage->tmp->relativeUrlPrefix = '';
+		csscrush::$storage->misc->relativeUrlPrefix = '';
 		$url_prefix = '';
 
 		if ( $importDir === $hostDir ) {
@@ -302,7 +331,7 @@ class csscrush_importer {
 		// and prepend $relative_url_prefix
 
 		// Make $url_prefix accessible in callback scope
-		csscrush::$storage->tmp->relativeUrlPrefix = $url_prefix;
+		csscrush::$storage->misc->relativeUrlPrefix = $url_prefix;
 
 		$url_function_patt = '!
 			([^a-z-])         # the preceeding character
@@ -361,3 +390,4 @@ class csscrush_importer {
 	}
 
 }
+

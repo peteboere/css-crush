@@ -19,10 +19,10 @@ class csscrush_rule implements IteratorAggregate {
 		$regex = csscrush::$regex;
 
 		// Parse the selectors chunk
-		if ( !empty( $selector_string ) ) {
+		if ( ! empty( $selector_string ) ) {
 
 			$selectors_match = csscrush_util::splitDelimList( $selector_string, ',' );
-			$this->parens += $selectors_match->matches;
+			// $this->parens += $selectors_match->matches;
 
 			// Remove and store comments that sit above the first selector
 			// remove all comments between the other selectors
@@ -35,85 +35,37 @@ class csscrush_rule implements IteratorAggregate {
 			$this->selectors = $selectors_match->list;
 		}
 
-		// Apply any custom functions
-		$declarations_string = csscrush_function::parseAndExecuteValue( $declarations_string );
-
 		// Parse the declarations chunk
 		// Need to split safely as there are semi-colons in data-uris
-		$declarations_match = csscrush_util::splitDelimList( $declarations_string, ';' );
-		$this->parens += $declarations_match->matches;
+		$declarations_match = csscrush_util::splitDelimList( $declarations_string, ';', true );
 
-		// Parse declarations in to property/value pairs
+		// Split declarations in to property/value pairs
 		foreach ( $declarations_match->list as $declaration ) {
+
 			// Strip comments around the property
 			$declaration = preg_replace( $regex->token->comment, '', $declaration );
 
-			// Store the property
+			// Extract the property part of the declaration
 			$colonPos = strpos( $declaration, ':' );
 			if ( $colonPos === false ) {
 				// If there is no colon it's malformed
 				continue;
 			}
-
-			// The property name
 			$prop = trim( substr( $declaration, 0, $colonPos ) );
-
-			// Test for escape tilde
-			if ( $skip = strpos( $prop, '~' ) === 0 ) {
-				$prop = substr( $prop, 1 );
-			}
-			// Store the property name
-			$this->addProperty( $prop );
-
-			// Store the property family
-			// Store the vendor id, if one is present
-			if ( preg_match( $regex->vendorPrefix, $prop, $vendor ) ) {
-				$family = $vendor[2];
-				$vendor = $vendor[1];
-			}
-			else {
-				$vendor = null;
-				$family = $prop;
-			}
 
 			// Extract the value part of the declaration
 			$value = substr( $declaration, $colonPos + 1 );
 			$value = $value !== false ? trim( $value ) : $value;
-			if ( $value === false or $value === '' ) {
-				// We'll ignore declarations with empty values
-				continue;
-			}
 
-			// Create an index of all functions in the current declaration
-			if ( preg_match_all( $regex->function->match, $value, $functions ) > 0 ) {
-				// csscrush::log( $functions );
-				$out = array();
-				foreach ( $functions[2] as $index => $fn_name ) {
-					$out[] = $fn_name;
-				}
-				$functions = array_unique( $out );
-			}
-			else {
-				$functions = array();
-			}
-
-			// Store the declaration
-			$_declaration = (object) array(
-				'property'  => $prop,
-				'family'    => $family,
-				'vendor'    => $vendor,
-				'functions' => $functions,
-				'value'     => $value,
-				'skip'      => $skip,
-			);
-			$this->declarations[] = $_declaration;
+			// Add declaration to the stack
+			$this->addDeclaration( $prop, $value );
 		}
 	}
 
 	public function addPropertyAliases () {
 
 		$regex = csscrush::$regex;
-		$aliasedProperties =& csscrush::$aliases[ 'properties' ];
+		$aliasedProperties =& csscrush::$config->aliases[ 'properties' ];
 
 		// First test for the existence of any aliased properties
 		$intersect = array_intersect( array_keys( $aliasedProperties ), array_keys( $this->properties ) );
@@ -157,7 +109,7 @@ class csscrush_rule implements IteratorAggregate {
 
 	public function addFunctionAliases () {
 
-		$function_aliases =& csscrush::$aliases[ 'functions' ];
+		$function_aliases =& csscrush::$config->aliases[ 'functions' ];
 		$aliased_functions = array_keys( $function_aliases );
 
 		if ( empty( $aliased_functions ) ) {
@@ -239,7 +191,7 @@ class csscrush_rule implements IteratorAggregate {
 
 	public function addValueAliases () {
 
-		$aliasedValues =& csscrush::$aliases[ 'values' ];
+		$aliasedValues =& csscrush::$config->aliases[ 'values' ];
 
 		// First test for the existence of any aliased properties
 		$intersect = array_intersect( array_keys( $aliasedValues ), array_keys( $this->properties ) );
@@ -287,7 +239,7 @@ class csscrush_rule implements IteratorAggregate {
 						preg_match( '!:any(___p\d+___)!', $selector, $m );
 
 						// Parse the arguments
-						$expression = trim( $this->parens[ $m[1] ], '()' );
+						$expression = trim( csscrush::$storage->tokens->parens[ $m[1] ], '()' );
 						$parts = preg_split( $reg_comma, $expression, null, PREG_SPLIT_NO_EMPTY );
 
 						$tmp = array();
@@ -339,7 +291,7 @@ class csscrush_rule implements IteratorAggregate {
 		return 0;
 	}
 
-	// Add property to the rule index keeping track of the count
+
 	public function addProperty ( $prop ) {
 		if ( isset( $this->properties[ $prop ] ) ) {
 			$this->properties[ $prop ]++;
@@ -349,27 +301,199 @@ class csscrush_rule implements IteratorAggregate {
 		}
 	}
 
-	public function createDeclaration ( $property, $value, $options = array() ) {
-		// Test for escape tilde
-		if ( $skip = strpos( $property, '~' ) === 0 ) {
-			$property = substr( $property, 1 );
-		}
-		$_declaration = array(
-			'property'  => $property,
-			'family'    => null,
-			'vendor'    => null,
-			'value'     => $value,
-			'skip'      => $skip,
-		);
-		$this->addProperty( $property );
-		return (object) array_merge( $_declaration, $options );
+
+	public function addDeclaration ( $prop, $value ) {
+
+		// $regex = csscrush::$regex;
+		// 
+		// // Check the input
+		// if ( empty( $prop ) or $value === '' or $value === null ) {
+		// 	return false;
+		// }
+		// 
+		// // Test for escape tilde
+		// if ( $skip = strpos( $prop, '~' ) === 0 ) {
+		// 	$prop = substr( $prop, 1 );
+		// }
+		// 
+		// // Store the property family
+		// // Store the vendor id, if one is present
+		// if ( preg_match( $regex->vendorPrefix, $prop, $vendor ) ) {
+		// 	$family = $vendor[2];
+		// 	$vendor = $vendor[1];
+		// }
+		// else {
+		// 	$vendor = null;
+		// 	$family = $prop;
+		// }
+		// 
+		// // Check for !important keywords
+		// if ( ( $important = strpos( $value, '!important' ) ) !== false ) {
+		// 	$value = substr( $value, 0, $important );
+		// 	$important = true;
+		// }
+		// 
+		// // Ignore declarations with null css values
+		// if ( $value === false or $value === '' ) {
+		// 	return false;
+		// }
+		// 
+		// // Apply custom functions
+		// if ( ! $skip ) {
+		// 	$value = csscrush_function::parseAndExecuteValue( $value );
+		// }
+		// 
+		// // Tokenize all remaining paren pairs
+		// $match_obj = csscrush_util::matchAllBrackets( $value );
+		// $this->parens += $match_obj->matches;
+		// $value = $match_obj->string;
+		// 
+		// 
+		// // Create an index of all regular functions in the value
+		// if ( preg_match_all( $regex->function->match, $value, $functions ) > 0 ) {
+		// 	$out = array();
+		// 	foreach ( $functions[2] as $index => $fn_name ) {
+		// 		$out[] = $fn_name;
+		// 	}
+		// 	$functions = array_unique( $out );
+		// }
+		// else {
+		// 	$functions = array();
+		// }
+		// 
+		// // Store the declaration
+		// $_declaration = (object) array(
+		// 	'property'   => $prop,
+		// 	'family'     => $family,
+		// 	'vendor'     => $vendor,
+		// 	'functions'  => $functions,
+		// 	'value'      => $value,
+		// 	'skip'       => $skip,
+		// 	'important'  => $important,
+		// );
+
+		
+
+		// Store the property name
+		$this->addProperty( $prop );
+
+		// Add declaration to the stack
+		$_declaration = new csscrush_declaration( $prop, $value );
+		$this->declarations[] = $_declaration;
+
+		return $_declaration;
 	}
 
-	// Get a declaration value without paren tokens
-	public function getDeclarationValue ( $declaration ) {
-		$paren_keys = array_keys( $this->parens );
-		$paren_values = array_values( $this->parens );
-		return str_replace( $paren_keys, $paren_values, $declaration->value );
+	// 
+	// // Get a declaration value without paren tokens
+	// public function getDeclarationValue ( $declaration ) {
+	// 	// $paren_keys = array_keys( $this->parens );
+	// 	// $paren_values = array_values( $this->parens );
+	// 	
+	// 	return csscrush::tokenReplace( $declaration->value, $token_replace );
+	// 	
+	// 	return str_replace( $paren_keys, $paren_values, $declaration->value );
+	// }
+
+}
+
+
+class csscrush_declaration {
+
+	public $property;
+	public $family;
+	public $vendor;
+	public $functions;
+	public $value;
+	public $skip;
+	public $important;
+	public $parenTokens;
+	
+	public function __construct ( $prop, $value ) {
+		
+		$regex = csscrush::$regex;
+
+		// Check the input
+		if ( empty( $prop ) or $value === '' or $value === null ) {
+			return false;
+		}
+
+		// Test for escape tilde
+		if ( $skip = strpos( $prop, '~' ) === 0 ) {
+			$prop = substr( $prop, 1 );
+		}
+
+		// Store the property family
+		// Store the vendor id, if one is present
+		if ( preg_match( $regex->vendorPrefix, $prop, $vendor ) ) {
+			$family = $vendor[2];
+			$vendor = $vendor[1];
+		}
+		else {
+			$vendor = null;
+			$family = $prop;
+		}
+
+		// Check for !important keywords
+		if ( ( $important = strpos( $value, '!important' ) ) !== false ) {
+			$value = substr( $value, 0, $important );
+			$important = true;
+		}
+
+		// Ignore declarations with null css values
+		if ( $value === false or $value === '' ) {
+			return false;
+		}
+
+		// Apply custom functions
+		if ( ! $skip ) {
+			$value = csscrush_function::parseAndExecuteValue( $value );
+		}
+
+		// Tokenize all remaining paren pairs
+		$match_obj = csscrush_util::matchAllBrackets( $value );
+		$this->parenTokens = $match_obj->matches;
+		$value = $match_obj->string;
+
+
+		// Create an index of all regular functions in the value
+		if ( preg_match_all( $regex->function->match, $value, $functions ) > 0 ) {
+			$out = array();
+			foreach ( $functions[2] as $index => $fn_name ) {
+				$out[] = $fn_name;
+			}
+			$functions = array_unique( $out );
+		}
+		else {
+			$functions = array();
+		}
+
+		// // Store the declaration
+		// $_declaration = (object) array(
+		// 	'property'   => $prop,
+		// 	'family'     => $family,
+		// 	'vendor'     => $vendor,
+		// 	'functions'  => $functions,
+		// 	'value'      => $value,
+		// 	'skip'       => $skip,
+		// 	'important'  => $important,
+		// );
+		
+		$this->property   = $prop;
+		$this->family     = $family;
+		$this->vendor     = $vendor;
+		$this->functions  = $functions;
+		$this->value      = $value;
+		$this->skip       = $skip;
+		$this->important  = $important;
+	}
+	
+	public function getFullValue () {
+
+		return csscrush::tokenReplace( $this->value, $this->parenTokens );
 	}
 
 }
+
+
+

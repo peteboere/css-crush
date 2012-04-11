@@ -12,7 +12,7 @@
  *     background: rgba(0,0,0,.5);
  */
 
-CssCrush_Hook::add( 'rule_postalias', 'csscrush_rgba' );
+csscrush_hook::add( 'rule_postalias', 'csscrush_rgba' );
 
 function csscrush_rgba ( CssCrush_Rule $rule ) {
 	$props = array_keys( $rule->properties );
@@ -40,12 +40,12 @@ function csscrush_rgba ( CssCrush_Rule $rule ) {
 			continue;
 		}
 		// Create rgb value from rgba
-		$raw_value = $rule->getDeclarationValue( $declaration );
+		$raw_value = $declaration->getFullValue();
 		$raw_value = substr( $raw_value, 5, strlen( $raw_value ) - 1 );
 		list( $r, $g, $b, $a ) = explode( ',', $raw_value );
 		
 		// Add rgb value to the stack, followed by rgba 
-		$new_set[] = $rule->createDeclaration( $declaration->property, "rgb($r,$g,$b)" );
+		$new_set[] = $rule->addDeclaration( $declaration->property, "rgb($r,$g,$b)" );
 		$new_set[] = $declaration;
 	}
 	$rule->declarations = $new_set;

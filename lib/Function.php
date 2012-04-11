@@ -44,7 +44,7 @@ class csscrush_function {
 		}
 
 		// No custom functions, early return
-		if ( !preg_match( $patt, $str ) ) {
+		if ( ! preg_match( $patt, $str ) ) {
 			return $str;
 		}
 

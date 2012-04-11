@@ -10,18 +10,18 @@
  *    color: #6abf40
  */
 
-CssCrush_Hook::add( 'rule_postalias', 'csscrush_hsl' );
+csscrush_hook::add( 'rule_postalias', 'csscrush_hsl' );
 
 function csscrush_hsl ( CssCrush_Rule $rule ) {
 	foreach ( $rule as &$declaration ) {
 		if ( 
-			!$declaration->skip and
-			( !empty( $declaration->functions ) and in_array( 'hsl', $declaration->functions ) )
+			! $declaration->skip and
+			( ! empty( $declaration->functions ) and in_array( 'hsl', $declaration->functions ) )
 		) {
 			while ( preg_match( '!hsl(___p\d+___)!', $declaration->value, $m ) ) {
 				$full_match = $m[0];
 				$token = $m[1];
-				$hsl = trim( $rule->parens[ $token ], '()' );
+				$hsl = trim( csscrush::$storage->tokens->parens[ $token ], '()' );
 				$hsl = array_map( 'trim', explode( ',', $hsl ) );
 				$rgb = CssCrush_Color::cssHslToRgb( $hsl );
 				$hex = CssCrush_Color::rgbToHex( $rgb );
