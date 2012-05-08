@@ -14,13 +14,15 @@
 
 csscrush_hook::add( 'rule_postalias', 'csscrush_rgba' );
 
-function csscrush_rgba ( CssCrush_Rule $rule ) {
+
+function csscrush_rgba ( csscrush_rule $rule ) {
+
 	$props = array_keys( $rule->properties );
 
 	// Determine which properties apply
 	$rgba_props = array();
 	foreach ( $props as $prop ) {
-		if ( $prop === 'background' or strpos( $prop, 'color' ) !== false ) {
+		if ( $prop === 'background' || strpos( $prop, 'color' ) !== false ) {
 			$rgba_props[] = $prop;
 		}
 	}
@@ -32,9 +34,9 @@ function csscrush_rgba ( CssCrush_Rule $rule ) {
 	foreach ( $rule as $declaration ) {
 		$is_viable = in_array( $declaration->property, $rgba_props );
 		if ( 
-			$declaration->skip or
-			!$is_viable or 
-			$is_viable and !preg_match( '!^rgba___p\d+___$!', $declaration->value )
+			$declaration->skip ||
+			! $is_viable || 
+			$is_viable && !preg_match( '!^rgba___p\d+___$!', $declaration->value )
 		) {
 			$new_set[] = $declaration;
 			continue;
@@ -45,7 +47,7 @@ function csscrush_rgba ( CssCrush_Rule $rule ) {
 		list( $r, $g, $b, $a ) = explode( ',', $raw_value );
 		
 		// Add rgb value to the stack, followed by rgba 
-		$new_set[] = $rule->addDeclaration( $declaration->property, "rgb($r,$g,$b)" );
+		$new_set[] = new csscrush_declaration( $declaration->property, "rgb($r,$g,$b)" );
 		$new_set[] = $declaration;
 	}
 	$rule->declarations = $new_set;

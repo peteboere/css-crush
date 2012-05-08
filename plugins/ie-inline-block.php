@@ -13,7 +13,7 @@
 
 csscrush_hook::add( 'rule_postalias', 'csscrush_display_inlineblock' );
 
-function csscrush_display_inlineblock ( CssCrush_Rule $rule ) {
+function csscrush_display_inlineblock ( csscrush_rule $rule ) {
 	if ( $rule->propertyCount( 'display' ) < 1 ) {
 		return;
 	}
@@ -22,13 +22,13 @@ function csscrush_display_inlineblock ( CssCrush_Rule $rule ) {
 		$new_set[] = $declaration;
 		$is_display = $declaration->property === 'display';
 		if ( 
-			$declaration->skip or 
-			!$is_display or 
-			$is_display and $declaration->value !== 'inline-block' ) {
+			$declaration->skip || 
+			! $is_display || 
+			$is_display && $declaration->value !== 'inline-block' ) {
 			continue;
 		}
-		$new_set[] = $rule->addDeclaration( '*display', 'inline' );
-		$new_set[] = $rule->addDeclaration( '*zoom', 1 );
+		$new_set[] = new csscrush_declaration( '*display', 'inline' );
+		$new_set[] = new csscrush_declaration( '*zoom', 1 );
 	}
 	$rule->declarations = $new_set;
 }

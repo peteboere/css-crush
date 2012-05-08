@@ -12,7 +12,8 @@
 
 csscrush_hook::add( 'rule_postalias', 'csscrush_clip' );
 
-function csscrush_clip ( CssCrush_Rule $rule ) {
+function csscrush_clip ( csscrush_rule $rule ) {
+
 	// Assume it's been dealt with if the property occurs more than once 
 	if ( $rule->propertyCount( 'clip' ) !== 1 ) {
 		return;
@@ -21,12 +22,13 @@ function csscrush_clip ( CssCrush_Rule $rule ) {
 	foreach ( $rule as $declaration ) {
 		$new_set[] = $declaration;
 		if ( 
-			$declaration->skip or
+			$declaration->skip ||
 			$declaration->property !== 'clip' 
 		) {
 			continue;
 		}
-		$new_set[] = $rule->addDeclaration( '*clip', str_replace( ',', ' ', $declaration->getFullValue() ) );
+		$new_set[] = new csscrush_declaration( '*clip', str_replace( ',', ' ', $declaration->getFullValue() ) );
 	}
 	$rule->declarations = $new_set;
 }
+

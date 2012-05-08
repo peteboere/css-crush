@@ -1,0 +1,268 @@
+<?php
+/**
+ *
+ *  Mixin objects
+ *
+ */
+
+class csscrush_mixin {
+
+	public $declarationsTemplate = array();
+
+	public $arguments;
+
+	public function __construct ( $block ) {
+
+		// Strip comment markers
+		$block = csscrush_util::stripComments( $block );
+
+		// Prepare the arguments object
+		$this->arguments = new csscrush_arglist( $block );
+
+		// Re-assign with the parsed arguments string
+		$block = $this->arguments->string;
+
+		// Need to split safely as there are semi-colons in data-uris
+		$declarations_match = csscrush_util::splitDelimList( $block, ';', true );
+
+		foreach ( $declarations_match->list as $raw_declaration ) {
+
+			$colon = strpos( $raw_declaration, ':' );
+			if ( $colon === -1 ) {
+				continue;
+			}
+
+			// Store template declarations as arrays as they are copied by value not reference
+			$declaration = array();
+
+			$declaration['property'] = trim( substr( $raw_declaration, 0, $colon ) );
+			$declaration['value'] = trim( substr( $raw_declaration, $colon + 1 ) );
+
+			if ( $declaration['property'] === 'mixin' ) {
+
+				// Mixin can contain other mixins if they are available
+				if ( $mixin_declarations = csscrush_mixin::parseValue( $declaration['value'] ) ) {
+
+					// Add mixin result to the stack
+					$this->declarationsTemplate = array_merge( $this->declarationsTemplate, $mixin_declarations );
+				}
+			}
+			elseif ( ! empty( $declaration['value'] ) ) {
+				$this->declarationsTemplate[] = $declaration;
+			}
+		}
+		return '';
+	}
+
+
+	public function call ( array $args ) {
+
+		// Copy the template
+		$declarations = $this->declarationsTemplate;
+
+		if ( count( $this->arguments ) ) {
+
+			list( $find, $replace ) = $this->arguments->getSubstitutions( $args );
+
+			// Place the arguments
+			foreach ( $declarations as &$declaration ) {
+				$declaration['value'] = str_replace( $find, $replace, $declaration['value'] );
+			}
+		}
+
+		// Return mixin declarations
+		return $declarations;
+	}
+
+
+	public static function parseSingleValue ( $message ) {
+
+		$message = ltrim( $message );
+
+		// e.g. mymixin( 50px, rgba(0,0,0,0), left 100% )
+
+		if ( preg_match( '!^[a-zA-Z0-9_-]+!', $message, $name_match ) ) {
+
+			$mixin_name = $name_match[0];
+
+			if ( isset( csscrush::$process->mixins[ $mixin_name ] ) ) {
+				$mixin = csscrush::$process->mixins[ $mixin_name ];
+			}
+			else {
+				// No mixin found with that name
+				return false;
+			}
+
+			// Discard the name part and any enclosing parens
+			$message = substr( $message, strlen( $mixin_name ) );
+			$message = trim( $message, ' \r\n\t()' );
+
+			// e.g. "value, rgba(0,0,0,0), left 100%"
+
+			// Determine what raw arguments there are to pass to the mixin
+			$args = array();
+			if ( $message !== '' ) {
+				$args = csscrush_util::splitDelimList( $message, ',', true, true );
+				// $args = array_map( 'trim', $args->list );
+				$args = $args->list;
+			}
+
+			return $mixin->call( $args );
+		}
+		return false;
+	}
+
+
+	public static function parseValue ( $message ) {
+
+		// Call the mixin and return the list of declarations
+		$values = csscrush_util::splitDelimList( $message, ',', true );
+
+		$declarations = array();
+
+		foreach ( $values->list as $item ) {
+
+			if ( $result = self::parseSingleValue( $item ) ) {
+
+				$declarations = array_merge( $declarations, $result );
+			}
+		}
+		return $declarations;
+	}
+}
+
+
+/**
+ *
+ *  Fragment objects
+ *
+ */
+
+class csscrush_fragment {
+
+	public $template = array();
+
+	public $arguments;
+
+	public function __construct ( $block ) {
+
+		// Prepare the arguments object
+		$this->arguments = new csscrush_arglist( $block );
+
+		// Re-assign with the parsed arguments string
+		$this->template = $this->arguments->string;
+	}
+
+	public function call ( array $args ) {
+
+		// Copy the template
+		$template = $this->template;
+
+		if ( count( $this->arguments ) ) {
+
+			list( $find, $replace ) = $this->arguments->getSubstitutions( $args );
+			$template = str_replace( $find, $replace, $template );
+		}
+
+		// Return fragment css
+		return $template;
+	}
+}
+
+
+
+
+/**
+ *
+ *  Argument list management for mixins and fragments
+ *
+ */
+
+class csscrush_arglist implements Countable {
+
+	// Positional argument default values
+	public $defaults = array();
+
+	// The number of expected arguments
+	public $argCount = 0;
+
+	// The string passed in with arg calls replaced by tokens
+	public $string;
+
+	// The arg matching regex
+	protected static $argRegex;
+
+	public static function init () {
+
+		// Create regex pattern for matching 'arg' functions
+		self::$argRegex = csscrush_function::createFunctionMatchPatt( array( 'arg' ), false );
+	}
+
+	function __construct ( $str ) {
+
+		// Parse all arg function calls in the passed string, callback creates default values
+		$this->string = csscrush_function::parseCustomFunctions(
+												$str, self::$argRegex, array( $this, 'store' ) );
+	}
+
+	public function store ( $raw_argument ) {
+
+		// Match the argument index integer
+		if ( ! preg_match( '!^[0-9]+!', $raw_argument, $position_match ) ) {
+			// On failure to match an integer, return an empty string
+			return '';
+		}
+
+		// Get the match from the array
+		$position_match = $position_match[0];
+
+		// Store the default value
+		$default_value = substr( $raw_argument, strlen( $position_match ) );
+		$default_value = $default_value ? ltrim( $default_value, " ,\t\n\r" ) : null;
+
+		if ( ! is_null( $default_value ) ) {
+			$this->defaults[ $position_match ] = trim( $default_value );
+		}
+
+		// Update the mixin argument count
+		$argNumber = ( (int) $position_match ) + 1;
+		$this->argCount = max( $this->argCount, $argNumber );
+
+		// Return the argument token
+		return "___arg{$position_match}___";
+	}
+
+	public function getDefaultValue ( $index ) {
+
+		return isset( $this->defaults[ $index ] ) ? $this->defaults[ $index ] : '';
+	}
+
+	public function getSubstitutions ( $args ) {
+
+		$argIndexes = range( 0, $this->argCount-1 );
+
+		// Create table of substitutions
+		$find = array();
+		$replace = array();
+
+		foreach ( $argIndexes as $index ) {
+
+			$find[] = "___arg{$index}___";
+
+			if ( isset( $args[ $index ] ) && $args[ $index ] !== 'default' ) {
+				$replace[] = $args[ $index ];
+			}
+			else {
+				$replace[] = $this->getDefaultValue( $index );
+			}
+		}
+
+		return array( $find, $replace );
+	}
+
+	public function count () {
+		return $this->argCount;
+	}
+}
+
+

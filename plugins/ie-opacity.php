@@ -14,7 +14,7 @@
 
 csscrush_hook::add( 'rule_postalias', 'csscrush_opacity' );
 
-function csscrush_opacity ( CssCrush_Rule $rule ) {
+function csscrush_opacity ( csscrush_rule $rule ) {
 	if ( $rule->propertyCount( 'opacity' ) < 1 ) {
 		return;
 	}
@@ -22,7 +22,7 @@ function csscrush_opacity ( CssCrush_Rule $rule ) {
 	foreach ( $rule as $declaration ) {
 		$new_set[] = $declaration;
 		if (
-			$declaration->skip or
+			$declaration->skip ||
 			$declaration->property != 'opacity'
 		) {
 			continue;
@@ -31,13 +31,13 @@ function csscrush_opacity ( CssCrush_Rule $rule ) {
 		$opacity = (float) $declaration->value;
 		$opacity = round( $opacity * 100 );
 
-		if ( !$rule->propertyCount( 'zoom' ) ) {
+		if ( ! $rule->propertyCount( 'zoom' ) ) {
 			// Filters need hasLayout
-			$new_set[] = $rule->addDeclaration( 'zoom', 1 );
+			$new_set[] = new csscrush_declaration( 'zoom', 1 );
 		}
 		$value = "alpha(opacity=$opacity)";
-		$new_set[] = $rule->addDeclaration( '-ms-filter', "\"$value\"" );
-		$new_set[] = $rule->addDeclaration( '*filter', $value );
+		$new_set[] = new csscrush_declaration( '-ms-filter', "\"$value\"" );
+		$new_set[] = new csscrush_declaration( '*filter', $value );
 	}
 	$rule->declarations = $new_set;
 }

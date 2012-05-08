@@ -7,8 +7,10 @@
 
 class csscrush_util {
 
+
 	// Create html attribute string from array
 	public static function htmlAttributes ( array $attributes ) {
+
 		$attr_string = '';
 		foreach ( $attributes as $name => $value ) {
 			$value = htmlspecialchars( $value, ENT_COMPAT, 'UTF-8', false );
@@ -18,10 +20,11 @@ class csscrush_util {
 	}
 
 
-	public static function normalizeSystemPath ( $path, $stripMsDos = false ) {
+	public static function normalizeSystemPath ( $path, $strip_ms_dos = false ) {
+
 		$path = rtrim( str_replace( '\\', '/', $path ), '/' );
 		
-		if ( $stripMsDos ) {
+		if ( $strip_ms_dos ) {
 			$path = preg_replace( '!^[a-z]\:!i', '', $path ); 
 		}
 		return $path;
@@ -40,7 +43,13 @@ class csscrush_util {
 	}
 
 
+	public static function stripComments ( $str ) {
+		return preg_replace( csscrush_regex::$patt->commentToken, '', $str );
+	}
+
+
 	public static function normalizeWhiteSpace ( $str ) {
+
 		$replacements = array(
 			'!\s+!'                             => ' ',
 			'!(\[)\s*|\s*(\])|(\()\s*|\s*(\))!' => '${1}${2}${3}${4}',  // Trim internal bracket WS
@@ -51,7 +60,54 @@ class csscrush_util {
 	}
 
 
-	public static function splitDelimList ( $str, $delim, $fold_in = false, $allow_empty = false ) {
+	public static function tokenReplace ( $string, $token_replace, $type = 'parens' ) {
+
+		// The tokens to replace
+		$token_replace = (array) $token_replace;
+
+		// Reference the token table
+		$token_table =& csscrush::$storage->tokens->{ $type };
+
+		// Replace the tokens listed
+		foreach ( $token_replace as $token ) {
+			if ( isset( $token_table[ $token ] ) ) {
+				$string = str_replace( $token, $token_table[ $token ], $string );
+			}
+		}
+
+		return $string;
+	}
+
+
+	public static function tokenReplaceAll ( $str, $type = 'parens' ) {
+
+		// Only $type 'parens' or 'strings' make any sense
+		$token_patt = 'parenToken';
+
+		if ( $type === 'strings' ) {
+			$token_patt = 'stringToken';
+		}
+
+		// Reference the token table
+		$token_table =& csscrush::$storage->tokens->{ $type };
+
+		// Find tokens
+		$matches = csscrush_regex::matchAll( csscrush_regex::$patt->{ $token_patt }, $str );
+	
+		foreach ( $matches as $m ) {
+			
+			$token = $m[0][0];
+			
+			if ( isset( $token_table[ $token ] ) ) {
+			
+				$str = str_replace( $token, $token_table[ $token ], $str );
+			}
+		}
+		return $str;
+	}
+
+
+	public static function splitDelimList ( $str, $delim, $fold_in = false, $trim = false ) {
 
 		$match_obj = self::matchAllBrackets( $str );
 
@@ -64,26 +120,25 @@ class csscrush_util {
 			$match_obj->list = preg_split( '!' . $delim . '!', $match_obj->string );
 		}
 
-		if ( false === $allow_empty ) {
-			$match_obj->list = array_filter( $match_obj->list );
+		if ( true === $trim ) {
+			$match_obj->list = array_map( 'trim', $match_obj->list );
 		}
+
+		// Filter out empties
+		$match_obj->list = array_filter( $match_obj->list );
+		
 		if ( $fold_in ) {
-			// $match_keys = array_keys( $match_obj->matches );
-			// $match_values = array_values( $match_obj->matches );
-			// foreach ( $match_obj->list as &$item ) {
-			// 	$item = str_replace( $match_keys, $match_values, $item );
-			// }
-			
+
 			foreach ( $match_obj->list as &$item ) {
-				$item = csscrush::tokenReplace( $item, $match_obj->matches );
+				$item = csscrush_util::tokenReplace( $item, $match_obj->matches );
 			}
-			
 		}
 		return $match_obj;
 	}
 
 
-	public static function matchBrackets ( $str, $brackets = array( '(', ')' ), $search_pos = 0 ) {
+	public static function matchBrackets ( $str, $brackets = array( '(', ')' ), 
+				$search_pos = 0, $capture_text = false ) {
 
 		list( $opener, $closer ) = $brackets;
 		$openings = array();
@@ -96,18 +151,20 @@ class csscrush_util {
 		$close_index = strpos( $str, $closer, $search_pos );
 
 		if ( $start_index === false ) {
+
 			return false;
 		}
 		if ( substr_count( $str, $opener ) !== substr_count( $str, $closer ) ) {
-		 	$sample = substr( $str, 0, 15 );
+
+		 	$sample = substr( $str, 0, 25 );
 			trigger_error( __METHOD__ . ": Unmatched token near '$sample'.\n", E_USER_WARNING );
 			return false;
 		}
 
 		while (
-			( $start_index !== false or $close_index !== false ) and $brake--
+			( $start_index !== false || $close_index !== false ) && $brake--
 		) {
-			if ( $start_index !== false and $close_index !== false ) {
+			if ( $start_index !== false && $close_index !== false ) {
 				$search_pos = min( $start_index, $close_index );
 				if ( $start_index < $close_index ) {
 					$openings[] = $start_index;
@@ -127,10 +184,18 @@ class csscrush_util {
 			$search_pos += 1; // Advance
 
 			if ( count( $closings ) === count( $openings ) ) {
+
 				$match->openings = $openings;
+				$match->start = $start = $openings[0];
 				$match->closings = $closings;
-				$match->start = $openings[0];
 				$match->end = $closings[ count( $closings ) - 1 ] + 1;
+
+				if ( $capture_text ) {
+					// Text capturing is optional to avoid using memory when not necessary
+					$match->inside = substr( $str, $start + 1, $match->end - $start - 2 );
+					$match->after = substr( $str, $match->end );
+				}
+
 				return $match;
 			}
 			$start_index = strpos( $str, $opener, $search_pos );
@@ -188,6 +253,7 @@ class csscrush_util {
 
 		// Step backwards through the matches
 		while ( $offset = array_pop( $offsets ) ) {
+
 			list( $start, $finish ) = $offset;
 
 			$before = substr( $str, 0, $start );
@@ -196,7 +262,6 @@ class csscrush_util {
 
 			$label = csscrush::tokenLabelCreate( 'p' );
 			$str = $before . $label . $after;
-			// $match_obj->matches[ $label ] = $content;
 			$match_obj->matches[] = $label;
 
 			// Parens will be folded in later
@@ -207,10 +272,14 @@ class csscrush_util {
 
 		return $match_obj;
 	}
-
-
 }
 
+
+/**
+ *
+ *  String sugar
+ *
+ */
 
 class csscrush_string {
 

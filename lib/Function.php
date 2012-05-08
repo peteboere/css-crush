@@ -16,7 +16,13 @@ class csscrush_function {
 	public static function init () {
 		// Set the custom function regex pattern
 		self::$functionList = self::getFunctions();
-		self::$functionPatt = '!(^|[^a-z0-9_-])(' . implode( '|', self::$functionList ) . ')?\(!i';
+		self::$functionPatt = self::createFunctionMatchPatt( self::$functionList );
+	}
+
+	public static function createFunctionMatchPatt ( $list, $include_unnamed_function = true ) {
+
+		$question = $include_unnamed_function ? '?' : '';
+		return '!(^|[^a-z0-9_-])(' . implode( '|', $list ) . ')' . $question . '\(!i';
 	}
 
 	public static function getFunctions () {
@@ -34,9 +40,7 @@ class csscrush_function {
 		return $fn_methods;
 	}
 
-	public static function parseAndExecuteValue ( $str ) {
-
-		$patt = self::$functionPatt;
+	public static function parseCustomFunctions ( $str, $patt, $process_callback = null ) {
 
 		// No bracketed expressions, early return
 		if ( false === strpos( $str, '(' ) ) {
@@ -52,10 +56,10 @@ class csscrush_function {
 		$str = preg_replace( '!\(([^\s])!', '( $1', $str, -1, $spacing_count );
 
 		// Find custom function matches
-		$match_count = preg_match_all( $patt, $str, $m, PREG_OFFSET_CAPTURE | PREG_SET_ORDER  );
+		$matches = csscrush_regex::matchAll( $patt, $str );
 
 		// Step through the matches from last to first
-		while ( $match = array_pop( $m ) ) {
+		while ( $match = array_pop( $matches ) ) {
 
 			$offset = $match[0][1];
 			$before_char = $match[1][0];
@@ -97,9 +101,16 @@ class csscrush_function {
 					$minus_before = '-' === $raw_fn_name ? '-' : '';
 
 					$result = '';
-					if ( in_array( $fn_name, self::$functionList ) ) {
-						$fn_name_clean = str_replace( '-', '_', $fn_name );
-						$result = call_user_func( array( 'self', "css_fn__$fn_name_clean" ), $content );
+					
+					if ( ! $process_callback ) {
+						// If no callback reference it's a built-in
+						if ( in_array( $fn_name, self::$functionList ) ) {
+							$fn_name_clean = str_replace( '-', '_', $fn_name );
+							$result = call_user_func( array( 'self', "css_fn__$fn_name_clean" ), $content );
+						}
+					}
+					else {
+						$result = call_user_func( $process_callback, $content );
 					}
 
 					// Join together the result
@@ -115,6 +126,11 @@ class csscrush_function {
 		}
 
 		return $str;
+		
+	} 
+
+	public static function parseAndExecuteValue ( $str ) {
+		return self::parseCustomFunctions( $str, self::$functionPatt );
 	}
 
 
@@ -135,10 +151,16 @@ class csscrush_function {
 	}
 
 	protected static function parseArgs ( $input, $allowSpaceDelim = false ) {
-		$args = csscrush_util::splitDelimList( $input, 
-				( $allowSpaceDelim ? '\s*[,\s]\s*' : ',' ), 
-				true, true );
-		return array_map( 'trim', $args->list );
+
+		$args = csscrush_util::splitDelimList( 
+			$input, 
+			( $allowSpaceDelim ? '\s*[,\s]\s*' : ',' ), 
+			true, 
+			true );
+
+		// return array_map( 'trim', $args->list );
+		
+		return $args->list;
 	}
 
 	protected static function colorAdjust ( $color, array $adjustments ) {
@@ -148,7 +170,7 @@ class csscrush_function {
 
 		// Support for Hex, RGB, RGBa and keywords
 		// HSL and HSLa are passed over
-		if ( $fn_matched or array_key_exists( $color, $keywords ) ) {
+		if ( $fn_matched || array_key_exists( $color, $keywords ) ) {
 
 			$alpha = 1;
 			$rgb = null;
@@ -237,7 +259,7 @@ class csscrush_function {
 
 		$result = @eval( "return $input;" );
 		
-		return $result === false ? 0 : round( $result, 10 );
+		return $result === false ? 0 : round( $result, 5 );
 	}
 
 	public static function css_fn__percent ( $input ) {
@@ -251,7 +273,7 @@ class csscrush_function {
 		$result = 0;
 
 		// Need to check arguments or we may see divide by zero errors
-		if ( count( $args ) > 1 and !empty( $args[0] ) and !empty( $args[1] ) ) {
+		if ( count( $args ) > 1 && !empty( $args[0] ) && !empty( $args[1] ) ) {
 
 			// Use bcmath if it's available for higher precision
 
@@ -297,7 +319,7 @@ class csscrush_function {
 		$result = "url($input)";
 
 		// No attempt to process absolute urls
-		if ( preg_match( csscrush::$regex->absoluteUrl, $input ) ) {
+		if ( preg_match( csscrush_regex::$patt->absoluteUrl, $input ) ) {
 			return $result;
 		}
 

@@ -31,7 +31,7 @@ class csscrush_importer {
 		$config = csscrush::$config;
 		$process = csscrush::$process;
 		$options = csscrush::$options;
-		$regex = csscrush::$regex;
+		$regex = csscrush_regex::$patt;
 		$hostfile = $process->input;
 
 		// Keep track of all import file info for later logging
@@ -83,7 +83,7 @@ class csscrush_importer {
 			}
 
 			// Url may be a string token
-			if ( preg_match( $regex->token->string, $url ) ) {
+			if ( preg_match( $regex->stringToken, $url ) ) {
 				$import_url_token = new csscrush_string( $url );
 				$url = $import_url_token->value;
 			}
@@ -147,14 +147,14 @@ class csscrush_importer {
 					
 					// Url match may be at one of 2 positions
 					if ( $matchAll[ $index ][1][1] == -1 ) {
-						$urlMatch  = $matchAll[ $index ][2][0];
+						$urlMatch = $matchAll[ $index ][2][0];
 					}
 					else {
-						$urlMatch  = $matchAll[ $index ][1][0];
+						$urlMatch = $matchAll[ $index ][1][0];
 					}
 
 					// Url may be a string token
-					if ( $urlMatchToken = preg_match( $regex->token->string, $urlMatch ) ) {
+					if ( $urlMatchToken = preg_match( $regex->stringToken, $urlMatch ) ) {
 						// Store the token
 						$urlMatchToken = new csscrush_string( $urlMatch );
 						// Set $urlMatch to the actual value
@@ -178,7 +178,7 @@ class csscrush_importer {
 					// The full revised statement for replacement
 					$statement = $fullMatch;
 
-					if ( $urlMatchToken and ! empty( $replace ) ) {
+					if ( $urlMatchToken && ! empty( $replace ) ) {
 						// Alter the stored token on internal hash table
 						$urlMatchToken->update( $replace );
 					}
@@ -347,7 +347,7 @@ class csscrush_importer {
 
 	protected static function cb_rewriteImportRelativeUrl ( $match ) {
 
-		$regex = csscrush::$regex;
+		$regex = csscrush_regex::$patt;
 		$storage = csscrush::$storage;
 
 		// The relative url prefix
@@ -357,7 +357,7 @@ class csscrush_importer {
 		$url = trim( $url );
 
 		// If the url is a string token we'll need to restore it as a string token later
-		if ( $url_is_token = preg_match( $regex->token->string, $url ) ) {
+		if ( $url_is_token = preg_match( $regex->stringToken, $url ) ) {
 
 			$url_token = new csscrush_string( $url );
 			$url = $url_token->value;
@@ -368,9 +368,9 @@ class csscrush_importer {
 		//   $url path is absolute or begins with slash
 		//   $url is an empty string
 		if (
-			empty( $url ) or
-			strpos( $url, '/' ) === 0 or
-			strpos( $url, '$(' ) === 0 or
+			empty( $url ) ||
+			strpos( $url, '/' ) === 0 ||
+			strpos( $url, '$(' ) === 0 ||
 			preg_match( $regex->absoluteUrl, $url )
 		) {
 			// Token or not, it's ok to return the full match if $url is a root relative or absolute ref

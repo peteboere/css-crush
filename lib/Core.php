@@ -19,44 +19,6 @@ class csscrush {
 	protected static $assetsLoaded = false;
 	protected static $tokenUID;
 
-	// Regular expressions
-	public static $regex = array(
-		'import'      => '!
-			@import\s+    # import at-rule
-			(?:
-			url\(\s*([^\)]+)\s*\) # url function
-			|                     # or
-			([_s\d]+)             # string token
-			)
-			\s*([^;]*);?  # media argument
-		!x',
-		'variables'   => '!@(?:variables|define)\s*([^\{]*)\{\s*(.*?)\s*\};?!s',
-		'atRule'      => '!@([-a-z_]+)\s*([^\{]*)\{\s*(.*?)\s*\};?!s',
-		'comment'     => '!/\*(.*?)\*/!s',
-		'string'      => '!(\'|"|`)(?:\\1|[^\1])*?\1!',
-		// As an exception we treat @font-face and @page rules like standard rules
-		'rule'        => '!
-			(\n(?:[^@{}]+|@(?:font-face|page)[^{]*)) # The selector
-			\{([^{}]*)\}  # The declaration block
-		!x',
-		'token'       => array(
-			'comment' => '!___c\d+___!',
-			'string'  => '!___s\d+___!',
-			'rule'    => '!___r\d+___!',
-			'paren'   => '!___p\d+___!',
-		),
-		'function'    => array(
-			'var'     => '!(?:
-				([^a-z0-9_-])
-				var\(\s*([a-z0-9_-]+)\s*\)
-				|
-				\$\(\s*([a-z0-9_-]+)\s*\)  # Dollar syntax
-			)!ix',
-			'match'   => '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i',
-		),
-		'vendorPrefix' => '!^-([a-z]+)-([a-z-]+)!',
-		'absoluteUrl'  => '!^https?://!',
-	);
 
 	// Init called once manually post class definition
 	public static function init ( $current_dir ) {
@@ -66,18 +28,8 @@ class csscrush {
 		// Path to this installation
 		self::$config->location = $current_dir;
 
-		// Get normalized document root reference: no symlink, forward slashes, no trailing slashes
-		$doc_root = null;
-		if ( isset( $_SERVER[ 'DOCUMENT_ROOT' ] ) ) {
-			$doc_root = realpath( $_SERVER[ 'DOCUMENT_ROOT' ] );
-		}
-		else {
-			// Probably IIS
-			$scriptname = $_SERVER[ 'SCRIPT_NAME' ];
-			$fullpath = realpath( basename( $scriptname ) );
-			$doc_root = substr( $fullpath, 0, stripos( $fullpath, $scriptname ) );
-		}
-		self::$config->docRoot = csscrush_util::normalizeSystemPath( $doc_root );
+		// Set the docRoot reference
+		self::setDocRoot();
 
 		// Set the default IO handler
 		self::$config->io = 'csscrush_io';
@@ -88,10 +40,54 @@ class csscrush {
 		self::$config->aliases = array();
 		self::$config->aliasesRaw = array();
 
-		// Casting to objects for ease of use
-		self::$regex = (object) self::$regex;
-		self::$regex->token = (object) self::$regex->token;
-		self::$regex->function = (object) self::$regex->function;
+		// Initialise other classes
+		csscrush_regex::init();
+		csscrush_function::init();
+		csscrush_arglist::init();
+	}
+
+
+	public static function setDocRoot ( $doc_root = null ) {
+
+		// Get document_root reference
+		// $_SERVER['DOCUMENT_ROOT'] is unreliable in certain CGI/Apache/IIS setups
+		
+		if ( ! $doc_root ) {
+
+			$script_filename = $_SERVER[ 'SCRIPT_FILENAME' ];
+			$script_name = $_SERVER[ 'SCRIPT_NAME' ];
+
+			if ( $script_filename && $script_name ) {
+
+				$len_diff = strlen( $script_filename ) - strlen( $script_name );
+
+				// We're comparing the two strings so normalize OS directory separators
+				$script_filename = str_replace( '\\', '/', $script_filename );
+				$script_name = str_replace( '\\', '/', $script_name );
+
+				// Check $script_filename ends with $script_name
+				if ( substr( $script_filename, $len_diff ) === $script_name ) {
+
+					$doc_root = realpath( substr( $script_filename, 0, $len_diff ) );
+				}
+			}
+
+			if ( ! $doc_root ) {
+
+				// If doc_root is still falsy, fallback to DOCUMENT_ROOT
+				$doc_root = realpath( $_SERVER[ 'DOCUMENT_ROOT' ] );
+			}
+
+			if ( ! $doc_root ) {
+
+				// If doc_root is still falsy, log an error
+				$error = "Could not get a document_root reference.";
+				csscrush::logError( $error );
+				trigger_error( __METHOD__ . ": $error\n", E_USER_NOTICE );
+			}
+		}
+
+		self::$config->docRoot = csscrush_util::normalizeSystemPath( $doc_root );
 	}
 
 
@@ -113,7 +109,7 @@ class csscrush {
 	protected static function loadAssets () {
 
 		// Find an aliases file in the root directory
-		// a local file will overrides the default
+		// a local file overrides the default
 		$aliases_file = csscrush_util::find( 'Aliases-local.ini', 'Aliases.ini' );
 
 		// Load aliases file if it exists
@@ -140,7 +136,7 @@ class csscrush {
 		}
 
 		// Find a plugins file in the root directory
-		// a local file will overrides the default
+		// a local file overrides the default
 		$plugins_file = csscrush_util::find( 'Plugins-local.ini', 'Plugins.ini' );
 
 		// Load plugins
@@ -179,7 +175,7 @@ class csscrush {
 		// Store input directory
 		$process->inputDir = $input_dir;
 		$process->inputDirUrl = substr( $process->inputDir, strlen( $doc_root ) );
-		
+
 		// Store reference to the output dir
 		$process->outputDir = csscrush::io_call( 'getOutputDir' );
 		$process->outputDirUrl = substr( $process->outputDir, strlen( $doc_root ) );
@@ -216,7 +212,7 @@ class csscrush {
 
 		// Since we're comparing strings, we need to iron out OS differences
 		$file = str_replace( '\\', '/', $file );
-		
+
 		// Finding the system path of the input file and validating it
 		$pathtest = true;
 		if ( strpos( $file, $doc_root ) === 0 ) {
@@ -288,18 +284,25 @@ class csscrush {
 		$file = self::file( $file, $options );
 
 		if ( ! empty( $file ) ) {
-			
+
 			// On success return the tag with any custom attributes
-			$attributes[ 'rel' ] = "stylesheet";
+			$attributes[ 'rel' ] = 'stylesheet';
 			$attributes[ 'href' ] = $file;
+
+			// Should media type be forced to 'all'?
+			if ( ! isset( $attributes[ 'media' ] ) ) {
+				$attributes[ 'media' ] = 'all';
+			}
+
 			$attr_string = csscrush_util::htmlAttributes( $attributes );
 			return "<link$attr_string />\n";
 		}
 		else {
-			
+
 			// Return an HTML comment with message on failure
 			$class = __CLASS__;
-			return "<!-- $class: File $file not found -->\n";
+			$errors = implode( "\n", self::$process->errors );
+			return "<!-- $class: $errors -->\n";
 		}
 	}
 
@@ -316,12 +319,12 @@ class csscrush {
 		$file = self::file( $file, $options );
 
 		if ( ! empty( $file ) ) {
-			
+
 			// On success fetch the CSS text
 			$content = file_get_contents( self::$process->outputDir . '/' . self::$process->outputFileName );
 			$tag_open = '';
 			$tag_close = '';
-			
+
 			if ( is_array( $attributes ) ) {
 				$attr_string = csscrush_util::htmlAttributes( $attributes );
 				$tag_open = "<style$attr_string>";
@@ -333,7 +336,8 @@ class csscrush {
 
 			// Return an HTML comment with message on failure
 			$class = __CLASS__;
-			return "<!-- $class: File $file not found -->\n";
+			$errors = implode( "\n", self::$process->errors );
+			return "<!-- $class: $errors -->\n";
 		}
 	}
 
@@ -382,15 +386,15 @@ class csscrush {
 	 * @param mixed $var  Assoc array of variable names and values, a php ini filename or null
 	 */
 	public static function globalVars ( $vars ) {
-		
+
 		$config = self::$config;
-		
+
 		// Merge into the stack, overrides existing variables of the same name
 		if ( is_array( $vars ) ) {
 			$config->vars = array_merge( $config->vars, $vars );
 		}
 		// Test for a file. If it is attempt to parse it
-		elseif ( is_string( $vars ) and file_exists( $vars ) ) {
+		elseif ( is_string( $vars ) && file_exists( $vars ) ) {
 			if ( $result = parse_ini_file( $vars ) ) {
 				$config->vars = array_merge( $config->vars, $result );
 			}
@@ -444,6 +448,11 @@ class csscrush {
 		}
 	}
 
+	public static function logError ( $msg ) {
+		self::$process->errors[] = $msg;
+		self::log( $msg );
+	}
+
 
 	#####################
 	#  Internal functions
@@ -452,7 +461,7 @@ class csscrush {
 
 		$file = csscrush_util::find( 'CssCrush-local.boilerplate', 'CssCrush.boilerplate' );
 
-		if ( ! $file or ! self::$options[ 'boilerplate' ] ) {
+		if ( ! $file || ! self::$options[ 'boilerplate' ] ) {
 			return '';
 		}
 
@@ -580,8 +589,6 @@ TPL;
 
 	protected static function calculateVariables () {
 
-		$regex = self::$regex;
-
 		// In-file variables override global variables
 		// Runtime variables override in-file variables
 		self::$storage->variables = array_merge( self::$config->vars, self::$storage->variables );
@@ -596,7 +603,7 @@ TPL;
 		foreach ( self::$storage->variables as $name => &$value ) {
 			// Referenced variables
 			$value = preg_replace_callback(
-				$regex->function->var, array( 'self', 'cb_placeVariables' ), $value );
+				csscrush_regex::$patt->varFunction, array( 'self', 'cb_placeVariables' ), $value );
 
 			// Custom functions:
 			//   Variable values can be escaped from function parsing with a tilde prefix
@@ -610,13 +617,16 @@ TPL;
 	}
 
 	protected static function placeVariables ( $stream ) {
+
 		$stream = preg_replace_callback(
-			self::$regex->function->var, array( 'self', 'cb_placeVariables' ), $stream );
+			csscrush_regex::$patt->varFunction, array( 'self', 'cb_placeVariables' ), $stream );
+
 		// Place variables in any string tokens
 		foreach ( self::$storage->tokens->strings as $label => &$string ) {
 			if ( strpos( $string, '$' ) !== false ) {
 				$string = preg_replace_callback(
-					self::$regex->function->var, array( 'self', 'cb_placeVariables' ), $string );
+					csscrush_regex::$patt->varFunction,
+					array( 'self', 'cb_placeVariables' ), $string );
 			}
 		}
 		return $stream;
@@ -626,31 +636,36 @@ TPL;
 
 		// Reset properties for current process
 		self::$tokenUID = 0;
-		
+
 		self::$process = new stdclass();
 		self::$process->cacheData = array();
-		
+		self::$process->mixins = array();
+		self::$process->fragments = array();
+		self::$process->abstracts = array();
+		self::$process->errors = array();
+		self::$process->selectorRelationships = array();
+
 		self::$storage = new stdclass();
 		self::$storage->tokens = (object) array(
-			'strings'  => array(),
-			'comments' => array(),
-			'rules'    => array(),
-			'parens'   => array(),
+			'strings'   => array(),
+			'comments'  => array(),
+			'rules'     => array(),
+			'parens'    => array(),
+			'mixinArgs' => array(),
 		);
 		self::$storage->variables = array();
 		self::$storage->misc = new stdclass();
-		
+
 		// Load the merged options
 		self::$options = self::getOptions( $options );
 	}
 
 	protected static function compile ( $stream ) {
 
-		$regex = self::$regex;
 		$options = self::$options;
 
 		// Load in aliases and macros
-		if ( !self::$assetsLoaded ) {
+		if ( ! self::$assetsLoaded ) {
 			self::loadAssets();
 			self::$assetsLoaded = true;
 		}
@@ -664,10 +679,15 @@ TPL;
 
 		// Calculate the variable stack
 		self::calculateVariables();
-		// self::log( self::$storage->variables );
 
 		// Place the variables
 		$stream = self::placeVariables( $stream );
+
+		// Pull out the mixin declarations
+		$stream = self::extractMixins( $stream );
+
+		// Pull out the fragments
+		$stream = self::extractFragments( $stream );
 
 		// Normalize whitespace
 		$stream = csscrush_util::normalizeWhiteSpace( $stream );
@@ -684,34 +704,25 @@ TPL;
 		// Rules
 		$stream = self::extractAndProcessRules( $stream );
 
-		// Alias at-rules (if there are any)
+		// Process any @-in blocks
+		$stream = self::prefixSelectors( $stream );
+
+		// Main processing on the rule objects
+		self::processRules();
+		
+		csscrush::log( csscrush::$storage->tokens->rules );
+		csscrush::log( array_keys( self::$process->selectorRelationships ) );
+
+		// Alias any @-rules
 		$stream = self::aliasAtRules( $stream );
 
-		
-		
-		$iterator = new csscrush_atrule_iterator( array(
-			'input' => $stream,
-			'search' => '@prefix',
-			'direction' => 'reverse',
-		));
-		
-		// csscrush::log( $iterator );
-		// csscrush::log( count( $iterator ) );
-		
-		foreach ( $iterator as $atrule ) {
-			// self::log( $value );
-		}
-
-
-		// print it all back
+		// Print it all back
 		$stream = self::display( $stream );
 
 		// Add in boilerplate
 		if ( $options[ 'boilerplate' ] ) {
 			$stream = self::getBoilerplate() . "\n$stream";
 		}
-
-		// self::log( self::$config->cacheData );
 
 		// Release memory
 		self::$storage = null;
@@ -722,10 +733,10 @@ TPL;
 	protected static function display ( $stream ) {
 
 		$minify = ! self::$options[ 'debug' ];
-		$regex = self::$regex;
+		$regex = csscrush_regex::$patt;
 
 		if ( $minify ) {
-			$stream = preg_replace( $regex->token->comment, '', $stream );
+			$stream = csscrush_util::stripComments( $stream );
 		}
 		else {
 			// Create newlines after tokens
@@ -741,7 +752,7 @@ TPL;
 		$stream = preg_replace( '!\n\s+!', "\n", $stream );
 
 		// Print out rules
-		$stream = preg_replace_callback( $regex->token->rule, array( 'self', 'cb_printRule' ), $stream );
+		$stream = preg_replace_callback( $regex->ruleToken, array( 'self', 'cb_printRule' ), $stream );
 
 		// Insert parens
 		$paren_labels = array_keys( self::$storage->tokens->parens );
@@ -774,14 +785,15 @@ TPL;
 
 	protected static function minify ( $str ) {
 		$replacements = array(
-			'!\n+| (\{)!'                       => '$1',    // Trim whitespace
-			'!(^|[: \(,])0(\.\d+)!'             => '$1$2',  // Strip leading zeros on floats
-			'!(^|[: \(,])\.?0(?:e[mx]|c[hm]|rem|v[hwm]|(?:moz)?mm|in|p[tcx])!i'   => '${1}0', // Strip unnecessary units on zero values for length types
-			'!(^|\:) *(0 0 0|0 0 0 0) *(;|\})!' => '${1}0${3}', // Collapse zero lists
+			'!\n+| (\{)!'                         => '$1',    // Trim whitespace
+			'!(^|[: \(,])0(\.\d+)!'               => '$1$2',  // Strip leading zeros on floats
+			'!(^|[: \(,])\.?0(?:e[mx]|c[hm]|rem|v[hwm]|in|p[tcx])!i'
+			                                      => '${1}0', // Strip unnecessary units on zero values for length types
+			'!(^|\:) *(0 0 0|0 0 0 0) *(;|\})!'   => '${1}0${3}', // Collapse zero lists
 			'!(padding|margin) ?\: *0 0 *(;|\})!' => '${1}:0${2}', // Collapse zero lists continued
-			'!\s*([>~+=])\s*!'                  => '$1',     // Clean-up around combinators
+			'!\s*([>~+=])\s*!'                    => '$1',     // Clean-up around combinators
 			'!\#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3!i'
-			                                    => '#$1$2$3', // Compress hex codes
+			                                      => '#$1$2$3', // Compress hex codes
 		);
 		return preg_replace(
 			array_keys( $replacements ), array_values( $replacements ), $str );
@@ -797,7 +809,7 @@ TPL;
 
 		foreach ( $aliases as $at_rule => $at_rule_aliases ) {
 			if (
-				strpos( $stream, "@$at_rule " ) === -1 or
+				strpos( $stream, "@$at_rule " ) === -1 ||
 				strpos( $stream, "@$at_rule{" ) === -1
 			) {
 				// Nothing to see here
@@ -830,12 +842,12 @@ TPL;
 					$copy_block = str_replace( "@$at_rule", "@$alias", $original_block );
 
 					// Aliases are nearly always prefixed, capture the current vendor name
-					preg_match( self::$regex->vendorPrefix, $alias, $vendor );
+					preg_match( csscrush_regex::$patt->vendorPrefix, $alias, $vendor );
 
 					$vendor = $vendor ? $vendor[1] : null;
 
 					// Duplicate rules
-					if ( preg_match_all( self::$regex->token->rule, $copy_block, $copy_matches ) ) {
+					if ( preg_match_all( csscrush_regex::$patt->ruleToken, $copy_block, $copy_matches ) ) {
 						$originals = array();
 						$replacements = array();
 
@@ -850,7 +862,7 @@ TPL;
 							// Filter out declarations that have different vendor context
 							$new_set = array();
 							foreach ( $cloneRule as $declaration ) {
-								if ( !$declaration->vendor or $declaration->vendor === $vendor ) {
+								if ( ! $declaration->vendor || $declaration->vendor === $vendor ) {
 									$new_set[] = $declaration;
 								}
 							}
@@ -885,27 +897,124 @@ TPL;
 		return $stream;
 	}
 
+	protected static function prefixSelectors ( $stream ) {
+
+		$matches = csscrush_regex::matchAll( '@in\s+([^\{]+){', $stream, true );
+
+		// Move through the matches in reverse order
+		while ( $match = array_pop( $matches ) ) {
+
+			list( $match_string, $match_start_pos ) = $match[0];
+			$match_length = strlen( $match_string );
+
+			$before = substr( $stream, 0, $match_start_pos );
+
+			$raw_argument = trim( $match[1][0] );
+
+			$arguments = csscrush_util::splitDelimList( $match[1][0], ',', false, true );
+			$arguments = $arguments->list;
+
+			$curly_match = csscrush_util::matchBrackets(
+								$stream, $brackets = array( '{', '}' ), $match_start_pos, true );
+
+			if ( ! $curly_match || empty( $raw_argument ) ) {
+				// Couldn't match the block
+				$stream = $before . substr( $stream, $match_start_pos + $match_length );
+				continue;
+			}
+
+			// Match all the rule tokens
+			$rule_matches = csscrush_regex::matchAll(
+								csscrush_regex::$patt->ruleToken,
+								$curly_match->inside );
+
+			foreach ( $rule_matches as $rule_match ) {
+
+				// Get the rule instance
+				$rule = csscrush_rule::get( $rule_match[0][0] );
+				
+				// Set the isNested flag
+				$rule->isNested = true;
+
+				// Using arguments create new selector list for the rule
+				$new_selector_list = array();
+
+				foreach ( $arguments as $arg_selector ) {
+
+					foreach ( $rule->selectorList as $rule_selector ) {
+
+						if ( ! $rule_selector->allowPrefix ) {
+
+							$new_selector_list[ $rule_selector->readableValue ] = $rule_selector;
+						}
+						elseif ( strpos( $rule_selector->value, '&' ) !== false ) {
+
+							// Ampersand is the positional symbol for where the
+							// prefix will be placed
+
+							// Find and replace (only once) the ampersand
+							$new_value = preg_replace(
+									'!&!',
+									$arg_selector,
+									$rule_selector->value,
+									1 );
+
+							// Not storing the selector as named
+							$new_selector_list[] = new csscrush_selector( $new_value );
+						}
+						else {
+							
+							// Not storing the selector as named
+							$new_selector_list[] = new csscrush_selector( "$arg_selector {$rule_selector->value}" );
+						}
+					}
+				}
+				$rule->selectorList = $new_selector_list;
+			}
+
+			// Concatenate
+			$stream = $before . $curly_match->inside . $curly_match->after;
+		}
+
+		return $stream;
+	}
+
 	public static function tokenLabelCreate ( $prefix ) {
 		$counter = ++self::$tokenUID;
 		return "___$prefix{$counter}___";
 	}
 
-	public static function tokenReplace ( $string, $token_replace, $type = 'parens' ) {
-
-		// The tokens to replace
-		$token_replace = (array) $token_replace;
-
-		// Reference the token table
-		$token_table =& self::$storage->tokens->{ $type };
-
-		// Replace the tokens listed
-		foreach ( $token_replace as $token ) {
-			if ( isset( $token_table[ $token ] ) ) {
-				$string = str_replace( $token, $token_table[ $token ], $string );
-			}
-		}
+	public static function processRules () {
 		
-		return $string;
+		foreach ( self::$storage->tokens->rules as $rule ) {
+
+			if ( ! $rule->isNested ) {
+				
+				// Associate selectors with the rule
+				foreach ( $rule->selectorList as $selector ) {
+					
+					// $readable_selector = $selector->makeReadableValue();
+					self::$process->selectorRelationships[ $selector->readableValue ] = $rule;
+				}
+			}
+
+			// Find previous selectors and apply the 
+			$rule->applyExtendables();
+
+			csscrush_hook::run( 'rule_prealias', $rule );
+
+			if ( ! empty( self::$config->aliases ) ) {
+				$rule->addPropertyAliases();
+				$rule->addFunctionAliases();
+				$rule->addValueAliases();
+			}
+
+			csscrush_hook::run( 'rule_postalias', $rule );
+
+			$rule->expandSelectors();
+
+			csscrush_hook::run( 'rule_postprocess', $rule );
+		}
 	}
 
 
@@ -944,17 +1053,17 @@ TPL;
 
 	protected static function cb_extractVariables ( $match ) {
 
-		$regex = self::$regex;
+		$regex = csscrush_regex::$patt;
 
 		$block = $match[2];
 
 		// Strip comment markers
-		$block = preg_replace( $regex->token->comment, '', $block );
+		$block = csscrush_util::stripComments( $block );
 
 		// Need to split safely as there are semi-colons in data-uris
 		$variables_match = csscrush_util::splitDelimList( $block, ';', true );
 
-		// Loop through the pairs, restore parens
+		// Loop through the pairs
 		foreach ( $variables_match->list as $var ) {
 			$colon = strpos( $var, ':' );
 			if ( $colon === -1 ) {
@@ -967,11 +1076,23 @@ TPL;
 		return '';
 	}
 
+	protected static function cb_extractMixins ( $match ) {
+
+		$name = trim( $match[1] );
+		$block = trim( $match[2] );
+
+		if ( ! empty( $name ) && ! empty( $block ) ) {
+			self::$process->mixins[ $name ] = new csscrush_mixin( $block );
+		}
+
+		return '';
+	}
+
 	protected static function cb_placeVariables ( $match ) {
 		$before_char = $match[1];
 
 		// Check for dollar shorthand
-		if ( empty( $match[2] ) and isset( $match[3] ) and strpos( $match[0], '$' ) !== false ) {
+		if ( empty( $match[2] ) && isset( $match[3] ) && strpos( $match[0], '$' ) !== false ) {
 			$variable_name = $match[3];
 		}
 		else {
@@ -986,36 +1107,30 @@ TPL;
 		}
 	}
 
-	protected static function cb_extractAndProcessRules ( $match ) {
+	protected static function cb_extractRules ( $match ) {
 
 		$rule = new stdclass();
-		$rule->selector_raw = $match[1];
-		$rule->declaration_raw = $match[2];
+		$rule->selector_raw = trim( $match[1] );
+		$rule->declaration_raw = trim( $match[2] );
 
 		csscrush_hook::run( 'rule_preprocess', $rule );
 
 		$rule = new csscrush_rule( $rule->selector_raw, $rule->declaration_raw );
 
-		// Only store rules with declarations
-		if ( ! empty( $rule->declarations ) ) {
+		// Store rules if they have declarations or extend arguments
+		if ( $rule->_declarations || $rule->extends ) {
 
-			csscrush_hook::run( 'rule_prealias', $rule );
-
-			if ( ! empty( self::$config->aliases ) ) {
-				$rule->addPropertyAliases();
-				$rule->addFunctionAliases();
-				$rule->addValueAliases();
-			}
-
-			csscrush_hook::run( 'rule_postalias', $rule );
-
-			$rule->expandSelectors();
-
-			csscrush_hook::run( 'rule_postprocess', $rule );
-
-			$label = self::tokenLabelCreate( 'r' );
+			$label = $rule->label;
+			
 			self::$storage->tokens->rules[ $label ] = $rule;
-			return $label . "\n";
+			
+			if ( $rule->_declarations ) {
+				return $label . "\n";
+			}
+			else {
+				// If only using extend no need to return a label
+				return '';
+			}
 		}
 		else {
 			return '';
@@ -1032,14 +1147,21 @@ TPL;
 		$whitespace = $minify ? '' : ' ';
 
 		$ruleLabel = $match[0];
-
+		
+		// If no rule matches the label return empty string
 		if ( ! isset( self::$storage->tokens->rules[ $ruleLabel ] ) ) {
 			return '';
 		}
+
 		$rule = self::$storage->tokens->rules[ $ruleLabel ];
 
+		// If there are no selectors associated with the rule return empty string
+		if ( empty( $rule->selectorList ) ) {
+			return '';
+		}
+
 		// Build the selector
-		$selectors = implode( ",$whitespace", $rule->selectors );
+		$selectors = implode( ",$whitespace", $rule->selectorList );
 
 		// Build the block
 		$block = array();
@@ -1066,19 +1188,112 @@ TPL;
 	#  Parsing methods
 
 	public static function extractAndProcessRules ( $stream ) {
-		return preg_replace_callback( self::$regex->rule, array( 'self', 'cb_extractAndProcessRules' ), $stream );
+		return preg_replace_callback( csscrush_regex::$patt->rule, array( 'self', 'cb_extractRules' ), $stream );
 	}
 
 	public static function extractVariables ( $stream ) {
-		return preg_replace_callback( self::$regex->variables, array( 'self', 'cb_extractVariables' ), $stream );
+		return preg_replace_callback( csscrush_regex::$patt->variables, array( 'self', 'cb_extractVariables' ), $stream );
 	}
 
 	public static function extractComments ( $stream ) {
-		return preg_replace_callback( self::$regex->comment, array( 'self', 'cb_extractComments' ), $stream );
+		return preg_replace_callback( csscrush_regex::$patt->comment, array( 'self', 'cb_extractComments' ), $stream );
 	}
 
 	public static function extractStrings ( $stream ) {
-		return preg_replace_callback( self::$regex->string, array( 'self', 'cb_extractStrings' ), $stream );
+		return preg_replace_callback( csscrush_regex::$patt->string, array( 'self', 'cb_extractStrings' ), $stream );
+	}
+
+	public static function extractMixins ( $stream ) {
+		return preg_replace_callback( csscrush_regex::$patt->mixin, array( 'self', 'cb_extractMixins' ), $stream );
+	}
+
+	public static function extractFragments ( $stream ) {
+
+		$matches = csscrush_regex::matchAll( '@fragment\s+(<name>)\s*{', $stream, true );
+
+		// Move through the matches last to first
+		while ( $match = array_pop( $matches ) ) {
+
+			list( $match_string, $match_start_pos ) = $match[0];
+			$fragment_name = $match[1][0];
+
+			$match_length = strlen( $match_string );
+			$before = substr( $stream, 0, $match_start_pos );
+
+			$curly_match = csscrush_util::matchBrackets(
+								$stream, $brackets = array( '{', '}' ), $match_start_pos, true );
+
+			if ( ! $curly_match ) {
+				// Couldn't match the block
+				$stream = $before . substr( $stream, $match_start_pos + $match_length );
+				continue;
+			}
+			else {
+				// Recontruct the stream without the fragment
+				$stream = $before . $curly_match->after;
+
+				// Create the fragment and store it
+				self::$process->fragments[ $fragment_name ] =
+						new csscrush_fragment( $curly_match->inside );
+
+				// csscrush::log( self::$process->fragments );
+			}
+		}
+
+		// Now find all the fragment calls
+		$matches = csscrush_regex::matchAll( '@fragment\s+(<name>)\s*(\(|;)', $stream, true );
+
+		// Move through the matches last to first
+		while ( $match = array_pop( $matches ) ) {
+
+			list( $match_string, $match_start_pos ) = $match[0];
+			$match_length = strlen( $match_string );
+			$before = substr( $stream, 0, $match_start_pos );
+
+			// The matched fragment name
+			$fragment_name = $match[1][0];
+			
+			// The fragment object, or null if name not present
+			$fragment = isset( self::$process->fragments[ $fragment_name ] ) ? self::$process->fragments[ $fragment_name ] : null;
+
+			// Fragment may be called without any argument list
+			$with_arguments = $match[2][0] === '(';
+
+
+			if ( $with_arguments ) {
+				$paren_match = csscrush_util::matchBrackets(
+								$stream, $brackets = array( '(', ')' ), $match_start_pos, true );
+				$after = ltrim( $paren_match->after, ';' );
+			}
+			else {
+				$after = substr( $stream, $match_start_pos + $match_length );
+			}
+
+			if ( ! $fragment || ( $with_arguments && ! $paren_match ) ) {
+
+				// Invalid fragment, or malformed argument list
+				$stream = $before . substr( $stream, $match_start_pos + $match_length );
+				continue;
+			}
+			else {
+
+				$args = array();
+				if ( $with_arguments ) {
+					// Get the argument array to pass to the fragment
+					$args = csscrush_util::splitDelimList( $paren_match->inside, ',', true, true );
+					// $args = array_map( 'trim', $args->list );
+					$args = $args->list;
+				}
+
+				// Execute the fragment and get the return value
+				$fragment_return = $fragment->call( $args );
+
+				// Recontruct the stream with the fragment return value
+				$stream = $before . $fragment_return . $after;
+			}
+		}
+
+		return $stream;
 	}
 
 }
@@ -1105,5 +1320,6 @@ function csscrush_globalvars ( $vars ) {
 function csscrush_clearcache ( $dir = '' ) {
 	return csscrush::clearcache( $dir );
 }
+
 
 

@@ -18,7 +18,7 @@
 
 csscrush_hook::add( 'rule_postalias', 'csscrush_filter' );
 
-function csscrush_filter ( CssCrush_Rule $rule ) {
+function csscrush_filter ( csscrush_rule $rule ) {
 	if ( $rule->propertyCount( '-ms-filter' ) < 1 ) {
 		return;
 	}
@@ -26,7 +26,7 @@ function csscrush_filter ( CssCrush_Rule $rule ) {
 	$new_set = array();
 	foreach ( $rule as $declaration ) {
 		if (
-			$declaration->skip or
+			$declaration->skip ||
 			$declaration->property !== '-ms-filter' 
 		) {
 			$new_set[] = $declaration;
@@ -35,21 +35,21 @@ function csscrush_filter ( CssCrush_Rule $rule ) {
 		$list = array_map( 'trim', explode( ',', $declaration->value ) );
 		foreach ( $list as &$item ) {
 			if ( 
-				strpos( $item, $filter_prefix ) !== 0 and 
+				strpos( $item, $filter_prefix ) !== 0 && 
 				strpos( $item, 'alpha' ) !== 0 // Shortcut syntax permissable on alpha
 			) {
 				$item = $filter_prefix . ucfirst( $item );
 			}
 		}
 		$declaration->value = implode( ',', $list );
-		if ( !$rule->propertyCount( 'zoom' ) ) {
+		if ( ! $rule->propertyCount( 'zoom' ) ) {
 			// Filters need hasLayout
-			$new_set[] = $rule->addDeclaration( 'zoom', 1 );
+			$new_set[] = new csscrush_declaration( 'zoom', 1 );
 		}
 		// Quoted version for -ms-filter IE >= 8
-		$new_set[] = $rule->addDeclaration( '-ms-filter', "\"$declaration->value\"" );
+		$new_set[] = new csscrush_declaration( '-ms-filter', "\"$declaration->value\"" );
 		// Star escaped property for IE < 8
-		$new_set[] = $rule->addDeclaration( '*filter', $declaration->value );
+		$new_set[] = new csscrush_declaration( '*filter', $declaration->value );
 	}
 	$rule->declarations = $new_set;
 }

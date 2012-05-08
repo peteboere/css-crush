@@ -1,6 +1,20 @@
-1.4.3
------
-
+1.5
+---
+New feature: Mixins
+New feature: Fragments
+New feature: Block nesting
+New feature: Rule inheritance / abstract rules
+Abstracted IO interface
+Added some error reporting
+Added spiffing.css plugin
+csscrush_tag method now uses media type 'all' by default
+Updated Aliases.ini / initial-values.ini
+Internal refactoring
+Resolved issue #23
+Resolved issue #24
+Resolved issue #27
+Resolved issue #28
+Resolved issue #29
 
 
 1.4.2

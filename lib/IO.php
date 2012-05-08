@@ -15,7 +15,7 @@ class csscrush_io {
 
 		$process->cacheFileName = '.csscrush';
 		$process->cacheFilePath = "$process->inputDir/$process->cacheFileName";
-	} 
+	}
 
 
 	public static function getInput ( $file = false ) {
@@ -34,8 +34,11 @@ class csscrush_io {
 		if ( $file ) {
 
 			if ( ! file_exists( $input->path ) ) {
-				// On failure return false with a message
-				trigger_error( __METHOD__ . ": File '$input->name' not found.\n", E_USER_WARNING );
+
+				// On failure return false
+				$error = "Input file '$input->name' not found.";
+				csscrush::logError( $error );
+				trigger_error( __METHOD__ . ": $error\n", E_USER_WARNING );
 				return false;
 			}
 			else {
@@ -56,22 +59,32 @@ class csscrush_io {
 
 		$output_dir = csscrush::$process->outputDir;
 		$pathtest = true;
+		$error = false;
 
 		if ( ! file_exists( $output_dir ) ) {
-			trigger_error( __METHOD__ . ": directory '$output_dir' doesn't exist.\n", E_USER_WARNING );
+
+			$error = "Output directory '$output_dir' doesn't exist.";
 			$pathtest = false;
 		}
-		else if ( $write_test and ! is_writable( $output_dir ) ) {
+		else if ( $write_test && ! is_writable( $output_dir ) ) {
+
 			csscrush::log( 'Attempting to change permissions' );
+
 			if ( ! @chmod( $output_dir, 0755 ) ) {
-				trigger_error( __METHOD__ . ": directory '$output_dir' is unwritable.\n", E_USER_WARNING );
-				csscrush::log( 'Unable to update permissions' );
+
+				$error = "Output directory '$output_dir' is unwritable.";
 				$pathtest = false;
 			}
 			else {
 				csscrush::log( 'Permissions updated' );
 			}
 		}
+		
+		if ( $error ) {
+			csscrush::logError( $error );
+			trigger_error( __METHOD__ . ": $error\n", E_USER_WARNING );
+		}
+
 		return $pathtest;
 	}
 
@@ -115,7 +128,7 @@ class csscrush_io {
 			// Start off with the input file then add imported files
 			$all_files = array( $input->mtime );
 
-			if ( file_exists( $existingfile->path ) and isset( $process->cacheData[ $process->outputFileName ] ) ) {
+			if ( file_exists( $existingfile->path ) && isset( $process->cacheData[ $process->outputFileName ] ) ) {
 
 				// File exists and has config
 				csscrush::log( 'has config' );
@@ -143,7 +156,7 @@ class csscrush_io {
 				$options_unchanged = $existing_options == csscrush::$options;
 				$files_unchanged = $existing_datesum == array_sum( $all_files );
 				
-				if ( $options_unchanged and $files_unchanged ) {
+				if ( $options_unchanged && $files_unchanged ) {
 
 					// Files have not been modified and config is the same: return the old file
 					csscrush::log( "Files and options have not been modified, returning existing
@@ -206,8 +219,8 @@ class csscrush_io {
 		$process = csscrush::$process;
 
 		if (
-			file_exists( $process->cacheFilePath ) and
-			$process->cacheData  and
+			file_exists( $process->cacheFilePath ) &&
+			$process->cacheData &&
 			$process->cacheData[ 'originPath' ] == $process->cacheFilePath
 		) {
 			// Already loaded and config file exists in the current directory
@@ -219,7 +232,7 @@ class csscrush_io {
 
 		$cache_data = array();
 
-		if ( $cache_data_exists and $cache_data_file_is_writable ) {
+		if ( $cache_data_exists && $cache_data_file_is_writable ) {
 			// Load from file
 			$cache_data = unserialize( file_get_contents( $process->cacheFilePath ) );
 		}
@@ -227,7 +240,10 @@ class csscrush_io {
 			// Config file may exist but not be writable (may not be visible in some ftp situations?)
 			if ( $cache_data_exists ) {
 				if ( ! @unlink( $process->cacheFilePath ) ) {
-					trigger_error( __METHOD__ . ": Could not delete config data file.\n", E_USER_NOTICE );
+
+					$error = "Could not delete config data file.";
+					csscrush::logError( $error );
+					trigger_error( __METHOD__ . ": $error\n", E_USER_NOTICE );
 				}
 			}
 			// Create

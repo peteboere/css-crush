@@ -17,7 +17,7 @@
 
 csscrush_hook::add( 'rule_prealias', 'csscrush_initial' );
 
-function csscrush_initial ( CssCrush_Rule $rule ) {
+function csscrush_initial ( csscrush_rule $rule ) {
 
 	static $initialValues = null;
 	if ( ! $initialValues ) {
@@ -28,7 +28,7 @@ function csscrush_initial ( CssCrush_Rule $rule ) {
 	}
 
 	foreach ( $rule as &$declaration ) {
-		if ( !$declaration->skip and 'initial' === $declaration->value ) {
+		if ( !$declaration->skip && 'initial' === $declaration->value ) {
 			if ( isset( $initialValues[ $declaration->property ] ) ) {
 				$declaration->value = $initialValues[ $declaration->property ];
 			}

@@ -16,11 +16,11 @@ Quick start
     <?php
     
     require_once 'CssCrush/CssCrush.php';
-    $global_css = CssCrush::file( '/css/global.css' );
+    $global_css = csscrush_file( '/css/global.css' );
     
     ?>
     
-    <link rel="stylesheet" type="text/css" href="<?php echo $global_css; ?>" />
+    <link rel="stylesheet" type="text/css" href="<?php echo $global_css; ?>" media="all" />
 
 
 Submitting bugs
