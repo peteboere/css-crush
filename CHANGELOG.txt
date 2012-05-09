@@ -1,9 +1,9 @@
 1.5
 ---
+New feature: Rule inheritance / abstract rules
+New feature: Block nesting
 New feature: Mixins
 New feature: Fragments
-New feature: Block nesting
-New feature: Rule inheritance / abstract rules
 Abstracted IO interface
 Added some error reporting
 Added spiffing.css plugin

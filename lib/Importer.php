@@ -114,12 +114,13 @@ class csscrush_importer {
 
 			// Failed to open import, just continue with the import line removed
 			if ( ! $import->content ) {
+
 				csscrush::log( "Import file '$import->url' not found at '$import->path'" );
 				$stream = $preStatement . $postStatement;
 				continue;
-
 			}
 			else {
+
 				// Import file opened successfully so we process it:
 				//   We need to resolve import statement urls in all imported files since
 				//   they will be brought inline with the hostfile
