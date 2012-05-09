@@ -22,7 +22,7 @@ require_once 'lib/Color.php';
 require_once 'lib/Regex.php';
 require_once 'lib/Hook.php';
 
-csscrush::init( dirname( __FILE__ ) );
+csscrush::init( __FILE__ );
 
 
 

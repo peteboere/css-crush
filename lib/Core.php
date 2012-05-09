@@ -21,12 +21,17 @@ class csscrush {
 
 
 	// Init called once manually post class definition
-	public static function init ( $current_dir ) {
+	public static function init ( $seed_file ) {
 
 		self::$config = new stdclass();
 
 		// Path to this installation
-		self::$config->location = $current_dir;
+		self::$config->location = dirname( $seed_file );
+
+		// Get version ID from seed file
+		$seed_file_contents = file_get_contents( $seed_file );
+		$match_count = preg_match( '!@version\s+([\d\.]+)!', $seed_file_contents, $version_match );
+		self::$config->version = $match_count ? $version_match[1] : null;
 
 		// Set the docRoot reference
 		self::setDocRoot();
@@ -468,12 +473,17 @@ class csscrush {
 		// Load the file
 		$boilerplate = file_get_contents( $file );
 
-		// Process any tags, currently only '{{datetime}}' is supported
+		// Substitute any tags
 		if ( preg_match_all( '!\{\{([^}]+)\}\}!', $boilerplate, $boilerplate_matches ) ) {
+
 			$replacements = array();
 			foreach ( $boilerplate_matches[0] as $index => $tag ) {
-				if ( $boilerplate_matches[1][$index] === 'datetime' ) {
+				$tag_name = $boilerplate_matches[1][$index];
+				if ( $tag_name === 'datetime' ) {
 					$replacements[] = @date( 'Y-m-d H:i:s O' );
+				}
+				elseif ( $tag_name === 'version' ) {
+					$replacements[] = 'v' . csscrush::$config->version;
 				}
 				else {
 					$replacements[] = '?';
@@ -481,6 +491,7 @@ class csscrush {
 			}
 			$boilerplate = str_replace( $boilerplate_matches[0], $replacements, $boilerplate );
 		}
+
 		// Pretty print
 		$boilerplate = explode( PHP_EOL, $boilerplate );
 		$boilerplate = array_map( 'trim', $boilerplate );
