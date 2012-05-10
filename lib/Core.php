@@ -721,7 +721,7 @@ TPL;
 		// Main processing on the rule objects
 		self::processRules();
 		
-		csscrush::log( csscrush::$storage->tokens->rules );
+		// csscrush::log( csscrush::$storage->tokens->rules );
 		csscrush::log( array_keys( self::$process->selectorRelationships ) );
 
 		// Alias any @-rules
@@ -999,14 +999,10 @@ TPL;
 		
 		foreach ( self::$storage->tokens->rules as $rule ) {
 
-			if ( ! $rule->isNested ) {
-				
-				// Associate selectors with the rule
-				foreach ( $rule->selectorList as $selector ) {
-					
-					// $readable_selector = $selector->makeReadableValue();
-					self::$process->selectorRelationships[ $selector->readableValue ] = $rule;
-				}
+			// Associate selectors with the rule
+			foreach ( $rule->selectorList as $selector ) {
+
+				self::$process->selectorRelationships[ $selector->readableValue ] = $rule;
 			}
 
 			// Find previous selectors and apply the 
@@ -1171,7 +1167,7 @@ TPL;
 			return '';
 		}
 
-		// Build the selector
+		// Build the selector; uses selector __toString method
 		$selectors = implode( ",$whitespace", $rule->selectorList );
 
 		// Build the block

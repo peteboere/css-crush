@@ -92,9 +92,9 @@ class csscrush_rule implements IteratorAggregate {
 					}
 				}
 			}
-			elseif ( $prop === 'extend' ) {
+			elseif ( $prop === 'extends' ) {
 
-				// Extend is a special case
+				// Extends is a special case
 				$this->setExtendSelectors( $value );
 			}
 			else {
@@ -626,7 +626,7 @@ class csscrush_selector {
 
 	public function __toString () {
 
-		return $this->value;
+		return $this->readableValue;
 	}
 }
 
