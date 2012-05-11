@@ -12,14 +12,37 @@ require_once 'CssCrush.php';
 define( 'STATUS_OK', 0 );
 define( 'STATUS_ERROR', 1 );
 
-// Get stdin input
-$stdin = fopen( 'php://stdin', 'r' );
-stream_set_blocking( $stdin, false ) or die ( 'Failed to disable stdin blocking' );
+// Open stream handles
+$stdin  = fopen( 'php://stdin', 'r' );
+$stdout = fopen( 'php://stdout', 'w' );
+$stderr = fopen( 'php://stderr', 'w' );
+
+// Get stdin contents
+if ( ! stream_set_blocking( $stdin, false ) ) {
+
+	stderr( 'Failed to disable stdin blocking' );
+	exit( STATUS_ERROR );
+}
 $stdin_contents = stream_get_contents( $stdin );
 fclose( $stdin );
 
-// Open stdout handle
-$stdout = fopen( 'php://stdout', 'w' );
+
+##################################################################
+##  Helpers
+
+function stderr ( $lines, $closing_newline = true ) {
+	global $stderr;
+	fwrite( $stderr,
+		implode( PHP_EOL, (array) $lines ) . ( $closing_newline ? PHP_EOL : '' )
+	);
+}
+
+function stdout ( $lines, $closing_newline = true ) {
+	global $stdout;
+	fwrite( $stdout,
+		implode( PHP_EOL, (array) $lines ) . ( $closing_newline ? PHP_EOL : '' )
+	);
+}
 
 
 ##################################################################
@@ -27,8 +50,13 @@ $stdout = fopen( 'php://stdout', 'w' );
 
 $version = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
 $required_version = 5.3;
+
 if ( $version < $required_version ) {
-	fwrite( $stdout, "PHP version $required_version or higher is required to use this tool.\nYou are currently running PHP version $version\n\n" );
+
+	stderr( array(
+		"PHP version $required_version or higher is required to use this tool.",
+		"You are currently running PHP version $version" )
+	);
 	exit( STATUS_ERROR );
 }
 
@@ -50,6 +78,7 @@ $long_opts = array(
 	'pretty',      // Pretty formatting
 	'boilerplate', // Output boilerplate
 	'help',        // Display help
+	'version',     // Display version
 	'vendor-target:', // Vendor target
 	'variables:',  // Map of variable names in an http query string format
 );
@@ -63,21 +92,21 @@ $vendor_target = @$opts['vendor-target'];
 $boilerplate = @( isset( $opts['b'] ) ?: isset( $opts['boilerplate'] ) );
 $pretty = @( isset( $opts['p'] ) ?: isset( $opts['pretty'] ) );
 $help_flag = @( isset( $opts['h'] ) ?: isset( $opts['help'] ) );
+$version_flag = @isset( $opts['version'] );
 
 
 ##################################################################
 ##  Help page
 
-// $command = $argv[0] == 'csscrush' ? 'csscrush' : 'php path/to/CssCrush/cli.php';
 $command = 'csscrush';
 
 $help = <<<TPL
 
-synopsis:
+Usage:
     csscrush [-f|--file] [-o|--output-file] [-p|--pretty] [-b|--boilerplate]
-             [-h|--help] [--variables] [--vendor-target]
+             [-h|--help] [--variables] [--vendor-target] [--version]
 
-options:
+Options:
     -f, --file:
         The input file, if omitted takes input from stdin
 
@@ -101,18 +130,28 @@ options:
         Set to 'none' for no vendor prefixes
         Set to a specific vendor prefix
 
-examples:
+    --version:
+        Version number
+
+Examples:
     $command -f=styles.css --pretty --vendor-target=webkit
 
     # Piping on unix based terminals
     cat 'styles.css' | $command --boilerplate
 
-
 TPL;
 
 
+
+if ( $version_flag ) {
+
+	stdout( 'CSS Crush ' . csscrush::$config->version );
+	exit( STATUS_OK );
+}
+
 if ( $help_flag ) {
-	fwrite( $stdout, $help );
+
+	stdout( $help );
 	exit( STATUS_OK );
 }
 
@@ -123,17 +162,22 @@ if ( $help_flag ) {
 $input = null;
 
 if ( $input_file ) {
+
 	if ( ! file_exists( $input_file ) ) {
-		fwrite( $stdout, "Input file not found\n\n" );
+
+		stdout( 'Input file not found' . PHP_EOL );
 		exit( STATUS_ERROR );
 	}
 	$input = file_get_contents( $input_file );
 }
 elseif ( $stdin_contents ) {
+
 	$input = $stdin_contents;
 }
 else {
-	fwrite( $stdout, $help );
+
+	// No input, just output help screen
+	stdout( $help );
 	exit( STATUS_OK );
 }
 
@@ -142,21 +186,25 @@ else {
 ##  Processing
 
 $process_opts = array();
-if ( $vendor_target ) {
-	$process_opts[ 'vendor_target' ] = $vendor_target;
-}
-if ( $variables ) {
-	parse_str( $variables, $in_vars );
-	$process_opts[ 'vars' ] = $in_vars;
-}
 $process_opts[ 'boilerplate' ] = $boilerplate ? true : false;
 $process_opts[ 'debug' ] = $pretty ? true : false;
 $process_opts[ 'rewrite_import_urls' ] = true;
+
+if ( $vendor_target ) {
+
+	$process_opts[ 'vendor_target' ] = $vendor_target;
+}
+if ( $variables ) {
+
+	parse_str( $variables, $in_vars );
+	$process_opts[ 'vars' ] = $in_vars;
+}
 
 $import_context = $input_file ? dirname( realpath( $input_file ) ) : null;
 
 // If there is an import context set it to the document root
 if ( $import_context ) {
+
 	$old_doc_root = csscrush::$config->docRoot;
 	csscrush::$config->docRoot = $import_context;
 	$process_opts[ 'import_context' ] = $import_context;
@@ -167,6 +215,7 @@ $output = csscrush::string( $input, $process_opts );
 
 // Reset the document root after processing
 if ( $import_context ) {
+
 	csscrush::$config->docRoot = $old_doc_root;
 }
 
@@ -175,26 +224,29 @@ if ( $import_context ) {
 ##  Output
 
 if ( $output_file ) {
+
 	if ( ! @file_put_contents( $output_file, $output ) ) {
-		$message = "Could not write to path '$output_file'\n";
+
+		$message[] = "Could not write to path '$output_file'";
+
 		if ( strpos( $output_file, '~' ) === 0 ) {
-			$message .= "Tilde expansion does not work\n";
+
+			$message[] = 'Tilde expansion does not work here';
 		}
-		fwrite( $stdout, $message );
+
+		stderr( $message );
 		exit( STATUS_ERROR );
 	}
 }
 else {
-	$output .= "\n";
-	fwrite( $stdout, $output );
+
+	if ( csscrush::$process->errors ) {
+		stderr( csscrush::$process->errors );
+	}
+
+	stdout( $output );
+	exit( STATUS_OK );
 }
-
-exit( STATUS_OK );
-
-
-
-
-
 
 
 
