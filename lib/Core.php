@@ -30,7 +30,7 @@ class csscrush {
 
 		// Get version ID from seed file
 		$seed_file_contents = file_get_contents( $seed_file );
-		$match_count = preg_match( '!@version\s+([\d\.]+)!', $seed_file_contents, $version_match );
+		$match_count = preg_match( '!@version\s+([\d\.\w-]+)!', $seed_file_contents, $version_match );
 		self::$config->version = $match_count ? $version_match[1] : null;
 
 		// Set the docRoot reference
@@ -1125,7 +1125,7 @@ TPL;
 		$rule = new csscrush_rule( $rule->selector_raw, $rule->declaration_raw );
 
 		// Store rules if they have declarations or extend arguments
-		if ( $rule->_declarations || $rule->extends ) {
+		if ( $rule->_declarations || $rule->extendsArgs ) {
 
 			$label = $rule->label;
 			

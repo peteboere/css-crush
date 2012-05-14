@@ -21,6 +21,9 @@ class csscrush_rule implements IteratorAggregate {
 	public $comments = array();
 
 	// Arugments passed in via 'extend' property
+	public $extendsArgs = array();
+
+	// Record of actual inherited rules
 	public $extends = array();
 
 	public $_declarations = array();
@@ -352,7 +355,7 @@ class csscrush_rule implements IteratorAggregate {
 					// Not creating a named rule association with this expanded selector
 					$new_set[] = new csscrush_selector( $row . $selector->value );
 				}
-				
+
 				// Store the unexpanded selector to selectorRelationships
 				csscrush::$process->selectorRelationships[ $readableValue ] = $this;
 			}
@@ -361,9 +364,9 @@ class csscrush_rule implements IteratorAggregate {
 				// Nothing to expand
 				$new_set[ $readableValue ] = $selector;
 			}
-			
+
 		} // foreach
-		
+
 		$this->selectorList = $new_set;
 	}
 
@@ -380,17 +383,24 @@ class csscrush_rule implements IteratorAggregate {
 			if ( preg_match( csscrush_regex::$patt->name, $arg ) ) {
 
 				// A regular name: an element name or an abstract rule name
-				$this->extends[ $arg ] = true;
+				$this->extendsArgs[ $arg ] = true;
 			}
 			else {
 
 				// Not a regular name: Some kind of selector so normalize it for later comparison
 				$readable_selector = csscrush_selector::makeReadableSelector( $arg );
 
-				$this->extends[ $readable_selector ] = true;
+				$this->extendsArgs[ $readable_selector ] = true;
 			}
 		}
-		csscrush::log( $this->extends );
+		csscrush::log( $this->extendsArgs );
+	}
+
+	public static function recursiveExtend ( $rule ) {
+		foreach ( $rule->extends as $parent_rule ) {
+			$parent_rule->addSelectors( $rule->selectorList );
+			self::recursiveExtend( $parent_rule );
+		}
 	}
 
 	public function applyExtendables () {
@@ -398,17 +408,33 @@ class csscrush_rule implements IteratorAggregate {
 		$abstracts = csscrush::$process->abstracts;
 		$selectorRelationships = csscrush::$process->selectorRelationships;
 
-		foreach ( $this->extends as $name => $bool ) {
+		foreach ( $this->extendsArgs as $name => $bool ) {
 
 			if ( isset( $abstracts[ $name ] ) ) {
 
+				$parent_abstract_rule = $abstracts[ $name ];
+
 				// Match found in abstract rules
-				$abstracts[ $name ]->addSelectors( $this->selectorList );
+				$parent_abstract_rule->addSelectors( $this->selectorList );
+
+				// Store a reference to directly extended rules
+				$this->extends[] = $parent_abstract_rule;
+
+				// Recursively inherit
+				self::recursiveExtend( $parent_abstract_rule );
 			}
 			else if ( isset( $selectorRelationships[ $name ] ) ) {
 
+				$parent_rule = $selectorRelationships[ $name ];
+
 				// Match found in selectorRelationships
-				$selectorRelationships[ $name ]->addSelectors( $this->selectorList );
+				$parent_rule->addSelectors( $this->selectorList );
+
+				// Store a reference to directly extended rules
+				$this->extends[] = $parent_rule;
+
+				// Recursively inherit
+				self::recursiveExtend( $parent_rule );
 			}
 		}
 	}
@@ -422,6 +448,7 @@ class csscrush_rule implements IteratorAggregate {
 
 		$this->selectorList = array_merge( $this->selectorList, $list );
 	}
+
 
 	############
 	#  IteratorAggregate

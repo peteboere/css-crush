@@ -93,9 +93,9 @@ class csscrush_mixin {
 				return false;
 			}
 
-			// Discard the name part and any enclosing parens
+			// Discard the name part and any wrapping parens and whitespace
 			$message = substr( $message, strlen( $mixin_name ) );
-			$message = trim( $message, ' \r\n\t()' );
+			$message = preg_replace( '!^\s*\(?\s*|\s*\)?\s*$!', '', $message );
 
 			// e.g. "value, rgba(0,0,0,0), left 100%"
 
