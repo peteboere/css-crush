@@ -8,7 +8,7 @@ Abstracted IO interface
 Added some error reporting
 Added spiffing.css plugin
 csscrush_tag method now uses media type 'all' by default
-Updated Aliases.ini / initial-values.ini
+Updated alias and initial-value tables
 Internal refactoring
 Resolved issue #23
 Resolved issue #24
