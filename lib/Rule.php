@@ -11,7 +11,7 @@ class csscrush_rule implements IteratorAggregate {
 	public $isNested;
 	public $label;
 
-	public $abstractName;
+	// public $abstractName;
 
 	public $properties = array();
 
@@ -393,7 +393,7 @@ class csscrush_rule implements IteratorAggregate {
 				$this->extendsArgs[ $readable_selector ] = true;
 			}
 		}
-		csscrush::log( $this->extendsArgs );
+		// csscrush::log( $this->extendsArgs );
 	}
 
 	public static function recursiveExtend ( $rule ) {
@@ -422,6 +422,7 @@ class csscrush_rule implements IteratorAggregate {
 
 				// Recursively inherit
 				self::recursiveExtend( $parent_abstract_rule );
+
 			}
 			else if ( isset( $selectorRelationships[ $name ] ) ) {
 

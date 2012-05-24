@@ -56,7 +56,7 @@ class csscrush {
 
 		// Get document_root reference
 		// $_SERVER['DOCUMENT_ROOT'] is unreliable in certain CGI/Apache/IIS setups
-		
+
 		if ( ! $doc_root ) {
 
 			$script_filename = $_SERVER[ 'SCRIPT_FILENAME' ];
@@ -298,7 +298,6 @@ class csscrush {
 			if ( ! isset( $attributes[ 'media' ] ) ) {
 				$attributes[ 'media' ] = 'all';
 			}
-
 			$attr_string = csscrush_util::htmlAttributes( $attributes );
 			return "<link$attr_string />\n";
 		}
@@ -713,14 +712,14 @@ TPL;
 		$stream = "\n" . str_replace( array_keys( $map ), array_values( $map ), $stream );
 
 		// Rules
-		$stream = self::extractAndProcessRules( $stream );
+		$stream = self::extractRules( $stream );
 
 		// Process any @-in blocks
 		$stream = self::prefixSelectors( $stream );
 
 		// Main processing on the rule objects
 		self::processRules();
-		
+
 		// csscrush::log( csscrush::$storage->tokens->rules );
 		csscrush::log( array_keys( self::$process->selectorRelationships ) );
 
@@ -943,7 +942,7 @@ TPL;
 
 				// Get the rule instance
 				$rule = csscrush_rule::get( $rule_match[0][0] );
-				
+
 				// Set the isNested flag
 				$rule->isNested = true;
 
@@ -974,7 +973,7 @@ TPL;
 							$new_selector_list[] = new csscrush_selector( $new_value );
 						}
 						else {
-							
+
 							// Not storing the selector as named
 							$new_selector_list[] = new csscrush_selector( "$arg_selector {$rule_selector->value}" );
 						}
@@ -996,7 +995,7 @@ TPL;
 	}
 
 	public static function processRules () {
-		
+
 		foreach ( self::$storage->tokens->rules as $rule ) {
 
 			// Associate selectors with the rule
@@ -1004,9 +1003,6 @@ TPL;
 
 				self::$process->selectorRelationships[ $selector->readableValue ] = $rule;
 			}
-
-			// Find previous selectors and apply the 
-			$rule->applyExtendables();
 
 			csscrush_hook::run( 'rule_prealias', $rule );
 
@@ -1019,6 +1015,9 @@ TPL;
 			csscrush_hook::run( 'rule_postalias', $rule );
 
 			$rule->expandSelectors();
+
+			// Find previous selectors and apply them
+			$rule->applyExtendables();
 
 			csscrush_hook::run( 'rule_postprocess', $rule );
 		}
@@ -1128,9 +1127,9 @@ TPL;
 		if ( $rule->_declarations || $rule->extendsArgs ) {
 
 			$label = $rule->label;
-			
+
 			self::$storage->tokens->rules[ $label ] = $rule;
-			
+
 			if ( $rule->_declarations ) {
 				return $label . "\n";
 			}
@@ -1154,7 +1153,7 @@ TPL;
 		$whitespace = $minify ? '' : ' ';
 
 		$ruleLabel = $match[0];
-		
+
 		// If no rule matches the label return empty string
 		if ( ! isset( self::$storage->tokens->rules[ $ruleLabel ] ) ) {
 			return '';
@@ -1194,7 +1193,7 @@ TPL;
 	############
 	#  Parsing methods
 
-	public static function extractAndProcessRules ( $stream ) {
+	public static function extractRules ( $stream ) {
 		return preg_replace_callback( csscrush_regex::$patt->rule, array( 'self', 'cb_extractRules' ), $stream );
 	}
 
@@ -1259,7 +1258,7 @@ TPL;
 
 			// The matched fragment name
 			$fragment_name = $match[1][0];
-			
+
 			// The fragment object, or null if name not present
 			$fragment = isset( self::$process->fragments[ $fragment_name ] ) ? self::$process->fragments[ $fragment_name ] : null;
 
