@@ -59,6 +59,10 @@ class csscrush_rule implements IteratorAggregate {
 				}
 
 				$this->addSelector( new csscrush_selector( $selector ) );
+
+				// Store selector relationships
+				//  - This happens twice; on first pass for mixins, second pass is for inheritance
+				$this->indexSelectors();
 			}
 		}
 
@@ -368,6 +372,13 @@ class csscrush_rule implements IteratorAggregate {
 		} // foreach
 
 		$this->selectorList = $new_set;
+	}
+
+	public function indexSelectors () {
+
+		foreach ( $this->selectorList as $selector ) {
+			csscrush::$process->selectorRelationships[ $selector->readableValue ] = $this;
+		}
 	}
 
 	public function setExtendSelectors ( $raw_value ) {

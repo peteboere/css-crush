@@ -996,13 +996,13 @@ TPL;
 
 	public static function processRules () {
 
+		// Reset the selector relationships
+		self::$process->selectorRelationships = array();
+
 		foreach ( self::$storage->tokens->rules as $rule ) {
 
-			// Associate selectors with the rule
-			foreach ( $rule->selectorList as $selector ) {
-
-				self::$process->selectorRelationships[ $selector->readableValue ] = $rule;
-			}
+			// Store selector relationships
+			$rule->indexSelectors();
 
 			csscrush_hook::run( 'rule_prealias', $rule );
 

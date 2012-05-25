@@ -78,38 +78,80 @@ class csscrush_mixin {
 	public static function parseSingleValue ( $message ) {
 
 		$message = ltrim( $message );
+		$mixin = null;
+		$non_mixin = null;
 
-		// e.g. mymixin( 50px, rgba(0,0,0,0), left 100% )
+		// e.g.
+		//   - mymixin( 50px, rgba(0,0,0,0), left 100% )
+		//   - abstract-rule
+		//   - #selector
 
-		if ( preg_match( '!^[a-zA-Z0-9_-]+!', $message, $name_match ) ) {
+		// Test for leading name
+		if ( preg_match( '!^[\w-]+!', $message, $name_match ) ) {
 
-			$mixin_name = $name_match[0];
+			$name = $name_match[0];
 
-			if ( isset( csscrush::$process->mixins[ $mixin_name ] ) ) {
-				$mixin = csscrush::$process->mixins[ $mixin_name ];
+			if ( isset( csscrush::$process->mixins[ $name ] ) ) {
+
+				// Mixin match
+				$mixin = csscrush::$process->mixins[ $name ];
+			}
+			elseif ( isset( csscrush::$process->abstracts[ $name ] ) ) {
+
+				// Abstract rule match
+				$non_mixin = csscrush::$process->abstracts[ $name ];
+			}
+		}
+
+		// If no mixin or abstract rule matched, look for matching selector
+		if ( ! $mixin && ! $non_mixin ) {
+
+			$selector_test = csscrush_selector::makeReadableSelector( $message );
+			// csscrush::log( array_keys( csscrush::$process->selectorRelationships ) );
+
+			if ( isset( csscrush::$process->selectorRelationships[ $selector_test ] ) ) {
+				$non_mixin = csscrush::$process->selectorRelationships[ $selector_test ];
+			}
+		}
+
+		// If no mixin matched, but matched alternative, use alternative
+		if ( ! $mixin ) {
+
+			if ( $non_mixin ) {
+
+				// Return expected format
+				$result = array();
+				foreach ( $non_mixin as $declaration ) {
+					$result[] = array(
+						'property' => $declaration->property,
+						'value'    => $declaration->value,
+					);
+				}
+				return $result;
 			}
 			else {
-				// No mixin found with that name
+
+				// Nothing matches
 				return false;
 			}
-
-			// Discard the name part and any wrapping parens and whitespace
-			$message = substr( $message, strlen( $mixin_name ) );
-			$message = preg_replace( '!^\s*\(?\s*|\s*\)?\s*$!', '', $message );
-
-			// e.g. "value, rgba(0,0,0,0), left 100%"
-
-			// Determine what raw arguments there are to pass to the mixin
-			$args = array();
-			if ( $message !== '' ) {
-				$args = csscrush_util::splitDelimList( $message, ',', true, true );
-				// $args = array_map( 'trim', $args->list );
-				$args = $args->list;
-			}
-
-			return $mixin->call( $args );
 		}
-		return false;
+
+		// We have a valid mixin.
+		// Discard the name part and any wrapping parens and whitespace
+		$message = substr( $message, strlen( $name ) );
+		$message = preg_replace( '!^\s*\(?\s*|\s*\)?\s*$!', '', $message );
+
+		// e.g. "value, rgba(0,0,0,0), left 100%"
+
+		// Determine what raw arguments there are to pass to the mixin
+		$args = array();
+		if ( $message !== '' ) {
+			$args = csscrush_util::splitDelimList( $message, ',', true, true );
+			// $args = array_map( 'trim', $args->list );
+			$args = $args->list;
+		}
+
+		return $mixin->call( $args );
 	}
 
 

@@ -1,3 +1,9 @@
+1.5.1
+-----
+Extended mixins to work with abstract rules and regular rules
+Fixed issue with selector grouping and inheritance in combination
+
+
 1.5
 ---
 New feature: Rule inheritance / abstract rules
