@@ -389,6 +389,9 @@ class csscrush_rule implements IteratorAggregate {
 		// Pass extra argument to trim the returned list
 		$args = csscrush_util::splitDelimList( $raw_value, ',', true, true );
 
+		// Reset if called earlier, last call wins by intention
+		$this->extendsArgs = array();
+
 		foreach ( $args->list as $arg ) {
 
 			if ( preg_match( csscrush_regex::$patt->name, $arg ) ) {
