@@ -326,7 +326,7 @@ class csscrush_importer {
 			$url_prefix .= '/';
 		}
 
-		csscrush::log( 'relative_url_prefix: ' . $url_prefix );
+		// csscrush::log( 'relative_url_prefix: ' . $url_prefix );
 
 		// Search for all relative url and data-uri references in the content
 		// and prepend $relative_url_prefix
@@ -352,7 +352,7 @@ class csscrush_importer {
 		$storage = csscrush::$storage;
 
 		// The relative url prefix
-		$relative_url_prefix = $storage->tmp->relativeUrlPrefix;
+		$relative_url_prefix = $storage->misc->relativeUrlPrefix;
 
 		list( $fullMatch, $before, $function, $url ) = $match;
 		$url = trim( $url );

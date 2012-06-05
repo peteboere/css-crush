@@ -1,3 +1,8 @@
+1.5.2
+-----
+Resolved issue #32
+
+
 1.5.1
 -----
 Extended mixins to work with abstract rules and regular rules

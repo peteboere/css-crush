@@ -328,12 +328,11 @@ class csscrush_function {
 			$file = csscrush::$config->docRoot . $input;
 		}
 		else {
-			$baseDir = csscrush::$config->baseDir;
-			$file = "$baseDir/$input";
+			$file = csscrush::$process->inputDir . "/$input";
 		}
 
 		// File not found
-		if ( !file_exists( $file ) ) {
+		if ( ! file_exists( $file ) ) {
 			return $result;
 		}
 
