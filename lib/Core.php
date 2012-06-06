@@ -320,6 +320,14 @@ class csscrush {
 	 */
 	public static function inline ( $file, $options = null, $attributes = array() ) {
 
+		// For inline output set boilerplate to not display by default
+		if ( ! is_array( $options ) ) {
+			$options = array();
+		}
+		if ( ! isset( $options[ 'boilerplate' ] ) ) {
+			$options[ 'boilerplate' ] = false;
+		}
+
 		$file = self::file( $file, $options );
 
 		if ( ! empty( $file ) ) {

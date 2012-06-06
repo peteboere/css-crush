@@ -1,6 +1,7 @@
 1.5.2
 -----
 Resolved issue #32
+csscrush::inline method now defaults to not printing a boilerplate
 
 
 1.5.1
