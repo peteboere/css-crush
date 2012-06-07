@@ -51,7 +51,7 @@ class csscrush_importer {
 		if ( $prependFile = csscrush_util::find( 'Prepend-local.css', 'Prepend.css' ) ) {
 			$stream = file_get_contents( $prependFile ) . $stream;
 		}
-		
+
 		$stream = csscrush::extractComments( $stream );
 		$stream = csscrush::extractStrings( $stream );
 
@@ -145,7 +145,7 @@ class csscrush_importer {
 				for ( $index = 0; $index < $matchCount; $index++ ) {
 
 					$fullMatch = $matchAll[ $index ][0][0];
-					
+
 					// Url match may be at one of 2 positions
 					if ( $matchAll[ $index ][1][1] == -1 ) {
 						$urlMatch = $matchAll[ $index ][2][0];
@@ -278,7 +278,7 @@ class csscrush_importer {
 
 		$stream = $import->content;
 
-		// We're comparing file system position so we'll
+		// Normalise the paths
 		$hostDir = csscrush_util::normalizeSystemPath( $import->hostDir, true );
 		$importDir = csscrush_util::normalizeSystemPath( dirname( $import->path ), true );
 
@@ -364,6 +364,9 @@ class csscrush_importer {
 			$url = $url_token->value;
 		}
 
+		// Normalise the path
+		$url = csscrush_util::normalizeSystemPath( $url );
+
 		// No rewrite if:
 		//   $url begins with a variable, e.g '$('
 		//   $url path is absolute or begins with slash
@@ -374,16 +377,22 @@ class csscrush_importer {
 			strpos( $url, '$(' ) === 0 ||
 			preg_match( $regex->absoluteUrl, $url )
 		) {
-			// Token or not, it's ok to return the full match if $url is a root relative or absolute ref
+			// Token or not, it's ok to return the full match
+			// if $url is a root relative or absolute ref
 			return $fullMatch;
 		}
 
 		// Prepend the relative url prefix
 		$url = $relative_url_prefix . $url;
 
-		// Restore quotes if $url was a string token
+		// Reduce redundant path segments (issue #35):
+		// e.g 'foo/../bar' => 'bar'
+		$url = preg_replace( '![^/.]+/\.\./!', '', $url );
+
+		// Restore quotes if $url was a string token, update the token and return it
 		if ( $url_is_token ) {
-			$url = $url_token->quoteMark . $url . $url_token->quoteMark;
+			$url_token->update( $url_token->quoteMark . $url . $url_token->quoteMark );
+			$url = $url_token->token;
 		}
 
 		// Reconstruct the match and return
