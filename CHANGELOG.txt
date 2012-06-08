@@ -2,6 +2,7 @@
 -----
 Resolved issue #32
 csscrush::inline method now defaults to not printing a boilerplate
+Updated aliases file
 
 
 1.5.1

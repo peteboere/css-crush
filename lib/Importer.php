@@ -385,7 +385,7 @@ class csscrush_importer {
 		// Prepend the relative url prefix
 		$url = $relative_url_prefix . $url;
 
-		// Reduce redundant path segments (issue #35):
+		// Reduce redundant path segments (issue #32):
 		// e.g 'foo/../bar' => 'bar'
 		$url = preg_replace( '![^/.]+/\.\./!', '', $url );
 
