@@ -20,14 +20,43 @@ class csscrush_util {
 	}
 
 
-	public static function normalizeSystemPath ( $path, $strip_ms_dos = false ) {
+	public static function normalizePath ( $path, $strip_ms_dos = false ) {
 
-		$path = rtrim( str_replace( '\\', '/', $path ), '/' );
-		
+		$path = rtrim( preg_replace( '![\\/]+!', '/', $path ), '/' );
+
 		if ( $strip_ms_dos ) {
-			$path = preg_replace( '!^[a-z]\:!i', '', $path ); 
+			$path = preg_replace( '!^[a-z]\:!i', '', $path );
 		}
 		return $path;
+	}
+
+
+	public static function cleanUpUrl ( $url ) {
+
+		// Reduce redundant path segments (issue #32):
+		// e.g 'foo/../bar' => 'bar'
+		$patt = '![^/.]+/\.\./!';
+
+		while ( preg_match( $patt, $url ) ) {
+			$url = preg_replace( $patt, '', $url );
+		}
+
+		if ( strpos( $url, '(' ) !== false || strpos( $url, ')' ) !== false ) {
+			$url = "\"$url\"";
+		}
+
+		return $url;
+	}
+
+
+	public static function strReplaceHash ( $str, $map = array() ) {
+
+		if ( ! $map ) {
+			return $str;
+		}
+		$labels = array_keys( $map );
+		$values = array_values( $map );
+		return str_replace( $labels, $values, $str );
 	}
 
 
@@ -93,13 +122,13 @@ class csscrush_util {
 
 		// Find tokens
 		$matches = csscrush_regex::matchAll( csscrush_regex::$patt->{ $token_patt }, $str );
-	
+
 		foreach ( $matches as $m ) {
-			
+
 			$token = $m[0][0];
-			
+
 			if ( isset( $token_table[ $token ] ) ) {
-			
+
 				$str = str_replace( $token, $token_table[ $token ], $str );
 			}
 		}
@@ -112,7 +141,7 @@ class csscrush_util {
 		$match_obj = self::matchAllBrackets( $str );
 
 		// If the delimiter is one character do a simple split
-		// Otherwise do a regex split 
+		// Otherwise do a regex split
 		if ( 1 === strlen( $delim ) ) {
 			$match_obj->list = explode( $delim, $match_obj->string );
 		}
@@ -126,7 +155,7 @@ class csscrush_util {
 
 		// Filter out empties
 		$match_obj->list = array_filter( $match_obj->list );
-		
+
 		if ( $fold_in ) {
 
 			foreach ( $match_obj->list as &$item ) {
@@ -137,7 +166,7 @@ class csscrush_util {
 	}
 
 
-	public static function matchBrackets ( $str, $brackets = array( '(', ')' ), 
+	public static function matchBrackets ( $str, $brackets = array( '(', ')' ),
 				$search_pos = 0, $capture_text = false ) {
 
 		list( $opener, $closer ) = $brackets;
@@ -280,7 +309,6 @@ class csscrush_util {
  *  String sugar
  *
  */
-
 class csscrush_string {
 
 	public $token;
@@ -292,16 +320,15 @@ class csscrush_string {
 	public $quoteMark;
 
 	public function __construct ( $token ) {
-		
+
 		$this->token = trim( $token );
 		$this->raw = csscrush::$storage->tokens->strings[ $token ];
 		$this->value = trim( $this->raw, '\'"' );
 		$this->quoteMark = $this->raw[0];
 	}
-	
+
 	public function update ( $newValue ) {
 		csscrush::$storage->tokens->strings[ $this->token ] = $newValue;
 	}
 }
-
 

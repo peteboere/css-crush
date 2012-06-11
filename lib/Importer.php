@@ -279,8 +279,8 @@ class csscrush_importer {
 		$stream = $import->content;
 
 		// Normalise the paths
-		$hostDir = csscrush_util::normalizeSystemPath( $import->hostDir, true );
-		$importDir = csscrush_util::normalizeSystemPath( dirname( $import->path ), true );
+		$hostDir = csscrush_util::normalizePath( $import->hostDir, true );
+		$importDir = csscrush_util::normalizePath( dirname( $import->path ), true );
 
 		csscrush::$storage->misc->relativeUrlPrefix = '';
 		$url_prefix = '';
@@ -365,7 +365,7 @@ class csscrush_importer {
 		}
 
 		// Normalise the path
-		$url = csscrush_util::normalizeSystemPath( $url );
+		$url = csscrush_util::normalizePath( $url );
 
 		// No rewrite if:
 		//   $url begins with a variable, e.g '$('
@@ -385,12 +385,16 @@ class csscrush_importer {
 		// Prepend the relative url prefix
 		$url = $relative_url_prefix . $url;
 
-		// Reduce redundant path segments (issue #32):
-		// e.g 'foo/../bar' => 'bar'
-		$url = preg_replace( '![^/.]+/\.\./!', '', $url );
+		// If the path comes via the css url function, we'll convert it to a url token
+		if ( $function == 'url' ) {
 
-		// Restore quotes if $url was a string token, update the token and return it
-		if ( $url_is_token ) {
+			$label = csscrush::tokenLabelCreate( 'u' );
+			csscrush::$storage->tokens->urls[ $label ] = $url;
+			$url = $label;
+		}
+		elseif ( $url_is_token ) {
+
+			// Restore quotes if $url was a string token, update the token and return it
 			$url_token->update( $url_token->quoteMark . $url . $url_token->quoteMark );
 			$url = $url_token->token;
 		}

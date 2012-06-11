@@ -55,6 +55,7 @@ class csscrush_regex {
 		$patt->stringToken  = '!___s\d+___!';
 		$patt->ruleToken    = '!___r\d+___!';
 		$patt->parenToken   = '!___p\d+___!';
+		$patt->urlToken     = '!___u\d+___!';
 
 		// Functions
 		$patt->varFunction  = '!(?:

@@ -92,7 +92,7 @@ class csscrush {
 			}
 		}
 
-		self::$config->docRoot = csscrush_util::normalizeSystemPath( $doc_root );
+		self::$config->docRoot = csscrush_util::normalizePath( $doc_root );
 	}
 
 
@@ -538,8 +538,8 @@ TPL;
 			'vendor_target' => 'all',
 
 			// Whether to rewrite the url references inside imported files
-			// This will be 'true' by default eventually
-			'rewrite_import_urls' => false,
+			// This will probably be 'true' by default eventually
+			'rewrite_import_urls' => true,
 
 			// Keeping track of global vars internally
 			'_globalVars' => self::$config->vars,
@@ -670,6 +670,7 @@ TPL;
 			'rules'     => array(),
 			'parens'    => array(),
 			'mixinArgs' => array(),
+			'urls'      => array(),
 		);
 		self::$storage->variables = array();
 		self::$storage->misc = new stdclass();
@@ -728,8 +729,8 @@ TPL;
 		// Main processing on the rule objects
 		self::processRules();
 
-		// csscrush::log( csscrush::$storage->tokens->rules );
-		csscrush::log( array_keys( self::$process->selectorRelationships ) );
+		// csscrush::log( csscrush::$storage->tokens->urls );
+		// csscrush::log( array_keys( self::$process->selectorRelationships ) );
 
 		// Alias any @-rules
 		$stream = self::aliasAtRules( $stream );
@@ -773,9 +774,7 @@ TPL;
 		$stream = preg_replace_callback( $regex->ruleToken, array( 'self', 'cb_printRule' ), $stream );
 
 		// Insert parens
-		$paren_labels = array_keys( self::$storage->tokens->parens );
-		$paren_values = array_values( self::$storage->tokens->parens );
-		$stream = str_replace( $paren_labels, $paren_values, $stream );
+		$stream = csscrush_util::strReplaceHash( $stream, self::$storage->tokens->parens );
 
 		if ( $minify ) {
 			$stream = self::minify( $stream );
@@ -792,10 +791,23 @@ TPL;
 			$stream = preg_replace( '!\n{3,}!', "\n\n", $stream );
 		}
 
-		// Insert literals
-		$string_labels = array_keys( self::$storage->tokens->strings );
-		$string_values = array_values( self::$storage->tokens->strings );
-		$stream = str_replace( $string_labels, $string_values, $stream );
+		// Insert URLs
+		if ( self::$storage->tokens->urls ) {
+
+			// Clean-up rewritten URLs
+			foreach ( csscrush::$storage->tokens->urls as $token => $url ) {
+
+				// Optionally set the URLs to absolute
+				if ( self::$options[ 'rewrite_import_urls' ] === 'absolute' ) {
+					$url = self::$process->inputDirUrl . '/' . $url;
+				}
+				csscrush::$storage->tokens->urls[ $token ] = csscrush_util::cleanUpUrl( $url );
+			}
+			$stream = csscrush_util::strReplaceHash( $stream, self::$storage->tokens->urls );
+		}
+
+		// Insert string literals
+		$stream = csscrush_util::strReplaceHash( $stream, self::$storage->tokens->strings );
 
 		// I think we're done
 		return $stream;
