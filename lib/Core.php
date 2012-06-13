@@ -31,7 +31,7 @@ class csscrush {
 		// Get version ID from seed file
 		$seed_file_contents = file_get_contents( $seed_file );
 		$match_count = preg_match( '!@version\s+([\d\.\w-]+)!', $seed_file_contents, $version_match );
-		self::$config->version = $match_count ? $version_match[1] : null;
+		self::$config->version = $match_count ? new csscrush_version( $version_match[1] ) : null;
 
 		// Set the docRoot reference
 		self::setDocRoot();
@@ -362,6 +362,11 @@ class csscrush {
 	 */
 	public static function string ( $string, $options = null ) {
 
+		// For strings set boilerplate to not display by default
+		if ( ! isset( $options[ 'boilerplate' ] ) ) {
+			$options[ 'boilerplate' ] = false;
+		}
+
 		// Reset for current process
 		self::reset( $options );
 
@@ -370,8 +375,8 @@ class csscrush {
 		$options = self::$options;
 
 		// Set the path context if one is given
-		if ( isset( $options[ 'import_context' ] ) && ! empty( $options[ 'import_context' ] ) ) {
-			self::setPath( $options[ 'import_context' ] );
+		if ( isset( $options[ 'context' ] ) && ! empty( $options[ 'context' ] ) ) {
+			self::setPath( $options[ 'context' ] );
 		}
 
 		// It's not associated with a real file so we create an 'empty' input object
@@ -729,7 +734,6 @@ TPL;
 		// Main processing on the rule objects
 		self::processRules();
 
-		// csscrush::log( csscrush::$storage->tokens->urls );
 		// csscrush::log( array_keys( self::$process->selectorRelationships ) );
 
 		// Alias any @-rules

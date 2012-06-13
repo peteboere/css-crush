@@ -200,21 +200,21 @@ if ( $variables ) {
 	$process_opts[ 'vars' ] = $in_vars;
 }
 
-$import_context = $input_file ? dirname( realpath( $input_file ) ) : null;
+$hostfile_context = $input_file ? dirname( realpath( $input_file ) ) : null;
 
 // If there is an import context set it to the document root
-if ( $import_context ) {
+if ( $hostfile_context ) {
 
 	$old_doc_root = csscrush::$config->docRoot;
-	csscrush::$config->docRoot = $import_context;
-	$process_opts[ 'import_context' ] = $import_context;
+	csscrush::$config->docRoot = $hostfile_context;
+	$process_opts[ 'context' ] = $hostfile_context;
 }
 
 // Process the stream
 $output = csscrush::string( $input, $process_opts );
 
 // Reset the document root after processing
-if ( $import_context ) {
+if ( $hostfile_context ) {
 
 	csscrush::$config->docRoot = $old_doc_root;
 }

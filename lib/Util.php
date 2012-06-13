@@ -312,23 +312,71 @@ class csscrush_util {
 class csscrush_string {
 
 	public $token;
-
 	public $value;
-
 	public $raw;
-
 	public $quoteMark;
 
 	public function __construct ( $token ) {
 
 		$this->token = trim( $token );
-		$this->raw = csscrush::$storage->tokens->strings[ $token ];
+		$this->raw = csscrush::$storage->tokens->strings[ $this->token ];
 		$this->value = trim( $this->raw, '\'"' );
 		$this->quoteMark = $this->raw[0];
 	}
 
 	public function update ( $newValue ) {
 		csscrush::$storage->tokens->strings[ $this->token ] = $newValue;
+	}
+}
+
+
+/**
+ *
+ *  Version string sugar
+ *
+ */
+class csscrush_version {
+
+	public $major;
+	public $minor;
+	public $revision;
+	public $extra;
+
+	public function __construct ( $version_string ) {
+
+		if ( ( $hyphen_pos = strpos( $version_string, '-' ) ) !== false ) {
+			$this->extra = substr( $version_string, $hyphen_pos + 1 );
+			$version_string = substr( $version_string, 0, $hyphen_pos );
+		}
+
+		$parts = explode( '.', $version_string );
+
+		if ( ( $major = array_shift( $parts ) ) !== null ) {
+			$this->major = (int) $major;
+		}
+		if ( ( $minor = array_shift( $parts ) ) !== null ) {
+			$this->minor = (int) $minor;
+		}
+		if ( ( $revision = array_shift( $parts ) ) !== null ) {
+			$this->revision = (int) $revision;
+		}
+	}
+
+	public function __toString () {
+
+		$out = (string) $this->major;
+
+		if ( ! is_null( $this->minor ) ) {
+			$out .= ".$this->minor";
+		}
+		if ( ! is_null( $this->revision ) ) {
+			$out .= ".$this->revision";
+		}
+		if ( ! is_null( $this->extra ) ) {
+			$out .= "-$this->extra";
+		}
+
+		return $out;
 	}
 }
 

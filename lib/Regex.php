@@ -38,12 +38,10 @@ class csscrush_regex {
 
 		$patt->variables = '!@(?:variables|define)\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
 		$patt->mixin     = '!@mixin\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
-		
 		$patt->abstract  = csscrush_regex::create( '^@abstract\s+(<name>)', 'i' );
-		
-		$patt->comment   = '!/\*(.*?)\*/!s';
-		$patt->string    = '!(\'|")(?:\\1|[^\1])*?\1!';
-		
+		$patt->comment   = '!/\*(.*?)\*/!sS';
+		$patt->string    = '!(\'|")(?:\\1|[^\1])*?\1!S';
+
 		// As an exception we treat some @-rules like standard rule blocks
 		$patt->rule       = '!
 			(\n(?:[^@{}]+|@(?:font-face|page|abstract)[^{]*)) # The selector

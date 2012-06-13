@@ -27,8 +27,8 @@ class csscrush_io {
 
 		// Make basic information about the input object accessible
 		$input = new stdclass();
+		$input->dir = ! empty( $process->inputDir ) ? $process->inputDir : null;
 		$input->name = $file ? basename( $file ) : null;
-		$input->dir = $file ? $process->inputDir : null;
 		$input->path = $file ? "$process->inputDir/$input->name" : null;
 
 		if ( $file ) {
