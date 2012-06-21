@@ -437,7 +437,7 @@ class csscrush {
 
 	public static $logging = false;
 
-	public static function log () {
+	public static function log ( $arg = null, $label = '' ) {
 
 		if ( ! self::$logging ) {
 			return;
@@ -445,13 +445,15 @@ class csscrush {
 		static $log = '';
 
 		$args = func_get_args();
-		if ( !count( $args ) ) {
+		if ( ! count( $args ) ) {
 			// No arguments, return the log
 			return $log;
 		}
-		else {
-			$arg = $args[0];
+
+		if ( $label ) {
+			$log .= "<h4>$label</h4>";
 		}
+
 		if ( is_string( $arg ) ) {
 			$log .= $arg . '<hr>';
 		}
@@ -1148,7 +1150,7 @@ TPL;
 		$rule = new csscrush_rule( $rule->selector_raw, $rule->declaration_raw );
 
 		// Store rules if they have declarations or extend arguments
-		if ( $rule->_declarations || $rule->extendsArgs ) {
+		if ( $rule->_declarations || $rule->extendArgs ) {
 
 			$label = $rule->label;
 

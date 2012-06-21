@@ -20,6 +20,12 @@ class csscrush_util {
 	}
 
 
+	public static function strEndsWith ( $haystack, $needle ) {
+
+		return substr( $haystack, -strlen( $needle ) ) === $needle;
+	}
+
+
 	public static function normalizePath ( $path, $strip_ms_dos = false ) {
 
 		$path = rtrim( preg_replace( '![\\/]+!', '/', $path ), '/' );
@@ -313,15 +319,14 @@ class csscrush_string {
 
 	public $token;
 	public $value;
-	public $raw;
 	public $quoteMark;
 
 	public function __construct ( $token ) {
 
 		$this->token = trim( $token );
-		$this->raw = csscrush::$storage->tokens->strings[ $this->token ];
-		$this->value = trim( $this->raw, '\'"' );
-		$this->quoteMark = $this->raw[0];
+		$raw = csscrush::$storage->tokens->strings[ $this->token ];
+		$this->value = trim( $raw, '\'"' );
+		$this->quoteMark = $raw[0];
 	}
 
 	public function update ( $newValue ) {

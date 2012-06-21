@@ -21,10 +21,7 @@ class csscrush_rule implements IteratorAggregate {
 	public $comments = array();
 
 	// Arugments passed in via 'extend' property
-	public $extendsArgs = array();
-
-	// Record of actual inherited rules
-	public $extends = array();
+	public $extendArgs = array();
 
 	public $_declarations = array();
 
@@ -390,30 +387,11 @@ class csscrush_rule implements IteratorAggregate {
 		$args = csscrush_util::splitDelimList( $raw_value, ',', true, true );
 
 		// Reset if called earlier, last call wins by intention
-		$this->extendsArgs = array();
+		$this->extendArgs = array();
 
 		foreach ( $args->list as $arg ) {
 
-			if ( preg_match( csscrush_regex::$patt->name, $arg ) ) {
-
-				// A regular name: an element name or an abstract rule name
-				$this->extendsArgs[ $arg ] = true;
-			}
-			else {
-
-				// Not a regular name: Some kind of selector so normalize it for later comparison
-				$readable_selector = csscrush_selector::makeReadableSelector( $arg );
-
-				$this->extendsArgs[ $readable_selector ] = true;
-			}
-		}
-		// csscrush::log( $this->extendsArgs );
-	}
-
-	public static function recursiveExtend ( $rule ) {
-		foreach ( $rule->extends as $parent_rule ) {
-			$parent_rule->addSelectors( $rule->selectorList );
-			self::recursiveExtend( $parent_rule );
+			$this->extendArgs[] = new csscrush_extendArg( $arg );
 		}
 	}
 
@@ -422,35 +400,60 @@ class csscrush_rule implements IteratorAggregate {
 		$abstracts = csscrush::$process->abstracts;
 		$selectorRelationships = csscrush::$process->selectorRelationships;
 
-		foreach ( $this->extendsArgs as $name => $bool ) {
+		// Filter the extendArgs list to usable references
+		foreach ( $this->extendArgs as $index => $extend_arg ) {
+
+			$name = $extend_arg->name;
 
 			if ( isset( $abstracts[ $name ] ) ) {
 
-				$parent_abstract_rule = $abstracts[ $name ];
-
-				// Match found in abstract rules
-				$parent_abstract_rule->addSelectors( $this->selectorList );
-
-				// Store a reference to directly extended rules
-				$this->extends[] = $parent_abstract_rule;
-
-				// Recursively inherit
-				self::recursiveExtend( $parent_abstract_rule );
+				$parent_rule = $abstracts[ $name ];
+				$extend_arg->pointer = $parent_rule;
 
 			}
-			else if ( isset( $selectorRelationships[ $name ] ) ) {
+			elseif ( isset( $selectorRelationships[ $name ] ) ) {
 
 				$parent_rule = $selectorRelationships[ $name ];
+				$extend_arg->pointer = $parent_rule;
 
-				// Match found in selectorRelationships
-				$parent_rule->addSelectors( $this->selectorList );
-
-				// Store a reference to directly extended rules
-				$this->extends[] = $parent_rule;
-
-				// Recursively inherit
-				self::recursiveExtend( $parent_rule );
 			}
+			else {
+
+				// Unusable, so unset it
+				unset( $this->extendArgs[ $index ] );
+			}
+		}
+
+		// Create a stack of all parent rule args
+		$parent_extend_args = array();
+		foreach ( $this->extendArgs as $extend_arg ) {
+			$parent_extend_args = array_merge( $parent_extend_args, $extend_arg->pointer->extendArgs );
+		}
+
+		// Merge this rule's extendArgs with parent extendArgs
+		$this->extendArgs = array_merge( $this->extendArgs, $parent_extend_args );
+
+		// Filter now?
+
+		// Add this rule's selectors to all extendArgs
+		foreach ( $this->extendArgs as $extend_arg ) {
+
+			$ancestor = $extend_arg->pointer;
+
+			$extend_selectors = $this->selectorList;
+
+			// If there is a pseudo class extension create a new set accordingly
+			if ( $extend_arg->pseudo ) {
+
+				$extend_selectors = array();
+				foreach ( $this->selectorList as $readable => $selector ) {
+					$new_selector = clone $selector;
+					$new_readable = $new_selector->appendPseudo( $extend_arg->pseudo );
+					$extend_selectors[ $new_readable ] = $new_selector;
+				}
+			}
+
+			$ancestor->addSelectors( $extend_selectors );
 		}
 	}
 
@@ -535,7 +538,6 @@ class csscrush_declaration {
 	public $skip;
 	public $important;
 	public $parenTokens;
-
 	public $isValid = true;
 
 	public function __construct ( $prop, $value ) {
@@ -625,15 +627,11 @@ class csscrush_declaration {
  * Selector objects
  *
  */
-
 class csscrush_selector {
 
 	public $value;
-
 	public $readableValue;
-
 	public $allowPrefix = true;
-
 
 	public static function makeReadableSelector ( $selector_string ) {
 
@@ -649,6 +647,11 @@ class csscrush_selector {
 		// Quick test for string tokens
 		if ( strpos( $selector_string, '___s' ) !== false ) {
 			$selector_string = csscrush_util::tokenReplaceAll( $selector_string, 'strings' );
+		}
+
+		// Quick test for double-colons for backwards compat
+		if ( strpos( $selector_string, '::' ) !== false ) {
+			$selector_string = preg_replace( '!::(after|before|first-(?:letter|line))!', ':$1', $selector_string );
 		}
 
 		return $selector_string;
@@ -670,7 +673,51 @@ class csscrush_selector {
 
 		return $this->readableValue;
 	}
+
+	public function appendPseudo ( $pseudo ) {
+
+		// Check to avoid doubling-up
+		if ( ! csscrush_util::strEndsWith( $this->readableValue, $pseudo ) ) {
+
+			$this->readableValue .= $pseudo;
+			$this->value .= $pseudo;
+		}
+		return $this->readableValue;
+	}
 }
 
+
+
+/**
+ *
+ * Extend argument objects
+ *
+ */
+class csscrush_extendArg {
+
+	public $pointer;
+	public $name;
+	public $pseudo;
+
+	public function __construct ( $name ) {
+
+		$this->name = $name;
+
+		if ( ! preg_match( csscrush_regex::$patt->name, $this->name ) ) {
+
+			// Not a regular name: Some kind of selector so normalize it for later comparison
+			$this->name = csscrush_selector::makeReadableSelector( $this->name );
+
+			// If applying the pseudo on output store
+			if ( substr( $this->name, -1 ) === '!' ) {
+
+				$this->name = rtrim( $this->name, ' !' );
+				if ( preg_match( '!\:\:?[\w-]+$!', $this->name, $m ) ) {
+					$this->pseudo = $m[0];
+				}
+			}
+		}
+	}
+}
 
 

@@ -1,3 +1,9 @@
+1.5.4
+-----
+Inheritance model improved to support adoption of pseudo classes and elements (see wiki)
+Double-colon plugin moved to core
+
+
 1.5.3
 -----
 Refactoring
