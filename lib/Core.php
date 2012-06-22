@@ -48,7 +48,6 @@ class csscrush {
 		// Initialise other classes
 		csscrush_regex::init();
 		csscrush_function::init();
-		csscrush_arglist::init();
 	}
 
 

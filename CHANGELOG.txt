@@ -1,6 +1,7 @@
 1.5.4
 -----
 Inheritance model improved to support adoption of pseudo classes and elements (see wiki)
+Added rule self-referencing function 'this()' and complimentary data-* properties
 Double-colon plugin moved to core
 
 

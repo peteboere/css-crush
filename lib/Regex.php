@@ -1,13 +1,13 @@
 <?php
 /**
- * 
+ *
  * Regex management
- * 
+ *
  */
 
 
 class csscrush_regex {
-	
+
 	public static $patt;
 
 	// Character classes
@@ -63,7 +63,11 @@ class csscrush_regex {
 			\$\(\s*([a-z0-9_-]+)\s*\)  # Dollar syntax
 		)!ix';
 		$patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i';
-		
+
+		// Specific functions
+		$patt->argFunction = csscrush_regex::createFunctionMatchPatt( array( 'arg' ) );
+		$patt->thisFunction = csscrush_regex::createFunctionMatchPatt( array( 'this' ) );
+
 		// Misc.
 		$patt->vendorPrefix = '!^-([a-z]+)-([a-z-]+)!';
 		$patt->absoluteUrl  = '!^https?://!';
@@ -73,16 +77,16 @@ class csscrush_regex {
 	public static function create ( $pattern_template, $flags = '' ) {
 
 		// Sugar
-		$pattern = str_replace( 
-						array( '<name>', '<!name>' ), 
-						array( self::$class->name, self::$class->notName ), 
+		$pattern = str_replace(
+						array( '<name>', '<!name>' ),
+						array( self::$class->name, self::$class->notName ),
 						$pattern_template );
 		return '!' . $pattern . "!$flags";
 	}
-	
-	
+
+
 	public static function matchAll ( $patt, $subject, $preprocess_patt = false, $offset = 0 ) {
-		
+
 		if ( $preprocess_patt ) {
 			// Assume case-insensitive
 			$patt = self::create( $patt, 'i' );
@@ -90,6 +94,13 @@ class csscrush_regex {
 
 		preg_match_all( $patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset );
 		return $matches;
+	}
+
+
+	public static function createFunctionMatchPatt ( $list, $include_unnamed_function = false ) {
+
+		$question = $include_unnamed_function ? '?' : '';
+		return '!(^|[^a-z0-9_-])(' . implode( '|', $list ) . ')' . $question . '\(!i';
 	}
 }
 

@@ -11,8 +11,6 @@ class csscrush_rule implements IteratorAggregate {
 	public $isNested;
 	public $label;
 
-	// public $abstractName;
-
 	public $properties = array();
 
 	public $selectorList = array();
@@ -24,6 +22,37 @@ class csscrush_rule implements IteratorAggregate {
 	public $extendArgs = array();
 
 	public $_declarations = array();
+
+	// A table for storing the declarations as data for the this() reference function
+	public $data = array();
+
+	public function declarationCheckin ( $prop, $value, &$pairs ) {
+
+		if ( $prop !== '' && $value !== '' ) {
+
+			if ( strpos( $prop, 'data-' ) === 0 ) {
+
+				// If it's with data prefix, we don't want to print it
+				// Just remove the prefix
+				$prop = substr( $prop, strlen( 'data-' ) );
+			}
+			else {
+
+				// Add to the stack
+				$pairs[] = array( $prop, $value );
+			}
+
+			// Set on the data table
+			$this->data[ $prop ] = $value;
+
+			// Unset on data table if the value has a 'this' function call:
+			//   - Restriction to avoid circular references
+			if ( preg_match( csscrush_regex::$patt->thisFunction, $value ) ) {
+
+				unset( $this->data[ $prop ] );
+			}
+		}
+	}
 
 	public function __construct ( $selector_string = null, $declarations_string ) {
 
@@ -67,6 +96,9 @@ class csscrush_rule implements IteratorAggregate {
 		// Need to split safely as there are semi-colons in data-uris
 		$declarations_match = csscrush_util::splitDelimList( $declarations_string, ';', true );
 
+		// First create a simple array of all properties and value pairs in raw state
+		$pairs = array();
+
 		// Split declarations in to property/value pairs
 		foreach ( $declarations_match->list as $declaration ) {
 
@@ -76,8 +108,8 @@ class csscrush_rule implements IteratorAggregate {
 			// Extract the property part of the declaration
 			$colonPos = strpos( $declaration, ':' );
 			if ( $colonPos === false ) {
-				// If there is no colon it's malformed
-				continue;
+
+				continue; // If there's no colon it's malformed
 			}
 			$prop = trim( substr( $declaration, 0, $colonPos ) );
 
@@ -92,7 +124,9 @@ class csscrush_rule implements IteratorAggregate {
 
 					// Add mixin declarations to the stack
 					while ( $mixin_declaration = array_shift( $mixin_declarations ) ) {
-						$this->addDeclaration( $mixin_declaration['property'], $mixin_declaration['value'] );
+
+						$this->declarationCheckin( 
+							$mixin_declaration['property'], $mixin_declaration['value'], $pairs );
 					}
 				}
 			}
@@ -103,9 +137,23 @@ class csscrush_rule implements IteratorAggregate {
 			}
 			else {
 
-				// Add declaration to the stack
-				$this->addDeclaration( $prop, $value );
+				$this->declarationCheckin( $prop, $value, $pairs );
 			}
+		}
+
+		// Bind declaration objects on the rule
+		foreach ( $pairs as $pair ) {
+
+			list( $prop, $value ) = $pair;
+
+			if ( preg_match( csscrush_regex::$patt->thisFunction, $value ) ) {
+
+				// Resolve this() references
+				$value = csscrush_function::parseCustomFunctions( $value, 
+						csscrush_regex::$patt->thisFunction, array( $this, 'thisCssFunction' ) );
+			}
+
+			$this->addDeclaration( $prop, $value );
 		}
 	}
 
@@ -124,6 +172,11 @@ class csscrush_rule implements IteratorAggregate {
 		if ( $name === 'declarations' ) {
 			return $this->_declarations;
 		}
+	}
+
+	public function thisCssFunction ( $raw_argument ) {
+
+		return isset( $this->data[ $raw_argument ] ) ? $this->data[ $raw_argument ] : '';
 	}
 
 	public function updatePropertyTable () {
@@ -401,7 +454,7 @@ class csscrush_rule implements IteratorAggregate {
 		$selectorRelationships = csscrush::$process->selectorRelationships;
 
 		// Filter the extendArgs list to usable references
-		foreach ( $this->extendArgs as $index => $extend_arg ) {
+		foreach ( $this->extendArgs as $key => $extend_arg ) {
 
 			$name = $extend_arg->name;
 
@@ -420,7 +473,7 @@ class csscrush_rule implements IteratorAggregate {
 			else {
 
 				// Unusable, so unset it
-				unset( $this->extendArgs[ $index ] );
+				unset( $this->extendArgs[ $key ] );
 			}
 		}
 

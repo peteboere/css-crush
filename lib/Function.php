@@ -14,15 +14,10 @@ class csscrush_function {
 	public static $functionList;
 
 	public static function init () {
+
 		// Set the custom function regex pattern
 		self::$functionList = self::getFunctions();
-		self::$functionPatt = self::createFunctionMatchPatt( self::$functionList );
-	}
-
-	public static function createFunctionMatchPatt ( $list, $include_unnamed_function = true ) {
-
-		$question = $include_unnamed_function ? '?' : '';
-		return '!(^|[^a-z0-9_-])(' . implode( '|', $list ) . ')' . $question . '\(!i';
+		self::$functionPatt = csscrush_regex::createFunctionMatchPatt( self::$functionList, true );
 	}
 
 	public static function getFunctions () {
@@ -87,6 +82,7 @@ class csscrush_function {
 				}
 
 				if ( 0 === $paren_score ) {
+
 					// Get the function inards
 					$content_start = $offset + strlen( $before_char ) + strlen( $raw_fn_name ) + 1;
 					$content_finish = $index;
@@ -103,6 +99,7 @@ class csscrush_function {
 					$result = '';
 					
 					if ( ! $process_callback ) {
+
 						// If no callback reference it's a built-in
 						if ( in_array( $fn_name, self::$functionList ) ) {
 							$fn_name_clean = str_replace( '-', '_', $fn_name );

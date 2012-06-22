@@ -54,7 +54,6 @@ class csscrush_mixin {
 		return '';
 	}
 
-
 	public function call ( array $args ) {
 
 		// Copy the template
@@ -73,7 +72,6 @@ class csscrush_mixin {
 		// Return mixin declarations
 		return $declarations;
 	}
-
 
 	public static function parseSingleValue ( $message ) {
 
@@ -154,7 +152,6 @@ class csscrush_mixin {
 		return $mixin->call( $args );
 	}
 
-
 	public static function parseValue ( $message ) {
 
 		// Call the mixin and return the list of declarations
@@ -231,20 +228,11 @@ class csscrush_arglist implements Countable {
 	// The string passed in with arg calls replaced by tokens
 	public $string;
 
-	// The arg matching regex
-	protected static $argRegex;
-
-	public static function init () {
-
-		// Create regex pattern for matching 'arg' functions
-		self::$argRegex = csscrush_function::createFunctionMatchPatt( array( 'arg' ), false );
-	}
-
 	function __construct ( $str ) {
 
 		// Parse all arg function calls in the passed string, callback creates default values
-		$this->string = csscrush_function::parseCustomFunctions(
-												$str, self::$argRegex, array( $this, 'store' ) );
+		$this->string = csscrush_function::parseCustomFunctions( $str, 
+				csscrush_regex::$patt->argFunction, array( $this, 'store' ) );
 	}
 
 	public function store ( $raw_argument ) {
