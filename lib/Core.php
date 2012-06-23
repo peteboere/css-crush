@@ -635,22 +635,31 @@ TPL;
 				$value = ltrim( $value, "!\t\r " );
 			}
 			else {
-				$value = csscrush_function::parseAndExecuteValue( $value );
+				csscrush_function::executeCustomFunctions( $value );
 			}
 		}
 	}
 
 	protected static function placeVariables ( $stream ) {
 
+		// Substitute simple case variables
 		$stream = preg_replace_callback(
 			csscrush_regex::$patt->varFunction, array( 'self', 'cb_placeVariables' ), $stream );
 
-		// Place variables in any string tokens
+		// Substitute variables with default values
+		$var_fn_patt = csscrush_regex::createFunctionMatchPatt( array( '$' ) );
+		$var_fn_callback = array( 'csscrush', 'cb_varFunctionWithDefault' );
+		csscrush_function::executeCustomFunctions( $stream, $var_fn_patt, $var_fn_callback );
+
+		// Repeat above steps for variables embedded in string tokens
 		foreach ( self::$storage->tokens->strings as $label => &$string ) {
-			if ( strpos( $string, '$' ) !== false ) {
+
+			if ( strpos( $string, '$(' ) !== false ) {
+
 				$string = preg_replace_callback(
-					csscrush_regex::$patt->varFunction,
-					array( 'self', 'cb_placeVariables' ), $string );
+					csscrush_regex::$patt->varFunction, 
+						array( 'self', 'cb_placeVariables' ), $string );
+				csscrush_function::executeCustomFunctions( $string, $var_fn_patt, $var_fn_callback );
 			}
 		}
 		return $stream;
@@ -1082,6 +1091,18 @@ TPL;
 		return self::$storage->tokens->comments[ $match[0] ];
 	}
 
+	protected static function cb_extractMixins ( $match ) {
+
+		$name = trim( $match[1] );
+		$block = trim( $match[2] );
+
+		if ( ! empty( $name ) && ! empty( $block ) ) {
+			self::$process->mixins[ $name ] = new csscrush_mixin( $block );
+		}
+
+		return '';
+	}
+
 	protected static function cb_extractVariables ( $match ) {
 
 		$regex = csscrush_regex::$patt;
@@ -1107,23 +1128,13 @@ TPL;
 		return '';
 	}
 
-	protected static function cb_extractMixins ( $match ) {
-
-		$name = trim( $match[1] );
-		$block = trim( $match[2] );
-
-		if ( ! empty( $name ) && ! empty( $block ) ) {
-			self::$process->mixins[ $name ] = new csscrush_mixin( $block );
-		}
-
-		return '';
-	}
-
 	protected static function cb_placeVariables ( $match ) {
+
 		$before_char = $match[1];
 
 		// Check for dollar shorthand
 		if ( empty( $match[2] ) && isset( $match[3] ) && strpos( $match[0], '$' ) !== false ) {
+
 			$variable_name = $match[3];
 		}
 		else {
@@ -1131,10 +1142,24 @@ TPL;
 		}
 
 		if ( isset( self::$storage->variables[ $variable_name ] ) ) {
+
 			return $before_char . self::$storage->variables[ $variable_name ];
 		}
 		else {
 			return $before_char;
+		}
+	}
+
+	public static function cb_varFunctionWithDefault ( $raw_argument ) {
+
+		list( $name, $default_value ) = csscrush_function::parseArgsSimple( $raw_argument );
+
+		if ( isset( self::$storage->variables[ $name ] ) ) {
+
+			return self::$storage->variables[ $name ];
+		}
+		else {
+			return $default_value;
 		}
 	}
 

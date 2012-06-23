@@ -149,9 +149,11 @@ class csscrush_util {
 		// If the delimiter is one character do a simple split
 		// Otherwise do a regex split
 		if ( 1 === strlen( $delim ) ) {
+
 			$match_obj->list = explode( $delim, $match_obj->string );
 		}
 		else {
+
 			$match_obj->list = preg_split( '!' . $delim . '!', $match_obj->string );
 		}
 
@@ -172,8 +174,7 @@ class csscrush_util {
 	}
 
 
-	public static function matchBrackets ( $str, $brackets = array( '(', ')' ),
-				$search_pos = 0, $capture_text = false ) {
+	public static function matchBrackets ( $str, $brackets = array( '(', ')' ), $search_pos = 0, $capture_text = false ) {
 
 		list( $opener, $closer ) = $brackets;
 		$openings = array();

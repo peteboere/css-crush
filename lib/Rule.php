@@ -125,7 +125,7 @@ class csscrush_rule implements IteratorAggregate {
 					// Add mixin declarations to the stack
 					while ( $mixin_declaration = array_shift( $mixin_declarations ) ) {
 
-						$this->declarationCheckin( 
+						$this->declarationCheckin(
 							$mixin_declaration['property'], $mixin_declaration['value'], $pairs );
 					}
 				}
@@ -146,12 +146,9 @@ class csscrush_rule implements IteratorAggregate {
 
 			list( $prop, $value ) = $pair;
 
-			if ( preg_match( csscrush_regex::$patt->thisFunction, $value ) ) {
-
-				// Resolve this() references
-				$value = csscrush_function::parseCustomFunctions( $value, 
-						csscrush_regex::$patt->thisFunction, array( $this, 'thisCssFunction' ) );
-			}
+			// Resolve this() references
+			csscrush_function::executeCustomFunctions( $value,
+					csscrush_regex::$patt->thisFunction, array( $this, 'thisCssFunction' ) );
 
 			$this->addDeclaration( $prop, $value );
 		}
@@ -176,7 +173,20 @@ class csscrush_rule implements IteratorAggregate {
 
 	public function thisCssFunction ( $raw_argument ) {
 
-		return isset( $this->data[ $raw_argument ] ) ? $this->data[ $raw_argument ] : '';
+		$args = csscrush_function::parseArgsSimple( $raw_argument );
+
+		if ( isset( $this->data[ $args[0] ] ) ) {
+
+			return $this->data[ $args[0] ];
+		}
+		elseif ( isset( $args[1] ) ) {
+
+			return $args[1];
+		}
+		else {
+
+			return '';
+		}
 	}
 
 	public function updatePropertyTable () {
@@ -637,7 +647,7 @@ class csscrush_declaration {
 
 		// Apply custom functions
 		if ( ! $skip ) {
-			$value = csscrush_function::parseAndExecuteValue( $value );
+			csscrush_function::executeCustomFunctions( $value );
 		}
 
 		// Tokenize all remaining paren pairs

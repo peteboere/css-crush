@@ -35,16 +35,21 @@ class csscrush_function {
 		return $fn_methods;
 	}
 
-	public static function parseCustomFunctions ( $str, $patt, $process_callback = null ) {
+	public static function executeCustomFunctions ( &$str, $patt = null, $process_callback = null ) {
 
 		// No bracketed expressions, early return
 		if ( false === strpos( $str, '(' ) ) {
-			return $str;
+			return;
+		}
+
+		// Set default pattern if not set
+		if ( is_null( $patt ) ) {
+			$patt = csscrush_function::$functionPatt;
 		}
 
 		// No custom functions, early return
 		if ( ! preg_match( $patt, $str ) ) {
-			return $str;
+			return;
 		}
 
 		// Need a space inside the front function paren for the following match_all to be reliable
@@ -73,6 +78,7 @@ class csscrush_function {
 			$paren_score = 0;
 
 			for ( $index = $first_paren_offset; $index < strlen( $str ); $index++ ) {
+
 				$char = $str[ $index ];
 				if ( '(' === $char ) {
 					$paren_score++;
@@ -122,30 +128,12 @@ class csscrush_function {
 			$str = str_replace( '( ', '(', $str );
 		}
 
-		return $str;
-		
+		// return $str;
 	} 
-
-	public static function parseAndExecuteValue ( $str ) {
-		return self::parseCustomFunctions( $str, self::$functionPatt );
-	}
 
 
 	############
 	#  Helpers
-
-	protected static function parseMathArgs ( $input ) {
-		// Split on comma, trim, and remove empties
-		$args = array_filter( array_map( 'trim', explode( ',', $input ) ) );
-
-		// Pass anything non-numeric through math
-		foreach ( $args as &$arg ) {
-			if ( !preg_match( '!^-?[\.0-9]+$!', $arg ) ) {
-				$arg = self::css_fn__math( $arg );
-			}
-		}
-		return $args;
-	}
 
 	protected static function parseArgs ( $input, $allowSpaceDelim = false ) {
 
@@ -155,9 +143,14 @@ class csscrush_function {
 			true, 
 			true );
 
-		// return array_map( 'trim', $args->list );
-		
 		return $args->list;
+	}
+
+	// Intended as a quick arg-list parse for function that take up-to 2 arguments
+	// with the proviso the first argument is a name
+	public static function parseArgsSimple ( $input ) {
+
+		return preg_split( csscrush_regex::$patt->argListSplit, $input, 2 );
 	}
 
 	protected static function colorAdjust ( $color, array $adjustments ) {
@@ -251,8 +244,9 @@ class csscrush_function {
 	############
 
 	public static function css_fn__math ( $input ) {
-		// Whitelist allowed characters
-		$input = preg_replace( '![^\.0-9\*\/\+\-\(\)]!', '', $input );
+
+		// Strip blacklisted characters
+		$input = preg_replace( csscrush_regex::$patt->mathBlacklist, '', $input );
 
 		$result = @eval( "return $input;" );
 		
@@ -261,7 +255,12 @@ class csscrush_function {
 
 	public static function css_fn__percent ( $input ) {
 
-		$args = self::parseMathArgs( $input );
+		// Strip non-numeric and non delimiter characters
+		$input = preg_replace( '![^\d\.\s,]!S', '', $input );
+
+		$args = preg_split( csscrush_regex::$patt->argListSplit, $input, -1, PREG_SPLIT_NO_EMPTY );
+
+		// csscrush::log( $input );
 
 		// Use precision argument if it exists, use default otherwise
 		$precision = isset( $args[2] ) ? $args[2] : 5;
@@ -270,7 +269,7 @@ class csscrush_function {
 		$result = 0;
 
 		// Need to check arguments or we may see divide by zero errors
-		if ( count( $args ) > 1 && !empty( $args[0] ) && !empty( $args[1] ) ) {
+		if ( count( $args ) > 1 && ! empty( $args[0] ) && ! empty( $args[1] ) ) {
 
 			// Use bcmath if it's available for higher precision
 
@@ -300,7 +299,7 @@ class csscrush_function {
 
 	// Percent function alias
 	public static function css_fn__pc ( $input ) {
-		return self::css_fn_percent( $input );
+		return self::css_fn__percent( $input );
 	}
 
 	public static function css_fn__data_uri ( $input ) {

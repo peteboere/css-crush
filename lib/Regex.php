@@ -69,8 +69,10 @@ class csscrush_regex {
 		$patt->thisFunction = csscrush_regex::createFunctionMatchPatt( array( 'this' ) );
 
 		// Misc.
-		$patt->vendorPrefix = '!^-([a-z]+)-([a-z-]+)!';
-		$patt->absoluteUrl  = '!^https?://!';
+		$patt->vendorPrefix  = '!^-([a-z]+)-([a-z-]+)!';
+		$patt->absoluteUrl   = '!^https?://!';
+		$patt->argListSplit  = '!\s*[,\s]\s*!S';
+		$patt->mathBlacklist = '![^\.0-9\*\/\+\-\(\)]!S';
 	}
 
 
@@ -100,6 +102,10 @@ class csscrush_regex {
 	public static function createFunctionMatchPatt ( $list, $include_unnamed_function = false ) {
 
 		$question = $include_unnamed_function ? '?' : '';
+
+		foreach ( $list as &$fn_name ) {
+			$fn_name = preg_quote( $fn_name );
+		}
 		return '!(^|[^a-z0-9_-])(' . implode( '|', $list ) . ')' . $question . '\(!i';
 	}
 }

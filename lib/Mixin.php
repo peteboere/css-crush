@@ -231,24 +231,27 @@ class csscrush_arglist implements Countable {
 	function __construct ( $str ) {
 
 		// Parse all arg function calls in the passed string, callback creates default values
-		$this->string = csscrush_function::parseCustomFunctions( $str, 
+		csscrush_function::executeCustomFunctions( $str, 
 				csscrush_regex::$patt->argFunction, array( $this, 'store' ) );
+		$this->string = $str;
 	}
 
 	public function store ( $raw_argument ) {
 
+		$args = csscrush_function::parseArgsSimple( $raw_argument );
+
 		// Match the argument index integer
-		if ( ! preg_match( '!^[0-9]+!', $raw_argument, $position_match ) ) {
+		if ( ! ctype_digit( $args[0] ) ) {
+
 			// On failure to match an integer, return an empty string
 			return '';
 		}
 
 		// Get the match from the array
-		$position_match = $position_match[0];
+		$position_match = $args[0];
 
 		// Store the default value
-		$default_value = substr( $raw_argument, strlen( $position_match ) );
-		$default_value = $default_value ? ltrim( $default_value, " ,\t\n\r" ) : null;
+		$default_value = isset( $args[1] ) ? $args[1] : null;
 
 		if ( ! is_null( $default_value ) ) {
 			$this->defaults[ $position_match ] = trim( $default_value );
