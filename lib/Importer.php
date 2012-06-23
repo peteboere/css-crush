@@ -52,8 +52,9 @@ class csscrush_importer {
 			$stream = file_get_contents( $prependFile ) . $stream;
 		}
 
-		$stream = csscrush::extractComments( $stream );
-		$stream = csscrush::extractStrings( $stream );
+		csscrush::extractComments( $stream );
+		csscrush::extractStrings( $stream );
+		$stream = csscrush_util::normalizeWhiteSpace( $stream );
 
 		// If rewriting URLs as absolute we need to do some extra work
 		if ( $options[ 'rewrite_import_urls' ] === 'absolute' ) {
@@ -142,8 +143,9 @@ class csscrush_importer {
 			//     they will be brought inline with the hostfile
 
 			// Start with extracting strings and comments in the import
-			$import->content = csscrush::extractComments( $import->content );
-			$import->content = csscrush::extractStrings( $import->content );
+			csscrush::extractComments( $import->content );
+			csscrush::extractStrings( $import->content );
+			$import->content = csscrush_util::normalizeWhiteSpace( $import->content );
 
 			$import->dir = dirname( $import->url );
 

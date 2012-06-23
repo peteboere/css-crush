@@ -640,7 +640,7 @@ TPL;
 		}
 	}
 
-	protected static function placeVariables ( $stream ) {
+	protected static function placeVariables ( &$stream ) {
 
 		// Substitute simple case variables
 		$stream = preg_replace_callback(
@@ -657,12 +657,11 @@ TPL;
 			if ( strpos( $string, '$(' ) !== false ) {
 
 				$string = preg_replace_callback(
-					csscrush_regex::$patt->varFunction, 
+					csscrush_regex::$patt->varFunction,
 						array( 'self', 'cb_placeVariables' ), $string );
 				csscrush_function::executeCustomFunctions( $string, $var_fn_patt, $var_fn_callback );
 			}
 		}
-		return $stream;
 	}
 
 	protected static function reset ( $options = null ) {
@@ -709,22 +708,19 @@ TPL;
 		self::pruneAliases();
 
 		// Parse variables
-		$stream = self::extractVariables( $stream );
+		self::extractVariables( $stream );
 
 		// Calculate the variable stack
 		self::calculateVariables();
 
 		// Place the variables
-		$stream = self::placeVariables( $stream );
+		self::placeVariables( $stream );
 
 		// Pull out the mixin declarations
-		$stream = self::extractMixins( $stream );
+		self::extractMixins( $stream );
 
 		// Pull out the fragments
-		$stream = self::extractFragments( $stream );
-
-		// Normalize whitespace
-		$stream = csscrush_util::normalizeWhiteSpace( $stream );
+		self::extractFragments( $stream );
 
 		// Adjust the stream so we can extract the rules cleanly
 		$map = array(
@@ -736,10 +732,10 @@ TPL;
 		$stream = "\n" . str_replace( array_keys( $map ), array_values( $map ), $stream );
 
 		// Rules
-		$stream = self::extractRules( $stream );
+		self::extractRules( $stream );
 
 		// Process any @-in blocks
-		$stream = self::prefixSelectors( $stream );
+		self::prefixSelectors( $stream );
 
 		// Main processing on the rule objects
 		self::processRules();
@@ -747,10 +743,10 @@ TPL;
 		// csscrush::log( array_keys( self::$process->selectorRelationships ) );
 
 		// Alias any @-rules
-		$stream = self::aliasAtRules( $stream );
+		self::aliasAtRules( $stream );
 
 		// Print it all back
-		$stream = self::display( $stream );
+		self::display( $stream );
 
 		// Add in boilerplate
 		if ( $options[ 'boilerplate' ] ) {
@@ -763,7 +759,7 @@ TPL;
 		return $stream;
 	}
 
-	protected static function display ( $stream ) {
+	protected static function display ( &$stream ) {
 
 		$minify = ! self::$options[ 'debug' ];
 		$regex = csscrush_regex::$patt;
@@ -823,8 +819,6 @@ TPL;
 		// Insert string literals
 		$stream = csscrush_util::strReplaceHash( $stream, self::$storage->tokens->strings );
 
-		// I think we're done
-		return $stream;
 	}
 
 	protected static function minify ( $str ) {
@@ -843,10 +837,10 @@ TPL;
 			array_keys( $replacements ), array_values( $replacements ), $str );
 	}
 
-	protected static function aliasAtRules ( $stream ) {
+	protected static function aliasAtRules ( &$stream ) {
 
 		if ( empty( self::$config->aliases[ 'at-rules' ] ) ) {
-			return $stream;
+			return;
 		}
 
 		$aliases = self::$config->aliases[ 'at-rules' ];
@@ -938,10 +932,9 @@ TPL;
 			} // while
 
 		} // foreach
-		return $stream;
 	}
 
-	protected static function prefixSelectors ( $stream ) {
+	protected static function prefixSelectors ( &$stream ) {
 
 		$matches = csscrush_regex::matchAll( '@in\s+([^\{]+){', $stream, true );
 
@@ -1019,8 +1012,6 @@ TPL;
 			// Concatenate
 			$stream = $before . $curly_match->inside . $curly_match->after;
 		}
-
-		return $stream;
 	}
 
 	public static function tokenLabelCreate ( $prefix ) {
@@ -1041,6 +1032,7 @@ TPL;
 			csscrush_hook::run( 'rule_prealias', $rule );
 
 			if ( ! empty( self::$config->aliases ) ) {
+
 				$rule->addPropertyAliases();
 				$rule->addFunctionAliases();
 				$rule->addValueAliases();
@@ -1243,27 +1235,27 @@ TPL;
 	############
 	#  Parsing methods
 
-	public static function extractRules ( $stream ) {
-		return preg_replace_callback( csscrush_regex::$patt->rule, array( 'self', 'cb_extractRules' ), $stream );
+	public static function extractRules ( &$stream ) {
+		$stream = preg_replace_callback( csscrush_regex::$patt->rule, array( 'self', 'cb_extractRules' ), $stream );
 	}
 
-	public static function extractVariables ( $stream ) {
-		return preg_replace_callback( csscrush_regex::$patt->variables, array( 'self', 'cb_extractVariables' ), $stream );
+	public static function extractVariables ( &$stream ) {
+		$stream = preg_replace_callback( csscrush_regex::$patt->variables, array( 'self', 'cb_extractVariables' ), $stream );
 	}
 
-	public static function extractComments ( $stream ) {
-		return preg_replace_callback( csscrush_regex::$patt->comment, array( 'self', 'cb_extractComments' ), $stream );
+	public static function extractComments ( &$stream ) {
+		$stream = preg_replace_callback( csscrush_regex::$patt->comment, array( 'self', 'cb_extractComments' ), $stream );
 	}
 
-	public static function extractStrings ( $stream ) {
-		return preg_replace_callback( csscrush_regex::$patt->string, array( 'self', 'cb_extractStrings' ), $stream );
+	public static function extractStrings ( &$stream ) {
+		$stream = preg_replace_callback( csscrush_regex::$patt->string, array( 'self', 'cb_extractStrings' ), $stream );
 	}
 
-	public static function extractMixins ( $stream ) {
-		return preg_replace_callback( csscrush_regex::$patt->mixin, array( 'self', 'cb_extractMixins' ), $stream );
+	public static function extractMixins ( &$stream ) {
+		$stream = preg_replace_callback( csscrush_regex::$patt->mixin, array( 'self', 'cb_extractMixins' ), $stream );
 	}
 
-	public static function extractFragments ( $stream ) {
+	public static function extractFragments ( &$stream ) {
 
 		$matches = csscrush_regex::matchAll( '@fragment\s+(<name>)\s*{', $stream, true );
 
@@ -1348,10 +1340,7 @@ TPL;
 				$stream = $before . $fragment_return . $after;
 			}
 		}
-
-		return $stream;
 	}
-
 }
 
 
