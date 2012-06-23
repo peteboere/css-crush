@@ -2,6 +2,8 @@
 -----
 Inheritance model improved to support adoption of pseudo classes and elements (see wiki)
 Added rule self-referencing function 'this()' and complimentary data-* properties
+Added default value argument for variables
+Commas are now optional when specifying arguments for most custom functions
 Double-colon plugin moved to core
 
 

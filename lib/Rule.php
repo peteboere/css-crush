@@ -66,8 +66,11 @@ class csscrush_rule implements IteratorAggregate {
 
 			// Remove and store comments that sit above the first selector
 			// remove all comments between the other selectors
-			preg_match_all( $regex->commentToken, $selectors_match->list[0], $m );
-			$this->comments = $m[0];
+			if ( strpos( $selectors_match->list[0], '___c' ) !== false ) {
+
+				preg_match_all( $regex->commentToken, $selectors_match->list[0], $m );
+				$this->comments = $m[0];
+			}
 
 			// Strip any other comments then create selector instances
 			foreach ( $selectors_match->list as $selector ) {

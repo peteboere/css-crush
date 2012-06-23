@@ -475,6 +475,14 @@ class csscrush {
 	#####################
 	#  Internal functions
 
+	public static function prepareStream ( &$stream ) {
+
+		$stream = preg_replace_callback( csscrush_regex::$patt->commentAndString,
+			array( 'self', 'cb_extractCommentAndString' ), $stream );
+
+		$stream = csscrush_util::normalizeWhiteSpace( $stream );
+	}
+
 	protected static function getBoilerplate () {
 
 		$file = csscrush_util::find( 'CssCrush-local.boilerplate', 'CssCrush.boilerplate' );
@@ -1053,34 +1061,29 @@ TPL;
 	#############################
 	#  preg_replace callbacks
 
-	protected static function cb_extractStrings ( $match ) {
-		$label = csscrush::tokenLabelCreate( 's' );
-		csscrush::$storage->tokens->strings[ $label ] = $match[0];
-		return $label;
-	}
+	protected static function cb_extractCommentAndString ( $match ) {
 
-	protected static function cb_restoreStrings ( $match ) {
-		return csscrush::$storage->tokens->strings[ $match[0] ];
-	}
+		$capture = $match[0];
 
-	protected static function cb_extractComments ( $match ) {
+		if ( strpos( $capture, '/*' ) === 0 ) {
 
-		$comment = $match[0];
+			// Strip private comments
+			$private_comment_marker = '$!';
 
-		// Strip private comments
-		$private_comment_marker = '$!';
-		if ( strpos( $comment, '/*' . $private_comment_marker ) === 0 ) {
-			return '';
+			if ( strpos( $capture, '/*' . $private_comment_marker ) === 0 ) {
+				return '';
+			}
+
+			$label = self::tokenLabelCreate( 'c' );
+			self::$storage->tokens->comments[ $label ] = $capture;
+		}
+		else {
+
+			$label = csscrush::tokenLabelCreate( 's' );
+			csscrush::$storage->tokens->strings[ $label ] = $capture;
 		}
 
-		$label = self::tokenLabelCreate( 'c' );
-		self::$storage->tokens->comments[ $label ] = $comment;
-
 		return $label;
-	}
-
-	protected static function cb_restoreComments ( $match ) {
-		return self::$storage->tokens->comments[ $match[0] ];
 	}
 
 	protected static function cb_extractMixins ( $match ) {
@@ -1173,20 +1176,12 @@ TPL;
 			self::$storage->tokens->rules[ $label ] = $rule;
 
 			if ( $rule->_declarations ) {
+
+				// If only using extend no need to return a label
 				return $label . "\n";
 			}
-			else {
-				// If only using extend no need to return a label
-				return '';
-			}
 		}
-		else {
-			return '';
-		}
-	}
-
-	protected static function cb_restoreLiteral ( $match ) {
-		return self::$storage->tokens[ $match[0] ];
+		return '';
 	}
 
 	protected static function cb_printRule ( $match ) {
@@ -1241,14 +1236,6 @@ TPL;
 
 	public static function extractVariables ( &$stream ) {
 		$stream = preg_replace_callback( csscrush_regex::$patt->variables, array( 'self', 'cb_extractVariables' ), $stream );
-	}
-
-	public static function extractComments ( &$stream ) {
-		$stream = preg_replace_callback( csscrush_regex::$patt->comment, array( 'self', 'cb_extractComments' ), $stream );
-	}
-
-	public static function extractStrings ( &$stream ) {
-		$stream = preg_replace_callback( csscrush_regex::$patt->string, array( 'self', 'cb_extractStrings' ), $stream );
 	}
 
 	public static function extractMixins ( &$stream ) {
