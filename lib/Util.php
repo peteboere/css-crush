@@ -28,7 +28,7 @@ class csscrush_util {
 
 	public static function normalizePath ( $path, $strip_ms_dos = false ) {
 
-		$path = rtrim( preg_replace( '![\\/]+!', '/', $path ), '/' );
+		$path = rtrim( preg_replace( '![\\\\/]+!', '/', $path ), '/' );
 
 		if ( $strip_ms_dos ) {
 			$path = preg_replace( '!^[a-z]\:!i', '', $path );

@@ -5,7 +5,6 @@
  *
  */
 
-
 class csscrush_regex {
 
 	public static $patt;
@@ -34,19 +33,22 @@ class csscrush_regex {
 			([_s\d]+)             # string token
 			)
 			\s*([^;]*);   # media argument
-		!x';
+		!xS';
 
 		$patt->variables = '!@(?:variables|define)\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
 		$patt->mixin     = '!@mixin\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
 		$patt->abstract  = csscrush_regex::create( '^@abstract\s+(<name>)', 'i' );
-		$patt->comment   = '!/\*(.*?)\*/!sS';
-		$patt->string    = '!(\'|")(?:\\1|[^\1])*?\1!S';
+		$patt->commentAndString = '!
+				(\'|")(?:\\1|[^\1])*?\1
+				|
+				/\*(?:.*?)\*/
+			!xsS';
 
 		// As an exception we treat some @-rules like standard rule blocks
 		$patt->rule       = '!
 			(\n(?:[^@{}]+|@(?:font-face|page|abstract)[^{]*)) # The selector
 			\{([^{}]*)\}  # The declaration block
-		!x';
+		!xS';
 
 		// Tokens
 		$patt->commentToken = '!___c\d+___!';
@@ -61,7 +63,7 @@ class csscrush_regex {
 			var\(\s*([a-z0-9_-]+)\s*\)
 			|
 			\$\(\s*([a-z0-9_-]+)\s*\)  # Dollar syntax
-		)!ix';
+		)!ixS';
 		$patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i';
 
 		// Specific functions
@@ -106,7 +108,7 @@ class csscrush_regex {
 		foreach ( $list as &$fn_name ) {
 			$fn_name = preg_quote( $fn_name );
 		}
-		return '!(^|[^a-z0-9_-])(' . implode( '|', $list ) . ')' . $question . '\(!i';
+		return '!(^|[^a-z0-9_-])(' . implode( '|', $list ) . ')' . $question . '\(!iS';
 	}
 }
 

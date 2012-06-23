@@ -52,9 +52,7 @@ class csscrush_importer {
 			$stream = file_get_contents( $prependFile ) . $stream;
 		}
 
-		csscrush::extractComments( $stream );
-		csscrush::extractStrings( $stream );
-		$stream = csscrush_util::normalizeWhiteSpace( $stream );
+		csscrush::prepareStream( $stream );
 
 		// If rewriting URLs as absolute we need to do some extra work
 		if ( $options[ 'rewrite_import_urls' ] === 'absolute' ) {
@@ -119,8 +117,6 @@ class csscrush_importer {
 			$import->mediaContext = $media_context;
 			$import->hostDir = $process->inputDir;
 
-			// csscrush::log( $import );
-
 			// Check to see if the url is root relative
 			// Flatten import path for convenience
 			if ( strpos( $import->url, '/' ) === 0 ) {
@@ -141,11 +137,7 @@ class csscrush_importer {
 			// Import file opened successfully so we process it:
 			//   - We need to resolve import statement urls in all imported files since
 			//     they will be brought inline with the hostfile
-
-			// Start with extracting strings and comments in the import
-			csscrush::extractComments( $import->content );
-			csscrush::extractStrings( $import->content );
-			$import->content = csscrush_util::normalizeWhiteSpace( $import->content );
+			csscrush::prepareStream( $import->content );
 
 			$import->dir = dirname( $import->url );
 
