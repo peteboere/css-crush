@@ -4,8 +4,8 @@ Inheritance model improved to support adoption of pseudo classes and elements (s
 Added rule self-referencing function 'this()' and complimentary data-* properties
 Added default value argument for variables
 Commas are now optional when specifying arguments for most custom functions
-Option rewrite_import_urls now defaults to true
 Double-colon plugin moved to core
+Option rewrite_import_urls now defaults to true
 
 
 1.5.3
