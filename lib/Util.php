@@ -343,9 +343,9 @@ class csscrush_string {
  */
 class csscrush_version {
 
-	public $major;
-	public $minor;
-	public $revision;
+	public $major = 0;
+	public $minor = 0;
+	public $revision = 0;
 	public $extra;
 
 	public function __construct ( $version_string ) {
@@ -383,6 +383,27 @@ class csscrush_version {
 		}
 
 		return $out;
+	}
+
+	public function compare ( $version_string ) {
+
+		$LESS  = -1;
+		$MORE  = 1;
+		$EQUAL = 0;
+
+		$test  = new csscrush_version( $version_string );
+
+		foreach ( array( 'major', 'minor', 'revision' ) as $level ) {
+
+			if ( $test->{ $level } < $this->{ $level } ) {
+				return $LESS;
+			}
+			elseif ( $test->{ $level } > $this->{ $level } ) {
+				return $MORE;
+			}
+		}
+
+		return $EQUAL;
 	}
 }
 
