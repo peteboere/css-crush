@@ -655,7 +655,7 @@ TPL;
 
 		// Substitute variables with default values
 		$var_fn_patt = csscrush_regex::createFunctionMatchPatt( array( '$' ) );
-		$var_fn_callback = array( 'csscrush', 'cb_varFunctionWithDefault' );
+		$var_fn_callback = array( '$' => array( 'csscrush', 'cb_varFunctionWithDefault' ) );
 		csscrush_function::executeCustomFunctions( $stream, $var_fn_patt, $var_fn_callback );
 
 		// Repeat above steps for variables embedded in string tokens
@@ -679,7 +679,6 @@ TPL;
 		self::$process = new stdclass();
 		self::$process->cacheData = array();
 		self::$process->mixins = array();
-		self::$process->fragments = array();
 		self::$process->abstracts = array();
 		self::$process->errors = array();
 		self::$process->selectorRelationships = array();
@@ -726,8 +725,8 @@ TPL;
 		// Pull out the mixin declarations
 		self::extractMixins( $stream );
 
-		// Pull out the fragments
-		self::extractFragments( $stream );
+		// Process fragments
+		self::resolveFragments( $stream );
 
 		// Adjust the stream so we can extract the rules cleanly
 		$map = array(
@@ -762,6 +761,9 @@ TPL;
 
 		// Release memory
 		self::$storage = null;
+		self::$process->mixins = null;
+		self::$process->abstracts = null;
+		self::$process->selectorRelationships = null;
 
 		return $stream;
 	}
@@ -1241,9 +1243,10 @@ TPL;
 		$stream = preg_replace_callback( csscrush_regex::$patt->mixin, array( 'self', 'cb_extractMixins' ), $stream );
 	}
 
-	public static function extractFragments ( &$stream ) {
+	public static function resolveFragments ( &$stream ) {
 
 		$matches = csscrush_regex::matchAll( '@fragment\s+(<name>)\s*{', $stream, true );
+		$fragments = array();
 
 		// Move through the matches last to first
 		while ( $match = array_pop( $matches ) ) {
@@ -1267,10 +1270,10 @@ TPL;
 				$stream = $before . $curly_match->after;
 
 				// Create the fragment and store it
-				self::$process->fragments[ $fragment_name ] =
+				$fragments[ $fragment_name ] =
 						new csscrush_fragment( $curly_match->inside );
 
-				// csscrush::log( self::$process->fragments );
+				// csscrush::log( $fragments );
 			}
 		}
 
@@ -1288,7 +1291,7 @@ TPL;
 			$fragment_name = $match[1][0];
 
 			// The fragment object, or null if name not present
-			$fragment = isset( self::$process->fragments[ $fragment_name ] ) ? self::$process->fragments[ $fragment_name ] : null;
+			$fragment = isset( $fragments[ $fragment_name ] ) ? $fragments[ $fragment_name ] : null;
 
 			// Fragment may be called without any argument list
 			$with_arguments = $match[2][0] === '(';

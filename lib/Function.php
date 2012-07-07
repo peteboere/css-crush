@@ -35,7 +35,7 @@ class csscrush_function {
 		return $fn_methods;
 	}
 
-	public static function executeCustomFunctions ( &$str, $patt = null, $process_callback = null ) {
+	public static function executeCustomFunctions ( &$str, $patt = null, $process_callback = null, $property = null ) {
 
 		// No bracketed expressions, early return
 		if ( false === strpos( $str, '(' ) ) {
@@ -113,7 +113,9 @@ class csscrush_function {
 						}
 					}
 					else {
-						$result = call_user_func( $process_callback, $content );
+						if ( isset( $process_callback[ $fn_name ] ) ) {
+							$result = call_user_func( $process_callback[ $fn_name ], $content, $fn_name, $property );
+						}
 					}
 
 					// Join together the result
@@ -135,7 +137,7 @@ class csscrush_function {
 	############
 	#  Helpers
 
-	protected static function parseArgs ( $input, $allowSpaceDelim = false ) {
+	public static function parseArgs ( $input, $allowSpaceDelim = false ) {
 
 		$args = csscrush_util::splitDelimList( 
 			$input, 

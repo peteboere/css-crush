@@ -69,6 +69,7 @@ class csscrush_regex {
 		// Specific functions
 		$patt->argFunction = csscrush_regex::createFunctionMatchPatt( array( 'arg' ) );
 		$patt->thisFunction = csscrush_regex::createFunctionMatchPatt( array( 'this' ) );
+		$patt->referenceFunction = csscrush_regex::createFunctionMatchPatt( array( 'this', 'query' ) );
 
 		// Misc.
 		$patt->vendorPrefix  = '!^-([a-z]+)-([a-z-]+)!';

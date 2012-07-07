@@ -232,7 +232,7 @@ class csscrush_arglist implements Countable {
 
 		// Parse all arg function calls in the passed string, callback creates default values
 		csscrush_function::executeCustomFunctions( $str, 
-				csscrush_regex::$patt->argFunction, array( $this, 'store' ) );
+				csscrush_regex::$patt->argFunction, array( 'arg' => array( $this, 'store' ) ) );
 		$this->string = $str;
 	}
 

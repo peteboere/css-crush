@@ -23,7 +23,10 @@ class csscrush_rule implements IteratorAggregate {
 
 	public $_declarations = array();
 
-	// A table for storing the declarations as data for the this() reference function
+	// A table for storing the declarations as data for this() referencing
+	public $localData = array();
+
+	// A table for storing the declarations as data for external query() referencing
 	public $data = array();
 
 	public function declarationCheckin ( $prop, $value, &$pairs ) {
@@ -35,6 +38,9 @@ class csscrush_rule implements IteratorAggregate {
 				// If it's with data prefix, we don't want to print it
 				// Just remove the prefix
 				$prop = substr( $prop, strlen( 'data-' ) );
+
+				// On first pass we only want to store data properties on $this->data
+				$this->data[ $prop ] = $value;
 			}
 			else {
 
@@ -42,14 +48,18 @@ class csscrush_rule implements IteratorAggregate {
 				$pairs[] = array( $prop, $value );
 			}
 
-			// Set on the data table
-			$this->data[ $prop ] = $value;
+			// Set on $this->localData
+			$this->localData[ $prop ] = $value;
 
-			// Unset on data table if the value has a 'this' function call:
+			// Unset on data tables if the value has a this() call:
 			//   - Restriction to avoid circular references
 			if ( preg_match( csscrush_regex::$patt->thisFunction, $value ) ) {
 
-				unset( $this->data[ $prop ] );
+				unset( $this->localData[ $prop ] );
+
+				if ( isset( $this->data[ $prop ] ) ) {
+					unset( $this->data[ $prop ] );
+				}
 			}
 		}
 	}
@@ -151,10 +161,24 @@ class csscrush_rule implements IteratorAggregate {
 
 			// Resolve this() references
 			csscrush_function::executeCustomFunctions( $value,
-					csscrush_regex::$patt->thisFunction, array( $this, 'thisCssFunction' ) );
+					csscrush_regex::$patt->referenceFunction, array(
+						'this'  => array( $this, 'cssThisFunction' ),
+						'query' => array( $this, 'cssQueryFunction' ),
+					), $prop );
 
-			$this->addDeclaration( $prop, $value );
+			if ( trim( $value ) !== '' ) {
+
+				// Add declaration and update the data table
+				$this->data[ $prop ] = $value;
+				$this->addDeclaration( $prop, $value );
+			}
 		}
+
+		// csscrush::log( $this->localData, 'LocalData' );
+		// csscrush::log( $this->data, 'Data' );
+
+		// localData no longer required
+		$this->localData = null;
 	}
 
 	public function __set ( $name, $value ) {
@@ -174,13 +198,13 @@ class csscrush_rule implements IteratorAggregate {
 		}
 	}
 
-	public function thisCssFunction ( $raw_argument ) {
+	public function cssThisFunction ( $input, $fn_name ) {
 
-		$args = csscrush_function::parseArgsSimple( $raw_argument );
+		$args = csscrush_function::parseArgsSimple( $input );
 
-		if ( isset( $this->data[ $args[0] ] ) ) {
+		if ( isset( $this->localData[ $args[0] ] ) ) {
 
-			return $this->data[ $args[0] ];
+			return $this->localData[ $args[0] ];
 		}
 		elseif ( isset( $args[1] ) ) {
 
@@ -190,6 +214,55 @@ class csscrush_rule implements IteratorAggregate {
 
 			return '';
 		}
+	}
+
+	public function cssQueryFunction ( $input, $fn_name, $property ) {
+
+		$result = '';
+		$args = csscrush_function::parseArgs( $input );
+
+		if ( count( $args ) < 1 ) {
+			return $result;
+		}
+
+		$abstracts =& csscrush::$process->abstracts;
+		$selectorRelationships =& csscrush::$process->selectorRelationships;
+
+		// Resolve arguments
+		$name = array_shift( $args );
+		$property = isset( $args[0] ) ? array_shift( $args ) : $property;
+		$default = isset( $args[0] ) ? $args[0] : null;
+
+		// csscrush::log( array( $name, $property, $default ) );
+
+		// Try to match a abstract rule first
+		if ( preg_match( csscrush_regex::$patt->name, $name ) ) {
+
+			// Search order: abstracts, rules
+			if ( isset( $abstracts[ $name ]->data[ $property ] ) ) {
+
+				$result = $abstracts[ $name ]->data[ $property ];
+			}
+			elseif ( isset( $selectorRelationships[ $name ]->data[ $property ] ) ) {
+
+				$result = $selectorRelationships[ $name ]->data[ $property ];
+			}
+		}
+		else {
+
+			// Look for a rule match
+			$name = csscrush_selector::makeReadableSelector( $name );
+			if ( isset( $selectorRelationships[ $name ]->data[ $property ] ) ) {
+
+				$result = $selectorRelationships[ $name ]->data[ $property ];
+			}
+		}
+
+		if ( $result === '' && ! is_null( $default ) ) {
+			$result = $default;
+		}
+
+		return $result;
 	}
 
 	public function updatePropertyTable () {
@@ -446,8 +519,8 @@ class csscrush_rule implements IteratorAggregate {
 
 	public function setExtendSelectors ( $raw_value ) {
 
-		$abstracts = csscrush::$process->abstracts;
-		$selectorRelationships = csscrush::$process->selectorRelationships;
+		$abstracts =& csscrush::$process->abstracts;
+		$selectorRelationships =& csscrush::$process->selectorRelationships;
 
 		// Pass extra argument to trim the returned list
 		$args = csscrush_util::splitDelimList( $raw_value, ',', true, true );
@@ -463,8 +536,12 @@ class csscrush_rule implements IteratorAggregate {
 
 	public function applyExtendables () {
 
-		$abstracts = csscrush::$process->abstracts;
-		$selectorRelationships = csscrush::$process->selectorRelationships;
+		if ( ! $this->extendArgs ) {
+			return;
+		}
+
+		$abstracts =& csscrush::$process->abstracts;
+		$selectorRelationships =& csscrush::$process->selectorRelationships;
 
 		// Filter the extendArgs list to usable references
 		foreach ( $this->extendArgs as $key => $extend_arg ) {
