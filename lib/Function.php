@@ -305,7 +305,7 @@ class csscrush_function {
 	}
 
 	public static function css_fn__data_uri ( $input ) {
-
+return '';
 		// Normalize, since argument might be a string token
 		if ( strpos( $input, '___s' ) === 0 ) {
 			$string_labels = array_keys( csscrush::$storage->tokens->strings );
@@ -358,23 +358,33 @@ class csscrush_function {
 		return "url(\"$data_uri\")";
 	}
 
+	public static function css_fn__hsla_adjust ( $input ) {
+		list( $color, $h, $s, $l, $a ) = array_pad( self::parseArgs( $input, true ), 5, 0 );
+		return self::colorAdjust( $color, array( $h, $s, $l, $a ) );
+	}
+
+	public static function css_fn__hsl_adjust ( $input ) {
+		list( $color, $h, $s, $l ) = array_pad( self::parseArgs( $input, true ), 4, 0 );
+		return self::colorAdjust( $color, array( $h, $s, $l, 0 ) );
+	}
+
 	public static function css_fn__h_adjust ( $input ) {
-		@list( $color, $h ) = self::parseArgs( $input, true );
+		list( $color, $h ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
 		return self::colorAdjust( $color, array( $h, 0, 0, 0 ) );
 	}
 
 	public static function css_fn__s_adjust ( $input ) {
-		@list( $color, $s ) = self::parseArgs( $input, true );
+		list( $color, $s ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
 		return self::colorAdjust( $color, array( 0, $s, 0, 0 ) );
 	}
 
 	public static function css_fn__l_adjust ( $input ) {
-		@list( $color, $l ) = self::parseArgs( $input, true );
+		list( $color, $l ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
 		return self::colorAdjust( $color, array( 0, 0, $l, 0 ) );
 	}
 	
 	public static function css_fn__a_adjust ( $input ) {
-		@list( $color, $a ) = self::parseArgs( $input, true );
+		list( $color, $a ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
 		return self::colorAdjust( $color, array( 0, 0, 0, $a ) );
 	}
 

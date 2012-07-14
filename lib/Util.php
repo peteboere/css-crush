@@ -181,7 +181,7 @@ class csscrush_util {
 		$closings = array();
 		$brake = 50; // Set a limit in the case of errors
 
-		$match = new stdclass();
+		$match = (object) array();
 
 		$start_index = strpos( $str, $opener, $search_pos );
 		$close_index = strpos( $str, $closer, $search_pos );
@@ -245,7 +245,7 @@ class csscrush_util {
 
 	public static function matchAllBrackets ( $str, $pair = '()', $offset = 0 ) {
 
-		$match_obj = new stdclass();
+		$match_obj = (object) array();
 		$match_obj->string = $str;
 		$match_obj->raw = $str;
 		$match_obj->matches = array();

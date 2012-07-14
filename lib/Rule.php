@@ -5,7 +5,7 @@
  *
  */
 
-class csscrush_rule implements IteratorAggregate {
+class csscrush_rule implements IteratorAggregate, Countable {
 
 	public $vendorContext;
 	public $isNested;
@@ -39,7 +39,8 @@ class csscrush_rule implements IteratorAggregate {
 				// Just remove the prefix
 				$prop = substr( $prop, strlen( 'data-' ) );
 
-				// On first pass we only want to store data properties on $this->data
+				// On first pass we want to store data properties on $this->data,
+				// as well as on local
 				$this->data[ $prop ] = $value;
 			}
 			else {
@@ -173,7 +174,6 @@ class csscrush_rule implements IteratorAggregate {
 				$this->addDeclaration( $prop, $value );
 			}
 		}
-
 		// csscrush::log( $this->localData, 'LocalData' );
 		// csscrush::log( $this->data, 'Data' );
 
@@ -216,7 +216,7 @@ class csscrush_rule implements IteratorAggregate {
 		}
 	}
 
-	public function cssQueryFunction ( $input, $fn_name, $property ) {
+	public function cssQueryFunction ( $input, $fn_name, $call_property ) {
 
 		$result = '';
 		$args = csscrush_function::parseArgs( $input );
@@ -230,10 +230,18 @@ class csscrush_rule implements IteratorAggregate {
 
 		// Resolve arguments
 		$name = array_shift( $args );
-		$property = isset( $args[0] ) ? array_shift( $args ) : $property;
+		$property = $call_property;
+		if ( isset( $args[0] ) ) {
+			if ( $args[0] !== 'default' ) {
+				$property = array_shift( $args );
+			}
+			else {
+				array_shift( $args );
+			}
+		}
 		$default = isset( $args[0] ) ? $args[0] : null;
 
-		// csscrush::log( array( $name, $property, $default ) );
+		// csscrush::log( array( $name, $property, $default ), 'query args' );
 
 		// Try to match a abstract rule first
 		if ( preg_match( csscrush_regex::$patt->name, $name ) ) {
@@ -261,7 +269,6 @@ class csscrush_rule implements IteratorAggregate {
 		if ( $result === '' && ! is_null( $default ) ) {
 			$result = $default;
 		}
-
 		return $result;
 	}
 
@@ -618,6 +625,14 @@ class csscrush_rule implements IteratorAggregate {
 		return new ArrayIterator( $this->declarations );
 	}
 
+
+	############
+	#  Countable
+
+	public function count() {
+
+		return count( $this->_declarations );
+	}
 
 	############
 	#  Rule API

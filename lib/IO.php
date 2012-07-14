@@ -26,7 +26,7 @@ class csscrush_io {
 		$process = csscrush::$process;
 
 		// Make basic information about the input object accessible
-		$input = new stdclass();
+		$input = (object) array();
 		$input->dir = ! empty( $process->inputDir ) ? $process->inputDir : null;
 		$input->name = $file ? basename( $file ) : null;
 		$input->path = $file ? "$process->inputDir/$input->name" : null;
@@ -120,7 +120,7 @@ class csscrush_io {
 			// Cached file exists
 			csscrush::log( 'Cached file exists' );
 
-			$existingfile = new stdclass();
+			$existingfile = (object) array();
 			$existingfile->name = $filename;
 			$existingfile->path = "$process->outputDir/$existingfile->name";
 			$existingfile->URL = "$process->outputDirUrl/$existingfile->name";

@@ -14,8 +14,8 @@ class csscrush_regex {
 
 	public static function init () {
 
-		self::$patt = $patt = new stdclass();
-		self::$class = $class = new stdclass();
+		self::$patt = $patt = (object) array();
+		self::$class = $class = (object) array();
 
 		// Character classes
 		$class->name = '[a-zA-Z0-9_-]+';

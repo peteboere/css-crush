@@ -676,14 +676,14 @@ TPL;
 		// Reset properties for current process
 		self::$tokenUID = 0;
 
-		self::$process = new stdclass();
+		self::$process = (object) array();
 		self::$process->cacheData = array();
 		self::$process->mixins = array();
 		self::$process->abstracts = array();
 		self::$process->errors = array();
 		self::$process->selectorRelationships = array();
 
-		self::$storage = new stdclass();
+		self::$storage = (object) array();
 		self::$storage->tokens = (object) array(
 			'strings'   => array(),
 			'comments'  => array(),
@@ -693,7 +693,7 @@ TPL;
 			'urls'      => array(),
 		);
 		self::$storage->variables = array();
-		self::$storage->misc = new stdclass();
+		self::$storage->misc = (object) array();
 
 		// Load the merged options
 		self::$options = self::getOptions( $options );
@@ -1161,7 +1161,7 @@ TPL;
 
 	protected static function cb_extractRules ( $match ) {
 
-		$rule = new stdclass();
+		$rule = (object) array();
 		$rule->selector_raw = trim( $match[1] );
 		$rule->declaration_raw = trim( $match[2] );
 
@@ -1170,17 +1170,14 @@ TPL;
 		$rule = new csscrush_rule( $rule->selector_raw, $rule->declaration_raw );
 
 		// Store rules if they have declarations or extend arguments
-		if ( $rule->_declarations || $rule->extendArgs ) {
+		if ( count( $rule ) || $rule->extendArgs ) {
 
 			$label = $rule->label;
 
 			self::$storage->tokens->rules[ $label ] = $rule;
 
-			if ( $rule->_declarations ) {
-
-				// If only using extend no need to return a label
-				return $label . "\n";
-			}
+			// If only using extend still return a label
+			return $label . "\n";
 		}
 		return '';
 	}
@@ -1197,10 +1194,10 @@ TPL;
 			return '';
 		}
 
-		$rule = self::$storage->tokens->rules[ $ruleLabel ];
+		$rule =& self::$storage->tokens->rules[ $ruleLabel ];
 
-		// If there are no selectors associated with the rule return empty string
-		if ( empty( $rule->selectorList ) ) {
+		// If there are no selectors or declarations associated with the rule return empty string
+		if ( empty( $rule->selectorList ) || ! count( $rule ) ) {
 			return '';
 		}
 

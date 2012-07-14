@@ -1,5 +1,5 @@
-1.5.4
------
+1.6
+---
 Inheritance model improved to support adoption of pseudo classes and elements (see wiki)
 Added rule self-referencing function 'this()' and complimentary data-* properties
 Added default value argument for variables

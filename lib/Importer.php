@@ -112,7 +112,7 @@ class csscrush_importer {
 			}
 
 			// Create import object
-			$import = new stdclass();
+			$import = (object) array();
 			$import->url = $url;
 			$import->mediaContext = $media_context;
 			$import->hostDir = $process->inputDir;
@@ -129,7 +129,7 @@ class csscrush_importer {
 			// Get the import contents, if unsuccessful just continue with the import line removed
 			if ( ! ( $import->content = @file_get_contents( $import->path ) ) ) {
 
-				csscrush::log( "Import file '$import->url' not found at '$import->path'" );
+				csscrush::log( "Import file '$import->url' not found" );
 				$stream = $pre_statement . $post_statement;
 				continue;
 			}
