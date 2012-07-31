@@ -153,9 +153,9 @@ class csscrush_io {
 				$existing_options = $process->cacheData[ $existingfile->name ][ 'options' ];
 				$existing_datesum = $process->cacheData[ $existingfile->name ][ 'datem_sum' ];
 
-				$options_unchanged = $existing_options == csscrush::$options;
+				$options_unchanged = ! array_diff( $existing_options, csscrush::$options );
 				$files_unchanged = $existing_datesum == array_sum( $all_files );
-				
+
 				if ( $options_unchanged && $files_unchanged ) {
 
 					// Files have not been modified and config is the same: return the old file
@@ -164,11 +164,12 @@ class csscrush_io {
 					return $existingfile->URL . ( csscrush::$options[ 'versioning' ] !== false  ? "?$existing_datesum" : '' );
 				}
 				else {
+
 					// Remove old file and continue making a new one...
 					! $options_unchanged && csscrush::log( 'Options have been modified' );
 					! $files_unchanged && csscrush::log( 'Files have been modified' );
 					csscrush::log( 'Removing existing file' );
-					
+
 					unlink( $existingfile->path );
 				}
 			}

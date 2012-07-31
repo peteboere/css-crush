@@ -378,13 +378,15 @@ class csscrush_importer {
 		$url = csscrush_util::normalizePath( $url );
 
 		// No rewrite if:
-		//   - $url begins with a variable, e.g '$('
-		//   - $url path is absolute or begins with slash
 		//   - $url is an empty string
+		//   - $url path is absolute or begins with slash
+		//   - $url begins with a variable, e.g '$('
+		//   - $url is a data uri
 		if (
-			empty( $url ) ||
+			$url === '' ||
 			strpos( $url, '/' ) === 0 ||
 			strpos( $url, '$(' ) === 0 ||
+			strpos( $url, 'data:' ) === 0 ||
 			preg_match( $regex->absoluteUrl, $url )
 		) {
 

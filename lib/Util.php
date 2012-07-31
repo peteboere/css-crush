@@ -162,7 +162,11 @@ class csscrush_util {
 		}
 
 		// Filter out empties
-		$match_obj->list = array_filter( $match_obj->list );
+		foreach( $match_obj->list as $key => &$item ) {
+			if ( $item === '' ) {
+				unset( $match_obj->list[$key] );
+			}
+		}
 
 		if ( $fold_in ) {
 

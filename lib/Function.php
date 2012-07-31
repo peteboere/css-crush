@@ -305,7 +305,7 @@ class csscrush_function {
 	}
 
 	public static function css_fn__data_uri ( $input ) {
-return '';
+
 		// Normalize, since argument might be a string token
 		if ( strpos( $input, '___s' ) === 0 ) {
 			$string_labels = array_keys( csscrush::$storage->tokens->strings );
@@ -347,7 +347,7 @@ return '';
 			'jpg'  => 'image/jpg',
 			'png'  => 'image/png',
 		);
-		if ( !array_key_exists( $file_ext, $allowed_file_extensions ) ) {
+		if ( ! array_key_exists( $file_ext, $allowed_file_extensions ) ) {
 			return $result;
 		}
 

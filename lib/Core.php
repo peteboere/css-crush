@@ -817,7 +817,10 @@ TPL;
 			foreach ( csscrush::$storage->tokens->urls as $token => $url ) {
 
 				// Optionally set the URLs to absolute
-				if ( self::$options[ 'rewrite_import_urls' ] === 'absolute' ) {
+				if (
+					self::$options[ 'rewrite_import_urls' ] === 'absolute' &&
+					strpos( $url, 'data:' ) !== 0
+				) {
 					$url = self::$process->inputDirUrl . '/' . $url;
 				}
 				csscrush::$storage->tokens->urls[ $token ] = csscrush_util::cleanUpUrl( $url );

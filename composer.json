@@ -1,0 +1,11 @@
+{
+	"name": "CssCrush/CssCrush",
+	"type": "library",
+	"description": "CSS preprocessor",
+	"keywords": ["css", "preprocessor"],
+	"homepage": "http://github.com/peteboere/css-crush",
+	"license": "MIT",
+	"require": {
+		"php": ">=5.12"
+	}
+}
