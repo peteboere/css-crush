@@ -1,11 +1,24 @@
 {
-	"name": "CssCrush/CssCrush",
+	"name": "css-crush/css-crush",
 	"type": "library",
 	"description": "CSS preprocessor",
 	"keywords": ["css", "preprocessor"],
 	"homepage": "http://github.com/peteboere/css-crush",
 	"license": "MIT",
+	"authors": [
+		{
+			"name": "Pete Boere",
+			"email": "pete@the-echoplex.net"
+		},
+		{
+			"name": "GitHub contributors",
+			"homepage": "https://github.com/peteboere/css-crush/contributors"
+		}
+	],
 	"require": {
-		"php": ">=5.12"
+		"php": ">=5.2.4"
+	},
+	"autoload": {
+		"files": ["CssCrush.php"]
 	}
 }

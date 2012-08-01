@@ -1,8 +1,11 @@
 1.6
 ---
 Inheritance model improved to support adoption of pseudo classes and elements (see wiki)
-Added rule self-referencing function 'this()' and complimentary data-* properties
+Added rule self-referencing function this() and complimentary data-* properties
+Added rule referencing function query()
 Added default value argument for variables
+Added hsl-adjust() and hsla-adjust() color functions
+Mixin and fragment arg() function can now be nested
 Commas are now optional when specifying arguments for most custom functions
 Double-colon plugin moved to core
 Option rewrite_import_urls now defaults to true

@@ -7,7 +7,7 @@
  * @version    1.6
  * @link       https://github.com/peteboere/css-crush
  * @license    http://www.opensource.org/licenses/mit-license.php (MIT)
- * @copyright  Copyright 2010-2012 Pete Boere
+ * @copyright  (c) 2010-2012 Pete Boere
  *
  */
 

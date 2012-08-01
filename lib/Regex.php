@@ -56,6 +56,7 @@ class csscrush_regex {
 		$patt->ruleToken    = '!___r\d+___!';
 		$patt->parenToken   = '!___p\d+___!';
 		$patt->urlToken     = '!___u\d+___!';
+		$patt->argToken     = '!___arg(\d+)___!';
 
 		// Functions
 		$patt->varFunction  = '!(?:
@@ -68,8 +69,8 @@ class csscrush_regex {
 
 		// Specific functions
 		$patt->argFunction = csscrush_regex::createFunctionMatchPatt( array( 'arg' ) );
+		$patt->queryFunction = csscrush_regex::createFunctionMatchPatt( array( 'query' ) );
 		$patt->thisFunction = csscrush_regex::createFunctionMatchPatt( array( 'this' ) );
-		$patt->referenceFunction = csscrush_regex::createFunctionMatchPatt( array( 'this', 'query' ) );
 
 		// Misc.
 		$patt->vendorPrefix  = '!^-([a-z]+)-([a-z-]+)!';

@@ -11,6 +11,8 @@ class csscrush_mixin {
 
 	public $arguments;
 
+	public $data = array();
+
 	public function __construct ( $block ) {
 
 		// Strip comment markers
@@ -49,6 +51,14 @@ class csscrush_mixin {
 			}
 			elseif ( ! empty( $declaration['value'] ) ) {
 				$this->declarationsTemplate[] = $declaration;
+			}
+		}
+
+		// Create data table for the mixin.
+		// Values that use arg() are excluded
+		foreach ( $this->declarationsTemplate as &$declaration ) {
+			if ( ! preg_match( csscrush_regex::$patt->argToken, $declaration['value'] ) ) {
+				$this->data[ $declaration['property'] ] = $declaration['value'];
 			}
 		}
 		return '';
@@ -145,7 +155,6 @@ class csscrush_mixin {
 		$args = array();
 		if ( $message !== '' ) {
 			$args = csscrush_util::splitDelimList( $message, ',', true, true );
-			// $args = array_map( 'trim', $args->list );
 			$args = $args->list;
 		}
 
@@ -265,9 +274,22 @@ class csscrush_arglist implements Countable {
 		return "___arg{$position_match}___";
 	}
 
-	public function getDefaultValue ( $index ) {
+	public function getArgValue ( $index, &$args ) {
 
-		return isset( $this->defaults[ $index ] ) ? $this->defaults[ $index ] : '';
+		// First lookup a passed value
+		if ( isset( $args[ $index ] ) && $args[ $index ] !== 'default' ) {
+			return $args[ $index ];
+		}
+
+		// Get a default value
+		$default = isset( $this->defaults[ $index ] ) ? $this->defaults[ $index ] : '';
+
+		// Recurse for nested arg() calls
+		if ( preg_match( csscrush_regex::$patt->argToken, $default, $m ) ) {
+
+			$default = $this->getArgValue( (int) $m[1], $args );
+		}
+		return $default;
 	}
 
 	public function getSubstitutions ( $args ) {
@@ -281,13 +303,7 @@ class csscrush_arglist implements Countable {
 		foreach ( $argIndexes as $index ) {
 
 			$find[] = "___arg{$index}___";
-
-			if ( isset( $args[ $index ] ) && $args[ $index ] !== 'default' ) {
-				$replace[] = $args[ $index ];
-			}
-			else {
-				$replace[] = $this->getDefaultValue( $index );
-			}
+			$replace[] = $this->getArgValue( $index, $args );
 		}
 
 		return array( $find, $replace );

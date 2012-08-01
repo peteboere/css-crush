@@ -33,6 +33,15 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 		if ( $prop !== '' && $value !== '' ) {
 
+			// First resolve query() calls that reference earlier rules
+			if ( preg_match( csscrush_regex::$patt->queryFunction, $value ) ) {
+
+				csscrush_function::executeCustomFunctions( $value,
+					csscrush_regex::$patt->queryFunction, array(
+						'query' => array( $this, 'cssQueryFunction' ),
+					), $prop );
+			}
+
 			if ( strpos( $prop, 'data-' ) === 0 ) {
 
 				// If it's with data prefix, we don't want to print it
@@ -57,10 +66,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			if ( preg_match( csscrush_regex::$patt->thisFunction, $value ) ) {
 
 				unset( $this->localData[ $prop ] );
-
-				if ( isset( $this->data[ $prop ] ) ) {
-					unset( $this->data[ $prop ] );
-				}
+				unset( $this->data[ $prop ] );
 			}
 		}
 	}
@@ -146,7 +152,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			}
 			elseif ( $prop === 'extends' ) {
 
-				// Extends is a special case
+				// Extends are also a special case
 				$this->setExtendSelectors( $value );
 			}
 			else {
@@ -160,11 +166,10 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 			list( $prop, $value ) = $pair;
 
-			// Resolve this() references
+			// Resolve self references, aka this()
 			csscrush_function::executeCustomFunctions( $value,
-					csscrush_regex::$patt->referenceFunction, array(
+					csscrush_regex::$patt->thisFunction, array(
 						'this'  => array( $this, 'cssThisFunction' ),
-						'query' => array( $this, 'cssQueryFunction' ),
 					), $prop );
 
 			if ( trim( $value ) !== '' ) {
@@ -174,8 +179,6 @@ class csscrush_rule implements IteratorAggregate, Countable {
 				$this->addDeclaration( $prop, $value );
 			}
 		}
-		// csscrush::log( $this->localData, 'LocalData' );
-		// csscrush::log( $this->data, 'Data' );
 
 		// localData no longer required
 		$this->localData = null;
@@ -226,6 +229,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		}
 
 		$abstracts =& csscrush::$process->abstracts;
+		$mixins =& csscrush::$process->mixins;
 		$selectorRelationships =& csscrush::$process->selectorRelationships;
 
 		// Resolve arguments
@@ -246,10 +250,14 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		// Try to match a abstract rule first
 		if ( preg_match( csscrush_regex::$patt->name, $name ) ) {
 
-			// Search order: abstracts, rules
+			// Search order: abstracts, mixins, rules
 			if ( isset( $abstracts[ $name ]->data[ $property ] ) ) {
 
 				$result = $abstracts[ $name ]->data[ $property ];
+			}
+			elseif ( isset( $mixins[ $name ]->data[ $property ] ) ) {
+
+				$result = $mixins[ $name ]->data[ $property ];
 			}
 			elseif ( isset( $selectorRelationships[ $name ]->data[ $property ] ) ) {
 
