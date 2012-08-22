@@ -45,6 +45,34 @@ class csscrush {
 		self::$config->aliases = array();
 		self::$config->aliasesRaw = array();
 
+		// Default options
+		self::$config->options = array(
+
+			// Minify. Set true for formatting and comments
+			'debug' => false,
+
+			// Append 'checksum' to output file name
+			'versioning' => true,
+
+			// Use the template boilerplate
+			'boilerplate' => true,
+
+			// Variables passed in at runtime
+			'vars' => array(),
+
+			// Enable/disable the cache
+			'cache' => true,
+
+			// Output file. Defaults the host-filename
+			'output_file' => null,
+
+			// Vendor target. Only apply prefixes for a specific vendor, set to 'none' for no prefixes
+			'vendor_target' => 'all',
+
+			// Whether to rewrite the url references inside imported files
+			'rewrite_import_urls' => true,
+		);
+
 		// Initialise other classes
 		csscrush_regex::init();
 		csscrush_function::init();
@@ -537,40 +565,17 @@ TPL;
 
 	protected static function getOptions ( $options ) {
 
-		// Create default options for those not set
-		$option_defaults = array(
+		if ( ! is_array( $options ) ) {
+			$options = array();
+		}
 
-			// Minify. Set true for formatting and comments
-			'debug' => false,
+		// Keeping track of global vars internally to maintain cache integrity
+		$options[ '_globalVars' ] = self::$config->vars;
 
-			// Append 'checksum' to output file name
-			'versioning' => true,
+		// Populate unset options with defaults
+		$options += self::$config->options;
 
-			// Use the template boilerplate
-			'boilerplate' => true,
-
-			// Variables passed in at runtime
-			'vars' => array(),
-
-			// Enable/disable the cache
-			'cache' => true,
-
-			// Output file. Defaults the host-filename
-			'output_file' => null,
-
-			// Vendor target. Only apply prefixes for a specific vendor, set to 'none' for no prefixes
-			'vendor_target' => 'all',
-
-			// Whether to rewrite the url references inside imported files
-			'rewrite_import_urls' => true,
-
-			// Keeping track of global vars internally
-			'_globalVars' => self::$config->vars,
-		);
-
-		return is_array( $options ) ?
-			array_merge( $option_defaults, $options ) : $option_defaults;
-
+		return $options;
 	}
 
 	protected static function pruneAliases () {
@@ -747,7 +752,7 @@ TPL;
 			'@' => "\n@",
 			'}' => "}\n",
 			'{' => "{\n",
-			';' => ";\n",
+			// ';' => ";\n",
 		);
 		$stream = "\n" . str_replace( array_keys( $map ), array_values( $map ), $stream );
 
@@ -1093,7 +1098,10 @@ TPL;
 			// Strip private comments
 			$private_comment_marker = '$!';
 
-			if ( strpos( $capture, '/*' . $private_comment_marker ) === 0 ) {
+			if (
+				strpos( $capture, '/*' . $private_comment_marker ) === 0 ||
+				! self::$options[ 'debug' ]
+			) {
 				return '';
 			}
 
