@@ -52,6 +52,12 @@ class csscrush_importer {
 			$stream = file_get_contents( $prependFile ) . $stream;
 		}
 
+		// If @charset is set store it
+		if ( preg_match( $regex->charset, $stream, $m ) ) {
+			$stream = preg_replace( $regex->charset, '', $stream );
+			$process->charset = $m[2];
+		}
+
 		csscrush::prepareStream( $stream );
 
 		// If rewriting URLs as absolute we need to do some extra work

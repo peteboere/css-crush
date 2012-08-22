@@ -77,6 +77,7 @@ class csscrush_regex {
 		$patt->absoluteUrl   = '!^https?://!';
 		$patt->argListSplit  = '!\s*[,\s]\s*!S';
 		$patt->mathBlacklist = '![^\.0-9\*\/\+\-\(\)]!S';
+		$patt->charset       = '!@charset\s+([\'"])([\w-]+)\1\s*;!i';
 	}
 
 

@@ -118,7 +118,9 @@ class csscrush {
 
 		// Load aliases file if it exists
 		if ( $aliases_file ) {
+
 			if ( $result = @parse_ini_file( $aliases_file, true ) ) {
+
 				self::$config->aliasesRaw = $result;
 
 				// Value aliases require a little preprocessing
@@ -130,6 +132,14 @@ class csscrush {
 					}
 					self::$config->aliasesRaw[ 'values' ] = $store;
 				}
+
+				// Ensure all alias groups are at least set (issue #34)
+				self::$config->aliasesRaw += array(
+					'properties' => array(),
+					'functions'  => array(),
+					'values'     => array(),
+					'at-rules'   => array(),
+					);
 			}
 			else {
 				trigger_error( __METHOD__ . ": Aliases file could not be parsed.\n", E_USER_NOTICE );
@@ -568,14 +578,14 @@ TPL;
 		// If a vendor target is given, we prune the aliases array
 		$vendor = self::$options[ 'vendor_target' ];
 
-		// For expicit 'none' argument turn off aliases
-		if ( 'none' === $vendor ) {
-			self::$config->aliases = null;
+		// Default vendor argument, use all aliases as normal
+		if ( 'all' === $vendor ) {
 			return;
 		}
 
-		// Default vendor argument, use all aliases as normal
-		if ( 'all' === $vendor ) {
+		// For expicit 'none' argument turn off aliases
+		if ( 'none' === $vendor ) {
+			self::$config->aliases = null;
 			return;
 		}
 
@@ -682,6 +692,7 @@ TPL;
 		self::$process->abstracts = array();
 		self::$process->errors = array();
 		self::$process->selectorRelationships = array();
+		self::$process->charset = null;
 
 		self::$storage = (object) array();
 		self::$storage->tokens = (object) array(
@@ -702,6 +713,7 @@ TPL;
 	protected static function compile ( $stream ) {
 
 		$options = self::$options;
+		$process = self::$process;
 
 		// Load in aliases and macros
 		if ( ! self::$assetsLoaded ) {
@@ -709,8 +721,10 @@ TPL;
 			self::$assetsLoaded = true;
 		}
 
-		// Set aliases. May be pruned if a vendor target is set
+		// Set aliases
 		self::$config->aliases = self::$config->aliasesRaw;
+
+		// Prune if a vendor target is set
 		self::pruneAliases();
 
 		// Parse variables
@@ -759,11 +773,16 @@ TPL;
 			$stream = self::getBoilerplate() . "\n$stream";
 		}
 
+		// Add @charset at top if set
+		if ( $process->charset ) {
+			$stream = "@charset \"{$process->charset}\";\n" . $stream;
+		}
+
 		// Release memory
 		self::$storage = null;
-		self::$process->mixins = null;
-		self::$process->abstracts = null;
-		self::$process->selectorRelationships = null;
+		$process->mixins = null;
+		$process->abstracts = null;
+		$process->selectorRelationships = null;
 
 		return $stream;
 	}

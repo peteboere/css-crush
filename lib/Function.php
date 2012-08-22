@@ -338,7 +338,7 @@ class csscrush_function {
 
 		// Only allow certain extensions
 		$allowed_file_extensions = array(
-			'woff' => 'font/woff;charset=utf-8',
+			'woff' => 'application/x-font-woff;charset=utf-8',
 			'ttf'  => 'font/truetype;charset=utf-8',
 			'svg'  => 'image/svg+xml',
 			'svgz' => 'image/svg+xml',

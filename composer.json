@@ -3,7 +3,7 @@
 	"type": "library",
 	"description": "CSS preprocessor",
 	"keywords": ["css", "preprocessor"],
-	"homepage": "http://github.com/peteboere/css-crush",
+	"homepage": "http://the-echoplex.net/csscrush",
 	"license": "MIT",
 	"authors": [
 		{
