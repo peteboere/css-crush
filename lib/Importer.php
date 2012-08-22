@@ -11,10 +11,10 @@ class csscrush_importer {
 	public static function save ( $data ) {
 
 		$process = csscrush::$process;
-		$options = csscrush::$options;
+		$options = $process->options;
 
 		// No saving if caching is disabled, return early
-		if ( ! $options[ 'cache' ] ) {
+		if ( ! $options->cache ) {
 			return;
 		}
 
@@ -30,7 +30,7 @@ class csscrush_importer {
 
 		$config = csscrush::$config;
 		$process = csscrush::$process;
-		$options = csscrush::$options;
+		$options = $process->options;
 		$regex = csscrush_regex::$patt;
 		$hostfile = $process->input;
 
@@ -61,7 +61,7 @@ class csscrush_importer {
 		csscrush::prepareStream( $stream );
 
 		// If rewriting URLs as absolute we need to do some extra work
-		if ( $options[ 'rewrite_import_urls' ] === 'absolute' ) {
+		if ( $options->rewrite_import_urls === 'absolute' ) {
 
 			// Normalize the @import statements in this case
 			foreach ( csscrush_regex::matchAll( $regex->import, $stream ) as $match ) {
@@ -217,7 +217,7 @@ class csscrush_importer {
 			}
 
 			// Optionally rewrite relative url and custom function data-uri references
-			if ( $options[ 'rewrite_import_urls' ] ) {
+			if ( $options->rewrite_import_urls ) {
 				$import->content = self::rewriteImportUrls( $import );
 			}
 
@@ -265,7 +265,6 @@ class csscrush_importer {
 				$import_statement = str_replace( $full_match, $the_space . $string_label, $import_statement );
 			}
 		}
-		// csscrush::log( 'Normalised: ' . $import_statement );
 
 		return $import_statement;
 	}

@@ -12,7 +12,6 @@ class csscrush {
 
 	// Properties available to each process
 	public static $process;
-	public static $options;
 	public static $storage;
 
 	// Internal
@@ -46,7 +45,7 @@ class csscrush {
 		self::$config->aliasesRaw = array();
 
 		// Default options
-		self::$config->options = array(
+		self::$config->options = (object) array(
 
 			// Minify. Set true for formatting and comments
 			'debug' => false,
@@ -249,7 +248,7 @@ class csscrush {
 
 		$config = self::$config;
 		$process = self::$process;
-		$options = self::$options;
+		$options = $process->options;
 		$doc_root = $config->docRoot;
 
 		// Since we're comparing strings, we need to iron out OS differences
@@ -287,7 +286,7 @@ class csscrush {
 		// Used in validateCache, and writing to filesystem
 		$process->outputFileName = csscrush::io_call( 'getOutputFileName' );
 
-		if ( $options[ 'cache' ] === true ) {
+		if ( $options->cache === true ) {
 
 			// If cache is enabled check for a valid compiled file
 			$valid_compliled_file = csscrush::io_call( 'validateExistingOutput' );
@@ -305,7 +304,7 @@ class csscrush {
 
 		// Create file and return url. Return empty string on failure
 		if ( file_put_contents( "$process->outputDir/$process->outputFileName", $stream ) ) {
-			$timestamp = $options[ 'versioning' ] ? '?' . time() : '';
+			$timestamp = $options->versioning ? '?' . time() : '';
 			return "$process->outputDirUrl/$process->outputFileName$timestamp";
 		}
 		else {
@@ -409,11 +408,11 @@ class csscrush {
 
 		$config = self::$config;
 		$process = self::$process;
-		$options = self::$options;
+		$options = $process->options;
 
 		// Set the path context if one is given
-		if ( isset( $options[ 'context' ] ) && ! empty( $options[ 'context' ] ) ) {
-			self::setPath( $options[ 'context' ] );
+		if ( isset( $options->context ) && ! empty( $options->context ) ) {
+			self::setPath( $options->context );
 		}
 
 		// It's not associated with a real file so we create an 'empty' input object
@@ -423,7 +422,7 @@ class csscrush {
 		$process->input->string = $string;
 
 		// Import files may be ignored
-		if ( isset( $options[ 'no_import' ] ) ) {
+		if ( isset( $options->no_import ) ) {
 			$process->input->importIgnore = true;
 		}
 
@@ -525,7 +524,7 @@ class csscrush {
 
 		$file = csscrush_util::find( 'CssCrush-local.boilerplate', 'CssCrush.boilerplate' );
 
-		if ( ! $file || ! self::$options[ 'boilerplate' ] ) {
+		if ( ! $file || ! self::$process->options->boilerplate ) {
 			return '';
 		}
 
@@ -573,15 +572,17 @@ TPL;
 		$options[ '_globalVars' ] = self::$config->vars;
 
 		// Populate unset options with defaults
-		$options += self::$config->options;
+		$options += (array) self::$config->options;
 
-		return $options;
+		return (object) $options;
 	}
 
 	protected static function pruneAliases () {
 
+		$options = self::$process->options;
+
 		// If a vendor target is given, we prune the aliases array
-		$vendor = self::$options[ 'vendor_target' ];
+		$vendor = $options->vendor_target;
 
 		// Default vendor argument, use all aliases as normal
 		if ( 'all' === $vendor ) {
@@ -595,11 +596,11 @@ TPL;
 		}
 
 		// Normalize vendor_target argument
-		$vendor = str_replace( '-', '', self::$options[ 'vendor_target' ] );
-		$vendor = "-$vendor-";
+		$vendor = '-' . str_replace( '-', '', $vendor ) . '-';
 
 		// Loop the aliases array, filter down to the target vendor
 		foreach ( self::$config->aliases as $group_name => $group_array ) {
+
 			// Property/value aliases are a special case
 			if ( 'values' === $group_name ) {
 				foreach ( $group_array as $property => $values ) {
@@ -616,6 +617,7 @@ TPL;
 				continue;
 			}
 			foreach ( $group_array as $alias_keyword => $prefix_array ) {
+
 				$result = array();
 				foreach ( $prefix_array as $prefix ) {
 					if ( strpos( $prefix, $vendor ) === 0 ) {
@@ -635,13 +637,15 @@ TPL;
 
 	protected static function calculateVariables () {
 
+		$options = self::$process->options;
+
 		// In-file variables override global variables
 		// Runtime variables override in-file variables
 		self::$storage->variables = array_merge( self::$config->vars, self::$storage->variables );
 
-		if ( !empty( self::$options[ 'vars' ] ) ) {
+		if ( ! empty( $options->vars ) ) {
 			self::$storage->variables = array_merge(
-				self::$storage->variables, self::$options[ 'vars' ] );
+				self::$storage->variables, $options->vars );
 		}
 
 		// Place variables referenced inside variables
@@ -698,6 +702,7 @@ TPL;
 		self::$process->errors = array();
 		self::$process->selectorRelationships = array();
 		self::$process->charset = null;
+		self::$process->options = self::getOptions( $options );
 
 		self::$storage = (object) array();
 		self::$storage->tokens = (object) array(
@@ -710,15 +715,12 @@ TPL;
 		);
 		self::$storage->variables = array();
 		self::$storage->misc = (object) array();
-
-		// Load the merged options
-		self::$options = self::getOptions( $options );
 	}
 
 	protected static function compile ( $stream ) {
 
-		$options = self::$options;
 		$process = self::$process;
+		$options = $process->options;
 
 		// Load in aliases and macros
 		if ( ! self::$assetsLoaded ) {
@@ -774,7 +776,7 @@ TPL;
 		self::display( $stream );
 
 		// Add in boilerplate
-		if ( $options[ 'boilerplate' ] ) {
+		if ( $options->boilerplate ) {
 			$stream = self::getBoilerplate() . "\n$stream";
 		}
 
@@ -794,7 +796,8 @@ TPL;
 
 	protected static function display ( &$stream ) {
 
-		$minify = ! self::$options[ 'debug' ];
+		$options = self::$process->options;
+		$minify = ! $options->debug;
 		$regex = csscrush_regex::$patt;
 
 		if ( $minify ) {
@@ -842,7 +845,7 @@ TPL;
 
 				// Optionally set the URLs to absolute
 				if (
-					self::$options[ 'rewrite_import_urls' ] === 'absolute' &&
+					$options->rewrite_import_urls === 'absolute' &&
 					strpos( $url, 'data:' ) !== 0
 				) {
 					$url = self::$process->inputDirUrl . '/' . $url;
@@ -1100,7 +1103,7 @@ TPL;
 
 			if (
 				strpos( $capture, '/*' . $private_comment_marker ) === 0 ||
-				! self::$options[ 'debug' ]
+				! self::$process->options->debug
 			) {
 				return '';
 			}
@@ -1214,7 +1217,7 @@ TPL;
 
 	protected static function cb_printRule ( $match ) {
 
-		$minify = ! self::$options[ 'debug' ];
+		$minify = ! self::$process->options->debug;
 		$whitespace = $minify ? '' : ' ';
 
 		$ruleLabel = $match[0];

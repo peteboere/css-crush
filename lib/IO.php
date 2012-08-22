@@ -92,13 +92,13 @@ class csscrush_io {
 	public static function getOutputFileName () {
 
 		$process = csscrush::$process;
-		$options = csscrush::$options;
+		$options = $process->options;
 		$input = $process->input;
 
 		$output_basename = basename( $input->name, '.css' );
 
-		if ( ! empty( $options[ 'output_file' ] ) ) {
-			$output_basename = basename( $options[ 'output_file' ], '.css' );
+		if ( ! empty( $options->output_file ) ) {
+			$output_basename = basename( $options->output_file, '.css' );
 		}
 
 		return "$output_basename.crush.css";
@@ -108,6 +108,7 @@ class csscrush_io {
 	public static function validateExistingOutput () {
 
 		$process = csscrush::$process;
+		$options = $process->options;
 		$config = csscrush::$config;
 		$input = $process->input;
 
@@ -153,7 +154,14 @@ class csscrush_io {
 				$existing_options = $process->cacheData[ $existingfile->name ][ 'options' ];
 				$existing_datesum = $process->cacheData[ $existingfile->name ][ 'datem_sum' ];
 
-				$options_unchanged = ! array_diff( $existing_options, csscrush::$options );
+				$options_unchanged = true;
+				foreach ( $existing_options as $key => &$value ) {
+					if ( $existing_options->{ $key } !== $options->{ $key } ) {
+						// csscrush::log( "$key is different" );
+						$options_unchanged = false;
+						break;
+					}
+				}
 				$files_unchanged = $existing_datesum == array_sum( $all_files );
 
 				if ( $options_unchanged && $files_unchanged ) {
@@ -161,7 +169,7 @@ class csscrush_io {
 					// Files have not been modified and config is the same: return the old file
 					csscrush::log( "Files and options have not been modified, returning existing
 						 file '$existingfile->URL'" );
-					return $existingfile->URL . ( csscrush::$options[ 'versioning' ] !== false  ? "?$existing_datesum" : '' );
+					return $existingfile->URL . ( $options->versioning !== false  ? "?$existing_datesum" : '' );
 				}
 				else {
 

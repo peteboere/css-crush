@@ -395,14 +395,14 @@ class csscrush_version {
 		$MORE  = 1;
 		$EQUAL = 0;
 
-		$test  = new csscrush_version( $version_string );
+		$test = new csscrush_version( $version_string );
 
 		foreach ( array( 'major', 'minor', 'revision' ) as $level ) {
 
-			if ( $test->{ $level } < $this->{ $level } ) {
+			if ( $this->{ $level } < $test->{ $level } ) {
 				return $LESS;
 			}
-			elseif ( $test->{ $level } > $this->{ $level } ) {
+			elseif ( $this->{ $level } > $test->{ $level } ) {
 				return $MORE;
 			}
 		}
