@@ -754,7 +754,7 @@ TPL;
 			'@' => "\n@",
 			'}' => "}\n",
 			'{' => "{\n",
-			// ';' => ";\n",
+			';' => ";\n",
 		);
 		$stream = "\n" . str_replace( array_keys( $map ), array_values( $map ), $stream );
 
@@ -804,10 +804,12 @@ TPL;
 			$stream = csscrush_util::stripComments( $stream );
 		}
 		else {
-			// Create newlines after tokens
+			// Formatting
 			$stream = preg_replace( '!([{}])!', "$1\n", $stream );
 			$stream = preg_replace( '!([@])!', "\n$1", $stream );
-			$stream = preg_replace( '!(___[a-z0-9]+___)!', "$1\n", $stream );
+
+			// Newlines after some tokens
+			$stream = preg_replace( '!(___[rc][0-9]+___)!', "$1\n", $stream );
 
 			// Kill double spaces
 			$stream = ltrim( preg_replace( '!\n+!', "\n", $stream ) );

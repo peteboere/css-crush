@@ -4,11 +4,10 @@
  * CSS Crush
  * Extensible CSS preprocessor
  * 
- * @version    1.6.1
+ * @version    1.6.2
  * @link       https://github.com/peteboere/css-crush
  * @license    http://www.opensource.org/licenses/mit-license.php (MIT)
  * @copyright  (c) 2010-2012 Pete Boere
- *
  */
 
 require_once 'lib/Util.php';
@@ -23,9 +22,3 @@ require_once 'lib/Regex.php';
 require_once 'lib/Hook.php';
 
 csscrush::init( __FILE__ );
-
-
-
-
-
-

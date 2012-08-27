@@ -26,27 +26,27 @@ class csscrush_regex {
 		$patt->notName = '!^' . $class->notName . '$!';
 
 		$patt->import = '!
-			@import\s+    # import at-rule
+			@import\s+             # import at-rule
 			(?:
-			url\(\s*([^\)]+)\s*\) # url function
-			|                     # or
-			([_s\d]+)             # string token
+			url\(\s*([^\)]+)\s*\)  # url function
+			|                      # or
+			([_s\d]+)              # string token
 			)
-			\s*([^;]*);   # media argument
+			\s*([^;]*);            # media argument
 		!xS';
 
 		$patt->variables = '!@(?:variables|define)\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
 		$patt->mixin     = '!@mixin\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
 		$patt->abstract  = csscrush_regex::create( '^@abstract\s+(<name>)', 'i' );
 		$patt->commentAndString = '!
-				(\'|")(?:\\1|[^\1])*?\1
+				(\'|")(?:\\1|[^\1])*?\1  # quoted string
 				|
-				/\*(?:.*?)\*/
+				/\*(?:.*?)\*/            # block comment
 			!xsS';
 
 		// As an exception we treat some @-rules like standard rule blocks
 		$patt->rule       = '!
-			(\n(?:[^@{}]+|@(?:font-face|page|abstract)[^{]*)) # The selector
+			(\n(?:[^@{}]+|@(?:font-face|page|abstract)[^{]*))  # The selector
 			\{([^{}]*)\}  # The declaration block
 		!xS';
 
