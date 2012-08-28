@@ -65,22 +65,22 @@ if ( $version < $required_version ) {
 ##  Options
 
 $short_opts = array(
-	"f::",  // Input file. Defaults to sdtin
-	"o::",  // Output file. Defaults to stdout
-	"p",    // Pretty formatting
-	'b',    // Output boilerplate
-	'h',    // Display help
+	"f:",  // Input file. Defaults to sdtin
+	"o:",  // Output file. Defaults to stdout
+	"p",   // Pretty formatting
+	'b',   // Output boilerplate
+	'h',   // Display help
 );
 
 $long_opts = array(
-	'file::',      // Input file. Defaults to sdtin
-	'output::',    // Output file. Defaults to stdout
-	'pretty',      // Pretty formatting
-	'boilerplate', // Output boilerplate
-	'help',        // Display help
-	'version',     // Display version
-	'vendor-target:', // Vendor target
-	'variables:',  // Map of variable names in an http query string format
+	'file:',           // Input file. Defaults to sdtin
+	'output:',         // Output file. Defaults to stdout
+	'pretty',          // Pretty formatting
+	'boilerplate',     // Output boilerplate
+	'help',            // Display help
+	'version',         // Display version
+	'vendor-target:',  // Vendor target
+	'variables:',      // Map of variable names in an http query string format
 );
 
 $opts = getopt( implode( $short_opts ), $long_opts );
@@ -134,7 +134,7 @@ Options:
         Version number
 
 Examples:
-    $command -f=styles.css --pretty --vendor-target=webkit
+    $command -f styles.css --pretty --vendor-target webkit
 
     # Piping on unix based terminals
     cat 'styles.css' | $command --boilerplate
