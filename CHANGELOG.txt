@@ -1,6 +1,8 @@
 1.6.2
 -----
 Fixed parsing issue introduced in 1.6.1
+Minor update to command line appication
+Updated aliases file
 
 
 1.6.1
