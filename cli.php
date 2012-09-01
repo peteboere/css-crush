@@ -7,7 +7,6 @@
 
 require_once 'CssCrush.php';
 
-
 // Exit status constants
 define( 'STATUS_OK', 0 );
 define( 'STATUS_ERROR', 1 );
@@ -89,12 +88,14 @@ $opts = getopt( implode( $short_opts ), $long_opts );
 
 $input_file = @( $opts['f'] ?: $opts['file'] );
 $output_file = @( $opts['o'] ?: $opts['output'] );
-$variables = @$opts['variables'];
-$vendor_target = @$opts['vendor-target'];
-$boilerplate = @( isset( $opts['b'] ) ?: isset( $opts['boilerplate'] ) );
 $pretty = @( isset( $opts['p'] ) ?: isset( $opts['pretty'] ) );
+$boilerplate = @( isset( $opts['b'] ) ?: isset( $opts['boilerplate'] ) );
 $help_flag = @( isset( $opts['h'] ) ?: isset( $opts['help'] ) );
 $version_flag = @isset( $opts['version'] );
+$vendor_target = @$opts['vendor-target'];
+$variables = @$opts['variables'];
+$enable_plugins = isset( $opts['enable'] ) ? (array) $opts['enable'] : null;
+$disable_plugins = isset( $opts['disable'] ) ? (array) $opts['disable'] : null;
 
 
 ##################################################################
@@ -124,6 +125,12 @@ Options:
     -h, --help:
         Display this help mesasge
 
+    --enable:
+        List of plugins to enable
+
+    --disable:
+        List of plugins to disable
+
     --variables:
         Map of variable names in an http query string format
 
@@ -140,6 +147,9 @@ Examples:
 
     # Piping on unix based terminals
     cat 'styles.css' | $command --boilerplate
+
+    # Linting
+    $command -f screen.css -p --enable property-sorter -o screen-linted.css
 
 TPL;
 
@@ -166,7 +176,6 @@ $input = null;
 if ( $input_file ) {
 
 	if ( ! file_exists( $input_file ) ) {
-
 		stdout( 'Input file not found' . PHP_EOL );
 		exit( STATUS_ERROR );
 	}
@@ -192,12 +201,31 @@ $process_opts[ 'boilerplate' ] = $boilerplate ? true : false;
 $process_opts[ 'debug' ] = $pretty ? true : false;
 $process_opts[ 'rewrite_import_urls' ] = true;
 
-if ( $vendor_target ) {
+// Enable plugin args
+if ( $enable_plugins ) {
+	foreach ( $enable_plugins as $arg ) {
+		foreach ( preg_split( '!\s*,\s*!', $arg ) as $plugin ) {
+			$process_opts[ 'enable' ][] = $plugin;
+		}
+	}
+}
 
+// Disable plugin args
+if ( $disable_plugins ) {
+	foreach ( $disable_plugins as $arg ) {
+		foreach ( preg_split( '!\s*,\s*!', $arg ) as $plugin ) {
+			$process_opts[ 'disable' ][] = $plugin;
+		}
+	}
+}
+
+// Vendor target args
+if ( $vendor_target ) {
 	$process_opts[ 'vendor_target' ] = $vendor_target;
 }
-if ( $variables ) {
 
+// Variables args
+if ( $variables ) {
 	parse_str( $variables, $in_vars );
 	$process_opts[ 'vars' ] = $in_vars;
 }
@@ -217,7 +245,6 @@ $output = csscrush::string( $input, $process_opts );
 
 // Reset the document root after processing
 if ( $hostfile_context ) {
-
 	csscrush::$config->docRoot = $old_doc_root;
 }
 
@@ -232,7 +259,6 @@ if ( $output_file ) {
 		$message[] = "Could not write to path '$output_file'";
 
 		if ( strpos( $output_file, '~' ) === 0 ) {
-
 			$message[] = 'Tilde expansion does not work here';
 		}
 
@@ -249,6 +275,3 @@ else {
 	stdout( $output );
 	exit( STATUS_OK );
 }
-
-
-
