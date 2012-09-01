@@ -15,9 +15,9 @@
  * 
  */
 
-csscrush_hook::add( 'rule_prealias', 'csscrush_initial' );
+csscrush_hook::add( 'rule_prealias', 'csscrush__initial' );
 
-function csscrush_initial ( csscrush_rule $rule ) {
+function csscrush__initial ( csscrush_rule $rule ) {
 
 	static $initialValues = null;
 	if ( ! $initialValues ) {

@@ -38,11 +38,11 @@ class csscrush {
 		// Set the default IO handler
 		self::$config->io = 'csscrush_io';
 
-		// Global assets
+		// Global storage
 		self::$config->vars = array();
-		self::$config->plugins = array();
 		self::$config->aliases = array();
 		self::$config->aliasesRaw = array();
+		self::$config->plugins = array();
 
 		// Default options
 		self::$config->options = (object) array(
@@ -70,6 +70,12 @@ class csscrush {
 
 			// Whether to rewrite the url references inside imported files
 			'rewrite_import_urls' => true,
+
+			// List of plugins to enable (as Array of names)
+			'enable' => null,
+
+			// List of plugins to disable (as Array of names)
+			'disable' => null,
 		);
 
 		// Initialise other classes
@@ -166,7 +172,7 @@ class csscrush {
 					'functions'  => array(),
 					'values'     => array(),
 					'at-rules'   => array(),
-					);
+				);
 			}
 			else {
 				trigger_error( __METHOD__ . ": Aliases file could not be parsed.\n", E_USER_NOTICE );
@@ -176,21 +182,18 @@ class csscrush {
 			trigger_error( __METHOD__ . ": Aliases file not found.\n", E_USER_NOTICE );
 		}
 
-		// Find a plugins file in the root directory
+		// Find a plugins file in the root directory,
 		// a local file overrides the default
 		$plugins_file = csscrush_util::find( 'Plugins-local.ini', 'Plugins.ini' );
 
 		// Load plugins
 		if ( $plugins_file ) {
 			if ( $result = @parse_ini_file( $plugins_file ) ) {
-				foreach ( $result[ 'plugins' ] as $plugin_file ) {
-					$path = self::$config->location . "/plugins/$plugin_file";
-					if ( file_exists( $path ) ) {
-						self::$config->plugins[] = $plugin_file;
-						require_once $path;
-					}
-					else {
-						trigger_error( __METHOD__ . ": Plugin file $plugin_file not found.\n", E_USER_NOTICE );
+				foreach ( $result[ 'plugins' ] as $plugin_name ) {
+					// Backwards compat.
+					$plugin_name = basename( $plugin_name, '.php' );
+					if ( csscrush_plugin::enable( $plugin_name ) ) {
+						self::$config->plugins[ $plugin_name ] = true;
 					}
 				}
 			}
@@ -448,7 +451,7 @@ class csscrush {
 		}
 		// Test for a file. If it is attempt to parse it
 		elseif ( is_string( $vars ) && file_exists( $vars ) ) {
-			if ( $result = parse_ini_file( $vars ) ) {
+			if ( $result = @parse_ini_file( $vars ) ) {
 				$config->vars = array_merge( $config->vars, $result );
 			}
 		}
@@ -719,6 +722,7 @@ TPL;
 
 	protected static function compile ( $stream ) {
 
+		$config = self::$config;
 		$process = self::$process;
 		$options = $process->options;
 
@@ -726,6 +730,30 @@ TPL;
 		if ( ! self::$assetsLoaded ) {
 			self::loadAssets();
 			self::$assetsLoaded = true;
+		}
+
+		// Load and unload plugins.
+		// First copy the base $config->plugins list.
+		$process->plugins = $config->plugins;
+
+		// Add option enabled plugins to the list.
+		if ( is_array( $options->enable ) ) {
+			foreach ( $options->enable as $plugin_name ) {
+				$process->plugins[ $plugin_name ] = true;
+			}
+		}
+
+		// Remove option disabled plugins from the list, and disable them.
+		if ( is_array( $options->disable ) ) {
+			foreach ( $options->disable as $plugin_name ) {
+				csscrush_plugin::disable( $plugin_name );
+				unset( $process->plugins[ $plugin_name ] );
+			}
+		}
+
+		// Enable all plugins in the remaining list.
+		foreach ( $process->plugins as $plugin_name => $bool ) {
+			csscrush_plugin::enable( $plugin_name );
 		}
 
 		// Set aliases

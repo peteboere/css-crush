@@ -10,9 +10,9 @@
  *     *clip: rect(1px 1px 1px 1px);
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush_clip' );
+csscrush_hook::add( 'rule_postalias', 'csscrush__ie_clip' );
 
-function csscrush_clip ( csscrush_rule $rule ) {
+function csscrush__ie_clip ( csscrush_rule $rule ) {
 
 	// Assume it's been dealt with if the property occurs more than once 
 	if ( $rule->propertyCount( 'clip' ) !== 1 ) {

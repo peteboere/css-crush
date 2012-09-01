@@ -13,9 +13,9 @@
  * 
  */
 
-csscrush_hook::add( 'rule_preprocess', 'csscrush_hocuspocus' );
+csscrush_hook::add( 'rule_preprocess', 'csscrush__hocus_pocus' );
 
-function csscrush_hocuspocus ( $rule ) {
+function csscrush__hocus_pocus ( $rule ) {
 
 	$adjustments = array(
 		'!:hocus([^a-z0-9_-]|$)!' => ':any(:hover,:focus)$1',

@@ -11,9 +11,10 @@
  *     *zoom: 1;
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush_display_inlineblock' );
+csscrush_hook::add( 'rule_postalias', 'csscrush__ie_inline_block' );
 
-function csscrush_display_inlineblock ( csscrush_rule $rule ) {
+function csscrush__ie_inline_block ( csscrush_rule $rule ) {
+
 	if ( $rule->propertyCount( 'display' ) < 1 ) {
 		return;
 	}

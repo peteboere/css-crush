@@ -12,9 +12,10 @@
  *     zoom: 1;
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush_opacity' );
+csscrush_hook::add( 'rule_postalias', 'csscrush__ie_opacity' );
 
-function csscrush_opacity ( csscrush_rule $rule ) {
+function csscrush__ie_opacity ( csscrush_rule $rule ) {
+
 	if ( $rule->propertyCount( 'opacity' ) < 1 ) {
 		return;
 	}

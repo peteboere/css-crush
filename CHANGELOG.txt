@@ -1,4 +1,4 @@
-1.6.2
+1.7
 -----
 Fixed parsing issue introduced in 1.6.1
 Minor update to command line appication

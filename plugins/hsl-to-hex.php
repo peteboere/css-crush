@@ -10,9 +10,9 @@
  *    color: #6abf40
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush_hsl' );
+csscrush_hook::add( 'rule_postalias', 'csscrush__hsl_to_hex' );
 
-function csscrush_hsl ( csscrush_rule $rule ) {
+function csscrush__hsl_to_hex ( csscrush_rule $rule ) {
 
 	foreach ( $rule as &$declaration ) {
 		if ( 

@@ -162,7 +162,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		}
 
 		// Bind declaration objects on the rule
-		foreach ( $pairs as $pair ) {
+		foreach ( $pairs as $index => &$pair ) {
 
 			list( $prop, $value ) = $pair;
 
@@ -176,7 +176,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 				// Add declaration and update the data table
 				$this->data[ $prop ] = $value;
-				$this->addDeclaration( $prop, $value );
+				$this->addDeclaration( $prop, $value, $index );
 			}
 		}
 
@@ -663,10 +663,10 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		}
 	}
 
-	public function addDeclaration ( $prop, $value ) {
+	public function addDeclaration ( $prop, $value, $contextIndex = 0 ) {
 
 		// Create declaration, add to the stack if it's valid
-		$declaration = new csscrush_declaration( $prop, $value );
+		$declaration = new csscrush_declaration( $prop, $value, $contextIndex );
 
 		if ( $declaration->isValid ) {
 
@@ -701,12 +701,13 @@ class csscrush_declaration {
 	public $vendor;
 	public $functions;
 	public $value;
+	public $index;
 	public $skip;
 	public $important;
 	public $parenTokens;
 	public $isValid = true;
 
-	public function __construct ( $prop, $value ) {
+	public function __construct ( $prop, $value, $contextIndex = 0 ) {
 
 		$regex = csscrush_regex::$patt;
 
@@ -774,6 +775,7 @@ class csscrush_declaration {
 		$this->family     = $family;
 		$this->vendor     = $vendor;
 		$this->functions  = $functions;
+		$this->index      = $contextIndex;
 		$this->value      = $value;
 		$this->skip       = $skip;
 		$this->important  = $important;

@@ -10,9 +10,10 @@
  *     _height: 100px;
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush_minheight' );
+csscrush_hook::add( 'rule_postalias', 'csscrush__ie_min_height' );
 
-function csscrush_minheight ( csscrush_rule $rule ) {
+function csscrush__ie_min_height ( csscrush_rule $rule ) {
+
 	if ( $rule->propertyCount( 'min-height' ) < 1 ) {
 		return;
 	}

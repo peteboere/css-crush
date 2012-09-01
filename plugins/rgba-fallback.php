@@ -12,10 +12,10 @@
  *     background: rgba(0,0,0,.5);
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush_rgba' );
+csscrush_hook::add( 'rule_postalias', 'csscrush__rgba_fallback' );
 
 
-function csscrush_rgba ( csscrush_rule $rule ) {
+function csscrush__rgba_fallback ( csscrush_rule $rule ) {
 
 	$props = array_keys( $rule->properties );
 

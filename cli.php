@@ -81,6 +81,8 @@ $long_opts = array(
 	'version',         // Display version
 	'vendor-target:',  // Vendor target
 	'variables:',      // Map of variable names in an http query string format
+	'enable:',         // List of plugins to enable
+	'disable:',        // List of plugins to disable
 );
 
 $opts = getopt( implode( $short_opts ), $long_opts );
