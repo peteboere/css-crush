@@ -299,10 +299,10 @@ class csscrush {
 			}
 		}
 
-		// Collate hostfile and imports
+		// Collate hostfile and imports.
 		$stream = csscrush_importer::hostfile( $process->input );
 
-		// Compile
+		// Compile.
 		$stream = self::compile( $stream );
 
 		// Create file and return url. Return empty string on failure
@@ -413,12 +413,16 @@ class csscrush {
 		$process = self::$process;
 		$options = $process->options;
 
-		// Set the path context if one is given
-		if ( isset( $options->context ) && ! empty( $options->context ) ) {
+		// Set the path context if one is given.
+		// Fallback to document root.
+		if ( ! empty( $options->context ) ) {
 			self::setPath( $options->context );
 		}
+		else {
+			self::setPath( $config->docRoot );
+		}
 
-		// It's not associated with a real file so we create an 'empty' input object
+		// It's not associated with a real file so we create an 'empty' input object.
 		$process->input = csscrush::io_call( 'getInput' );
 
 		// Set the string on the object
@@ -525,9 +529,21 @@ class csscrush {
 
 	protected static function getBoilerplate () {
 
-		$file = csscrush_util::find( 'CssCrush-local.boilerplate', 'CssCrush.boilerplate' );
+		$file = false;
+		$boilerplate_option = self::$process->options->boilerplate;
 
-		if ( ! $file || ! self::$process->options->boilerplate ) {
+		if ( $boilerplate_option === true ) {
+			$file = csscrush_util::find(
+				'CssCrush-local.boilerplate', 'CssCrush.boilerplate' );
+		}
+		elseif ( is_string( $boilerplate_option ) ) {
+			if ( file_exists( $boilerplate_option ) ) {
+				$file = $boilerplate_option;
+			}
+		}
+
+		// Return an empty string if no file is found.
+		if ( ! $file ) {
 			return '';
 		}
 
@@ -1093,6 +1109,8 @@ TPL;
 		// Reset the selector relationships
 		self::$process->selectorRelationships = array();
 
+		$aliases =& self::$config->aliases;
+
 		foreach ( self::$storage->tokens->rules as $rule ) {
 
 			// Store selector relationships
@@ -1100,10 +1118,13 @@ TPL;
 
 			csscrush_hook::run( 'rule_prealias', $rule );
 
-			if ( ! empty( self::$config->aliases ) ) {
-
+			if ( ! empty( $aliases[ 'properties' ] ) ) {
 				$rule->addPropertyAliases();
+			}
+			if ( ! empty( $aliases[ 'functions' ] ) ) {
 				$rule->addFunctionAliases();
+			}
+			if ( ! empty( $aliases[ 'values' ] ) ) {
 				$rule->addValueAliases();
 			}
 

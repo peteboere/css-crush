@@ -1,8 +1,14 @@
 1.7
 -----
+Updated plugin API
+Added options for enabling and disabling plugins at runtime
+Added support for SASS-like @include/@extend syntax for invoking mixins and extends
+Added property sorter plugin
+Boilerplate option now accepts a filename string as a boilerplate template
+CssCrush::string() now uses document_root as a default context for finding linked resources
+Updated command line appication
+Updated aliases and initial value files
 Fixed parsing issue introduced in 1.6.1
-Minor update to command line appication
-Updated aliases file
 
 
 1.6.1

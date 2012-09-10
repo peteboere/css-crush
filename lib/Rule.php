@@ -114,7 +114,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 		// Parse the declarations chunk
 		// Need to split safely as there are semi-colons in data-uris
-		$declarations_match = csscrush_util::splitDelimList( $declarations_string, ';', true );
+		$declarations_match = csscrush_util::splitDelimList( $declarations_string, ';', true, true );
 
 		// First create a simple array of all properties and value pairs in raw state
 		$pairs = array();
@@ -125,16 +125,24 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			// Strip comments around the property
 			$declaration = csscrush_util::stripComments( $declaration );
 
-			// Extract the property part of the declaration
-			$colonPos = strpos( $declaration, ':' );
-			if ( $colonPos === false ) {
+			// Accept several different syntaxes for mixin and extends.
+			if ( preg_match( '!^(?:(@include|mixin)|(@?extends?))[\s\:]+!iS', $declaration, $m ) ) {
 
-				continue; // If there's no colon it's malformed
+				$prop = isset( $m[2] ) ? 'extends' : 'mixin';
+				$value = substr( $declaration, strlen( $m[0] ) );
 			}
-			$prop = trim( substr( $declaration, 0, $colonPos ) );
+			elseif ( ( $colonPos = strpos( $declaration, ':' ) ) !== false ) {
 
-			// Extract the value part of the declaration
-			$value = substr( $declaration, $colonPos + 1 );
+				$prop = trim( substr( $declaration, 0, $colonPos ) );
+				// Extract the value part of the declaration.
+				$value = substr( $declaration, $colonPos + 1 );
+			}
+			else {
+				// Must be malformed.
+				continue;
+			}
+
+			// Some cleanup.
 			$value = $value !== false ? trim( $value ) : $value;
 
 			if ( $prop === 'mixin' ) {
