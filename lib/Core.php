@@ -1210,23 +1210,10 @@ TPL;
 
 	protected static function cb_placeVariables ( $match ) {
 
-		$before_char = $match[1];
-
-		// Check for dollar shorthand
-		if ( empty( $match[2] ) && isset( $match[3] ) && strpos( $match[0], '$' ) !== false ) {
-
-			$variable_name = $match[3];
-		}
-		else {
-			$variable_name = $match[2];
-		}
+		$variable_name = $match[1];
 
 		if ( isset( self::$storage->variables[ $variable_name ] ) ) {
-
-			return $before_char . self::$storage->variables[ $variable_name ];
-		}
-		else {
-			return $before_char;
+			return self::$storage->variables[ $variable_name ];
 		}
 	}
 

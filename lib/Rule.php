@@ -126,7 +126,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			$declaration = csscrush_util::stripComments( $declaration );
 
 			// Accept several different syntaxes for mixin and extends.
-			if ( preg_match( '!^(?:(@include|mixin)|(@?extends?))[\s\:]+!iS', $declaration, $m ) ) {
+			if ( preg_match( $regex->mixinExtend, $declaration, $m ) ) {
 
 				$prop = isset( $m[2] ) ? 'extends' : 'mixin';
 				$value = substr( $declaration, strlen( $m[0] ) );
@@ -253,8 +253,6 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		}
 		$default = isset( $args[0] ) ? $args[0] : null;
 
-		// csscrush::log( array( $name, $property, $default ), 'query args' );
-
 		// Try to match a abstract rule first
 		if ( preg_match( csscrush_regex::$patt->name, $name ) ) {
 
@@ -330,30 +328,27 @@ class csscrush_rule implements IteratorAggregate, Countable {
 				// There are aliases for the current property
 				foreach ( $aliasedProperties[ $prop ] as $prop_alias ) {
 
+					// If an aliased version already exists to not create one.
 					if ( $this->propertyCount( $prop_alias ) ) {
 						continue;
 					}
 
-					// If the aliased property hasn't been set manually, we create it
+					// Create the aliased declaration.
 					$copy = clone $declaration;
-					$copy->family = $copy->property;
 					$copy->property = $prop_alias;
 
-					// Remembering to set the vendor property
+					// Set the aliased declaration vendor property.
 					$copy->vendor = null;
-
-					// Increment the property count
-					$this->addProperty( $prop_alias );
 					if ( preg_match( $regex->vendorPrefix, $prop_alias, $vendor ) ) {
 						$copy->vendor = $vendor[1];
 					}
 					$new_set[] = $copy;
 				}
 			}
-			// Un-aliased property or a property alias that has been manually set
+			// Un-aliased property or a property alias that has been manually set.
 			$new_set[] = $declaration;
 		}
-		// Re-assign
+		// Re-assign.
 		$this->declarations = $new_set;
 	}
 
@@ -368,8 +363,8 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 		$new_set = array();
 
-		// Keep track of the function aliases we apply and to which property 'family'
-		// they belong, so we can avoid un-unecessary duplications
+		// Keep track of the function aliases we apply and to which property
+		// they belong, so we can avoid un-unecessary duplications.
 		$used_fn_aliases = array();
 
 		// Shim in aliased functions
@@ -383,14 +378,15 @@ class csscrush_rule implements IteratorAggregate, Countable {
 				$new_set[] = $declaration;
 				continue;
 			}
-			// Get list of functions used in declaration that are alias-able, if none skip
+
+			// Get list of functions used in declaration that are alias-able, if none skip.
 			$intersect = array_intersect( $declaration->functions, $aliased_functions );
 			if ( empty( $intersect ) ) {
 				$new_set[] = $declaration;
 				continue;
 			}
-			// csscrush::log($intersect);
-			// Loop the aliasable functions
+
+			// Loop the aliasable functions.
 			foreach ( $intersect as $fn_name ) {
 
 				if ( $declaration->vendor ) {
@@ -404,7 +400,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 							'${1}' . $fn_search,
 							$declaration->value
 						);
-						$used_fn_aliases[ $declaration->family ][] = $fn_search;
+						$used_fn_aliases[ $declaration->canonicalProperty ][] = $fn_search;
 					}
 				}
 				else {
@@ -413,8 +409,8 @@ class csscrush_rule implements IteratorAggregate, Countable {
 					foreach ( $function_aliases[ $fn_name ] as $fn_alias ) {
 
 						if (
-							isset( $used_fn_aliases[ $declaration->family ] ) &&
-							in_array( $fn_alias, $used_fn_aliases[ $declaration->family ] )
+							isset( $used_fn_aliases[ $declaration->canonicalProperty ] ) &&
+							in_array( $fn_alias, $used_fn_aliases[ $declaration->canonicalProperty ] )
 						) {
 							// If the function alias has already been applied in a vendor property
 							// for the same declaration property assume all is good
@@ -427,8 +423,6 @@ class csscrush_rule implements IteratorAggregate, Countable {
 							$copy->value
 						);
 						$new_set[] = $copy;
-						// Increment the property count
-						$this->addProperty( $copy->property );
 					}
 				}
 			}
@@ -705,7 +699,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 class csscrush_declaration {
 
 	public $property;
-	public $family;
+	public $canonicalProperty;
 	public $vendor;
 	public $functions;
 	public $value;
@@ -734,15 +728,15 @@ class csscrush_declaration {
 			$prop = substr( $prop, 1 );
 		}
 
-		// Store the property family
-		// Store the vendor id, if one is present
+		// Store the canonical property name.
+		// Store the vendor mark if one is present.
 		if ( preg_match( $regex->vendorPrefix, $prop, $vendor ) ) {
-			$family = $vendor[2];
+			$canonical_property = $vendor[2];
 			$vendor = $vendor[1];
 		}
 		else {
 			$vendor = null;
-			$family = $prop;
+			$canonical_property = $prop;
 		}
 
 		// Check for !important keywords
@@ -779,14 +773,14 @@ class csscrush_declaration {
 			$functions = array();
 		}
 
-		$this->property   = $prop;
-		$this->family     = $family;
-		$this->vendor     = $vendor;
-		$this->functions  = $functions;
-		$this->index      = $contextIndex;
-		$this->value      = $value;
-		$this->skip       = $skip;
-		$this->important  = $important;
+		$this->property          = $prop;
+		$this->canonicalProperty = $canonical_property;
+		$this->vendor            = $vendor;
+		$this->functions         = $functions;
+		$this->index             = $contextIndex;
+		$this->value             = $value;
+		$this->skip              = $skip;
+		$this->important         = $important;
 	}
 
 	public function getFullValue () {

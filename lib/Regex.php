@@ -59,12 +59,7 @@ class csscrush_regex {
 		$patt->argToken     = '!___arg(\d+)___!';
 
 		// Functions
-		$patt->varFunction  = '!(?:
-			([^a-z0-9_-])
-			var\(\s*([a-z0-9_-]+)\s*\)
-			|
-			\$\(\s*([a-z0-9_-]+)\s*\)  # Dollar syntax
-		)!ixS';
+		$patt->varFunction = '!\$\(\s*([a-z0-9_-]+)\s*\)!iS';
 		$patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i';
 
 		// Specific functions
@@ -73,7 +68,8 @@ class csscrush_regex {
 		$patt->thisFunction = csscrush_regex::createFunctionMatchPatt( array( 'this' ) );
 
 		// Misc.
-		$patt->vendorPrefix  = '!^-([a-z]+)-([a-z-]+)!';
+		$patt->vendorPrefix  = '!^-([a-z]+)-([a-z-]+)!iS';
+		$patt->mixinExtend   = '!^(?:(@include|mixin)|(@?extends?))[\s\:]+!iS';
 		$patt->absoluteUrl   = '!^https?://!';
 		$patt->argListSplit  = '!\s*[,\s]\s*!S';
 		$patt->mathBlacklist = '![^\.0-9\*\/\+\-\(\)]!S';

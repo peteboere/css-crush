@@ -2,21 +2,21 @@
 /**
  * Property sorter.
  * Order CSS properties according to a sorting table.
- * 
+ *
  * Examples use the predefined sorting table.
- * 
+ *
  * To define a custom sorting table globally define $CSSCRUSH_PROPERTY_SORT_ORDER.
  * Assign an empty array to create an alphabetical sort:
- * 
+ *
  *     $CSSCRUSH_PROPERTY_SORT_ORDER = array( 'color', ... );
- * 
+ *
  *
  * @before
  *     color: red;
  *     background: #000;
  *     opacity: .5;
  *     display: block;
- * 
+ *
  * @after
  *     display: block;
  *     opacity: .5;
@@ -48,35 +48,77 @@ function csscrush__property_sorter ( csscrush_rule $rule ) {
 function _csscrush__property_sorter_callback ( $a, $b ) {
 
 	$map =& _csscrush__property_sorter_get_table();
-	$a_prop =& $a->property;
-	$b_prop =& $b->property;
+	$a_prop =& $a->canonicalProperty;
+	$b_prop =& $b->canonicalProperty;
 	$a_listed = isset( $map[ $a_prop ] );
 	$b_listed = isset( $map[ $b_prop ] );
 
-	// If both properties are listed do a table comparison.
+	// If the properties are identical we need to flag for an index comparison.
+	$compare_indexes = false;
+
+	// If the 'canonical' properties are identical we need to flag for a vendor comparison.
+	$compare_vendor = false;
+
+	// If both properties are listed.
 	if ( $a_listed && $b_listed ) {
 
 		if ( $a_prop === $b_prop ) {
-			return $a->index > $b->index ? 1 : -1;
+			if ( $a->vendor || $b->vendor ) {
+				$compare_vendor = true;
+			}
+			else {
+				$compare_indexes = true;
+			}
 		}
-		return $map[ $a_prop ] > $map[ $b_prop ] ? 1 : -1;
+		else {
+			// Table comparison.
+			return $map[ $a_prop ] > $map[ $b_prop ] ? 1 : -1;
+		}
 	}
 
-	// Listed properties always come before un-listed.
-	if ( $a_listed && ! $b_listed ) {
+	// If one property is listed it always takes higher priority.
+	elseif ( $a_listed && ! $b_listed ) {
 		return -1;
 	}
-	if ( $b_listed && ! $a_listed ) {
+	elseif ( $b_listed && ! $a_listed ) {
 		return 1;
 	}
 
-	// If propertes are the same compare declaration indexes.
-	if ( $a_prop === $b_prop ) {
+	// If neither property is listed.
+	else {
+
+		if ( $a_prop === $b_prop ) {
+			if ( $a->vendor || $b->vendor ) {
+				$compare_vendor = true;
+			}
+			else {
+				$compare_indexes = true;
+			}
+		}
+		else {
+			// Regular sort.
+			return $a_prop > $b_prop ? 1 : -1;
+		}
+	}
+
+	// Comparing by index.
+	if ( $compare_indexes  ) {
 		return $a->index > $b->index ? 1 : -1;
 	}
 
-	// If neither property is listed do a regular sort.
-	return $a_prop > $b_prop ? 1 : -1;
+	// Comparing by vendor mark.
+	if ( $compare_vendor ) {
+		if ( ! $a->vendor && $b->vendor ) {
+			return 1;
+		}
+		elseif ( $a->vendor && ! $b->vendor ) {
+			return -1;
+		}
+		else {
+			// If both have a vendor mark compare vendor name length.
+			return strlen( $b->vendor ) > strlen( $a->vendor ) ? 1 : -1;
+		}
+	}
 }
 
 
@@ -115,22 +157,8 @@ function &_csscrush__property_sorter_get_table () {
 		}
 	}
 
-	// Add in prefixed properties based on the aliases file
-	$collated_table = array();
-	$property_aliases =& csscrush::$config->aliases[ 'properties' ];
-	$priority = 0;
-
-	foreach ( $table as $property ) {
-		if ( isset( $property_aliases[ $property ] ) ) {
-			foreach ( $property_aliases[ $property ] as &$property_alias ) {
-				$collated_table[ $property_alias ] = ++$priority;
-			}
-		}
-		$collated_table[ $property ] = ++$priority;
-	}
-
-	// Cache the collated table
-	$GLOBALS[ 'CSSCRUSH_PROPERTY_SORT_ORDER_CACHE' ] = $collated_table;
+	// Cache the table (and flip it).
+	$GLOBALS[ 'CSSCRUSH_PROPERTY_SORT_ORDER_CACHE' ] = array_flip( $table );
 
 	return $GLOBALS[ 'CSSCRUSH_PROPERTY_SORT_ORDER_CACHE' ];
 }
