@@ -79,7 +79,7 @@ class csscrush_io {
 				csscrush::log( 'Permissions updated' );
 			}
 		}
-		
+
 		if ( $error ) {
 			csscrush::logError( $error );
 			trigger_error( __METHOD__ . ": $error\n", E_USER_WARNING );
@@ -156,8 +156,7 @@ class csscrush_io {
 
 				$options_unchanged = true;
 				foreach ( $existing_options as $key => &$value ) {
-					if ( $existing_options->{ $key } !== $options->{ $key } ) {
-						// csscrush::log( "$key is different" );
+					if ( $existing_options[ $key ] !== $options->{ $key } ) {
 						$options_unchanged = false;
 						break;
 					}
@@ -241,9 +240,12 @@ class csscrush_io {
 
 		$cache_data = array();
 
-		if ( $cache_data_exists && $cache_data_file_is_writable ) {
-			// Load from file
-			$cache_data = unserialize( file_get_contents( $process->cacheFilePath ) );
+		if (
+			$cache_data_exists &&
+			$cache_data_file_is_writable &&
+			$cache_data = json_decode( file_get_contents( $process->cacheFilePath ), true )
+		) {
+			// Successfully loaded config file.
 		}
 		else {
 			// Config file may exist but not be writable (may not be visible in some ftp situations?)
@@ -255,9 +257,9 @@ class csscrush_io {
 					trigger_error( __METHOD__ . ": $error\n", E_USER_NOTICE );
 				}
 			}
-			// Create
+			// Create config file.
 			csscrush::log( 'Creating cache data file' );
-			file_put_contents( $process->cacheFilePath, serialize( array() ) );
+			file_put_contents( $process->cacheFilePath, json_encode( array() ) );
 		}
 
 		return $cache_data;
@@ -267,12 +269,12 @@ class csscrush_io {
 	public static function saveCacheData () {
 
 		$process = csscrush::$process;
-		
+
 		// Need to store the current path so we can check we're using the right config path later
 		$process->cacheData[ 'originPath' ] = $process->cacheFilePath;
-		
+
 		csscrush::log( 'Saving config' );
-		file_put_contents( $process->cacheFilePath, serialize( $process->cacheData ) );
+		file_put_contents( $process->cacheFilePath, json_encode( $process->cacheData ) );
 	}
 
 }
