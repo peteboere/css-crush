@@ -38,27 +38,36 @@ class csscrush_importer {
 		$mtimes = array();
 		$filenames = array();
 
-		// Determine input; string or file
-		// Extract the comments then strings
+		$stream = '';
+		$prepend_file_contents = '';
+
+		// The prepend file.
+		if ( $prepend_file = csscrush_util::find( 'Prepend-local.css', 'Prepend.css' ) ) {
+			$prepend_file_contents = file_get_contents( $prepend_file );
+			$process->currentFile = 'file://' . $prepend_file;
+			// If there's a parsing error inside the prepend file, wipe $prepend_file_contents.
+			if ( ! csscrush::prepareStream( $prepend_file_contents ) ) {
+				$prepend_file_contents = '';
+			}
+		}
+
+		// Resolve main input: string or file.
 		if ( isset( $hostfile->string ) ) {
-			$stream = $hostfile->string;
+			$stream .= $hostfile->string;
+			$process->currentFile = 'inline-css';
 		}
 		else {
-			$stream = file_get_contents( $hostfile->path );
+			$stream .= file_get_contents( $hostfile->path );
+			$process->currentFile = 'file://' . $hostfile->path;
 		}
 
-		// If there's a prepend file, prepend it
-		if ( $prependFile = csscrush_util::find( 'Prepend-local.css', 'Prepend.css' ) ) {
-			$stream = file_get_contents( $prependFile ) . $stream;
+		// If there's a parsing error go no further.
+		if ( ! csscrush::prepareStream( $stream ) ) {
+			return $stream;
 		}
 
-		// If @charset is set store it
-		if ( preg_match( $regex->charset, $stream, $m ) ) {
-			$stream = preg_replace( $regex->charset, '', $stream );
-			$process->charset = $m[2];
-		}
-
-		csscrush::prepareStream( $stream );
+		// Not forgetting to prepend the prepend file contents.
+		$stream = $prepend_file_contents . $stream;
 
 		// If rewriting URLs as absolute we need to do some extra work
 		if ( $options->rewrite_import_urls === 'absolute' ) {
@@ -143,7 +152,13 @@ class csscrush_importer {
 			// Import file opened successfully so we process it:
 			//   - We need to resolve import statement urls in all imported files since
 			//     they will be brought inline with the hostfile
-			csscrush::prepareStream( $import->content );
+			$process->currentFile = 'file://' . $import->path;
+
+			// If there are unmatched brackets inside the import, strip it.
+			if ( ! csscrush::prepareStream( $import->content ) ) {
+				$stream = $pre_statement . $post_statement;
+				continue;
+			}
 
 			$import->dir = dirname( $import->url );
 

@@ -78,7 +78,7 @@ class csscrush_util {
 	}
 
 
-	public static function stripComments ( $str ) {
+	public static function stripCommentTokens ( $str ) {
 		return preg_replace( csscrush_regex::$patt->commentToken, '', $str );
 	}
 
@@ -332,6 +332,10 @@ class csscrush_string {
 		$raw = csscrush::$storage->tokens->strings[ $this->token ];
 		$this->value = trim( $raw, '\'"' );
 		$this->quoteMark = $raw[0];
+	}
+
+	public function __toString () {
+		return csscrush::$storage->tokens->strings[ $this->token ];
 	}
 
 	public function update ( $newValue ) {

@@ -11,6 +11,8 @@ class csscrush_rule implements IteratorAggregate, Countable {
 	public $isNested;
 	public $label;
 
+	public $tracingStub = null;
+
 	public $properties = array();
 
 	public $selectorList = array();
@@ -74,7 +76,15 @@ class csscrush_rule implements IteratorAggregate, Countable {
 	public function __construct ( $selector_string = null, $declarations_string ) {
 
 		$regex = csscrush_regex::$patt;
+		$options = csscrush::$process->options;
 		$this->label = csscrush::tokenLabelCreate( 'r' );
+
+		// If tracing store the last tracing stub, then strip all.
+		if ( $options->trace && $trace_tokens = csscrush_regex::matchAll( $regex->traceToken, $selector_string ) ) {
+			$trace_token = array_pop( $trace_tokens );
+			$this->tracingStub = $trace_token[0][0];
+			$selector_string = preg_replace( $regex->traceToken, '', $selector_string );
+		}
 
 		// Parse the selectors chunk
 		if ( ! empty( $selector_string ) ) {
@@ -84,7 +94,6 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			// Remove and store comments that sit above the first selector
 			// remove all comments between the other selectors
 			if ( strpos( $selectors_match->list[0], '___c' ) !== false ) {
-
 				preg_match_all( $regex->commentToken, $selectors_match->list[0], $m );
 				$this->comments = $m[0];
 			}
@@ -92,7 +101,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			// Strip any other comments then create selector instances
 			foreach ( $selectors_match->list as $selector ) {
 
-				$selector = trim( csscrush_util::stripComments( $selector ) );
+				$selector = trim( csscrush_util::stripCommentTokens( $selector ) );
 
 				// If the selector matches an absract directive
 				if ( preg_match( $regex->abstract, $selector, $m ) ) {
@@ -123,7 +132,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		foreach ( $declarations_match->list as $declaration ) {
 
 			// Strip comments around the property
-			$declaration = csscrush_util::stripComments( $declaration );
+			$declaration = csscrush_util::stripCommentTokens( $declaration );
 
 			// Accept several different syntaxes for mixin and extends.
 			if ( preg_match( $regex->mixinExtend, $declaration, $m ) ) {

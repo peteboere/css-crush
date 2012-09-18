@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 /**
  *
@@ -78,10 +79,12 @@ $long_opts = array(
 	'boilerplate',     // Output boilerplate
 	'help',            // Display help
 	'version',         // Display version
+	'trace',           // Output sass tracing stubs
 	'vendor-target:',  // Vendor target
 	'variables:',      // Map of variable names in an http query string format
 	'enable:',         // List of plugins to enable
 	'disable:',        // List of plugins to disable
+	'context:',        // Context for resolving URLs
 );
 
 $opts = getopt( implode( $short_opts ), $long_opts );
@@ -92,10 +95,12 @@ $pretty = @( isset( $opts['p'] ) ?: isset( $opts['pretty'] ) );
 $boilerplate = @( isset( $opts['b'] ) ?: isset( $opts['boilerplate'] ) );
 $help_flag = @( isset( $opts['h'] ) ?: isset( $opts['help'] ) );
 $version_flag = @isset( $opts['version'] );
+$trace_flag = @isset( $opts['trace'] );
 $vendor_target = @$opts['vendor-target'];
 $variables = @$opts['variables'];
 $enable_plugins = isset( $opts['enable'] ) ? (array) $opts['enable'] : null;
 $disable_plugins = isset( $opts['disable'] ) ? (array) $opts['disable'] : null;
+$context = isset( $opts['context'] ) ? (array) $opts['context'] : null;
 
 
 ##################################################################
@@ -130,6 +135,12 @@ Options:
 
     --disable:
         List of plugins to disable
+
+    --context:
+        Filepath context for resolving URLs
+
+    --trace:
+        Output debug-info stubs compatible with sass development tools
 
     --variables:
         Map of variable names in an http query string format
@@ -219,6 +230,11 @@ if ( $disable_plugins ) {
 	}
 }
 
+// Tracing
+if ( $trace_flag ) {
+	$process_opts[ 'trace' ] = true;
+}
+
 // Vendor target args
 if ( $vendor_target ) {
 	$process_opts[ 'vendor_target' ] = $vendor_target;
@@ -230,21 +246,23 @@ if ( $variables ) {
 	$process_opts[ 'vars' ] = $in_vars;
 }
 
-$hostfile_context = $input_file ? dirname( realpath( $input_file ) ) : null;
+// Resolve a context for URLs
+if ( ! $context ) {
+	$context = $input_file ? dirname( realpath( $input_file ) ) : null;
+}
 
 // If there is an import context set it to the document root
-if ( $hostfile_context ) {
-
+if ( $context ) {
 	$old_doc_root = csscrush::$config->docRoot;
-	csscrush::$config->docRoot = $hostfile_context;
-	$process_opts[ 'context' ] = $hostfile_context;
+	csscrush::$config->docRoot = $context;
+	$process_opts[ 'context' ] = $context;
 }
 
 // Process the stream
 $output = csscrush::string( $input, $process_opts );
 
 // Reset the document root after processing
-if ( $hostfile_context ) {
+if ( $context ) {
 	csscrush::$config->docRoot = $old_doc_root;
 }
 

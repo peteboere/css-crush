@@ -76,6 +76,9 @@ class csscrush {
 
 			// List of plugins to disable (as Array of names)
 			'disable' => null,
+
+			// Output sass debug-info stubs that work with development tools like FireSass.
+			'trace' => false,
 		);
 
 		// Initialise other classes
@@ -277,9 +280,6 @@ class csscrush {
 			return '';
 		}
 
-		// Load the cache data
-		$process->cacheData = csscrush::io_call( 'getCacheData' );
-
 		// Get the input file object
 		if ( ! ( $process->input = csscrush::io_call( 'getInput', $file ) ) ) {
 			return '';
@@ -289,7 +289,11 @@ class csscrush {
 		// Used in validateCache, and writing to filesystem
 		$process->outputFileName = csscrush::io_call( 'getOutputFileName' );
 
-		if ( $options->cache === true ) {
+		// Caching.
+		if ( $options->cache ) {
+
+			// Load the cache data
+			$process->cacheData = csscrush::io_call( 'getCacheData' );
 
 			// If cache is enabled check for a valid compiled file
 			$valid_compliled_file = csscrush::io_call( 'validateExistingOutput' );
@@ -519,12 +523,117 @@ class csscrush {
 	#####################
 	#  Internal functions
 
+	public static function addTracingStubs ( &$stream ) {
+
+		$selector_patt = '! (^|;|\})+ ([^;{}]+) (\{) !xmS';
+		$token_or_whitespace = '!(\s*___c\d+___\s*|\s+)!';
+
+		$matches = csscrush_regex::matchAll( $selector_patt, $stream );
+
+		// Start from last match and move backwards.
+		while ( $m = array_pop( $matches ) ) {
+
+			// Shortcuts for readability.
+			list( $full_match, $before, $content, $after ) = $m;
+			$full_match_text  = $full_match[0];
+			$full_match_start = $full_match[1];
+
+			// The correct before string.
+			$before = substr( $full_match_text, 0, $content[1] - $full_match_start );
+
+			// Split the matched selector part.
+			$content_parts = preg_split( $token_or_whitespace, $content[0], null,
+				PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY );
+
+			foreach ( $content_parts as $part ) {
+
+				if ( ! preg_match( $token_or_whitespace, $part ) ) {
+
+					// Match to a valid selector.
+					if ( preg_match( '!^([^@]|@(?:page|abstract))!S', $part ) ) {
+
+						// Count line breaks between the start of stream and
+						// the matched selector to get the line number.
+						$selector_index = $full_match_start + strlen( $before );
+						$line_num = 1;
+						$stream_before = "";
+						if ( $selector_index ) {
+							$stream_before = substr( $stream, 0, $selector_index );
+							$line_num = substr_count( $stream_before, "\n" ) + 1;
+						}
+
+						// Get the currently processed file path, and escape it.
+						// if ( $current_file = csscrush::$process->currentFile ) {
+						$current_file = str_replace( ' ', '%20', csscrush::$process->currentFile );
+						$current_file = preg_replace( '![^\w-]!', '\\\\$0', $current_file );
+
+						// Splice in tracing stub.
+						$label = csscrush::tokenLabelCreate( 't' );
+						$stream = $stream_before . "$label" . substr( $stream, $selector_index );
+						self::$storage->tokens->traces[ $label ]
+							= "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line_num}}";
+
+					}
+					else {
+						// Not matched as a valid selector, move on.
+						continue 2;
+					}
+					break;
+				}
+
+				// Append split segment to $before.
+				$before .= $part;
+			}
+		}
+	}
+
 	public static function prepareStream ( &$stream ) {
+
+		$regex = csscrush_regex::$patt;
+		$process = csscrush::$process;
+		$trace = $process->options->trace;
 
 		$stream = preg_replace_callback( csscrush_regex::$patt->commentAndString,
 			array( 'self', 'cb_extractCommentAndString' ), $stream );
 
+		// If @charset is set store it.
+		if ( preg_match( $regex->charset, $stream, $m ) ) {
+			$replace = '';
+			if ( ! $process->charset ) {
+				$replace = str_repeat( "\n", substr_count( $m[0], "\n" ) );
+				$process->charset = new csscrush_string( $m[1] );
+			}
+			$stream = preg_replace( $regex->charset, $replace, $stream );
+		}
+
+		// Catch obvious typing errors.
+		$parse_errors = array();
+		$current_file = $process->currentFile;
+		$balanced_parens = substr_count( $stream, "(" ) === substr_count( $stream, ")" );
+		$balanced_curlies = substr_count( $stream, "{" ) === substr_count( $stream, "}" );
+
+		if ( ! $balanced_parens ) {
+			$parse_errors[] = "Unmatched '(' in $current_file.";
+		}
+		if ( ! $balanced_curlies ) {
+			$parse_errors[] = "Unmatched '{' in $current_file.";
+		}
+		if ( $parse_errors ) {
+			foreach ( $parse_errors as $error_msg ) {
+				csscrush::logError( $error_msg );
+				trigger_error( "$error_msg\n", E_USER_NOTICE );
+			}
+			return false;
+		}
+
+		// Optionally add tracing stubs.
+		if ( $trace ) {
+			self::addTracingStubs( $stream );
+		}
+
 		$stream = csscrush_util::normalizeWhiteSpace( $stream );
+
+		return true;
 	}
 
 	protected static function getBoilerplate () {
@@ -721,6 +830,7 @@ TPL;
 		self::$process->errors = array();
 		self::$process->selectorRelationships = array();
 		self::$process->charset = null;
+		self::$process->currentFile = null;
 		self::$process->options = self::getOptions( $options );
 
 		self::$storage = (object) array();
@@ -731,6 +841,7 @@ TPL;
 			'parens'    => array(),
 			'mixinArgs' => array(),
 			'urls'      => array(),
+			'traces'    => array(),
 		);
 		self::$storage->variables = array();
 		self::$storage->misc = (object) array();
@@ -819,6 +930,12 @@ TPL;
 		// Print it all back
 		self::display( $stream );
 
+		// Release memory
+		self::$storage = null;
+		$process->mixins = null;
+		$process->abstracts = null;
+		$process->selectorRelationships = null;
+
 		// Add in boilerplate
 		if ( $options->boilerplate ) {
 			$stream = self::getBoilerplate() . "\n$stream";
@@ -826,14 +943,8 @@ TPL;
 
 		// Add @charset at top if set
 		if ( $process->charset ) {
-			$stream = "@charset \"{$process->charset}\";\n" . $stream;
+			$stream = "@charset $process->charset;\n" . $stream;
 		}
-
-		// Release memory
-		self::$storage = null;
-		$process->mixins = null;
-		$process->abstracts = null;
-		$process->selectorRelationships = null;
 
 		return $stream;
 	}
@@ -845,7 +956,7 @@ TPL;
 		$regex = csscrush_regex::$patt;
 
 		if ( $minify ) {
-			$stream = csscrush_util::stripComments( $stream );
+			$stream = csscrush_util::stripCommentTokens( $stream );
 		}
 		else {
 			// Formatting
@@ -1021,7 +1132,7 @@ TPL;
 
 	protected static function prefixSelectors ( &$stream ) {
 
-		$matches = csscrush_regex::matchAll( '@in\s+([^\{]+){', $stream, true );
+		$matches = csscrush_regex::matchAll( '@in\s+([^{]+){', $stream, true );
 
 		// Move through the matches in reverse order
 		while ( $match = array_pop( $matches ) ) {
@@ -1145,30 +1256,45 @@ TPL;
 
 	protected static function cb_extractCommentAndString ( $match ) {
 
-		$capture = $match[0];
+		$full_match = $match[0];
 
-		if ( strpos( $capture, '/*' ) === 0 ) {
+		// We return the newlines to maintain line numbering when tracing.
+		$newlines = str_repeat( "\n", substr_count( $full_match, "\n" ) );
+
+		if ( strpos( $full_match, '/*' ) === 0 ) {
 
 			// Strip private comments
 			$private_comment_marker = '$!';
 
 			if (
-				strpos( $capture, '/*' . $private_comment_marker ) === 0 ||
+				strpos( $full_match, '/*' . $private_comment_marker ) === 0 ||
 				! self::$process->options->debug
 			) {
-				return '';
+				return $newlines;
 			}
 
 			$label = self::tokenLabelCreate( 'c' );
-			self::$storage->tokens->comments[ $label ] = $capture;
+
+			// Fix broken comments as they will break any subsquent
+			// imported files that are inlined.
+			if ( ! preg_match( '!\*/$!', $full_match ) ) {
+				$full_match .= '*/';
+			}
+			self::$storage->tokens->comments[ $label ] = $full_match;
 		}
 		else {
 
 			$label = csscrush::tokenLabelCreate( 's' );
-			csscrush::$storage->tokens->strings[ $label ] = $capture;
+
+			// Fix broken strings as they will break any subsquent
+			// imported files that are inlined.
+			if ( $full_match[0] !== $full_match[ strlen( $full_match )-1 ] ) {
+				$full_match .= $full_match[0];
+			}
+			csscrush::$storage->tokens->strings[ $label ] = $full_match;
 		}
 
-		return $label;
+		return $newlines . $label;
 	}
 
 	protected static function cb_extractMixins ( $match ) {
@@ -1190,7 +1316,7 @@ TPL;
 		$block = $match[2];
 
 		// Strip comment markers
-		$block = csscrush_util::stripComments( $block );
+		$block = csscrush_util::stripCommentTokens( $block );
 
 		// Need to split safely as there are semi-colons in data-uris
 		$variables_match = csscrush_util::splitDelimList( $block, ';', true );
@@ -1267,6 +1393,12 @@ TPL;
 
 		$rule =& self::$storage->tokens->rules[ $ruleLabel ];
 
+		// Tracing stubs.
+		$tracing_stub = '';
+		if ( $rule->tracingStub ) {
+			$tracing_stub =& self::$storage->tokens->traces[ $rule->tracingStub ];
+		}
+
 		// If there are no selectors or declarations associated with the rule return empty string
 		if ( empty( $rule->selectorList ) || ! count( $rule ) ) {
 			return '';
@@ -1285,13 +1417,16 @@ TPL;
 		// Return whole rule
 		if ( $minify ) {
 			$block = implode( ';', $block );
-			return "$selectors{{$block}}";
+			return "$tracing_stub$selectors{{$block}}";
 		}
 		else {
-			$block = implode( ";\n\t", $block );
-			// Include pre rule comments
+			// Include pre-rule comments.
 			$comments = implode( "\n", $rule->comments );
-			return "$comments\n$selectors {\n\t$block;\n\t}\n";
+			if ( $tracing_stub ) {
+				$tracing_stub .= "\n";
+			}
+			$block = implode( ";\n\t", $block );
+			return "$comments\n$tracing_stub$selectors {\n\t$block;\n\t}\n";
 		}
 	}
 
@@ -1340,8 +1475,6 @@ TPL;
 				// Create the fragment and store it
 				$fragments[ $fragment_name ] =
 						new csscrush_fragment( $curly_match->inside );
-
-				// csscrush::log( $fragments );
 			}
 		}
 

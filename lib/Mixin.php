@@ -16,7 +16,7 @@ class csscrush_mixin {
 	public function __construct ( $block ) {
 
 		// Strip comment markers
-		$block = csscrush_util::stripComments( $block );
+		$block = csscrush_util::stripCommentTokens( $block );
 
 		// Prepare the arguments object
 		$this->arguments = new csscrush_arglist( $block );

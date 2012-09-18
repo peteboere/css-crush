@@ -39,9 +39,9 @@ class csscrush_regex {
 		$patt->mixin     = '!@mixin\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
 		$patt->abstract  = csscrush_regex::create( '^@abstract\s+(<name>)', 'i' );
 		$patt->commentAndString = '!
-				(\'|")(?:\\1|[^\1])*?\1  # quoted string
+				(\'|")(?:\\\\\1|[^\1])*?(?:\1|$)  # quoted string (to EOF if unmatched)
 				|
-				/\*(?:.*?)\*/            # block comment
+				/\*(?:.*?)(?:\*/|$)               # block comment (to EOF if unmatched)
 			!xsS';
 
 		// As an exception we treat some @-rules like standard rule blocks
@@ -56,6 +56,7 @@ class csscrush_regex {
 		$patt->ruleToken    = '!___r\d+___!';
 		$patt->parenToken   = '!___p\d+___!';
 		$patt->urlToken     = '!___u\d+___!';
+		$patt->traceToken   = '!___t\d+___!';
 		$patt->argToken     = '!___arg(\d+)___!';
 
 		// Functions
@@ -73,7 +74,7 @@ class csscrush_regex {
 		$patt->absoluteUrl   = '!^https?://!';
 		$patt->argListSplit  = '!\s*[,\s]\s*!S';
 		$patt->mathBlacklist = '![^\.0-9\*\/\+\-\(\)]!S';
-		$patt->charset       = '!@charset\s+([\'"])([\w-]+)\1\s*;!i';
+		$patt->charset       = '!@charset\s+(___s\d+___)\s*;!i';
 	}
 
 
@@ -95,8 +96,8 @@ class csscrush_regex {
 			$patt = self::create( $patt, 'i' );
 		}
 
-		preg_match_all( $patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset );
-		return $matches;
+		$count = preg_match_all( $patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset );
+		return $count ? $matches : array();
 	}
 
 

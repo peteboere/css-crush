@@ -119,7 +119,7 @@ class csscrush_io {
 				continue;
 			}
 			// Cached file exists
-			csscrush::log( 'Cached file exists' );
+			csscrush::log( 'Cached file exists.' );
 
 			$existingfile = (object) array();
 			$existingfile->name = $filename;
@@ -132,7 +132,7 @@ class csscrush_io {
 			if ( file_exists( $existingfile->path ) && isset( $process->cacheData[ $process->outputFileName ] ) ) {
 
 				// File exists and has config
-				csscrush::log( 'has config' );
+				csscrush::log( 'Cached file is registered.' );
 
 				foreach ( $process->cacheData[ $existingfile->name ][ 'imports' ] as $import_file ) {
 
@@ -145,7 +145,7 @@ class csscrush_io {
 					}
 					else {
 						// File has been moved, remove old file and skip to compile
-						csscrush::log( 'Import file has been moved, removing existing file' );
+						csscrush::log( 'Import file has been moved, removing existing file.' );
 						unlink( $existingfile->path );
 						return false;
 					}
@@ -167,22 +167,22 @@ class csscrush_io {
 
 					// Files have not been modified and config is the same: return the old file
 					csscrush::log( "Files and options have not been modified, returning existing
-						 file '$existingfile->URL'" );
+						 file '$existingfile->URL'." );
 					return $existingfile->URL . ( $options->versioning !== false  ? "?$existing_datesum" : '' );
 				}
 				else {
 
 					// Remove old file and continue making a new one...
-					! $options_unchanged && csscrush::log( 'Options have been modified' );
-					! $files_unchanged && csscrush::log( 'Files have been modified' );
-					csscrush::log( 'Removing existing file' );
+					! $options_unchanged && csscrush::log( 'Options have been modified.' );
+					! $files_unchanged && csscrush::log( 'Files have been modified.' );
+					csscrush::log( 'Removing existing file.' );
 
 					unlink( $existingfile->path );
 				}
 			}
 			else if ( file_exists( $existingfile->path ) ) {
 				// File exists but has no config
-				csscrush::log( 'File exists but no config, removing existing file' );
+				csscrush::log( 'File exists but no config, removing existing file.' );
 				unlink( $existingfile->path );
 			}
 			return false;
@@ -237,7 +237,6 @@ class csscrush_io {
 
 		$cache_data_exists = file_exists( $process->cacheFilePath );
 		$cache_data_file_is_writable = $cache_data_exists ? is_writable( $process->cacheFilePath ) : false;
-
 		$cache_data = array();
 
 		if (
@@ -246,6 +245,7 @@ class csscrush_io {
 			$cache_data = json_decode( file_get_contents( $process->cacheFilePath ), true )
 		) {
 			// Successfully loaded config file.
+			csscrush::log( 'Cache data loaded.' );
 		}
 		else {
 			// Config file may exist but not be writable (may not be visible in some ftp situations?)
@@ -257,8 +257,10 @@ class csscrush_io {
 					trigger_error( __METHOD__ . ": $error\n", E_USER_NOTICE );
 				}
 			}
-			// Create config file.
-			csscrush::log( 'Creating cache data file' );
+			else {
+				// Create config file.
+				csscrush::log( 'Creating cache data file.' );
+			}
 			file_put_contents( $process->cacheFilePath, json_encode( array() ) );
 		}
 
@@ -273,7 +275,7 @@ class csscrush_io {
 		// Need to store the current path so we can check we're using the right config path later
 		$process->cacheData[ 'originPath' ] = $process->cacheFilePath;
 
-		csscrush::log( 'Saving config' );
+		csscrush::log( 'Saving config.' );
 		file_put_contents( $process->cacheFilePath, json_encode( $process->cacheData ) );
 	}
 
