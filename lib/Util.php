@@ -178,71 +178,41 @@ class csscrush_util {
 	}
 
 
-	public static function matchBrackets ( $str, $brackets = array( '(', ')' ), $search_pos = 0, $capture_text = false ) {
+	public static function matchBrackets ( $str, $brackets = array( '(', ')' ), $offset = 0, $capture_text = false ) {
 
 		list( $opener, $closer ) = $brackets;
-		$openings = array();
-		$closings = array();
-		$brake = 50; // Set a limit in the case of errors
 
 		$match = (object) array();
 
-		$start_index = strpos( $str, $opener, $search_pos );
-		$close_index = strpos( $str, $closer, $search_pos );
-
-		if ( $start_index === false ) {
-
+		if ( strpos( $str, $opener, $offset ) === false ) {
 			return false;
 		}
-		if ( substr_count( $str, $opener ) !== substr_count( $str, $closer ) ) {
 
-		 	$sample = substr( $str, 0, 25 );
+		if ( substr_count( $str, $opener ) !== substr_count( $str, $closer ) ) {
+			$sample = substr( $str, 0, 25 );
 			trigger_error( __METHOD__ . ": Unmatched token near '$sample'.\n", E_USER_WARNING );
 			return false;
 		}
 
-		while (
-			( $start_index !== false || $close_index !== false ) && $brake--
-		) {
-			if ( $start_index !== false && $close_index !== false ) {
-				$search_pos = min( $start_index, $close_index );
-				if ( $start_index < $close_index ) {
-					$openings[] = $start_index;
-				}
-				else {
-					$closings[] = $close_index;
-				}
-			}
-			elseif ( $start_index !== false ) {
-				$search_pos = $start_index;
-				$openings[] = $start_index;
-			}
-			else {
-				$search_pos = $close_index;
-				$closings[] = $close_index;
-			}
-			$search_pos += 1; // Advance
-
-			if ( count( $closings ) === count( $openings ) ) {
-
-				$match->openings = $openings;
-				$match->start = $start = $openings[0];
-				$match->closings = $closings;
-				$match->end = $closings[ count( $closings ) - 1 ] + 1;
-
-				if ( $capture_text ) {
-					// Text capturing is optional to avoid using memory when not necessary
-					$match->inside = substr( $str, $start + 1, $match->end - $start - 2 );
-					$match->after = substr( $str, $match->end );
-				}
-
-				return $match;
-			}
-			$start_index = strpos( $str, $opener, $search_pos );
-			$close_index = strpos( $str, $closer, $search_pos );
+		$patt = csscrush_regex::$patt->balancedParens;
+		if ( $opener === '{' ) {
+			$patt = csscrush_regex::$patt->balancedCurlies;
 		}
 
-		trigger_error( __METHOD__ . ": Reached brake limit of '$brake'. Exiting.\n", E_USER_WARNING );
+		if ( preg_match( $patt, $str, $m, PREG_OFFSET_CAPTURE, $offset ) ) {
+
+			$match->start = $start = $m[0][1];
+			$match->end = $start + strlen( $m[0][0] );
+
+			if ( $capture_text ) {
+				// Text capturing is optional to avoid using memory when not necessary.
+				$match->inside = substr( $str, $start + 1, $match->end - $start - 2 );
+				$match->after = substr( $str, $match->end );
+			}
+			return $match;
+		}
+
+		trigger_error( __METHOD__ . ": Could not match '$opener'. Exiting.\n", E_USER_WARNING );
 		return false;
 	}
 
@@ -250,45 +220,25 @@ class csscrush_util {
 	public static function matchAllBrackets ( $str, $pair = '()', $offset = 0 ) {
 
 		$match_obj = (object) array();
-		$match_obj->string = $str;
-		$match_obj->raw = $str;
 		$match_obj->matches = array();
 
 		list( $opener, $closer ) = str_split( $pair, 1 );
 
-		// Return early if there's no match
-		if ( false === ( $first_offset = strpos( $str, $opener, $offset ) ) ) {
+		// Return early if there's no match.
+		if ( false === strpos( $str, $opener, $offset ) ) {
+			$match_obj->string = $str;
 			return $match_obj;
 		}
 
-		// Step through the string one character at a time storing offsets
-		$paren_score = -1;
-		$inside_paren = false;
-		$match_start = 0;
+		$patt = csscrush_regex::$patt->balancedParens;
+		if ( $opener === '{' ) {
+			$patt = csscrush_regex::$patt->balancedCurlies;
+		}
+
+		// Match balanced bracket pairs.
 		$offsets = array();
-
-		for ( $index = $first_offset; $index < strlen( $str ); $index++ ) {
-			$char = $str[ $index ];
-
-			if ( $opener === $char ) {
-				if ( ! $inside_paren ) {
-					$paren_score = 1;
-					$match_start = $index;
-				}
-				else {
-					$paren_score++;
-				}
-				$inside_paren = true;
-			}
-			elseif ( $closer === $char ) {
-				$paren_score--;
-			}
-
-			if ( 0 === $paren_score ) {
-				$inside_paren = false;
-				$paren_score = -1;
-				$offsets[] = array( $match_start, $index + 1 );
-			}
+		foreach ( csscrush_regex::matchAll( $patt, $str ) as $m ) {
+			$offsets[] = array( $m[0][1], $m[0][1] + strlen( $m[0][0] ) );
 		}
 
 		// Step backwards through the matches
@@ -304,7 +254,7 @@ class csscrush_util {
 			$str = $before . $label . $after;
 			$match_obj->matches[] = $label;
 
-			// Parens will be folded in later
+			// Parens will be folded in later.
 			csscrush::$storage->tokens->parens[ $label ] = $content;
 		}
 

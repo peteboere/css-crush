@@ -50,6 +50,10 @@ class csscrush_regex {
 			\{([^{}]*)\}  # The declaration block
 		!xS';
 
+		// Balanced bracket matching.
+		$patt->balancedParens  = '!\( (?: (?: (?>[^()]+) | (?R) )* ) \)!xS';
+		$patt->balancedCurlies = '!\{ (?: (?: (?>[^{}]+) | (?R) )* ) \}!xS';
+
 		// Tokens
 		$patt->commentToken = '!___c\d+___!';
 		$patt->stringToken  = '!___s\d+___!';

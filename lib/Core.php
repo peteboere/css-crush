@@ -618,10 +618,11 @@ class csscrush {
 		if ( ! $balanced_curlies ) {
 			$parse_errors[] = "Unmatched '{' in $current_file.";
 		}
+
 		if ( $parse_errors ) {
 			foreach ( $parse_errors as $error_msg ) {
 				csscrush::logError( $error_msg );
-				trigger_error( "$error_msg\n", E_USER_NOTICE );
+				trigger_error( "$error_msg\n", E_USER_WARNING );
 			}
 			return false;
 		}
@@ -871,6 +872,9 @@ TPL;
 		}
 
 		// Remove option disabled plugins from the list, and disable them.
+		if ( $options->disable === 'all' ) {
+			$options->disable = array_keys( $config->plugins );
+		}
 		if ( is_array( $options->disable ) ) {
 			foreach ( $options->disable as $plugin_name ) {
 				csscrush_plugin::disable( $plugin_name );
@@ -930,12 +934,6 @@ TPL;
 		// Print it all back
 		self::display( $stream );
 
-		// Release memory
-		self::$storage = null;
-		$process->mixins = null;
-		$process->abstracts = null;
-		$process->selectorRelationships = null;
-
 		// Add in boilerplate
 		if ( $options->boilerplate ) {
 			$stream = self::getBoilerplate() . "\n$stream";
@@ -945,6 +943,12 @@ TPL;
 		if ( $process->charset ) {
 			$stream = "@charset $process->charset;\n" . $stream;
 		}
+
+		// Release memory
+		self::$storage = null;
+		$process->mixins = null;
+		$process->abstracts = null;
+		$process->selectorRelationships = null;
 
 		return $stream;
 	}
@@ -1148,7 +1152,7 @@ TPL;
 			$arguments = $arguments->list;
 
 			$curly_match = csscrush_util::matchBrackets(
-								$stream, $brackets = array( '{', '}' ), $match_start_pos, true );
+								$stream, array( '{', '}' ), $match_start_pos, true );
 
 			if ( ! $curly_match || empty( $raw_argument ) ) {
 				// Couldn't match the block

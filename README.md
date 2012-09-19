@@ -1,5 +1,5 @@
 CSS Crush
-=====
+===================================
 
 CSS Crush is an extensible PHP based CSS preprocessor that aims to alleviate many of the hacks and workarounds necessary in modern CSS development.
 
