@@ -263,7 +263,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		$default = isset( $args[0] ) ? $args[0] : null;
 
 		// Try to match a abstract rule first
-		if ( preg_match( csscrush_regex::$patt->name, $name ) ) {
+		if ( preg_match( csscrush_regex::$patt->ident, $name ) ) {
 
 			// Search order: abstracts, mixins, rules
 			if ( isset( $abstracts[ $name ]->data[ $property ] ) ) {
@@ -882,7 +882,7 @@ class csscrush_extendArg {
 
 		$this->name = $name;
 
-		if ( ! preg_match( csscrush_regex::$patt->name, $this->name ) ) {
+		if ( ! preg_match( csscrush_regex::$patt->ident, $this->name ) ) {
 
 			// Not a regular name: Some kind of selector so normalize it for later comparison
 			$this->name = csscrush_selector::makeReadableSelector( $this->name );

@@ -17,13 +17,13 @@ class csscrush_regex {
 		self::$patt = $patt = (object) array();
 		self::$class = $class = (object) array();
 
-		// Character classes
-		$class->name = '[a-zA-Z0-9_-]+';
-		$class->notName = '[^a-zA-Z0-9_-]+';
+		// Character classes.
+		$class->ident = '[a-zA-Z0-9_-]+';
+		$class->notIdent = '[^a-zA-Z0-9_-]+';
 
-		// Patterns
-		$patt->name = '!^' . $class->name . '$!';
-		$patt->notName = '!^' . $class->notName . '$!';
+		// Patterns.
+		$patt->ident = '!^' . $class->ident . '$!';
+		$patt->notIdent = '!^' . $class->notIdent . '$!';
 
 		$patt->import = '!
 			@import\s+             # import at-rule
@@ -37,7 +37,7 @@ class csscrush_regex {
 
 		$patt->variables = '!@(?:variables|define)\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
 		$patt->mixin     = '!@mixin\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
-		$patt->abstract  = csscrush_regex::create( '^@abstract\s+(<name>)', 'i' );
+		$patt->abstract  = csscrush_regex::create( '^@abstract\s+(<ident>)', 'i' );
 		$patt->commentAndString = '!
 				(\'|")(?:\\\\\1|[^\1])*?(?:\1|$)  # quoted string (to EOF if unmatched)
 				|
@@ -86,8 +86,8 @@ class csscrush_regex {
 
 		// Sugar
 		$pattern = str_replace(
-						array( '<name>', '<!name>' ),
-						array( self::$class->name, self::$class->notName ),
+						array( '<ident>', '<!ident>' ),
+						array( self::$class->ident, self::$class->notIdent ),
 						$pattern_template );
 		return '!' . $pattern . "!$flags";
 	}

@@ -1,6 +1,7 @@
 1.7
 ---
 Added trace option to output SASS compatible debug-info stubs for use with tools like FireSass.
+Added @ifdefine directive for dynamically including/excluding parts of a CSS file based on the existence of variables.
 Updated plugin API.
 Added options for enabling and disabling plugins at runtime.
 Added property sorter plugin.

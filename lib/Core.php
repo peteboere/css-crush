@@ -563,7 +563,6 @@ class csscrush {
 						}
 
 						// Get the currently processed file path, and escape it.
-						// if ( $current_file = csscrush::$process->currentFile ) {
 						$current_file = str_replace( ' ', '%20', csscrush::$process->currentFile );
 						$current_file = preg_replace( '![^\w-]!', '\\\\$0', $current_file );
 
@@ -854,7 +853,7 @@ TPL;
 		$process = self::$process;
 		$options = $process->options;
 
-		// Load in aliases and macros
+		// Load in aliases and plugins.
 		if ( ! self::$assetsLoaded ) {
 			self::loadAssets();
 			self::$assetsLoaded = true;
@@ -887,28 +886,31 @@ TPL;
 			csscrush_plugin::enable( $plugin_name );
 		}
 
-		// Set aliases
+		// Set aliases.
 		self::$config->aliases = self::$config->aliasesRaw;
 
-		// Prune if a vendor target is set
+		// Prune if a vendor target is set.
 		self::pruneAliases();
 
-		// Parse variables
+		// Parse variables.
 		self::extractVariables( $stream );
 
-		// Calculate the variable stack
+		// Calculate the variable stack.
 		self::calculateVariables();
 
-		// Place the variables
+		// Apply variables.
 		self::placeVariables( $stream );
 
-		// Pull out the mixin declarations
+		// Resolve @ifdefine blocks.
+		self::resolveIfDefines( $stream );
+
+		// Pull out @mixin definitions.
 		self::extractMixins( $stream );
 
-		// Process fragments
+		// Pull out @fragment blocks, and invoke.
 		self::resolveFragments( $stream );
 
-		// Adjust the stream so we can extract the rules cleanly
+		// Adjust the stream so we can extract the rules cleanly.
 		$map = array(
 			'@' => "\n@",
 			'}' => "}\n",
@@ -917,34 +919,32 @@ TPL;
 		);
 		$stream = "\n" . str_replace( array_keys( $map ), array_values( $map ), $stream );
 
-		// Rules
+		// Parse rules.
 		self::extractRules( $stream );
 
-		// Process any @-in blocks
+		// Process @in blocks.
 		self::prefixSelectors( $stream );
 
-		// Main processing on the rule objects
+		// Main processing on the rule objects.
 		self::processRules();
 
-		// csscrush::log( array_keys( self::$process->selectorRelationships ) );
-
-		// Alias any @-rules
+		// Alias any @-rules.
 		self::aliasAtRules( $stream );
 
-		// Print it all back
+		// Print it all back.
 		self::display( $stream );
 
-		// Add in boilerplate
+		// Add in boilerplate.
 		if ( $options->boilerplate ) {
 			$stream = self::getBoilerplate() . "\n$stream";
 		}
 
-		// Add @charset at top if set
+		// Add @charset at top if set.
 		if ( $process->charset ) {
 			$stream = "@charset $process->charset;\n" . $stream;
 		}
 
-		// Release memory
+		// Release memory.
 		self::$storage = null;
 		$process->mixins = null;
 		$process->abstracts = null;
@@ -1452,7 +1452,7 @@ TPL;
 
 	public static function resolveFragments ( &$stream ) {
 
-		$matches = csscrush_regex::matchAll( '@fragment\s+(<name>)\s*{', $stream, true );
+		$matches = csscrush_regex::matchAll( '@fragment\s+(<ident>)\s*{', $stream, true );
 		$fragments = array();
 
 		// Move through the matches last to first
@@ -1483,7 +1483,7 @@ TPL;
 		}
 
 		// Now find all the fragment calls
-		$matches = csscrush_regex::matchAll( '@fragment\s+(<name>)\s*(\(|;)', $stream, true );
+		$matches = csscrush_regex::matchAll( '@fragment\s+(<ident>)\s*(\(|;)', $stream, true );
 
 		// Move through the matches last to first
 		while ( $match = array_pop( $matches ) ) {
@@ -1500,7 +1500,6 @@ TPL;
 
 			// Fragment may be called without any argument list
 			$with_arguments = $match[2][0] === '(';
-
 
 			if ( $with_arguments ) {
 				$paren_match = csscrush_util::matchBrackets(
@@ -1523,7 +1522,6 @@ TPL;
 				if ( $with_arguments ) {
 					// Get the argument array to pass to the fragment
 					$args = csscrush_util::splitDelimList( $paren_match->inside, ',', true, true );
-					// $args = array_map( 'trim', $args->list );
 					$args = $args->list;
 				}
 
@@ -1535,6 +1533,42 @@ TPL;
 			}
 		}
 	}
+
+	public static function resolveIfDefines ( &$stream ) {
+
+		$matches = csscrush_regex::matchAll( '@ifdefine\s+(not\s+)?(<ident>)\s*\{', $stream, true );
+
+		// Move through the matches last to first.
+		while ( $match = array_pop( $matches ) ) {
+
+			$full_match = $match[0][0];
+			$full_match_start = $match[0][1];
+			$before = substr( $stream, 0, $full_match_start );
+
+			$negate = $match[1][1] != -1;
+			$name = $match[2][0];
+			$name_defined = isset( self::$storage->variables[ $name ] );
+
+			$curly_match = csscrush_util::matchBrackets(
+								$stream, $brackets = array( '{', '}' ), $full_match_start, true );
+
+			if ( ! $curly_match ) {
+				// Couldn't match the block.
+				$stream = $before . substr( $stream, $full_match_start + strlen( $full_match ) );
+				continue;
+			}
+
+			if ( ! $negate && $name_defined || $negate && ! $name_defined ) {
+				// Test resolved true so include the innards.
+				$stream = $before . $curly_match->inside . $curly_match->after;
+			}
+			else {
+				// Recontruct the stream without the innards.
+				$stream = $before . $curly_match->after;
+			}
+		}
+	}
+
 }
 
 
