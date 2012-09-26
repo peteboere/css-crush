@@ -189,7 +189,7 @@ class csscrush_util {
 		}
 
 		if ( substr_count( $str, $opener ) !== substr_count( $str, $closer ) ) {
-			$sample = substr( $str, 0, 25 );
+			$sample = substr( $str, $offset, 25 );
 			trigger_error( __METHOD__ . ": Unmatched token near '$sample'.\n", E_USER_WARNING );
 			return false;
 		}

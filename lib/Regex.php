@@ -1,7 +1,7 @@
 <?php
 /**
  *
- * Regex management
+ * Regex management.
  *
  */
 
@@ -9,21 +9,19 @@ class csscrush_regex {
 
 	public static $patt;
 
-	// Character classes
-	public static $class;
+	// Character classes.
+	public static $classes;
 
 	public static function init () {
 
 		self::$patt = $patt = (object) array();
-		self::$class = $class = (object) array();
+		self::$classes = $classes = (object) array();
 
 		// Character classes.
-		$class->ident = '[a-zA-Z0-9_-]+';
-		$class->notIdent = '[^a-zA-Z0-9_-]+';
+		$classes->ident = '[a-zA-Z0-9_-]+';
 
 		// Patterns.
-		$patt->ident = '!^' . $class->ident . '$!';
-		$patt->notIdent = '!^' . $class->notIdent . '$!';
+		$patt->ident = '!^' . $classes->ident . '$!';
 
 		$patt->import = '!
 			@import\s+             # import at-rule
@@ -33,28 +31,37 @@ class csscrush_regex {
 			([_s\d]+)              # string token
 			)
 			\s*([^;]*);            # media argument
-		!xS';
+		!xiS';
 
 		$patt->variables = '!@(?:variables|define)\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
 		$patt->mixin     = '!@mixin\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
 		$patt->abstract  = csscrush_regex::create( '^@abstract\s+(<ident>)', 'i' );
-		$patt->commentAndString = '!
-				(\'|")(?:\\\\\1|[^\1])*?(?:\1|$)  # quoted string (to EOF if unmatched)
-				|
-				/\*(?:.*?)(?:\*/|$)               # block comment (to EOF if unmatched)
-			!xsS';
 
-		// As an exception we treat some @-rules like standard rule blocks
-		$patt->rule       = '!
-			(\n(?:[^@{}]+|@(?:font-face|page|abstract)[^{]*))  # The selector
-			\{([^{}]*)\}  # The declaration block
-		!xS';
+		$patt->commentAndString = '!
+			# Quoted string (to EOF if unmatched).
+			(\'|")(?:\\\\\1|[^\1])*?(?:\1|$)
+			|
+			# Block comment (to EOF if unmatched).
+			/\*(?:.*?)(?:\*/|$)
+		!xsS';
+
+		// As an exception we treat some @-rules like standard rule blocks.
+		$patt->rule = '~
+			# The selector.
+			\n(
+				[^@{}]+
+				|
+				(?: [^@{}]+ )? @(?: font-face|page|abstract ) (?!-)\b [^{]*
+			)
+			# The declaration block.
+			\{ ( [^{}]* ) \}
+		~xiS';
 
 		// Balanced bracket matching.
 		$patt->balancedParens  = '!\( (?: (?: (?>[^()]+) | (?R) )* ) \)!xS';
 		$patt->balancedCurlies = '!\{ (?: (?: (?>[^{}]+) | (?R) )* ) \}!xS';
 
-		// Tokens
+		// Tokens.
 		$patt->commentToken = '!___c\d+___!';
 		$patt->stringToken  = '!___s\d+___!';
 		$patt->ruleToken    = '!___r\d+___!';
@@ -63,11 +70,11 @@ class csscrush_regex {
 		$patt->traceToken   = '!___t\d+___!';
 		$patt->argToken     = '!___arg(\d+)___!';
 
-		// Functions
+		// Functions.
 		$patt->varFunction = '!\$\(\s*([a-z0-9_-]+)\s*\)!iS';
 		$patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i';
 
-		// Specific functions
+		// Specific functions.
 		$patt->argFunction = csscrush_regex::createFunctionMatchPatt( array( 'arg' ) );
 		$patt->queryFunction = csscrush_regex::createFunctionMatchPatt( array( 'query' ) );
 		$patt->thisFunction = csscrush_regex::createFunctionMatchPatt( array( 'this' ) );
@@ -84,10 +91,10 @@ class csscrush_regex {
 
 	public static function create ( $pattern_template, $flags = '' ) {
 
-		// Sugar
+		// Sugar.
 		$pattern = str_replace(
-						array( '<ident>', '<!ident>' ),
-						array( self::$class->ident, self::$class->notIdent ),
+						array( '<ident>' ),
+						array( self::$classes->ident ),
 						$pattern_template );
 		return '!' . $pattern . "!$flags";
 	}
@@ -96,7 +103,7 @@ class csscrush_regex {
 	public static function matchAll ( $patt, $subject, $preprocess_patt = false, $offset = 0 ) {
 
 		if ( $preprocess_patt ) {
-			// Assume case-insensitive
+			// Assume case-insensitive.
 			$patt = self::create( $patt, 'i' );
 		}
 
