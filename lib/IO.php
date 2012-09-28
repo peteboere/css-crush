@@ -151,7 +151,8 @@ class csscrush_io {
 					}
 				}
 
-				$existing_options = $process->cacheData[ $existingfile->name ][ 'options' ];
+				// Cast because the cached options may be a stdClass if an IO adapter has been used.
+				$existing_options = (array) $process->cacheData[ $existingfile->name ][ 'options' ];
 				$existing_datesum = $process->cacheData[ $existingfile->name ][ 'datem_sum' ];
 
 				$options_unchanged = true;
