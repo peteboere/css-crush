@@ -80,7 +80,10 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		$this->label = csscrush::tokenLabelCreate( 'r' );
 
 		// If tracing store the last tracing stub, then strip all.
-		if ( $options->trace && $trace_tokens = csscrush_regex::matchAll( $regex->traceToken, $selector_string ) ) {
+		if (
+			$options->trace &&
+			$trace_tokens = csscrush_regex::matchAll( $regex->traceToken, $selector_string )
+		) {
 			$trace_token = array_pop( $trace_tokens );
 			$this->tracingStub = $trace_token[0][0];
 			$selector_string = preg_replace( $regex->traceToken, '', $selector_string );
@@ -750,7 +753,7 @@ class csscrush_declaration {
 
 		// Check for !important keywords
 		if ( ( $important = strpos( $value, '!important' ) ) !== false ) {
-			$value = substr( $value, 0, $important );
+			$value = rtrim( substr( $value, 0, $important ) );
 			$important = true;
 		}
 
@@ -820,7 +823,7 @@ class csscrush_selector {
 		}
 
 		// Create space around combinators, then normalize whitespace
-		$selector_string = preg_replace( '!([>+~])!', ' $1 ', $selector_string );
+		$selector_string = preg_replace( '#([>+]|~(?!=))#', ' $1 ', $selector_string );
 		$selector_string = csscrush_util::normalizeWhiteSpace( $selector_string );
 
 		// Quick test for string tokens

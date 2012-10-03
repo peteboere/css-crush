@@ -931,8 +931,8 @@ TPL;
 		// Alias any @-rules.
 		self::aliasAtRules( $stream );
 
-		// Print it all back.
-		self::display( $stream );
+		// Print rules, optionally minify.
+		self::collate( $stream );
 
 		// Add in boilerplate.
 		if ( $options->boilerplate ) {
@@ -953,58 +953,71 @@ TPL;
 		return $stream;
 	}
 
-	protected static function display ( &$stream ) {
+	protected static function collate ( &$stream ) {
 
 		$options = self::$process->options;
 		$minify = ! $options->debug;
 		$regex = csscrush_regex::$patt;
 
 		if ( $minify ) {
-			$stream = csscrush_util::stripCommentTokens( $stream );
+
+			// Strip whitespace around colons used in @-rule arguments.
+			$stream = preg_replace( '! ?\: ?!', ':', $stream );
+			// Strip newlines added during parsing.
+			$stream = preg_replace( '!\n+!', '', $stream );
 		}
 		else {
-			// Formatting
+
+			// Pretty printing.
 			$stream = preg_replace( '!([{}])!', "$1\n", $stream );
+			$stream = preg_replace( '!([^\s])\{!', "$1 {", $stream );
 			$stream = preg_replace( '!([@])!', "\n$1", $stream );
 
-			// Newlines after some tokens
+			// Newlines after some tokens.
 			$stream = preg_replace( '!(___[rc][0-9]+___)!', "$1\n", $stream );
 
-			// Kill double spaces
+			// Kill double spaces.
 			$stream = ltrim( preg_replace( '!\n+!', "\n", $stream ) );
 		}
 
-		// Kill leading space
+		// Kill leading space.
 		$stream = preg_replace( '!\n\s+!', "\n", $stream );
 
-		// Print out rules
+		// Print out rules.
 		$stream = preg_replace_callback( $regex->ruleToken, array( 'self', 'cb_printRule' ), $stream );
 
-		// Insert parens
+		// Insert parens.
 		$stream = csscrush_util::strReplaceHash( $stream, self::$storage->tokens->parens );
 
+		// Compress hex-codes, collapse TRBL lists etc.
+		$stream = self::decruft( $stream );
+
 		if ( $minify ) {
-			$stream = self::minify( $stream );
+			// Trim whitespace around selector combinators.
+			$stream = preg_replace( '! ?([>~+]) ?!S', '$1', $stream );
 		}
 		else {
-			// Insert comments
+			// Add space after commas.
+			$stream = str_replace( ',', ', ', $stream );
+
+			// Insert comments.
 			$comment_labels = array_keys( self::$storage->tokens->comments );
 			$comment_values = array_values( self::$storage->tokens->comments );
 			foreach ( $comment_values as &$comment ) {
 				$comment = "$comment\n";
 			}
 			$stream = str_replace( $comment_labels, $comment_values, $stream );
-			// Normalize line breaks
+			// Normalize line breaks.
 			$stream = preg_replace( '!\n{3,}!', "\n\n", $stream );
 		}
 
-		// Insert URLs
+		// Insert URLs.
 		if ( self::$storage->tokens->urls ) {
 
-			// Clean-up rewritten URLs
+			// Clean-up rewritten URLs.
 			foreach ( csscrush::$storage->tokens->urls as $token => $url ) {
 
-				// Optionally set the URLs to absolute
+				// Optionally set the URLs to absolute.
 				if (
 					$options->rewrite_import_urls === 'absolute' &&
 					strpos( $url, 'data:' ) !== 0
@@ -1016,23 +1029,34 @@ TPL;
 			$stream = csscrush_util::strReplaceHash( $stream, self::$storage->tokens->urls );
 		}
 
-		// Insert string literals
+		// Insert string literals.
 		$stream = csscrush_util::strReplaceHash( $stream, self::$storage->tokens->strings );
-
 	}
 
-	protected static function minify ( $str ) {
+	protected static function decruft ( $str ) {
+
 		$replacements = array(
-			'!\n+| (\{)!'                         => '$1',    // Trim whitespace
-			'!(^|[: \(,])0(\.\d+)!'               => '$1$2',  // Strip leading zeros on floats
-			'!(^|[: \(,])\.?0(?:e[mx]|c[hm]|rem|v[hwm]|in|p[tcx])!i'
-			                                      => '${1}0', // Strip unnecessary units on zero values for length types
-			'!(^|\:) *(0 0 0|0 0 0 0) *(;|\})!'   => '${1}0${3}', // Collapse zero lists
-			'!(padding|margin) ?\: *0 0 *(;|\})!' => '${1}:0${2}', // Collapse zero lists continued
-			'!\s*([>~+=])\s*!'                    => '$1',     // Clean-up around combinators
-			'!\#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3!i'
-			                                      => '#$1$2$3', // Compress hex codes
+
+			// Strip leading zeros on floats.
+			'!([: \(,])(-?)0(\.\d+)!S' => '$1$2$3',
+
+			// Strip unnecessary units on zero values for length types.
+			'!([: \(,])\.?0(?:e[mx]|c[hm]|rem|v[hwm]|in|p[tcx])!iS' => '${1}0',
+
+			// Collapse zero lists.
+			'!(\: *)(?:0 0 0|0 0 0 0) *([;}])!S' => '${1}0$2',
+
+			// Collapse zero lists 2nd pass.
+			'!(padding|margin|border-radius) ?(\: *)0 0 *([;}])!iS' => '${1}${2}0$3',
+
+			// Dropping redundant trailing zeros on TRBL lists.
+			'!(\: *)(-?(?:\d+)?\.?\d+[a-z]{1,4}) 0 0 0 *([;}])!iS' => '$1$2 0 0$3',
+			'!(\: *)0 0 (-?(?:\d+)?\.?\d+[a-z]{1,4}) 0 *([;}])!iS' => '${1}0 0 $2$3',
+
+			// Compress hex codes.
+			'!\#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3!iS' => '#$1$2$3',
 		);
+
 		return preg_replace(
 			array_keys( $replacements ), array_values( $replacements ), $str );
 	}
@@ -1270,6 +1294,7 @@ TPL;
 			// Strip private comments
 			$private_comment_marker = '$!';
 
+			// Bail without storing comment if in debug mode or a private comment.
 			if (
 				strpos( $full_match, '/*' . $private_comment_marker ) === 0 ||
 				! self::$process->options->debug
@@ -1288,14 +1313,13 @@ TPL;
 		}
 		else {
 
-			$label = csscrush::tokenLabelCreate( 's' );
-
 			// Fix broken strings as they will break any subsquent
 			// imported files that are inlined.
 			if ( $full_match[0] !== $full_match[ strlen( $full_match )-1 ] ) {
 				$full_match .= $full_match[0];
 			}
-			csscrush::$storage->tokens->strings[ $label ] = $full_match;
+
+			$label = csscrush_string::add( $full_match );
 		}
 
 		return $newlines . $label;
@@ -1409,7 +1433,7 @@ TPL;
 		}
 
 		// Build the selector; uses selector __toString method
-		$selectors = implode( ",$whitespace", $rule->selectorList );
+		$selectors = implode( ',', $rule->selectorList );
 
 		// Build the block
 		$block = array();

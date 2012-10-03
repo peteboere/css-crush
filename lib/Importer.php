@@ -275,8 +275,8 @@ class csscrush_importer {
 			else {
 
 				//  @import url( some/path/styles.css );
-				$string_label = csscrush::tokenLabelCreate( 's' );
-				csscrush::$storage->tokens->strings[ $string_label ] = '"' . $the_url . '"';
+				$the_url = '"' . $the_url . '"';
+				$string_label = csscrush_string::add( $the_url );
 				$import_statement = str_replace( $full_match, $the_space . $string_label, $import_statement );
 			}
 		}

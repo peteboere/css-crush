@@ -54,7 +54,7 @@ class csscrush_regex {
 				(?: [^@{}]+ )? @(?: font-face|page|abstract ) (?!-)\b [^{]*
 			)
 			# The declaration block.
-			\{ ( [^{}]* ) \}
+			\{ ([^{}]*) \}
 		~xiS';
 
 		// Balanced bracket matching.
@@ -72,7 +72,7 @@ class csscrush_regex {
 
 		// Functions.
 		$patt->varFunction = '!\$\(\s*([a-z0-9_-]+)\s*\)!iS';
-		$patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!i';
+		$patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!iS';
 
 		// Specific functions.
 		$patt->argFunction = csscrush_regex::createFunctionMatchPatt( array( 'arg' ) );
@@ -85,7 +85,7 @@ class csscrush_regex {
 		$patt->absoluteUrl   = '!^https?://!';
 		$patt->argListSplit  = '!\s*[,\s]\s*!S';
 		$patt->mathBlacklist = '![^\.0-9\*\/\+\-\(\)]!S';
-		$patt->charset       = '!@charset\s+(___s\d+___)\s*;!i';
+		$patt->charset       = '!@charset\s+(___s\d+___)\s*;!iS';
 	}
 
 

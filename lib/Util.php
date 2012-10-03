@@ -86,9 +86,12 @@ class csscrush_util {
 	public static function normalizeWhiteSpace ( $str ) {
 
 		$replacements = array(
-			'!\s+!'                             => ' ',
-			'!(\[)\s*|\s*(\])|(\()\s*|\s*(\))!' => '${1}${2}${3}${4}',  // Trim internal bracket WS
-			'!\s*(;|,|\/|\!)\s*!'               => '$1',     // Trim WS around delimiters and special characters
+			// Convert all whitespace sequences to a single space.
+			'!\s+!S' => ' ',
+			// Trim bracket whitespace where it's safe to do it.
+			'!([\[(]) | ([\])])| ?([{}]) ?!S' => '${1}${2}${3}',
+			// Trim whitespace around delimiters and special characters.
+			'! ?([;/,]) ?!S' => '$1',
 		);
 		return preg_replace(
 			array_keys( $replacements ), array_values( $replacements ), $str );
@@ -241,7 +244,7 @@ class csscrush_util {
 			$offsets[] = array( $m[0][1], $m[0][1] + strlen( $m[0][0] ) );
 		}
 
-		// Step backwards through the matches
+		// Step backwards through the matches.
 		while ( $offset = array_pop( $offsets ) ) {
 
 			list( $start, $finish ) = $offset;
@@ -275,6 +278,12 @@ class csscrush_string {
 	public $token;
 	public $value;
 	public $quoteMark;
+
+	public static function add ( $full_match ) {
+		$label = csscrush::tokenLabelCreate( 's' );
+		csscrush::$storage->tokens->strings[ $label ] = $full_match;
+		return $label;
+	}
 
 	public function __construct ( $token ) {
 

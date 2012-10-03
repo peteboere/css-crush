@@ -1,3 +1,8 @@
+1.7.1
+-----
+Improved minification.
+
+
 1.7
 ---
 Added trace option to output SASS compatible debug-info stubs for use with tools like FireSass.

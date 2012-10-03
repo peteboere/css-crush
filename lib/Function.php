@@ -353,9 +353,9 @@ class csscrush_function {
 
 		$mime_type = $allowed_file_extensions[ $file_ext ];
 		$base64 = base64_encode( file_get_contents( $file ) );
-		$data_uri = "data:{$mime_type};base64,$base64";
+		$string_label = csscrush_string::add( "\"data:$mime_type;base64,$base64\"" );
 
-		return "url(\"$data_uri\")";
+		return "url($string_label)";
 	}
 
 	public static function css_fn__hsla_adjust ( $input ) {
