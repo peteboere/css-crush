@@ -23,15 +23,7 @@ class csscrush_regex {
 		// Patterns.
 		$patt->ident = '!^' . $classes->ident . '$!';
 
-		$patt->import = '!
-			@import\s+             # import at-rule
-			(?:
-			url\(\s*([^\)]+)\s*\)  # url function
-			|                      # or
-			([_s\d]+)              # string token
-			)
-			\s*([^;]*);            # media argument
-		!xiS';
+		$patt->import = '!@import (\?u\d+\?) ?([^;]*);!iS';
 
 		$patt->variables = '!@(?:variables|define)\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
 		$patt->mixin     = '!@mixin\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
@@ -58,21 +50,21 @@ class csscrush_regex {
 		~xiS';
 
 		// Balanced bracket matching.
-		$patt->balancedParens  = '!\( (?: (?: (?>[^()]+) | (?R) )* ) \)!xS';
-		$patt->balancedCurlies = '!\{ (?: (?: (?>[^{}]+) | (?R) )* ) \}!xS';
+		$patt->balancedParens  = '!\(\s* ( (?: (?>[^()]+) | (?R) )* ) \s*\)!xS';
+		$patt->balancedCurlies = '!\{\s* ( (?: (?>[^{}]+) | (?R) )* ) \s*\}!xS';
 
 		// Tokens.
-		$patt->commentToken = '!___c\d+___!';
-		$patt->stringToken  = '!___s\d+___!';
-		$patt->ruleToken    = '!___r\d+___!';
-		$patt->parenToken   = '!___p\d+___!';
-		$patt->urlToken     = '!___u\d+___!';
-		$patt->traceToken   = '!___t\d+___!';
-		$patt->argToken     = '!___arg(\d+)___!';
+		$patt->cToken = '!\?c\d+\?!'; // Comments
+		$patt->sToken = '!\?s\d+\?!'; // Strings
+		$patt->rToken = '!\?r\d+\?!'; // Rules
+		$patt->pToken = '!\?p\d+\?!'; // Parens
+		$patt->uToken = '!\?u\d+\?!'; // URLs
+		$patt->tToken = '!\?t\d+\?!'; // Traces
+		$patt->aToken = '!\?arg(\d+)\?!'; // Args
 
 		// Functions.
 		$patt->varFunction = '!\$\(\s*([a-z0-9_-]+)\s*\)!iS';
-		$patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(___p\d+___)!iS';
+		$patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(\?p\d+\?)!iS';
 
 		// Specific functions.
 		$patt->argFunction = csscrush_regex::createFunctionMatchPatt( array( 'arg' ) );
@@ -85,7 +77,7 @@ class csscrush_regex {
 		$patt->absoluteUrl   = '!^https?://!';
 		$patt->argListSplit  = '!\s*[,\s]\s*!S';
 		$patt->mathBlacklist = '![^\.0-9\*\/\+\-\(\)]!S';
-		$patt->charset       = '!@charset\s+(___s\d+___)\s*;!iS';
+		$patt->charset       = '!@charset\s+(\?s\d+\?)\s*;!iS';
 	}
 
 
@@ -119,7 +111,7 @@ class csscrush_regex {
 		foreach ( $list as &$fn_name ) {
 			$fn_name = preg_quote( $fn_name );
 		}
-		return '!(^|[^a-z0-9_-])(' . implode( '|', $list ) . ')' . $question . '\(!iS';
+		return '#(?<![\w-])(' . implode( '|', $list ) . ')' . $question . '\(#iS';
 	}
 }
 

@@ -4,7 +4,6 @@
  *  Utilities
  *
  */
-
 class csscrush_util {
 
 
@@ -26,32 +25,18 @@ class csscrush_util {
 	}
 
 
-	public static function normalizePath ( $path, $strip_ms_dos = false ) {
+	public static function normalizePath ( $path, $strip_drive_letter = false ) {
 
-		$path = rtrim( preg_replace( '![\\\\/]+!', '/', $path ), '/' );
-
-		if ( $strip_ms_dos ) {
+		if ( $strip_drive_letter ) {
 			$path = preg_replace( '!^[a-z]\:!i', '', $path );
 		}
+		// Backslashes and repeat slashes to a single forward slash.
+		$path = rtrim( preg_replace( '![\\\\/]+!', '/', $path ), '/' );
+
+		// Removing redundant './'.
+		$path = preg_replace( '!^\./|/\./!', '', $path );
+
 		return $path;
-	}
-
-
-	public static function cleanUpUrl ( $url ) {
-
-		// Reduce redundant path segments (issue #32):
-		// e.g 'foo/../bar' => 'bar'
-		$patt = '![^/.]+/\.\./!';
-
-		while ( preg_match( $patt, $url ) ) {
-			$url = preg_replace( $patt, '', $url );
-		}
-
-		if ( strpos( $url, '(' ) !== false || strpos( $url, ')' ) !== false ) {
-			$url = "\"$url\"";
-		}
-
-		return $url;
 	}
 
 
@@ -79,7 +64,8 @@ class csscrush_util {
 
 
 	public static function stripCommentTokens ( $str ) {
-		return preg_replace( csscrush_regex::$patt->commentToken, '', $str );
+
+		return preg_replace( csscrush_regex::$patt->cToken, '', $str );
 	}
 
 
@@ -98,92 +84,57 @@ class csscrush_util {
 	}
 
 
-	public static function tokenReplace ( $string, $token_replace, $type = 'parens' ) {
+	public static function splitDelimList ( $str, $delim = ',', $trim = true ) {
 
-		// The tokens to replace
-		$token_replace = (array) $token_replace;
+		$do_preg_split = strlen( $delim ) > 1 ? true : false;
 
-		// Reference the token table
-		$token_table =& csscrush::$storage->tokens->{ $type };
-
-		// Replace the tokens listed
-		foreach ( $token_replace as $token ) {
-			if ( isset( $token_table[ $token ] ) ) {
-				$string = str_replace( $token, $token_table[ $token ], $string );
+		if ( ! $do_preg_split && strpos( $str, $delim ) === false ) {
+			if ( $trim ) {
+				$str = trim( $str );
 			}
+			return array( $str );
 		}
 
-		return $string;
-	}
-
-
-	public static function tokenReplaceAll ( $str, $type = 'parens' ) {
-
-		// Only $type 'parens' or 'strings' make any sense
-		$token_patt = 'parenToken';
-
-		if ( $type === 'strings' ) {
-			$token_patt = 'stringToken';
-		}
-
-		// Reference the token table
-		$token_table =& csscrush::$storage->tokens->{ $type };
-
-		// Find tokens
-		$matches = csscrush_regex::matchAll( csscrush_regex::$patt->{ $token_patt }, $str );
-
-		foreach ( $matches as $m ) {
-
-			$token = $m[0][0];
-
-			if ( isset( $token_table[ $token ] ) ) {
-
-				$str = str_replace( $token, $token_table[ $token ], $str );
-			}
-		}
-		return $str;
-	}
-
-
-	public static function splitDelimList ( $str, $delim, $fold_in = false, $trim = false ) {
-
-		$match_obj = self::matchAllBrackets( $str );
-
-		// If the delimiter is one character do a simple split
-		// Otherwise do a regex split
-		if ( 1 === strlen( $delim ) ) {
-
-			$match_obj->list = explode( $delim, $match_obj->string );
+		if ( strpos( $str, '(' ) !== false ) {
+			$match_count
+				= preg_match_all( csscrush_regex::$patt->balancedParens, $str, $matches );
 		}
 		else {
-
-			$match_obj->list = preg_split( '!' . $delim . '!', $match_obj->string );
+			$match_count = 0;
 		}
 
-		if ( true === $trim ) {
-			$match_obj->list = array_map( 'trim', $match_obj->list );
+		if ( $match_count ) {
+			$keys = array();
+			foreach ( $matches[0] as $index => &$value ) {
+				$keys[] = "?$index?";
+			}
+			$str = str_replace( $matches[0], $keys, $str );
 		}
 
-		// Filter out empties
-		foreach( $match_obj->list as $key => &$item ) {
-			if ( $item === '' ) {
-				unset( $match_obj->list[$key] );
+		if ( $do_preg_split ) {
+			$list = preg_split( '!' . $delim . '!', $str );
+		}
+		else {
+			$list = explode( $delim, $str );
+		}
+
+		if ( $match_count ) {
+			foreach ( $list as &$value ) {
+				$value = str_replace( $keys, $matches[0], $value );
 			}
 		}
 
-		if ( $fold_in ) {
-
-			foreach ( $match_obj->list as &$item ) {
-				$item = csscrush_util::tokenReplace( $item, $match_obj->matches );
-			}
+		if ( $trim ) {
+			$list = array_map( 'trim', $list );
 		}
-		return $match_obj;
+
+		return $list;
 	}
 
 
-	public static function matchBrackets ( $str, $brackets = array( '(', ')' ), $offset = 0, $capture_text = false ) {
+	public static function matchBrackets ( $str, $brackets = '()', $offset = 0, $capture_text = false ) {
 
-		list( $opener, $closer ) = $brackets;
+		list( $opener, $closer ) = str_split( $brackets, 1 );
 
 		$match = (object) array();
 
@@ -204,12 +155,12 @@ class csscrush_util {
 
 		if ( preg_match( $patt, $str, $m, PREG_OFFSET_CAPTURE, $offset ) ) {
 
-			$match->start = $start = $m[0][1];
-			$match->end = $start + strlen( $m[0][0] );
+			$match->start = $m[0][1];
+			$match->end = $match->start + strlen( $m[0][0] );
 
 			if ( $capture_text ) {
 				// Text capturing is optional to avoid using memory when not necessary.
-				$match->inside = substr( $str, $start + 1, $match->end - $start - 2 );
+				$match->inside = $m[1][0];
 				$match->after = substr( $str, $match->end );
 			}
 			return $match;
@@ -220,85 +171,170 @@ class csscrush_util {
 	}
 
 
-	public static function matchAllBrackets ( $str, $pair = '()', $offset = 0 ) {
+	public static function getLinkBetweenDirs ( $dir1, $dir2 ) {
 
-		$match_obj = (object) array();
-		$match_obj->matches = array();
+		// Normalise the paths.
+		$dir1 = trim( csscrush_util::normalizePath( $dir1, true ), '/' );
+		$dir2 = trim( csscrush_util::normalizePath( $dir2, true ), '/' );
 
-		list( $opener, $closer ) = str_split( $pair, 1 );
+		// The link between.
+		$link = '';
 
-		// Return early if there's no match.
-		if ( false === strpos( $str, $opener, $offset ) ) {
-			$match_obj->string = $str;
-			return $match_obj;
+		if ( $dir1 != $dir2 ) {
+
+			// Split the directory paths into arrays so we can compare segment by segment.
+			$dir1_segs = explode( '/', $dir1 );
+			$dir2_segs = explode( '/', $dir2 );
+
+			// Shift the segments until they are on different branches.
+			while ( isset( $dir1_segs[0] ) && isset( $dir2_segs[0] ) && ( $dir1_segs[0] === $dir2_segs[0] ) ) {
+				array_shift( $dir1_segs );
+				array_shift( $dir2_segs );
+			}
+
+			$link = str_repeat( '../', count( $dir1_segs ) ) . implode( '/', $dir2_segs );
 		}
 
-		$patt = csscrush_regex::$patt->balancedParens;
-		if ( $opener === '{' ) {
-			$patt = csscrush_regex::$patt->balancedCurlies;
-		}
-
-		// Match balanced bracket pairs.
-		$offsets = array();
-		foreach ( csscrush_regex::matchAll( $patt, $str ) as $m ) {
-			$offsets[] = array( $m[0][1], $m[0][1] + strlen( $m[0][0] ) );
-		}
-
-		// Step backwards through the matches.
-		while ( $offset = array_pop( $offsets ) ) {
-
-			list( $start, $finish ) = $offset;
-
-			$before = substr( $str, 0, $start );
-			$content = substr( $str, $start, $finish - $start );
-			$after = substr( $str, $finish );
-
-			$label = csscrush::tokenLabelCreate( 'p' );
-			$str = $before . $label . $after;
-			$match_obj->matches[] = $label;
-
-			// Parens will be folded in later.
-			csscrush::$storage->tokens->parens[ $label ] = $content;
-		}
-
-		$match_obj->string = $str;
-
-		return $match_obj;
+		// Add closing slash.
+		return $link !== '' ? rtrim( $link, '/' ) . '/' : '';
 	}
 }
 
 
 /**
  *
- *  String sugar
+ *  URL tokens.
  *
  */
-class csscrush_string {
+class csscrush_url {
 
-	public $token;
+	public $protocol;
+	public $isRelative;
+	public $isRooted;
+	public $convertToData;
 	public $value;
-	public $quoteMark;
+	public $label;
 
-	public static function add ( $full_match ) {
-		$label = csscrush::tokenLabelCreate( 's' );
-		csscrush::$storage->tokens->strings[ $label ] = $full_match;
-		return $label;
-	}
+	public function __construct ( $raw_value, $convert_to_data = false ) {
 
-	public function __construct ( $token ) {
+		$regex = csscrush_regex::$patt;
 
-		$this->token = trim( $token );
-		$raw = csscrush::$storage->tokens->strings[ $this->token ];
-		$this->value = trim( $raw, '\'"' );
-		$this->quoteMark = $raw[0];
+		if ( preg_match( $regex->sToken, $raw_value ) ) {
+			$this->value = trim( csscrush::tokenFetch( $raw_value ), '\'"' );
+			csscrush::tokenRelease( $raw_value );
+		}
+		else {
+			$this->value = $raw_value;
+		}
+
+		$this->evaluate();
+		$this->label = csscrush::tokenLabelCreate( 'u' );
+		csscrush::$process->tokens->u[ $this->label ] = $this;
 	}
 
 	public function __toString () {
-		return csscrush::$storage->tokens->strings[ $this->token ];
+		$quote = '';
+		if ( preg_match( '![()*]!', $this->value ) || 'data' === $this->protocol ) {
+			$quote = '"';
+		}
+		return "url($quote$this->value$quote)";
 	}
 
-	public function update ( $newValue ) {
-		csscrush::$storage->tokens->strings[ $this->token ] = $newValue;
+	public static function get ( $token ) {
+		return csscrush::$process->tokens->u[ $token ];
+	}
+
+	public function evaluate () {
+
+		$leading_variable = strpos( $this->value, '$(' ) === 0;
+
+		if ( preg_match( '!^([a-z]+)\:!i', $this->value, $m ) ) {
+			$this->protocol = strtolower( $m[1] );
+		}
+		else {
+			// Normalize './' led paths.
+			$this->value = preg_replace( '!^\.\/+!i', '', $this->value );
+			if ( $this->value[0] === '/' ) {
+				$this->isRooted = true;
+			}
+			elseif ( ! $leading_variable ) {
+				$this->isRelative = true;
+			}
+			// Normalize slashes.
+			$this->value = rtrim( preg_replace( '![\\\\/]+!', '/', $this->value ), '/' );
+		}
+	}
+
+	public function applyVariables () {
+		csscrush::placeVariables( $this->value );
+		$this->evaluate();
+	}
+
+	public function toData () {
+
+		if ( $this->isRooted ) {
+			$file = csscrush::$config->docRoot . $this->value;
+		}
+		else {
+			$file = csscrush::$process->input->dir . "/$this->value";
+		}
+
+		// File not found.
+		if ( ! file_exists( $file ) ) {
+			return;
+		}
+
+		$file_ext = pathinfo( $file, PATHINFO_EXTENSION );
+
+		// Only allow certain extensions
+		static $allowed_file_extensions = array(
+			'woff' => 'application/x-font-woff;charset=utf-8',
+			'ttf'  => 'font/truetype;charset=utf-8',
+			'svg'  => 'image/svg+xml',
+			'svgz' => 'image/svg+xml',
+			'gif'  => 'image/gif',
+			'jpeg' => 'image/jpg',
+			'jpg'  => 'image/jpg',
+			'png'  => 'image/png',
+		);
+
+		if ( ! isset( $allowed_file_extensions[ $file_ext ] ) ) {
+			return;
+		}
+
+		$mime_type = $allowed_file_extensions[ $file_ext ];
+		$base64 = base64_encode( file_get_contents( $file ) );
+		$this->value = "data:$mime_type;base64,$base64";
+		$this->protocol = 'data';
+	}
+
+	public function prepend ( $path_fragment ) {
+		$this->value = $path_fragment . $this->value;
+	}
+
+	public function resolveRootedPath () {
+
+		$config = csscrush::$config;
+		$process = csscrush::$process;
+
+		if ( ! file_exists ( $config->docRoot . $this->value ) ) {
+			return false;
+		}
+
+		// Move upwards '..' by the number of slashes in baseURL to get a relative path.
+		$this->value = str_repeat( '../', substr_count( $process->input->dirUrl, '/' ) ) .
+			substr( $this->value, 1 );
+	}
+
+	public function simplify () {
+
+		// Reduce redundant path segments (issue #32):
+		// e.g 'foo/../bar' => 'bar'
+		$patt = '![^/.]+/\.\./!';
+
+		while ( preg_match( $patt, $this->value ) ) {
+			$this->value = preg_replace( $patt, '', $this->value );
+		}
 	}
 }
 

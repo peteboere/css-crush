@@ -36,7 +36,7 @@ function csscrush__rgba_fallback ( csscrush_rule $rule ) {
 		if ( 
 			$declaration->skip ||
 			! $is_viable || 
-			$is_viable && !preg_match( '!^rgba___p\d+___$!', $declaration->value )
+			$is_viable && !preg_match( '!^rgba\?p\d+\?$!', $declaration->value )
 		) {
 			$new_set[] = $declaration;
 			continue;

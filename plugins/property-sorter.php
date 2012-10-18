@@ -5,10 +5,9 @@
  *
  * Examples use the predefined sorting table.
  *
- * To define a custom sorting table globally define $CSSCRUSH_PROPERTY_SORT_ORDER.
- * Assign an empty array to create an alphabetical sort:
+ * To define a custom sorting order pass an array to csscrush_set_property_sort_order():
  *
- *     $CSSCRUSH_PROPERTY_SORT_ORDER = array( 'color', ... );
+ *     csscrush_set_property_sort_order( array( 'color', ... ) );
  *
  *
  * @before
@@ -43,7 +42,7 @@ function csscrush__property_sorter ( csscrush_rule $rule ) {
 
 
 /*
-	Callback for sorting
+	Callback for sorting.
 */
 function _csscrush__property_sorter_callback ( $a, $b ) {
 
@@ -124,9 +123,6 @@ function _csscrush__property_sorter_callback ( $a, $b ) {
 
 /*
 	Cache for the table of values to compare against.
-
-	If you need to re-define the sort table during runtime unset the cache first:
-	unset( $GLOBALS[ 'CSSCRUSH_PROPERTY_SORT_ORDER_CACHE' ] );
 */
 function &_csscrush__property_sorter_get_table () {
 
@@ -145,7 +141,7 @@ function &_csscrush__property_sorter_get_table () {
 	// No user-defined table, use pre-defined.
 	else {
 
-		// Load from property-sorting.ini
+		// Load from property-sorting.ini.
 		if ( $sorting_file_contents
 			= file_get_contents( csscrush::$config->location . '/misc/property-sorting.ini' ) ) {
 
@@ -155,6 +151,9 @@ function &_csscrush__property_sorter_get_table () {
 		else {
 			trigger_error( __METHOD__ . ": Property sorting file not found.\n", E_USER_NOTICE );
 		}
+
+		// Store to the global variable.
+		$GLOBALS[ 'CSSCRUSH_PROPERTY_SORT_ORDER' ] = $table;
 	}
 
 	// Cache the table (and flip it).
@@ -162,3 +161,22 @@ function &_csscrush__property_sorter_get_table () {
 
 	return $GLOBALS[ 'CSSCRUSH_PROPERTY_SORT_ORDER_CACHE' ];
 }
+
+
+/*
+	Get the current sorting table.
+*/
+function csscrush_get_property_sort_order () {
+	_csscrush__property_sorter_get_table();
+	return $GLOBALS[ 'CSSCRUSH_PROPERTY_SORT_ORDER' ];
+}
+
+
+/*
+	Set a custom sorting table.
+*/
+function csscrush_set_property_sort_order ( array $new_order ) {
+	unset( $GLOBALS[ 'CSSCRUSH_PROPERTY_SORT_ORDER_CACHE' ] );
+	$GLOBALS[ 'CSSCRUSH_PROPERTY_SORT_ORDER' ] = $new_order;
+}
+

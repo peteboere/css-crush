@@ -24,10 +24,10 @@ class csscrush_mixin {
 		// Re-assign with the parsed arguments string
 		$block = $this->arguments->string;
 
-		// Need to split safely as there are semi-colons in data-uris
-		$declarations_match = csscrush_util::splitDelimList( $block, ';', true );
+		// Split the block around semi-colons.
+		$declarations = preg_split( '!\s*;\s*!', trim( $block ), null, PREG_SPLIT_NO_EMPTY );
 
-		foreach ( $declarations_match->list as $raw_declaration ) {
+		foreach ( $declarations as $raw_declaration ) {
 
 			$colon = strpos( $raw_declaration, ':' );
 			if ( $colon === -1 ) {
@@ -57,7 +57,7 @@ class csscrush_mixin {
 		// Create data table for the mixin.
 		// Values that use arg() are excluded
 		foreach ( $this->declarationsTemplate as &$declaration ) {
-			if ( ! preg_match( csscrush_regex::$patt->argToken, $declaration['value'] ) ) {
+			if ( ! preg_match( csscrush_regex::$patt->aToken, $declaration['value'] ) ) {
 				$this->data[ $declaration['property'] ] = $declaration['value'];
 			}
 		}
@@ -154,8 +154,7 @@ class csscrush_mixin {
 		// Determine what raw arguments there are to pass to the mixin
 		$args = array();
 		if ( $message !== '' ) {
-			$args = csscrush_util::splitDelimList( $message, ',', true, true );
-			$args = $args->list;
+			$args = csscrush_util::splitDelimList( $message );
 		}
 
 		return $mixin->call( $args );
@@ -164,11 +163,9 @@ class csscrush_mixin {
 	public static function parseValue ( $message ) {
 
 		// Call the mixin and return the list of declarations
-		$values = csscrush_util::splitDelimList( $message, ',', true );
-
 		$declarations = array();
 
-		foreach ( $values->list as $item ) {
+		foreach ( csscrush_util::splitDelimList( $message ) as $item ) {
 
 			if ( $result = self::parseSingleValue( $item ) ) {
 
@@ -271,7 +268,7 @@ class csscrush_arglist implements Countable {
 		$this->argCount = max( $this->argCount, $argNumber );
 
 		// Return the argument token
-		return "___arg{$position_match}___";
+		return "?arg$position_match?";
 	}
 
 	public function getArgValue ( $index, &$args ) {
@@ -285,7 +282,7 @@ class csscrush_arglist implements Countable {
 		$default = isset( $this->defaults[ $index ] ) ? $this->defaults[ $index ] : '';
 
 		// Recurse for nested arg() calls
-		if ( preg_match( csscrush_regex::$patt->argToken, $default, $m ) ) {
+		if ( preg_match( csscrush_regex::$patt->aToken, $default, $m ) ) {
 
 			$default = $this->getArgValue( (int) $m[1], $args );
 		}
@@ -302,7 +299,7 @@ class csscrush_arglist implements Countable {
 
 		foreach ( $argIndexes as $index ) {
 
-			$find[] = "___arg{$index}___";
+			$find[] = "?arg$index?";
 			$replace[] = $this->getArgValue( $index, $args );
 		}
 

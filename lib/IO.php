@@ -14,50 +14,18 @@ class csscrush_io {
 		$process = csscrush::$process;
 
 		$process->cacheFileName = '.csscrush';
-		$process->cacheFilePath = "$process->inputDir/$process->cacheFileName";
-	}
-
-
-	public static function getInput ( $file = false ) {
-
-		// May return a hostfile object associated with a real file
-		// Alternatively it may return a hostfile object with string input
-
-		$process = csscrush::$process;
-
-		// Make basic information about the input object accessible
-		$input = (object) array();
-		$input->dir = ! empty( $process->inputDir ) ? $process->inputDir : null;
-		$input->name = $file ? basename( $file ) : null;
-		$input->path = $file ? "$process->inputDir/$input->name" : null;
-
-		if ( $file ) {
-
-			if ( ! file_exists( $input->path ) ) {
-
-				// On failure return false
-				$error = "Input file '$input->name' not found.";
-				csscrush::logError( $error );
-				trigger_error( __METHOD__ . ": $error\n", E_USER_WARNING );
-				return false;
-			}
-			else {
-				// Capture the modified time
-				$input->mtime = filemtime( $input->path );
-			}
-		}
-		return $input;
+		$process->cacheFilePath = "{$process->input->dir}/$process->cacheFileName";
 	}
 
 
 	public static function getOutputDir () {
-		return csscrush::$process->inputDir;
+		return csscrush::$process->input->dir;
 	}
 
 
-	public static function testOutputDir ( $write_test = true ) {
+	public static function testOutputDir () {
 
-		$output_dir = csscrush::$process->outputDir;
+		$output_dir = csscrush::$process->output->dir;
 		$pathtest = true;
 		$error = false;
 
@@ -66,9 +34,9 @@ class csscrush_io {
 			$error = "Output directory '$output_dir' doesn't exist.";
 			$pathtest = false;
 		}
-		else if ( $write_test && ! is_writable( $output_dir ) ) {
+		else if ( ! is_writable( $output_dir ) ) {
 
-			csscrush::log( 'Attempting to change permissions' );
+			csscrush::log( 'Attempting to change permissions.' );
 
 			if ( ! @chmod( $output_dir, 0755 ) ) {
 
@@ -76,7 +44,7 @@ class csscrush_io {
 				$pathtest = false;
 			}
 			else {
-				csscrush::log( 'Permissions updated' );
+				csscrush::log( 'Permissions updated.' );
 			}
 		}
 
@@ -93,9 +61,8 @@ class csscrush_io {
 
 		$process = csscrush::$process;
 		$options = $process->options;
-		$input = $process->input;
 
-		$output_basename = basename( $input->name, '.css' );
+		$output_basename = basename( $process->input->filename, '.css' );
 
 		if ( ! empty( $options->output_file ) ) {
 			$output_basename = basename( $options->output_file, '.css' );
@@ -112,32 +79,33 @@ class csscrush_io {
 		$config = csscrush::$config;
 		$input = $process->input;
 
-		// Search base directory for an existing compiled file
-		foreach ( scandir( $process->outputDir ) as $filename ) {
+		// Search base directory for an existing compiled file.
+		foreach ( scandir( $process->output->dir ) as $filename ) {
 
-			if ( $process->outputFileName != $filename ) {
+			if ( $process->output->filename != $filename ) {
 				continue;
 			}
-			// Cached file exists
+
+			// Cached file exists.
 			csscrush::log( 'Cached file exists.' );
 
 			$existingfile = (object) array();
-			$existingfile->name = $filename;
-			$existingfile->path = "$process->outputDir/$existingfile->name";
-			$existingfile->URL = "$process->outputDirUrl/$existingfile->name";
+			$existingfile->filename = $filename;
+			$existingfile->path = "{$process->output->dir}/$existingfile->filename";
+			$existingfile->URL = "{$process->output->dirUrl}/$existingfile->filename";
 
 			// Start off with the input file then add imported files
 			$all_files = array( $input->mtime );
 
-			if ( file_exists( $existingfile->path ) && isset( $process->cacheData[ $process->outputFileName ] ) ) {
+			if ( file_exists( $existingfile->path ) && isset( $process->cacheData[ $process->output->filename ] ) ) {
 
 				// File exists and has config
 				csscrush::log( 'Cached file is registered.' );
 
-				foreach ( $process->cacheData[ $existingfile->name ][ 'imports' ] as $import_file ) {
+				foreach ( $process->cacheData[ $existingfile->filename ][ 'imports' ] as $import_file ) {
 
 					// Check if this is docroot relative or input dir relative
-					$root = strpos( $import_file, '/' ) === 0 ? $config->docRoot : $process->inputDir;
+					$root = strpos( $import_file, '/' ) === 0 ? $config->docRoot : $process->input->dir;
 					$import_filepath = realpath( $root ) . "/$import_file";
 
 					if ( file_exists( $import_filepath ) ) {
@@ -152,8 +120,8 @@ class csscrush_io {
 				}
 
 				// Cast because the cached options may be a stdClass if an IO adapter has been used.
-				$existing_options = (array) $process->cacheData[ $existingfile->name ][ 'options' ];
-				$existing_datesum = $process->cacheData[ $existingfile->name ][ 'datem_sum' ];
+				$existing_options = (array) $process->cacheData[ $existingfile->filename ][ 'options' ];
+				$existing_datesum = $process->cacheData[ $existingfile->filename ][ 'datem_sum' ];
 
 				$options_unchanged = true;
 				foreach ( $existing_options as $key => &$value ) {
@@ -280,6 +248,26 @@ class csscrush_io {
 		file_put_contents( $process->cacheFilePath, json_encode( $process->cacheData ) );
 	}
 
+
+	final static function registerInputFile ( $file ) {
+
+		$input = csscrush::$process->input;
+
+		$input->filename = basename( $file );
+		$input->path = "$input->dir/$input->filename";
+
+		if ( ! file_exists( $input->path ) ) {
+
+			// On failure return false.
+			$error = "Input file '$input->filename' not found.";
+			csscrush::logError( $error );
+			trigger_error( __METHOD__ . ": $error\n", E_USER_WARNING );
+			return false;
+		}
+		else {
+			// Capture the modified time.
+			$input->mtime = filemtime( $input->path );
+			return true;
+		}
+	}
 }
-
-

@@ -82,27 +82,28 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		// If tracing store the last tracing stub, then strip all.
 		if (
 			$options->trace &&
-			$trace_tokens = csscrush_regex::matchAll( $regex->traceToken, $selector_string )
+			$trace_tokens = csscrush_regex::matchAll( $regex->tToken, $selector_string )
 		) {
 			$trace_token = array_pop( $trace_tokens );
 			$this->tracingStub = $trace_token[0][0];
-			$selector_string = preg_replace( $regex->traceToken, '', $selector_string );
+			$selector_string = preg_replace( $regex->tToken, '', $selector_string );
 		}
 
 		// Parse the selectors chunk
 		if ( ! empty( $selector_string ) ) {
 
-			$selectors_match = csscrush_util::splitDelimList( $selector_string, ',' );
+			csscrush::captureParens( $selector_string );
+			$selectors = csscrush_util::splitDelimList( $selector_string );
 
 			// Remove and store comments that sit above the first selector
 			// remove all comments between the other selectors
-			if ( strpos( $selectors_match->list[0], '___c' ) !== false ) {
-				preg_match_all( $regex->commentToken, $selectors_match->list[0], $m );
+			if ( strpos( $selectors[0], '?c' ) !== false ) {
+				preg_match_all( $regex->cToken, $selectors[0], $m );
 				$this->comments = $m[0];
 			}
 
 			// Strip any other comments then create selector instances
-			foreach ( $selectors_match->list as $selector ) {
+			foreach ( $selectors as $selector ) {
 
 				$selector = trim( csscrush_util::stripCommentTokens( $selector ) );
 
@@ -124,15 +125,14 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			}
 		}
 
-		// Parse the declarations chunk
-		// Need to split safely as there are semi-colons in data-uris
-		$declarations_match = csscrush_util::splitDelimList( $declarations_string, ';', true, true );
+		// Parse the declarations chunk.
+		$declarations = preg_split( '!\s*;\s*!', trim( $declarations_string ), null, PREG_SPLIT_NO_EMPTY );
 
 		// First create a simple array of all properties and value pairs in raw state
 		$pairs = array();
 
 		// Split declarations in to property/value pairs
-		foreach ( $declarations_match->list as $declaration ) {
+		foreach ( $declarations as $declaration ) {
 
 			// Strip comments around the property
 			$declaration = csscrush_util::stripCommentTokens( $declaration );
@@ -218,6 +218,48 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 		if ( $name === 'declarations' ) {
 			return $this->_declarations;
+		}
+	}
+
+	public function __toString () {
+
+		$minify = ! csscrush::$process->options->debug;
+		$whitespace = $minify ? '' : ' ';
+
+		// Tracing stubs.
+		$tracing_stub = '';
+		if ( $this->tracingStub ) {
+			$tracing_stub =& csscrush::$process->tokens->t[ $this->tracingStub ];
+		}
+
+		// If there are no selectors or declarations associated with the rule return empty string
+		if ( empty( $this->selectorList ) || ! count( $this ) ) {
+			return '';
+		}
+
+		// Build the selector; uses selector __toString method
+		$selectors = implode( ',', $this->selectorList );
+
+		// Build the block
+		$block = array();
+		foreach ( $this as $declaration ) {
+			$important = $declaration->important ? "$whitespace!important" : '';
+			$block[] = "$declaration->property:{$whitespace}$declaration->value{$important}";
+		}
+
+		// Return whole rule
+		if ( $minify ) {
+			$block = implode( ';', $block );
+			return "$tracing_stub$selectors{{$block}}";
+		}
+		else {
+			// Include pre-rule comments.
+			$comments = implode( "\n", $this->comments );
+			if ( $tracing_stub ) {
+				$tracing_stub .= "\n";
+			}
+			$block = implode( ";\n\t", $block );
+			return "$comments\n$tracing_stub$selectors {\n\t$block;\n\t}\n";
 		}
 	}
 
@@ -321,7 +363,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 	public function addPropertyAliases () {
 
 		$regex = csscrush_regex::$patt;
-		$aliasedProperties =& csscrush::$config->aliases[ 'properties' ];
+		$aliasedProperties =& csscrush::$process->aliases[ 'properties' ];
 
 		// First test for the existence of any aliased properties
 		$intersect = array_intersect( array_keys( $aliasedProperties ), array_keys( $this->properties ) );
@@ -366,7 +408,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 	public function addFunctionAliases () {
 
-		$function_aliases =& csscrush::$config->aliases[ 'functions' ];
+		$function_aliases =& csscrush::$process->aliases[ 'functions' ];
 		$aliased_functions = array_keys( $function_aliases );
 
 		if ( empty( $aliased_functions ) ) {
@@ -447,7 +489,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 	public function addValueAliases () {
 
-		$aliasedValues =& csscrush::$config->aliases[ 'values' ];
+		$aliasedValues =& csscrush::$process->aliases[ 'values' ];
 
 		// First test for the existence of any aliased properties
 		$intersect = array_intersect( array_keys( $aliasedValues ), array_keys( $this->properties ) );
@@ -487,7 +529,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 		foreach ( $this->selectorList as $readableValue => $selector ) {
 
-			$pos = strpos( $selector->value, ':any___' );
+			$pos = strpos( $selector->value, ':any?' );
 
 			if ( $pos !== false ) {
 
@@ -495,10 +537,10 @@ class csscrush_rule implements IteratorAggregate, Countable {
 				$chain = array( '' );
 				do {
 					if ( $pos === 0 ) {
-						preg_match( '!:any(___p\d+___)!', $selector->value, $m );
+						preg_match( '!:any(\?p\d+\?)!', $selector->value, $m );
 
 						// Parse the arguments
-						$expression = trim( csscrush::$storage->tokens->parens[ $m[1] ], '()' );
+						$expression = trim( csscrush::$process->tokens->p[ $m[1] ], '()' );
 						$parts = preg_split( $reg_comma, $expression, null, PREG_SPLIT_NO_EMPTY );
 
 						$tmp = array();
@@ -516,7 +558,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 						}
 						$selector->value = substr( $selector->value, $pos );
 					}
-				} while ( ( $pos = strpos( $selector->value, ':any___' ) ) !== false );
+				} while ( ( $pos = strpos( $selector->value, ':any?' ) ) !== false );
 
 				// Finish off
 				foreach ( $chain as &$row ) {
@@ -551,14 +593,10 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		$abstracts =& csscrush::$process->abstracts;
 		$selectorRelationships =& csscrush::$process->selectorRelationships;
 
-		// Pass extra argument to trim the returned list
-		$args = csscrush_util::splitDelimList( $raw_value, ',', true, true );
-
-		// Reset if called earlier, last call wins by intention
+		// Reset if called earlier, last call wins by intention.
 		$this->extendArgs = array();
 
-		foreach ( $args->list as $arg ) {
-
+		foreach ( csscrush_util::splitDelimList( $raw_value ) as $arg ) {
 			$this->extendArgs[] = new csscrush_extendArg( $arg );
 		}
 	}
@@ -661,7 +699,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 	public function propertyCount ( $prop ) {
 
-		if ( array_key_exists( $prop, $this->properties ) ) {
+		if ( isset( $this->properties[ $prop ] ) ) {
 			return $this->properties[ $prop ];
 		}
 		return 0;
@@ -695,8 +733,8 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 	public static function get ( $token ) {
 
-		if ( isset( csscrush::$storage->tokens->rules[ $token ] ) ) {
-			return csscrush::$storage->tokens->rules[ $token ];
+		if ( isset( csscrush::$process->tokens->r[ $token ] ) ) {
+			return csscrush::$process->tokens->r[ $token ];
 		}
 		return null;
 	}
@@ -718,7 +756,6 @@ class csscrush_declaration {
 	public $index;
 	public $skip;
 	public $important;
-	public $parenTokens;
 	public $isValid = true;
 
 	public function __construct ( $prop, $value, $contextIndex = 0 ) {
@@ -768,12 +805,10 @@ class csscrush_declaration {
 			csscrush_function::executeCustomFunctions( $value );
 		}
 
-		// Tokenize all remaining paren pairs
-		$match_obj = csscrush_util::matchAllBrackets( $value );
-		$this->parenTokens = $match_obj->matches;
-		$value = $match_obj->string;
+		// Capture all remaining paren pairs.
+		csscrush::captureParens( $value );
 
-		// Create an index of all regular functions in the value
+		// Create an index of all regular functions in the value.
 		if ( preg_match_all( $regex->function, $value, $functions ) > 0 ) {
 			$out = array();
 			foreach ( $functions[2] as $index => $fn_name ) {
@@ -797,7 +832,7 @@ class csscrush_declaration {
 
 	public function getFullValue () {
 
-		return csscrush_util::tokenReplace( $this->value, $this->parenTokens );
+		return csscrush::tokenRestoreAll( $this->value, 'p' );
 	}
 
 }
@@ -818,8 +853,8 @@ class csscrush_selector {
 	public static function makeReadableSelector ( $selector_string ) {
 
 		// Quick test for paren tokens
-		if ( strpos( $selector_string, '___p' ) !== false ) {
-			$selector_string = csscrush_util::tokenReplaceAll( $selector_string, 'parens' );
+		if ( strpos( $selector_string, '?p' ) !== false ) {
+			$selector_string = csscrush::tokenRestoreAll( $selector_string, 'p' );
 		}
 
 		// Create space around combinators, then normalize whitespace
@@ -827,8 +862,8 @@ class csscrush_selector {
 		$selector_string = csscrush_util::normalizeWhiteSpace( $selector_string );
 
 		// Quick test for string tokens
-		if ( strpos( $selector_string, '___s' ) !== false ) {
-			$selector_string = csscrush_util::tokenReplaceAll( $selector_string, 'strings' );
+		if ( strpos( $selector_string, '?s' ) !== false ) {
+			$selector_string = csscrush::tokenRestoreAll( $selector_string, 's' );
 		}
 
 		// Quick test for double-colons for backwards compat
