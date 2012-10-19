@@ -4,23 +4,22 @@
  * Custom CSS functions
  *
  */
-
 class csscrush_function {
 
 	// Regex pattern for finding custom functions
-	public static $functionPatt;
+	static public $functionPatt;
 
 	// Cache for function names
-	public static $functionList;
+	static public $functionList;
 
-	public static function init () {
+	static public function init () {
 
 		// Set the custom function regex pattern
 		self::$functionList = self::getFunctions();
 		self::$functionPatt = csscrush_regex::createFunctionMatchPatt( self::$functionList, true );
 	}
 
-	public static function getFunctions () {
+	static public function getFunctions () {
 
 		// Fetch custom function names
 		// Include subtraction operator
@@ -35,7 +34,7 @@ class csscrush_function {
 		return $fn_methods;
 	}
 
-	public static function executeCustomFunctions ( &$str, $patt = null, $process_callback = null, $property = null ) {
+	static public function executeCustomFunctions ( &$str, $patt = null, $process_callback = null, $property = null ) {
 
 		// No bracketed expressions, early return.
 		if ( false === strpos( $str, '(' ) ) {
@@ -77,7 +76,7 @@ class csscrush_function {
 			$closing_paren = $opening_paren + strlen( $parens[0][0] );
 
 			// Get the function arguments.
-			$args = $parens[1][0];
+			$args = trim( $parens[1][0] );
 
 			// Workaround the minus.
 			$minus_before = '-' === $raw_fn_name ? '-' : '';
@@ -104,21 +103,21 @@ class csscrush_function {
 	}
 
 
-	############
-	#  Helpers
+	#############################
+	#  Helpers.
 
-	public static function parseArgs ( $input, $allowSpaceDelim = false ) {
+	static public function parseArgs ( $input, $allowSpaceDelim = false ) {
 		return csscrush_util::splitDelimList(
 			$input, ( $allowSpaceDelim ? '\s*[,\s]\s*' : ',' ) );
 	}
 
 	// Intended as a quick arg-list parse for function that take up-to 2 arguments
 	// with the proviso the first argument is a name
-	public static function parseArgsSimple ( $input ) {
+	static public function parseArgsSimple ( $input ) {
 		return preg_split( csscrush_regex::$patt->argListSplit, $input, 2 );
 	}
 
-	protected static function colorAdjust ( $color, array $adjustments ) {
+	static protected function colorAdjust ( $color, array $adjustments ) {
 
 		$fn_matched = preg_match( '!^(#|rgba?|hsla?)!', $color, $m );
 		$keywords = csscrush_color::getKeywords();
@@ -206,9 +205,10 @@ class csscrush_function {
 	}
 
 
-	############
+	#############################
+	#  CSS functions.
 
-	public static function css_fn__math ( $input ) {
+	static protected function css_fn__math ( $input ) {
 
 		// Strip blacklisted characters
 		$input = preg_replace( csscrush_regex::$patt->mathBlacklist, '', $input );
@@ -218,7 +218,7 @@ class csscrush_function {
 		return $result === false ? 0 : round( $result, 5 );
 	}
 
-	public static function css_fn__percent ( $input ) {
+	static protected function css_fn__percent ( $input ) {
 
 		// Strip non-numeric and non delimiter characters
 		$input = preg_replace( '![^\d\.\s,]!S', '', $input );
@@ -260,42 +260,39 @@ class csscrush_function {
 		return $result . '%';
 	}
 
-	// Percent function alias
-	public static function css_fn__pc ( $input ) {
+	// Percent function alias.
+	static protected function css_fn__pc ( $input ) {
 		return self::css_fn__percent( $input );
 	}
 
-	public static function css_fn__hsla_adjust ( $input ) {
+	static protected function css_fn__hsla_adjust ( $input ) {
 		list( $color, $h, $s, $l, $a ) = array_pad( self::parseArgs( $input, true ), 5, 0 );
 		return self::colorAdjust( $color, array( $h, $s, $l, $a ) );
 	}
 
-	public static function css_fn__hsl_adjust ( $input ) {
+	static protected function css_fn__hsl_adjust ( $input ) {
 		list( $color, $h, $s, $l ) = array_pad( self::parseArgs( $input, true ), 4, 0 );
 		return self::colorAdjust( $color, array( $h, $s, $l, 0 ) );
 	}
 
-	public static function css_fn__h_adjust ( $input ) {
+	static protected function css_fn__h_adjust ( $input ) {
 		list( $color, $h ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
 		return self::colorAdjust( $color, array( $h, 0, 0, 0 ) );
 	}
 
-	public static function css_fn__s_adjust ( $input ) {
+	static protected function css_fn__s_adjust ( $input ) {
 		list( $color, $s ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
 		return self::colorAdjust( $color, array( 0, $s, 0, 0 ) );
 	}
 
-	public static function css_fn__l_adjust ( $input ) {
+	static protected function css_fn__l_adjust ( $input ) {
 		list( $color, $l ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
 		return self::colorAdjust( $color, array( 0, 0, $l, 0 ) );
 	}
 
-	public static function css_fn__a_adjust ( $input ) {
+	static protected function css_fn__a_adjust ( $input ) {
 		list( $color, $a ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
 		return self::colorAdjust( $color, array( 0, 0, 0, $a ) );
 	}
-
 }
-
-
 

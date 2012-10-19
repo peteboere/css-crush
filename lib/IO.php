@@ -4,12 +4,10 @@
  * Interface for writing files, retrieving files and checking caches
  *
  */
-
 class csscrush_io {
 
-
 	// Any setup that needs to be done
-	public static function init () {
+	static public function init () {
 
 		$process = csscrush::$process;
 
@@ -17,13 +15,11 @@ class csscrush_io {
 		$process->cacheFilePath = "{$process->input->dir}/$process->cacheFileName";
 	}
 
-
-	public static function getOutputDir () {
+	static public function getOutputDir () {
 		return csscrush::$process->input->dir;
 	}
 
-
-	public static function testOutputDir () {
+	static public function testOutputDir () {
 
 		$output_dir = csscrush::$process->output->dir;
 		$pathtest = true;
@@ -56,8 +52,7 @@ class csscrush_io {
 		return $pathtest;
 	}
 
-
-	public static function getOutputFileName () {
+	static public function getOutputFileName () {
 
 		$process = csscrush::$process;
 		$options = $process->options;
@@ -71,8 +66,7 @@ class csscrush_io {
 		return "$output_basename.crush.css";
 	}
 
-
-	public static function validateExistingOutput () {
+	static public function validateExistingOutput () {
 
 		$process = csscrush::$process;
 		$options = $process->options;
@@ -161,8 +155,7 @@ class csscrush_io {
 		return false;
 	}
 
-
-	public static function clearCache ( $dir ) {
+	static public function clearCache ( $dir ) {
 
 		if ( empty( $dir ) ) {
 			$dir = dirname( __FILE__ );
@@ -189,8 +182,7 @@ class csscrush_io {
 		}
 	}
 
-
-	public static function getCacheData () {
+	static public function getCacheData () {
 
 		$config = csscrush::$config;
 		$process = csscrush::$process;
@@ -236,8 +228,7 @@ class csscrush_io {
 		return $cache_data;
 	}
 
-
-	public static function saveCacheData () {
+	static public function saveCacheData () {
 
 		$process = csscrush::$process;
 
@@ -248,8 +239,7 @@ class csscrush_io {
 		file_put_contents( $process->cacheFilePath, json_encode( $process->cacheData ) );
 	}
 
-
-	final static function registerInputFile ( $file ) {
+	static final function registerInputFile ( $file ) {
 
 		$input = csscrush::$process->input;
 

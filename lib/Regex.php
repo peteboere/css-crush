@@ -4,18 +4,18 @@
  * Regex management.
  *
  */
-
 class csscrush_regex {
 
-	public static $patt;
+	// Patterns.
+	static public $patt;
 
 	// Character classes.
-	public static $classes;
+	static public $classes;
 
-	public static function init () {
+	static public function init () {
 
-		self::$patt = $patt = (object) array();
-		self::$classes = $classes = (object) array();
+		self::$patt = $patt = new stdclass();
+		self::$classes = $classes = new stdclass();
 
 		// Character classes.
 		$classes->ident = '[a-zA-Z0-9_-]+';
@@ -23,19 +23,23 @@ class csscrush_regex {
 		// Patterns.
 		$patt->ident = '!^' . $classes->ident . '$!';
 
-		$patt->import = '!@import (\?u\d+\?) ?([^;]*);!iS';
+		// @-rule blocks.
+		$patt->import        = '~@import\s+(\?u\d+\?)\s?([^;]*);~iS';
+		$patt->variables     = '~@(?:define|variables) *([^\{]*)\{ *(.*?) *\};?~iS';
+		$patt->mixin         = '~@mixin *([^\{]*)\{ *(.*?) *\};?~iS';
+		$patt->abstract      = csscrush_regex::create( '^@abstract\s+(<ident>)', 'i' );
+		$patt->selectorAlias = csscrush_regex::create( '@selector-alias +\:(<ident>) +([^;]+) *;', 'iS' );
+		$patt->ifDefine      = csscrush_regex::create( '@ifdefine +(not +)?(<ident>) *\{', 'iS' );
+		$patt->fragmentDef   = csscrush_regex::create( '@fragment +(<ident>) *\{', 'iS' );
+		$patt->fragmentCall  = csscrush_regex::create( '@fragment +(<ident>) *(\(|;)', 'iS' );
 
-		$patt->variables = '!@(?:variables|define)\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
-		$patt->mixin     = '!@mixin\s*([^\{]*)\{\s*(.*?)\s*\};?!s';
-		$patt->abstract  = csscrush_regex::create( '^@abstract\s+(<ident>)', 'i' );
-
-		$patt->commentAndString = '!
+		$patt->commentAndString = '~
 			# Quoted string (to EOF if unmatched).
 			(\'|")(?:\\\\\1|[^\1])*?(?:\1|$)
 			|
 			# Block comment (to EOF if unmatched).
 			/\*(?:.*?)(?:\*/|$)
-		!xsS';
+		~xsS';
 
 		// As an exception we treat some @-rules like standard rule blocks.
 		$patt->rule = '~
@@ -63,10 +67,9 @@ class csscrush_regex {
 		$patt->aToken = '!\?arg(\d+)\?!'; // Args
 
 		// Functions.
-		$patt->varFunction = '!\$\(\s*([a-z0-9_-]+)\s*\)!iS';
 		$patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(\?p\d+\?)!iS';
-
-		// Specific functions.
+		$patt->varFunction = csscrush_regex::create( '\$\(\s*(<ident>)\s*\)', 'iS' );
+		$patt->varFunctionStart = '!(\$)\(!';
 		$patt->argFunction = csscrush_regex::createFunctionMatchPatt( array( 'arg' ) );
 		$patt->queryFunction = csscrush_regex::createFunctionMatchPatt( array( 'query' ) );
 		$patt->thisFunction = csscrush_regex::createFunctionMatchPatt( array( 'this' ) );
@@ -74,25 +77,22 @@ class csscrush_regex {
 		// Misc.
 		$patt->vendorPrefix  = '!^-([a-z]+)-([a-z-]+)!iS';
 		$patt->mixinExtend   = '!^(?:(@include|mixin)|(@?extends?))[\s\:]+!iS';
-		$patt->absoluteUrl   = '!^https?://!';
 		$patt->argListSplit  = '!\s*[,\s]\s*!S';
 		$patt->mathBlacklist = '![^\.0-9\*\/\+\-\(\)]!S';
 		$patt->charset       = '!@charset\s+(\?s\d+\?)\s*;!iS';
 	}
 
-
-	public static function create ( $pattern_template, $flags = '' ) {
+	static public function create ( $pattern_template, $flags = '', $delim = '!' ) {
 
 		// Sugar.
 		$pattern = str_replace(
 						array( '<ident>' ),
 						array( self::$classes->ident ),
 						$pattern_template );
-		return '!' . $pattern . "!$flags";
+		return "$delim{$pattern}$delim{$flags}";
 	}
 
-
-	public static function matchAll ( $patt, $subject, $preprocess_patt = false, $offset = 0 ) {
+	static public function matchAll ( $patt, $subject, $preprocess_patt = false, $offset = 0 ) {
 
 		if ( $preprocess_patt ) {
 			// Assume case-insensitive.
@@ -103,15 +103,13 @@ class csscrush_regex {
 		return $count ? $matches : array();
 	}
 
-
-	public static function createFunctionMatchPatt ( $list, $include_unnamed_function = false ) {
+	static public function createFunctionMatchPatt ( $list, $include_unnamed_function = false ) {
 
 		$question = $include_unnamed_function ? '?' : '';
 
 		foreach ( $list as &$fn_name ) {
 			$fn_name = preg_quote( $fn_name );
 		}
-		return '#(?<![\w-])(' . implode( '|', $list ) . ')' . $question . '\(#iS';
+		return '~(?<![\w-])(' . implode( '|', $list ) . ')' . $question . '\(~iS';
 	}
 }
-

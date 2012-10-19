@@ -4,12 +4,11 @@
  * Colour parsing and conversion
  * 
  */
-
 class csscrush_color {
 
 	protected static $keywords = array();
 	
-	public static function getKeywords () {
+	static public function getKeywords () {
 		// Load the keywords if necessary
 		if ( empty( self::$keywords ) ) {
 			$path = csscrush::$config->location . '/misc/color-keywords.ini';
@@ -32,7 +31,7 @@ class csscrush_color {
 	 * Assumes r, g, and b are contained in the set [0, 255] and
 	 * returns h, s, and l in the set [0, 1].
 	 */
-	public static function rgbToHsl ( array $rgb ) {
+	static public function rgbToHsl ( array $rgb ) {
 
 		list( $r, $g, $b ) = $rgb;
 		$r /= 255;
@@ -76,7 +75,7 @@ class csscrush_color {
 	 * Assumes h, s, and l are contained in the set [0, 1] and
 	 * returns r, g, and b in the set [0, 255].
 	 */
-	public static function hslToRgb ( array $hsl ) {
+	static public function hslToRgb ( array $hsl ) {
 		list( $h, $s, $l ) = $hsl;
 		$r;
 		$g;
@@ -95,7 +94,7 @@ class csscrush_color {
 	}
 
 	// Convert percentages to points (0-255)
-	public static function normalizeCssRgb ( array $rgb ) {
+	static public function normalizeCssRgb ( array $rgb ) {
 		foreach ( $rgb as &$val ) {
 			if ( strpos( $val, '%' ) !== false ) {
 				$val = str_replace( '%', '', $val );
@@ -105,7 +104,7 @@ class csscrush_color {
 		return $rgb;
 	}
 
-	public static function cssHslToRgb ( array $hsl ) {
+	static public function cssHslToRgb ( array $hsl ) {
 
 		// Normalize the hue degree value then convert to float
 		$h = array_shift( $hsl );
@@ -128,7 +127,7 @@ class csscrush_color {
 		return $rgb;
 	}
 
-	public static function hueToRgb ( $p, $q, $t ) {
+	static public function hueToRgb ( $p, $q, $t ) {
 		if ( $t < 0 ) $t += 1;
 		if ( $t > 1 ) $t -= 1;
 		if ( $t < 1/6 ) return $p + ( $q - $p ) * 6 * $t;
@@ -137,7 +136,7 @@ class csscrush_color {
 		return $p;
 	}
 
-	public static function rgbToHex ( array $rgb ) {
+	static public function rgbToHex ( array $rgb ) {
 		$hex_out = '#'; 
 		foreach ( $rgb as $val ) {
 			$hex_out .= str_pad( dechex( $val ), 2, '0', STR_PAD_LEFT );
@@ -145,7 +144,7 @@ class csscrush_color {
 		return $hex_out;
 	}
 
-	public static function hexToRgb ( $hex ) {
+	static public function hexToRgb ( $hex ) {
 		$hex = substr( $hex, 1 );
 		
 		// Handle shortened format

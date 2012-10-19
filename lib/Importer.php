@@ -4,41 +4,21 @@
  * Recursive file importing
  *
  */
-
 class csscrush_importer {
 
-
-	public static function save ( $data ) {
-
-		$process = csscrush::$process;
-		$options = $process->options;
-
-		// No saving if caching is disabled, return early
-		if ( ! $options->cache ) {
-			return;
-		}
-
-		// Write to config
-		$process->cacheData[ $process->output->filename ] = $data;
-
-		// Save config changes
-		csscrush::io_call( 'saveCacheData' );
-	}
-
-
-	public static function hostfile () {
+	static public function hostfile () {
 
 		$config = csscrush::$config;
 		$process = csscrush::$process;
 		$options = $process->options;
 		$regex = csscrush_regex::$patt;
-		$hostfile = $process->input;
+		$input = $process->input;
 
 		// Keep track of all import file info for cache data.
 		$mtimes = array();
 		$filenames = array();
 
-		$stream = '';
+		$str = '';
 		$prepend_file_contents = '';
 
 		// The prepend file.
@@ -46,42 +26,42 @@ class csscrush_importer {
 			$prepend_file_contents = file_get_contents( $prepend_file );
 			$process->currentFile = 'file://' . $prepend_file;
 			// If there's a parsing error inside the prepend file, wipe $prepend_file_contents.
-			if ( ! csscrush::prepareStream( $prepend_file_contents ) ) {
+			if ( ! self::prepareForStream( $prepend_file_contents ) ) {
 				$prepend_file_contents = '';
 			}
 		}
 
 		// Resolve main input; Is it a bare string or a file.
-		if ( isset( $hostfile->string ) ) {
-			$stream .= $hostfile->string;
-			$process->currentFile = 'inline-css';
+		if ( isset( $input->string ) ) {
+			$str .= $input->string;
+			$process->currentFile = 'inline css';
 		}
 		else {
-			$stream .= file_get_contents( $hostfile->path );
-			$process->currentFile = 'file://' . $hostfile->path;
+			$str .= file_get_contents( $input->path );
+			$process->currentFile = 'file://' . $input->path;
 		}
 
 		// If there's a parsing error go no further.
-		if ( ! csscrush::prepareStream( $stream ) ) {
-			return $stream;
+		if ( ! self::prepareForStream( $str ) ) {
+			return $str;
 		}
 
 		// Prepend any prepend file contents here.
-		$stream = $prepend_file_contents . $stream;
+		$str = $prepend_file_contents . $str;
 
 		// This may be set non-zero during the script if an absolute @import URL is encountered.
 		$search_offset = 0;
 
 		// Recurses until the nesting heirarchy is flattened and all import files are inlined.
-		while ( preg_match( $regex->import, $stream, $match, PREG_OFFSET_CAPTURE, $search_offset ) ) {
+		while ( preg_match( $regex->import, $str, $match, PREG_OFFSET_CAPTURE, $search_offset ) ) {
 
 			$match_len = strlen( $match[0][0] );
 			$match_start = $match[0][1];
 			$match_end = $match_start + $match_len;
 
 			// If just stripping the import statements
-			if ( isset( $hostfile->importIgnore ) ) {
-				$stream = substr_replace( $stream, '', $match_start, $match_len );
+			if ( isset( $input->importIgnore ) ) {
+				$str = substr_replace( $str, '', $match_start, $match_len );
 				continue;
 			}
 
@@ -107,13 +87,13 @@ class csscrush_importer {
 				$import->path = realpath( $config->docRoot . $import->url->value );
 			}
 			else {
-				$import->path = realpath( "$hostfile->dir/{$import->url->value}" );
+				$import->path = realpath( "$input->dir/{$import->url->value}" );
 			}
 
 			// Get the import contents, if unsuccessful just continue with the import line removed.
 			if ( ! ( $import->content = @file_get_contents( $import->path ) ) ) {
 				csscrush::log( "Import file '{$import->url->value}' not found" );
-				$stream = substr_replace( $stream, '', $match_start, $match_len );
+				$str = substr_replace( $str, '', $match_start, $match_len );
 				continue;
 			}
 
@@ -123,8 +103,8 @@ class csscrush_importer {
 			$process->currentFile = 'file://' . $import->path;
 
 			// If there are unmatched brackets inside the import, strip it.
-			if ( ! csscrush::prepareStream( $import->content ) ) {
-				$stream = substr_replace( $stream, '', $match_start, $match_len );
+			if ( ! self::prepareForStream( $import->content ) ) {
+				$str = substr_replace( $str, '', $match_start, $match_len );
 				continue;
 			}
 
@@ -160,24 +140,27 @@ class csscrush_importer {
 				$import->content = "@media $import->mediaContext {{$import->content}}";
 			}
 
-			$stream = substr_replace( $stream, $import->content, $match_start, $match_len );
+			$str = substr_replace( $str, $import->content, $match_start, $match_len );
 		}
 
-		// Save only if the hostfile object is associated with a real file
-		if ( $hostfile->path ) {
+		// Save only if caching is on and the hostfile object is associated with a real file.
+		if ( $input->path && $process->options->cache ) {
 
-			self::save( array(
+			// Write to config.
+			$process->cacheData[ $process->output->filename ] = array(
 				'imports'      => $filenames,
-				'datem_sum'    => array_sum( $mtimes ) + $hostfile->mtime,
+				'datem_sum'    => array_sum( $mtimes ) + $input->mtime,
 				'options'      => $options,
-			));
+			);
+
+			// Save config changes.
+			$process->ioCall( 'saveCacheData' );
 		}
 
-		return $stream;
+		return $str;
 	}
 
-
-	protected static function rewriteImportedUrls ( $import ) {
+	static protected function rewriteImportedUrls ( $import ) {
 
 		$link = csscrush_util::getLinkBetweenDirs(
 			csscrush::$process->input->dir, dirname( $import->path ) );
@@ -200,4 +183,190 @@ class csscrush_importer {
 			}
 		}
 	}
+
+	static protected function prepareForStream ( &$str ) {
+
+		$regex = csscrush_regex::$patt;
+		$process = csscrush::$process;
+		$trace = $process->options->trace;
+
+		$str = preg_replace_callback( $regex->commentAndString,
+			array( 'self', 'cb_extractCommentAndString' ), $str );
+
+		// If @charset is set store it.
+		if ( preg_match( $regex->charset, $str, $m ) ) {
+			$replace = '';
+			if ( ! $process->charset ) {
+				// Keep track of newlines for line tracing.
+				$replace = str_repeat( "\n", substr_count( $m[0], "\n" ) );
+				$process->charset = trim( $process->fetchToken( $m[1] ), '"\'' );
+			}
+			$str = preg_replace( $regex->charset, $replace, $str );
+		}
+
+		// Catch obvious typing errors.
+		$parse_errors = array();
+		$current_file = $process->currentFile;
+		$balanced_parens = substr_count( $str, "(" ) === substr_count( $str, ")" );
+		$balanced_curlies = substr_count( $str, "{" ) === substr_count( $str, "}" );
+
+		if ( ! $balanced_parens ) {
+			$parse_errors[] = "Unmatched '(' in $current_file.";
+		}
+		if ( ! $balanced_curlies ) {
+			$parse_errors[] = "Unmatched '{' in $current_file.";
+		}
+
+		if ( $parse_errors ) {
+			foreach ( $parse_errors as $error_msg ) {
+				csscrush::logError( $error_msg );
+				trigger_error( "$error_msg\n", E_USER_WARNING );
+			}
+			return false;
+		}
+
+		// Optionally add tracing stubs.
+		if ( $trace ) {
+			self::addTracingStubs( $str );
+		}
+
+		// Strip unneeded whitespace.
+		$str = csscrush_util::normalizeWhiteSpace( $str );
+
+		// Tokenize all the URLs.
+		$patt = '#
+			@import\x{20}(\?s\d+\?)
+			|
+			(?<!-) \b (url|data-uri)\(
+		#ixS';
+
+		$offset = 0;
+		while ( preg_match( $patt, $str, $outer_m, PREG_OFFSET_CAPTURE, $offset ) ) {
+
+			$outer_offset = $outer_m[0][1];
+			$is_import_url = ! isset( $outer_m[2] );
+
+			if ( $is_import_url ) {
+				$url = new csscrush_url( $outer_m[1][0] );
+				$str = str_replace( $outer_m[1][0], $url->label, $str );
+			}
+			// Match parenthesis if not a string token.
+			elseif ( preg_match( $regex->balancedParens, $str, $inner_m, PREG_OFFSET_CAPTURE, $outer_offset ) ) {
+				$url = new csscrush_url( $inner_m[1][0] );
+				$func_name = strtolower( $outer_m[2][0] );
+				$url->convertToData = 'data-uri' === $func_name;
+				$str = substr_replace( $str, $url->label, $outer_offset,
+					strlen( $func_name ) + strlen( $inner_m[0][0] ) );
+			}
+			// If brackets cannot be matched, skip over the original match.
+			else {
+				$offset += strlen( $outer_m[0][0] );
+			}
+		}
+
+		return true;
+	}
+
+	static protected function cb_extractCommentAndString ( $match ) {
+
+		$full_match = $match[0];
+		$process = csscrush::$process;
+
+		// We return the newlines to maintain line numbering when tracing.
+		$newlines = str_repeat( "\n", substr_count( $full_match, "\n" ) );
+
+		if ( strpos( $full_match, '/*' ) === 0 ) {
+
+			// Strip private comments
+			$private_comment_marker = '$';
+
+			// Bail without storing comment if in debug mode or a private comment.
+			if (
+				strpos( $full_match, '/*' . $private_comment_marker ) === 0 ||
+				! $process->options->debug
+			) {
+				return $newlines;
+			}
+
+			// Fix broken comments as they will break any subsquent
+			// imported files that are inlined.
+			if ( ! preg_match( '!\*/$!', $full_match ) ) {
+				$full_match .= '*/';
+			}
+			$label = $process->addToken( $full_match, 'c' );
+		}
+		else {
+
+			// Fix broken strings as they will break any subsquent
+			// imported files that are inlined.
+			if ( $full_match[0] !== $full_match[ strlen( $full_match )-1 ] ) {
+				$full_match .= $full_match[0];
+			}
+			$label = $process->addToken( $full_match, 's' );
+		}
+
+		return $newlines . $label;
+	}
+
+	static protected function addTracingStubs ( &$str ) {
+
+		$selector_patt = '! (^|;|\})+ ([^;{}]+) (\{) !xmS';
+		$token_or_whitespace = '!(\s*\?c\d+\?\s*|\s+)!S';
+
+		$matches = csscrush_regex::matchAll( $selector_patt, $str );
+
+		// Start from last match and move backwards.
+		while ( $m = array_pop( $matches ) ) {
+
+			// Shortcuts for readability.
+			list( $full_match, $before, $content, $after ) = $m;
+			$full_match_text  = $full_match[0];
+			$full_match_start = $full_match[1];
+
+			// The correct before string.
+			$before = substr( $full_match_text, 0, $content[1] - $full_match_start );
+
+			// Split the matched selector part.
+			$content_parts = preg_split( $token_or_whitespace, $content[0], null,
+				PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY );
+
+			foreach ( $content_parts as $part ) {
+
+				if ( ! preg_match( $token_or_whitespace, $part ) ) {
+
+					// Match to a valid selector.
+					if ( preg_match( '!^([^@]|@(?:page|abstract))!iS', $part ) ) {
+
+						// Count line breaks between the start of stream and
+						// the matched selector to get the line number.
+						$selector_index = $full_match_start + strlen( $before );
+						$line_num = 1;
+						$str_before = "";
+						if ( $selector_index ) {
+							$str_before = substr( $str, 0, $selector_index );
+							$line_num = substr_count( $str_before, "\n" ) + 1;
+						}
+
+						// Get the currently processed file path, and escape it.
+						$current_file = str_replace( ' ', '%20', csscrush::$process->currentFile );
+						$current_file = preg_replace( '![^\w-]!', '\\\\$0', $current_file );
+
+						// Splice in tracing stub.
+						$label = csscrush::$process->addToken( "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line_num}}", 't' );
+
+						$str = $str_before . $label . substr( $str, $selector_index );
+					}
+					else {
+						// Not matched as a valid selector, move on.
+						continue 2;
+					}
+					break;
+				}
+
+				// Append split segment to $before.
+				$before .= $part;
+			}
+		}
+	}
+
 }

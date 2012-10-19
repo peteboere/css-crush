@@ -1,14 +1,13 @@
 <?php
 /**
  *
- *  Utilities
+ *  General utilities.
  *
  */
 class csscrush_util {
 
-
-	// Create html attribute string from array
-	public static function htmlAttributes ( array $attributes ) {
+	// Create html attribute string from array.
+	static public function htmlAttributes ( array $attributes ) {
 
 		$attr_string = '';
 		foreach ( $attributes as $name => $value ) {
@@ -18,14 +17,7 @@ class csscrush_util {
 		return $attr_string;
 	}
 
-
-	public static function strEndsWith ( $haystack, $needle ) {
-
-		return substr( $haystack, -strlen( $needle ) ) === $needle;
-	}
-
-
-	public static function normalizePath ( $path, $strip_drive_letter = false ) {
+	static public function normalizePath ( $path, $strip_drive_letter = false ) {
 
 		if ( $strip_drive_letter ) {
 			$path = preg_replace( '!^[a-z]\:!i', '', $path );
@@ -34,24 +26,15 @@ class csscrush_util {
 		$path = rtrim( preg_replace( '![\\\\/]+!', '/', $path ), '/' );
 
 		// Removing redundant './'.
-		$path = preg_replace( '!^\./|/\./!', '', $path );
+		$path = str_replace( '/./', '/', $path );
+		if ( strpos( $path, './' ) === 0 ) {
+			$path = substr( $path, 2 );
+		}
 
 		return $path;
 	}
 
-
-	public static function strReplaceHash ( $str, $map = array() ) {
-
-		if ( ! $map ) {
-			return $str;
-		}
-		$labels = array_keys( $map );
-		$values = array_values( $map );
-		return str_replace( $labels, $values, $str );
-	}
-
-
-	public static function find () {
+	static public function find () {
 
 		foreach ( func_get_args() as $file ) {
 			$file_path = csscrush::$config->location . '/' . $file;
@@ -62,14 +45,12 @@ class csscrush_util {
 		return false;
 	}
 
-
-	public static function stripCommentTokens ( $str ) {
+	static public function stripCommentTokens ( $str ) {
 
 		return preg_replace( csscrush_regex::$patt->cToken, '', $str );
 	}
 
-
-	public static function normalizeWhiteSpace ( $str ) {
+	static public function normalizeWhiteSpace ( $str ) {
 
 		$replacements = array(
 			// Convert all whitespace sequences to a single space.
@@ -77,14 +58,13 @@ class csscrush_util {
 			// Trim bracket whitespace where it's safe to do it.
 			'!([\[(]) | ([\])])| ?([{}]) ?!S' => '${1}${2}${3}',
 			// Trim whitespace around delimiters and special characters.
-			'! ?([;/,]) ?!S' => '$1',
+			'! ?([;,]) ?!S' => '$1',
 		);
 		return preg_replace(
 			array_keys( $replacements ), array_values( $replacements ), $str );
 	}
 
-
-	public static function splitDelimList ( $str, $delim = ',', $trim = true ) {
+	static public function splitDelimList ( $str, $delim = ',', $trim = true ) {
 
 		$do_preg_split = strlen( $delim ) > 1 ? true : false;
 
@@ -131,47 +111,7 @@ class csscrush_util {
 		return $list;
 	}
 
-
-	public static function matchBrackets ( $str, $brackets = '()', $offset = 0, $capture_text = false ) {
-
-		list( $opener, $closer ) = str_split( $brackets, 1 );
-
-		$match = (object) array();
-
-		if ( strpos( $str, $opener, $offset ) === false ) {
-			return false;
-		}
-
-		if ( substr_count( $str, $opener ) !== substr_count( $str, $closer ) ) {
-			$sample = substr( $str, $offset, 25 );
-			trigger_error( __METHOD__ . ": Unmatched token near '$sample'.\n", E_USER_WARNING );
-			return false;
-		}
-
-		$patt = csscrush_regex::$patt->balancedParens;
-		if ( $opener === '{' ) {
-			$patt = csscrush_regex::$patt->balancedCurlies;
-		}
-
-		if ( preg_match( $patt, $str, $m, PREG_OFFSET_CAPTURE, $offset ) ) {
-
-			$match->start = $m[0][1];
-			$match->end = $match->start + strlen( $m[0][0] );
-
-			if ( $capture_text ) {
-				// Text capturing is optional to avoid using memory when not necessary.
-				$match->inside = $m[1][0];
-				$match->after = substr( $str, $match->end );
-			}
-			return $match;
-		}
-
-		trigger_error( __METHOD__ . ": Could not match '$opener'. Exiting.\n", E_USER_WARNING );
-		return false;
-	}
-
-
-	public static function getLinkBetweenDirs ( $dir1, $dir2 ) {
+	static public function getLinkBetweenDirs ( $dir1, $dir2 ) {
 
 		// Normalise the paths.
 		$dir1 = trim( csscrush_util::normalizePath( $dir1, true ), '/' );
@@ -203,6 +143,75 @@ class csscrush_util {
 
 /**
  *
+ *  Balanced bracket matching on the main stream.
+ *
+ */
+class csscrush_balancedMatch {
+
+	public function __construct ( csscrush_stream $stream, $offset, $brackets = '{}' ) {
+
+		$this->stream = $stream;
+		$this->offset = $offset;
+		$this->match = null;
+		$this->length = 0;
+
+		list( $opener, $closer ) = str_split( $brackets, 1 );
+
+		if ( strpos( $stream->raw, $opener, $this->offset ) === false ) {
+			return;
+		}
+
+		if ( substr_count( $stream->raw, $opener ) !== substr_count( $stream->raw, $closer ) ) {
+			$sample = substr( $stream->raw, $this->offset, 25 );
+			trigger_error( __METHOD__ . ": Unmatched token near '$sample'.\n", E_USER_WARNING );
+			return;
+		}
+
+		$patt = $opener === '{' ?
+			csscrush_regex::$patt->balancedCurlies : csscrush_regex::$patt->balancedParens;
+
+		if ( preg_match( $patt, $stream->raw, $m, PREG_OFFSET_CAPTURE, $this->offset ) ) {
+
+			$this->match = $m;
+			$this->matchLength = strlen( $m[0][0] );
+			$this->matchStart = $m[0][1];
+			$this->matchEnd = $this->matchStart + $this->matchLength;
+			$this->length = $this->matchEnd - $this->offset;
+		}
+		else {
+			trigger_error( __METHOD__ . ": Could not match '$opener'. Exiting.\n", E_USER_WARNING );
+		}
+	}
+
+	public function inside () {
+
+		return $this->match[1][0];
+	}
+
+	public function whole () {
+
+		return substr( $this->stream->raw, $this->offset, $this->length );
+	}
+
+	public function replace ( $replacement ) {
+
+		$this->stream->splice( $replacement, $this->offset, $this->length );
+	}
+
+	public function unWrap () {
+
+		$this->stream->splice( $this->inside(), $this->offset, $this->length );
+	}
+
+	public function nextIndexOf ( $needle ) {
+
+		return strpos( $this->stream->raw, $needle, $this->offset );
+	}
+}
+
+
+/**
+ *
  *  URL tokens.
  *
  */
@@ -218,18 +227,18 @@ class csscrush_url {
 	public function __construct ( $raw_value, $convert_to_data = false ) {
 
 		$regex = csscrush_regex::$patt;
+		$process = csscrush::$process;
 
 		if ( preg_match( $regex->sToken, $raw_value ) ) {
-			$this->value = trim( csscrush::tokenFetch( $raw_value ), '\'"' );
-			csscrush::tokenRelease( $raw_value );
+			$this->value = trim( $process->fetchToken( $raw_value ), '\'"' );
+			$process->releaseToken( $raw_value );
 		}
 		else {
 			$this->value = $raw_value;
 		}
 
 		$this->evaluate();
-		$this->label = csscrush::tokenLabelCreate( 'u' );
-		csscrush::$process->tokens->u[ $this->label ] = $this;
+		$this->label = $process->addToken( $this, 'u' );
 	}
 
 	public function __toString () {
@@ -240,7 +249,7 @@ class csscrush_url {
 		return "url($quote$this->value$quote)";
 	}
 
-	public static function get ( $token ) {
+	static public function get ( $token ) {
 		return csscrush::$process->tokens->u[ $token ];
 	}
 
@@ -263,11 +272,6 @@ class csscrush_url {
 			// Normalize slashes.
 			$this->value = rtrim( preg_replace( '![\\\\/]+!', '/', $this->value ), '/' );
 		}
-	}
-
-	public function applyVariables () {
-		csscrush::placeVariables( $this->value );
-		$this->evaluate();
 	}
 
 	public function toData () {
@@ -341,7 +345,112 @@ class csscrush_url {
 
 /**
  *
- *  Version string sugar
+ *  Stream sugar.
+ *
+ */
+class csscrush_stream {
+
+	public function __construct ( $str ) {
+		$this->raw = $str;
+	}
+
+	public function __toString () {
+		return $this->raw;
+	}
+
+	static public function endsWith ( $haystack, $needle ) {
+
+		return substr( $haystack, -strlen( $needle ) ) === $needle;
+	}
+
+	public function update ( $str ) {
+		$this->raw = $str;
+		return $this;
+	}
+
+	public function substr ( $start, $length = null ) {
+		if ( is_null( $length ) ) {
+			return substr( $this->raw, $start );
+		}
+		else {
+			return substr( $this->raw, $start, $length );
+		}
+	}
+
+	public function matchAll ( $patt, $preprocess_patt = false ) {
+		return csscrush_regex::matchAll( $patt, $this->raw, $preprocess_patt );
+	}
+
+	public function replace ( $find, $replacement ) {
+		$this->raw = str_replace( $find, $replacement, $this->raw );
+		return $this;
+	}
+
+	public function replaceHash ( $replacements ) {
+		if ( $replacements ) {
+			$this->raw = str_replace(
+				array_keys( $replacements ),
+				array_values( $replacements ),
+				$this->raw );
+		}
+		return $this;
+	}
+
+	public function pregReplace ( $patt, $replacement ) {
+		$this->raw = preg_replace( $patt, $replacement, $this->raw );
+		return $this;
+	}
+
+	public function pregReplaceCallback ( $patt, $callback ) {
+		$this->raw = preg_replace_callback( $patt, $callback, $this->raw );
+		return $this;
+	}
+
+	public function pregReplaceHash ( $replacements ) {
+		if ( $replacements ) {
+			$this->raw = preg_replace(
+				array_keys( $replacements ),
+				array_values( $replacements ),
+				$this->raw );
+		}
+		return $this;
+	}
+
+	public function append ( $append ) {
+		$this->raw .= $append;
+		return $this;
+	}
+
+	public function prepend ( $prepend ) {
+		$this->raw = $prepend . $this->raw;
+		return $this;
+	}
+
+	public function splice ( $replacement, $offset, $length = null ) {
+		$this->raw = substr_replace( $this->raw, $replacement, $offset, $length );
+		return $this;
+	}
+
+	public function trim () {
+		$this->raw = trim( $this->raw );
+		return $this;
+	}
+
+	public function rTrim () {
+		$this->raw = rtrim( $this->raw );
+		return $this;
+	}
+
+	public function lTrim () {
+		$this->raw = ltrim( $this->raw );
+		return $this;
+	}
+}
+
+
+/**
+ *
+ *  Version string.
  *
  */
 class csscrush_version {

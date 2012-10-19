@@ -13,6 +13,7 @@
 require_once 'lib/Util.php';
 require_once 'lib/IO.php';
 require_once 'lib/Core.php';
+require_once 'lib/Process.php';
 require_once 'lib/Rule.php';
 require_once 'lib/Mixin.php';
 require_once 'lib/Function.php';

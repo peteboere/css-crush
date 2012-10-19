@@ -4,7 +4,6 @@
  *  Access to the execution flow
  * 
  */
-
 class csscrush_hook {
 
 	// Table of hooks and the functions attached to them
@@ -37,7 +36,7 @@ class csscrush_hook {
 		unset( self::$register[ $hook ][ $fn_name ] );
 	}
 
-	static public function run ( $hook, $arg_obj ) {
+	static public function run ( $hook, $arg_obj = null ) {
 
 		// Run all callbacks attached to the hook
 		if ( ! isset( self::$register[ $hook ] ) ) {

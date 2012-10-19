@@ -1,6 +1,9 @@
 1.8
 -----
+Added selector aliasing with @selector-alias directive.
+Added viewport @-rule aliases.
 Improved minification.
+Major refactoring.
 
 
 1.7

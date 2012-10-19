@@ -4,9 +4,7 @@
  *  Plugin API
  * 
  */
-
 class csscrush_plugin {
-
 
 	// The required prefix to all plugin function names
 	static public $prefix = 'csscrush__';
@@ -14,13 +12,11 @@ class csscrush_plugin {
 	// The current loaded plugins
 	static protected $associated_hooks = array();
 
-
 	// Externally associate a hook with the plugin
 	static public function registerHook ( $plugin_name, $hook ) {
 
 		self::$associated_hooks[ $plugin_name ] = $hook;
 	}
-
 
 	static public function enable ( $plugin_name ) {
 
@@ -49,7 +45,6 @@ class csscrush_plugin {
 		}
 		return true;
 	}
-
 
 	static public function disable ( $plugin_name ) {
 

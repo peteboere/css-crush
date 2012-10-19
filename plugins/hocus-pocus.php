@@ -13,13 +13,5 @@
  * 
  */
 
-csscrush_hook::add( 'rule_preprocess', 'csscrush__hocus_pocus' );
-
-function csscrush__hocus_pocus ( $rule ) {
-
-	$adjustments = array(
-		'!:hocus([^a-z0-9_-]|$)!' => ':any(:hover,:focus)$1',
-		'!:pocus([^a-z0-9_-]|$)!' => ':any(:hover,:focus,:active)$1',
-	);
-	$rule->selector_raw = preg_replace( array_keys( $adjustments ), array_values( $adjustments ), $rule->selector_raw );
-}
+csscrush::$config->selectorAliases[ 'hocus' ] = ':any(:hover,:focus)';
+csscrush::$config->selectorAliases[ 'pocus' ] = ':any(:hover,:focus,:active)';

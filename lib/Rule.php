@@ -1,10 +1,9 @@
 <?php
 /**
  *
- * CSS rule API
+ * CSS rule API.
  *
  */
-
 class csscrush_rule implements IteratorAggregate, Countable {
 
 	public $vendorContext;
@@ -31,53 +30,12 @@ class csscrush_rule implements IteratorAggregate, Countable {
 	// A table for storing the declarations as data for external query() referencing
 	public $data = array();
 
-	public function declarationCheckin ( $prop, $value, &$pairs ) {
-
-		if ( $prop !== '' && $value !== '' ) {
-
-			// First resolve query() calls that reference earlier rules
-			if ( preg_match( csscrush_regex::$patt->queryFunction, $value ) ) {
-
-				csscrush_function::executeCustomFunctions( $value,
-					csscrush_regex::$patt->queryFunction, array(
-						'query' => array( $this, 'cssQueryFunction' ),
-					), $prop );
-			}
-
-			if ( strpos( $prop, 'data-' ) === 0 ) {
-
-				// If it's with data prefix, we don't want to print it
-				// Just remove the prefix
-				$prop = substr( $prop, strlen( 'data-' ) );
-
-				// On first pass we want to store data properties on $this->data,
-				// as well as on local
-				$this->data[ $prop ] = $value;
-			}
-			else {
-
-				// Add to the stack
-				$pairs[] = array( $prop, $value );
-			}
-
-			// Set on $this->localData
-			$this->localData[ $prop ] = $value;
-
-			// Unset on data tables if the value has a this() call:
-			//   - Restriction to avoid circular references
-			if ( preg_match( csscrush_regex::$patt->thisFunction, $value ) ) {
-
-				unset( $this->localData[ $prop ] );
-				unset( $this->data[ $prop ] );
-			}
-		}
-	}
-
 	public function __construct ( $selector_string = null, $declarations_string ) {
 
 		$regex = csscrush_regex::$patt;
-		$options = csscrush::$process->options;
-		$this->label = csscrush::tokenLabelCreate( 'r' );
+		$process = csscrush::$process;
+		$options = $process->options;
+		$this->label = $process->createTokenLabel( 'r' );
 
 		// If tracing store the last tracing stub, then strip all.
 		if (
@@ -92,7 +50,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		// Parse the selectors chunk
 		if ( ! empty( $selector_string ) ) {
 
-			csscrush::captureParens( $selector_string );
+			$process->captureParens( $selector_string );
 			$selectors = csscrush_util::splitDelimList( $selector_string );
 
 			// Remove and store comments that sit above the first selector
@@ -113,7 +71,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 					$abstract_name = $m[1];
 
 					// Link the rule to the abstract name and skip forward to declaration parsing
-					csscrush::$process->abstracts[ $abstract_name ] = $this;
+					$process->abstracts[ $abstract_name ] = $this;
 					break;
 				}
 
@@ -260,6 +218,47 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			}
 			$block = implode( ";\n\t", $block );
 			return "$comments\n$tracing_stub$selectors {\n\t$block;\n\t}\n";
+		}
+	}
+
+	public function declarationCheckin ( $prop, $value, &$pairs ) {
+
+		if ( $prop !== '' && $value !== '' ) {
+
+			// First resolve query() calls that reference earlier rules
+			if ( preg_match( csscrush_regex::$patt->queryFunction, $value ) ) {
+
+				csscrush_function::executeCustomFunctions( $value,
+					csscrush_regex::$patt->queryFunction, array(
+						'query' => array( $this, 'cssQueryFunction' ),
+					), $prop );
+			}
+
+			if ( strpos( $prop, 'data-' ) === 0 ) {
+
+				// If it's with data prefix, we don't want to print it
+				// Just remove the prefix
+				$prop = substr( $prop, strlen( 'data-' ) );
+
+				// On first pass we want to store data properties on $this->data,
+				// as well as on local
+				$this->data[ $prop ] = $value;
+			}
+			else {
+
+				// Add to the stack
+				$pairs[] = array( $prop, $value );
+			}
+
+			// Set on $this->localData
+			$this->localData[ $prop ] = $value;
+
+			// Unset on data tables if the value has a this() call:
+			//   - Restriction to avoid circular references
+			if ( preg_match( csscrush_regex::$patt->thisFunction, $value ) ) {
+
+				unset( $this->localData[ $prop ], $this->data[ $prop ] );
+			}
 		}
 	}
 
@@ -694,6 +693,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		return count( $this->_declarations );
 	}
 
+
 	############
 	#  Rule API
 
@@ -731,7 +731,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		return false;
 	}
 
-	public static function get ( $token ) {
+	static public function get ( $token ) {
 
 		if ( isset( csscrush::$process->tokens->r[ $token ] ) ) {
 			return csscrush::$process->tokens->r[ $token ];
@@ -740,12 +740,12 @@ class csscrush_rule implements IteratorAggregate, Countable {
 	}
 }
 
+
 /**
  *
- * Declaration objects
+ * Declaration objects.
  *
  */
-
 class csscrush_declaration {
 
 	public $property;
@@ -806,7 +806,7 @@ class csscrush_declaration {
 		}
 
 		// Capture all remaining paren pairs.
-		csscrush::captureParens( $value );
+		csscrush::$process->captureParens( $value );
 
 		// Create an index of all regular functions in the value.
 		if ( preg_match_all( $regex->function, $value, $functions ) > 0 ) {
@@ -832,16 +832,15 @@ class csscrush_declaration {
 
 	public function getFullValue () {
 
-		return csscrush::tokenRestoreAll( $this->value, 'p' );
+		return csscrush::$process->restoreTokens( $this->value, 'p' );
 	}
 
 }
 
 
-
 /**
  *
- * Selector objects
+ * Selector objects.
  *
  */
 class csscrush_selector {
@@ -850,11 +849,11 @@ class csscrush_selector {
 	public $readableValue;
 	public $allowPrefix = true;
 
-	public static function makeReadableSelector ( $selector_string ) {
+	static function makeReadableSelector ( $selector_string ) {
 
 		// Quick test for paren tokens
 		if ( strpos( $selector_string, '?p' ) !== false ) {
-			$selector_string = csscrush::tokenRestoreAll( $selector_string, 'p' );
+			$selector_string = csscrush::$process->restoreTokens( $selector_string, 'p' );
 		}
 
 		// Create space around combinators, then normalize whitespace
@@ -863,7 +862,7 @@ class csscrush_selector {
 
 		// Quick test for string tokens
 		if ( strpos( $selector_string, '?s' ) !== false ) {
-			$selector_string = csscrush::tokenRestoreAll( $selector_string, 's' );
+			$selector_string = csscrush::$process->restoreTokens( $selector_string, 's' );
 		}
 
 		// Quick test for double-colons for backwards compat
@@ -894,7 +893,7 @@ class csscrush_selector {
 	public function appendPseudo ( $pseudo ) {
 
 		// Check to avoid doubling-up
-		if ( ! csscrush_util::strEndsWith( $this->readableValue, $pseudo ) ) {
+		if ( ! csscrush_stream::endsWith( $this->readableValue, $pseudo ) ) {
 
 			$this->readableValue .= $pseudo;
 			$this->value .= $pseudo;
@@ -904,10 +903,9 @@ class csscrush_selector {
 }
 
 
-
 /**
  *
- * Extend argument objects
+ * Extend argument objects.
  *
  */
 class csscrush_extendArg {
@@ -936,5 +934,4 @@ class csscrush_extendArg {
 		}
 	}
 }
-
 

@@ -4,7 +4,6 @@
  *  Mixin objects
  *
  */
-
 class csscrush_mixin {
 
 	public $declarationsTemplate = array();
@@ -83,7 +82,7 @@ class csscrush_mixin {
 		return $declarations;
 	}
 
-	public static function parseSingleValue ( $message ) {
+	static public function parseSingleValue ( $message ) {
 
 		$message = ltrim( $message );
 		$mixin = null;
@@ -160,7 +159,7 @@ class csscrush_mixin {
 		return $mixin->call( $args );
 	}
 
-	public static function parseValue ( $message ) {
+	static public function parseValue ( $message ) {
 
 		// Call the mixin and return the list of declarations
 		$declarations = array();
@@ -182,7 +181,6 @@ class csscrush_mixin {
  *  Fragment objects
  *
  */
-
 class csscrush_fragment {
 
 	public $template = array();
@@ -215,14 +213,11 @@ class csscrush_fragment {
 }
 
 
-
-
 /**
  *
  *  Argument list management for mixins and fragments
  *
  */
-
 class csscrush_arglist implements Countable {
 
 	// Positional argument default values
@@ -234,11 +229,13 @@ class csscrush_arglist implements Countable {
 	// The string passed in with arg calls replaced by tokens
 	public $string;
 
-	function __construct ( $str ) {
+	public function __construct ( $str ) {
 
 		// Parse all arg function calls in the passed string, callback creates default values
 		csscrush_function::executeCustomFunctions( $str, 
-				csscrush_regex::$patt->argFunction, array( 'arg' => array( $this, 'store' ) ) );
+				csscrush_regex::$patt->argFunction, array(
+					'arg' => array( $this, 'store' )
+				));
 		$this->string = $str;
 	}
 
@@ -310,5 +307,4 @@ class csscrush_arglist implements Countable {
 		return $this->argCount;
 	}
 }
-
 
