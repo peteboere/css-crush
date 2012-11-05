@@ -10,7 +10,7 @@ class csscrush_rule implements IteratorAggregate, Countable {
 	public $isNested;
 	public $label;
 
-	public $tracingStub = null;
+	public $tracingStub;
 
 	public $properties = array();
 
@@ -181,8 +181,9 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 	public function __toString () {
 
-		$minify = ! csscrush::$process->options->debug;
+		$minify = csscrush::$process->options->minify;
 		$whitespace = $minify ? '' : ' ';
+		$EOL = PHP_EOL;
 
 		// Tracing stubs.
 		$tracing_stub = '';
@@ -190,13 +191,15 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			$tracing_stub =& csscrush::$process->tokens->t[ $this->tracingStub ];
 		}
 
-		// If there are no selectors or declarations associated with the rule return empty string
+		// If there are no selectors or declarations associated with the rule return empty string.
 		if ( empty( $this->selectorList ) || ! count( $this ) ) {
+			// De-referencing self.
+			unset( csscrush::$process->tokens->r[ $this->label ] );
 			return '';
 		}
 
-		// Build the selector; uses selector __toString method
-		$selectors = implode( ',', $this->selectorList );
+		// Build the selector; uses selector __toString method.
+		$selectors = implode( $minify ? ',' : ",$EOL", $this->selectorList );
 
 		// Build the block
 		$block = array();
@@ -212,12 +215,12 @@ class csscrush_rule implements IteratorAggregate, Countable {
 		}
 		else {
 			// Include pre-rule comments.
-			$comments = implode( "\n", $this->comments );
+			$comments = implode( '', $this->comments );
 			if ( $tracing_stub ) {
-				$tracing_stub .= "\n";
+				$tracing_stub .= $EOL;
 			}
-			$block = implode( ";\n\t", $block );
-			return "$comments\n$tracing_stub$selectors {\n\t$block;\n\t}\n";
+			$block = implode( ";$EOL\t", $block );
+			return "$comments$tracing_stub$selectors {{$EOL}\t$block;$EOL\t}$EOL$EOL";
 		}
 	}
 

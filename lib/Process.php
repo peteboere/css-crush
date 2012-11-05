@@ -22,6 +22,7 @@ class csscrush_process {
 		$this->mixins = array();
 		$this->abstracts = array();
 		$this->errors = array();
+		$this->stat = array();
 		$this->selectorRelationships = array();
 		$this->charset = null;
 		$this->currentFile = null;
@@ -109,17 +110,27 @@ class csscrush_process {
 
 	public function setOptions ( $options ) {
 
+		$config = csscrush::$config;
+
 		if ( ! is_array( $options ) ) {
 			$options = array();
 		}
 
+		// Backwards compat for change option name from debug to minify.
+		if ( array_key_exists( 'debug', $options ) && ! array_key_exists( 'minify', $options ) ) {
+			$options[ 'minify' ] = ! $options[ 'debug' ];
+		}
+
+		// Resolve trace options.
+		if ( array_key_exists( 'trace', $options ) && ! is_array( $options[ 'trace' ] ) ) {
+			$options[ 'trace' ] = $options[ 'trace' ] ? array( 'stubs' ) : array();
+		}
+
 		// Keeping track of global vars internally to maintain cache integrity.
-		$options[ '_globalVars' ] = csscrush::$config->vars;
+		$options[ '_globalVars' ] = $config->vars;
 
 		// Populate unset options with defaults.
-		$options += (array) csscrush::$config->options;
-
-		$this->options = (object) $options;
+		$this->options = (object) ( $options + (array) $config->options );
 	}
 
 
@@ -242,20 +253,11 @@ class csscrush_process {
 		}
 
 		// Pretty print.
-		static $format_callback;
-		if ( ! $format_callback ) {
-			$format_callback = create_function( '$it', 'return ! empty($it) ? " $it" : $it;' );
-		}
-		$boilerplate = explode( PHP_EOL, $boilerplate );
+		$EOL = PHP_EOL;
+		$boilerplate = preg_split( '![\t ]*(\r\n?|\n)[\t ]*!S', $boilerplate );
 		$boilerplate = array_map( 'trim', $boilerplate );
-		$boilerplate = array_map( $format_callback, $boilerplate );
-		$boilerplate = implode( PHP_EOL . ' *', $boilerplate );
-		$boilerplate = <<<TPL
-/*
- *$boilerplate
- */
-TPL;
-		return $boilerplate . PHP_EOL;
+		$boilerplate = "$EOL * " . implode( "$EOL * ", $boilerplate );
+		return "/*{$boilerplate}$EOL */$EOL";
 	}
 
 
@@ -699,7 +701,7 @@ TPL;
 			csscrush::$process->tokens->r[ $rule->label ] = $rule;
 
 			// If only using extend still return a label.
-			return $rule->label . "\n";
+			return $rule->label;
 		}
 	}
 
@@ -875,39 +877,33 @@ TPL;
 	protected function collate () {
 
 		$options = $this->options;
-		$minify = ! $options->debug;
+		$minify = $options->minify;
 		$regex = csscrush_regex::$patt;
 		$regex_replacements = array();
+		$EOL = PHP_EOL;
+
+		// Strip newlines added during parsing.
+		$regex_replacements[ '!\n+!' ] = '';
 
 		if ( $minify ) {
-
 			// Strip whitespace around colons used in @-rule arguments.
 			$regex_replacements[ '! ?\: ?!' ] = ':';
-			// Strip newlines added during parsing.
-			$regex_replacements[ '!\n+!' ] = '';
 		}
 		else {
-
 			// Pretty printing.
-			$regex_replacements[ '!([{}])!' ] = "$1\n";
+			$regex_replacements[ '!}!' ] = "$0$EOL$EOL";
 			$regex_replacements[ '!([^\s])\{!' ] = "$1 {";
-			$regex_replacements[ '!([@])!' ] = "\n$1";
-
-			// Newlines after some tokens.
-			$regex_replacements[ '!(\?[rc][0-9]+\?)!' ] = "$1\n";
-
-			// Kill double spaces.
-			$regex_replacements[ '!\n+!' ] = "\n";
+			$regex_replacements[ '! ?(@[^{]+\{)!' ] = "$1$EOL";
+			$regex_replacements[ '! ?(@[^;]+\;)!' ] = "$1$EOL";
 		}
-
-		// Kill leading space.
-		$regex_replacements[ '!\n\s+!' ] = "\n";
 
 		// Apply all replacements.
 		$this->stream->pregReplaceHash( $regex_replacements )->lTrim();
 
 		// Print out rules.
 		$this->stream->replaceHash( $this->tokens->r );
+		csscrush::runStat( 'selector_count' );
+		csscrush::runStat( 'rule_count' );
 
 		// Insert parens.
 		$this->stream->replaceHash( $this->tokens->p );
@@ -920,20 +916,17 @@ TPL;
 			$this->stream->pregReplace( '! ?([>~+]) ?!S', '$1' );
 		}
 		else {
-			// Add space after commas.
-			$this->stream->replace( ',', ', ' );
 
 			// Add newlines after comments.
 			foreach ( $this->tokens->c as $token => &$comment ) {
-				$comment .= "\n";
+				$comment .= "$EOL$EOL";
 			}
 
 			// Insert comments and do final whitespace cleanup.
 			$this->stream
 				->replaceHash( $this->tokens->c )
-				->pregReplace( '!\n{3,}!', "\n\n" )
 				->trim()
-				->append( "\n" );
+				->append( $EOL );
 		}
 
 		// Insert URLs.
@@ -974,11 +967,14 @@ TPL;
 
 		// Add @charset at top if set.
 		if ( $this->charset ) {
-			$this->stream->prepend( "@charset \"$this->charset\";\n" );
+			$this->stream->prepend( "@charset \"$this->charset\";$EOL" );
 		}
 	}
 
 	public function compile () {
+
+		// Always store start time.
+		$this->stat[ 'compile_start_time' ] = microtime( true );
 
 		// Resolve active aliases and plugins.
 		$this->filterPlugins();
@@ -1005,7 +1001,7 @@ TPL;
 		// Pull out @fragment blocks, and invoke.
 		$this->resolveFragments();
 
-		// Adjust the stream so we can extract the rules cleanly.
+		// Adjust meta characters so we can extract the rules cleanly.
 		$this->stream->replaceHash( array(
 			'@' => "\n@",
 			'}' => "}\n",
@@ -1030,6 +1026,8 @@ TPL;
 
 		// Release memory.
 		$this->release();
+
+		csscrush::runStat( 'compile_time' );
 
 		return $this->stream;
 	}

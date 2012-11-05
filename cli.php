@@ -209,7 +209,7 @@ else {
 
 $process_opts = array();
 $process_opts[ 'boilerplate' ] = $boilerplate ? true : false;
-$process_opts[ 'debug' ] = $pretty ? true : false;
+$process_opts[ 'minify' ] = $pretty ? false : true;
 $process_opts[ 'rewrite_import_urls' ] = true;
 
 // Enable plugin args

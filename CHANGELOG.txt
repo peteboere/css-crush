@@ -3,6 +3,11 @@
 Added selector aliasing with @selector-alias directive.
 Added viewport @-rule aliases.
 Improved minification.
+Improved cross OS support.
+Debug option renamed to 'minify'; debug option will still work as before but is deprecated.
+Expanded trace option to take an optional array of log parameters;
+log params available are stubs, selector_count and compile_time.
+Added csscrush::stat method to retrieve logged parameters.
 Major refactoring.
 
 
@@ -15,7 +20,7 @@ Added options for enabling and disabling plugins at runtime.
 Added property sorter plugin.
 Added support for SASS-like @include/@extend syntax for invoking mixins and extends.
 Boilerplate option now accepts a filename string as a boilerplate template.
-CssCrush::string() now uses document_root as a default context for finding linked resources.
+csscrush::string method now uses document_root as a default context for finding linked resources.
 Updated command line appication.
 Updated aliases and initial value files.
 Fixed parsing issue introduced in 1.6.1.

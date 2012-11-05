@@ -25,13 +25,14 @@ class csscrush_importer {
 		if ( $prepend_file = csscrush_util::find( 'Prepend-local.css', 'Prepend.css' ) ) {
 			$prepend_file_contents = file_get_contents( $prepend_file );
 			$process->currentFile = 'file://' . $prepend_file;
+
 			// If there's a parsing error inside the prepend file, wipe $prepend_file_contents.
 			if ( ! self::prepareForStream( $prepend_file_contents ) ) {
 				$prepend_file_contents = '';
 			}
 		}
 
-		// Resolve main input; Is it a bare string or a file.
+		// Resolve main input; a string of css or a file.
 		if ( isset( $input->string ) ) {
 			$str .= $input->string;
 			$process->currentFile = 'inline css';
@@ -188,7 +189,9 @@ class csscrush_importer {
 
 		$regex = csscrush_regex::$patt;
 		$process = csscrush::$process;
-		$trace = $process->options->trace;
+
+		// Convert all end-of-lines to unix style.
+		$str = preg_replace( '~\r\n?~', "\n", $str );
 
 		$str = preg_replace_callback( $regex->commentAndString,
 			array( 'self', 'cb_extractCommentAndString' ), $str );
@@ -226,14 +229,20 @@ class csscrush_importer {
 		}
 
 		// Optionally add tracing stubs.
-		if ( $trace ) {
+		if ( in_array( 'stubs', $process->options->trace ) ) {
 			self::addTracingStubs( $str );
 		}
 
 		// Strip unneeded whitespace.
 		$str = csscrush_util::normalizeWhiteSpace( $str );
 
-		// Tokenize all the URLs.
+		self::captureUrls( $str );
+
+		return true;
+	}
+
+	static protected function captureUrls ( &$str ) {
+
 		$patt = '#
 			@import\x{20}(\?s\d+\?)
 			|
@@ -251,7 +260,9 @@ class csscrush_importer {
 				$str = str_replace( $outer_m[1][0], $url->label, $str );
 			}
 			// Match parenthesis if not a string token.
-			elseif ( preg_match( $regex->balancedParens, $str, $inner_m, PREG_OFFSET_CAPTURE, $outer_offset ) ) {
+			elseif (
+				preg_match( csscrush_regex::$patt->balancedParens, $str, $inner_m, PREG_OFFSET_CAPTURE, $outer_offset )
+			) {
 				$url = new csscrush_url( $inner_m[1][0] );
 				$func_name = strtolower( $outer_m[2][0] );
 				$url->convertToData = 'data-uri' === $func_name;
@@ -263,8 +274,6 @@ class csscrush_importer {
 				$offset += strlen( $outer_m[0][0] );
 			}
 		}
-
-		return true;
 	}
 
 	static protected function cb_extractCommentAndString ( $match ) {
@@ -277,13 +286,10 @@ class csscrush_importer {
 
 		if ( strpos( $full_match, '/*' ) === 0 ) {
 
-			// Strip private comments
-			$private_comment_marker = '$';
-
 			// Bail without storing comment if in debug mode or a private comment.
 			if (
-				strpos( $full_match, '/*' . $private_comment_marker ) === 0 ||
-				! $process->options->debug
+				$process->options->minify ||
+				strpos( $full_match, '/*$' ) === 0
 			) {
 				return $newlines;
 			}

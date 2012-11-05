@@ -41,8 +41,8 @@ class csscrush {
 		// Default options.
 		self::$config->options = (object) array(
 
-			// Minify. Set true for formatting and comments
-			'debug' => false,
+			// Minify. Set false for formatting and comments
+			'minify' => true,
 
 			// Append 'checksum' to output file name
 			'versioning' => true,
@@ -71,8 +71,9 @@ class csscrush {
 			// List of plugins to disable (as Array of names)
 			'disable' => null,
 
-			// Output sass debug-info stubs that work with development tools like FireSass.
-			'trace' => false,
+			// Debugging options.
+			// Set true to output sass debug-info stubs that work with development tools like FireSass.
+			'trace' => array(),
 		);
 
 		// Initialise other classes.
@@ -196,11 +197,11 @@ class csscrush {
 	#  External API.
 
 	/**
-	 * Process host CSS file and return a new compiled file
+	 * Process host CSS file and return a new compiled file.
 	 *
-	 * @param string $file  URL or System path to the host CSS file
-	 * @param mixed $options  An array of options or null
-	 * @return string  The public path to the compiled file or an empty string
+	 * @param string $file  URL or System path to the host CSS file.
+	 * @param mixed $options  An array of options or null.
+	 * @return string  The public path to the compiled file or an empty string.
 	 */
 	static public function file ( $file, $options = null ) {
 
@@ -271,12 +272,12 @@ class csscrush {
 	}
 
 	/**
-	 * Process host CSS file and return an HTML link tag with populated href
+	 * Process host CSS file and return an HTML link tag with populated href.
 	 *
-	 * @param string $file  Absolute or relative path to the host CSS file
-	 * @param mixed $options  An array of options or null
-	 * @param array $attributes  An array of HTML attributes
-	 * @return string  HTML link tag or error message inside HTML comment
+	 * @param string $file  Absolute or relative path to the host CSS file.
+	 * @param mixed $options  An array of options or null.
+	 * @param array $attributes  An array of HTML attributes.
+	 * @return string  HTML link tag or error message inside HTML comment.
 	 */
 	static public function tag ( $file, $options = null, $attributes = array() ) {
 
@@ -305,12 +306,12 @@ class csscrush {
 	}
 
 	/**
-	 * Process host CSS file and return CSS as text wrapped in html style tags
+	 * Process host CSS file and return CSS as text wrapped in html style tags.
 	 *
-	 * @param string $file  Absolute or relative path to the host CSS file
-	 * @param mixed $options  An array of options or null
-	 * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag
-	 * @return string  HTML link tag or error message inside HTML comment
+	 * @param string $file  Absolute or relative path to the host CSS file.
+	 * @param mixed $options  An array of options or null.
+	 * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag.
+	 * @return string  HTML link tag or error message inside HTML comment.
 	 */
 	static public function inline ( $file, $options = null, $attributes = array() ) {
 
@@ -349,11 +350,11 @@ class csscrush {
 	}
 
 	/**
-	 * Compile a raw string of CSS string and return it
+	 * Compile a raw string of CSS string and return it.
 	 *
-	 * @param string $string  CSS text
-	 * @param mixed $options  An array of options or null
-	 * @return string  CSS text
+	 * @param string $string  CSS text.
+	 * @param mixed $options  An array of options or null.
+	 * @return string  CSS text.
 	 */
 	static public function string ( $string, $options = null ) {
 
@@ -390,9 +391,9 @@ class csscrush {
 	}
 
 	/**
-	 * Add variables globally
+	 * Add variables globally.
 	 *
-	 * @param mixed $var  Assoc array of variable names and values, a php ini filename or null
+	 * @param mixed $var  Assoc array of variable names and values, a php ini filename or null.
 	 */
 	static public function globalVars ( $vars ) {
 
@@ -415,12 +416,32 @@ class csscrush {
 	}
 
 	/**
-	 * Clear config file and compiled files for the specified directory
+	 * Clear config file and compiled files for the specified directory.
 	 *
-	 * @param string $dir  System path to the directory
+	 * @param string $dir  System path to the directory.
 	 */
 	static public function clearCache ( $dir = '' ) {
 		return $process->ioCall( 'clearCache', $dir );
+	}
+
+	/**
+	 * Get debug info.
+	 * Depends on arguments passed to the trace option.
+	 *
+	 * @param string $name  Name of stat to retrieve. Leave blank to retrieve all.
+	 */
+	static public function stat ( $name = null ) {
+
+		$stat = csscrush::$process->stat;
+
+		if ( $name && array_key_exists( $name, $stat ) ) {
+			return array( $name => $stat[ $name ] );
+		}
+
+		// Lose stats that are only useful internally.
+		unset( $stat[ 'compile_start_time' ] );
+
+		return $stat;
 	}
 
 
@@ -464,6 +485,33 @@ class csscrush {
 		self::log( $msg );
 	}
 
+	static public function runStat ( $name ) {
+
+		$process = csscrush::$process;
+
+		if ( ! $process->options->trace || ! in_array( $name, $process->options->trace ) ) {
+			return;
+		}
+
+		switch ( $name ) {
+
+			case 'selector_count':
+				$process->stat[ 'selector_count' ] = 0;
+				foreach ( $process->tokens->r as $rule ) {
+					$process->stat[ 'selector_count' ] += count( $rule->selectorList );
+				}
+				break;
+
+			case 'rule_count':
+				$process->stat[ 'rule_count' ] = count( $process->tokens->r );
+				break;
+
+			case 'compile_time':
+				$time = microtime( true );
+				$process->stat[ 'compile_time' ] =  $time - $process->stat[ 'compile_start_time' ];
+				break;
+		}
+	}
 }
 
 
