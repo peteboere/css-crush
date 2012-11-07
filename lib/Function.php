@@ -120,7 +120,7 @@ class csscrush_function {
 	static protected function colorAdjust ( $color, array $adjustments ) {
 
 		$fn_matched = preg_match( '!^(#|rgba?|hsla?)!', $color, $m );
-		$keywords = csscrush_color::getKeywords();
+		$keywords =& csscrush_color::loadKeywords();
 
 		// Support for Hex, RGB, RGBa and keywords
 		// HSL and HSLa are passed over

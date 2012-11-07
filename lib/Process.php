@@ -696,7 +696,7 @@ class csscrush_process {
 		$rule = new csscrush_rule( $rule->selector_raw, $rule->declaration_raw );
 
 		// Store rules if they have declarations or extend arguments.
-		if ( count( $rule ) || $rule->extendArgs ) {
+		if ( ! empty( $rule->_declarations ) || $rule->extendArgs ) {
 
 			csscrush::$process->tokens->r[ $rule->label ] = $rule;
 
@@ -739,9 +739,6 @@ class csscrush_process {
 
 				// Get the rule instance.
 				$rule = csscrush_rule::get( $rule_match[0][0] );
-
-				// Set the isNested flag.
-				$rule->isNested = true;
 
 				// Using arguments create new selector list for the rule.
 				$new_selector_list = array();
@@ -908,6 +905,13 @@ class csscrush_process {
 		// Insert parens.
 		$this->stream->replaceHash( $this->tokens->p );
 
+		// Advanced minification parameters.
+		if ( is_array( $minify ) ) {
+			if ( in_array( 'colors', $minify ) ) {
+				$this->minifyColors();
+			}
+		}
+
 		// Compress hex-codes, collapse TRBL lists etc.
 		$this->decruft();
 
@@ -1057,8 +1061,43 @@ class csscrush_process {
 			'!(\: *)0 0 (-?(?:\d+)?\.?\d+[a-z]{1,4}) 0 *([;}])!iS' => '${1}0 0 $2$3',
 
 			// Compress hex codes.
-			'!\#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3!iS' => '#$1$2$3',
+			csscrush_regex::$patt->cruftyHex => '#$1$2$3',
 		));
 	}
 
+
+	#############################
+	#  Advanced minification.
+
+	protected function minifyColors () {
+
+		static $keywords_patt;
+		if ( ! $keywords_patt ) {
+			$keywords =& csscrush_color::loadMinifyableKeywords();
+			$keywords_patt = '~(?<![\w-\.#])(' .
+				implode( '|', array_keys( $keywords ) ) . ')(?![\w-\.#\]])~iS';
+		}
+
+		static $keywords_callback;
+		if ( ! $keywords_callback ) {
+			$keywords_callback = create_function( '$m',
+				'return csscrush_color::$minifyableKeywords[ strtolower( $m[0] ) ];' );
+		}
+
+		$this->stream->pregReplaceCallback( $keywords_patt, $keywords_callback );
+
+		static $functions_callback;
+		if ( ! $functions_callback ) {
+			$functions_callback = create_function( '$m', '
+				$args = csscrush_function::parseArgs( trim( $m[2] ) );
+				if ( stripos( $m[1], \'hsl\' ) === 0 ) {
+					$args = csscrush_color::cssHslToRgb( $args );
+				}
+				return csscrush_color::rgbToHex( $args );
+			');
+		}
+
+		$this->stream->pregReplaceCallback(
+			'~(?<![\w-])(rgb|hsl)\(([^\)]{5,})\)~iS', $functions_callback );
+	}
 }

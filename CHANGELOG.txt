@@ -5,6 +5,7 @@ Added viewport @-rule aliases.
 Improved minification.
 Improved cross OS support.
 Debug option renamed to 'minify'; debug option will still work as before but is deprecated.
+New minify option optionally takes an array of advanced minification parameters.
 Expanded trace option to take an optional array of log parameters;
 log params available are stubs, selector_count and compile_time.
 Added csscrush::stat method to retrieve logged parameters.

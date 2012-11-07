@@ -7,9 +7,7 @@
 class csscrush_rule implements IteratorAggregate, Countable {
 
 	public $vendorContext;
-	public $isNested;
 	public $label;
-
 	public $tracingStub;
 
 	public $properties = array();
@@ -181,9 +179,12 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 	public function __toString () {
 
-		$minify = csscrush::$process->options->minify;
-		$whitespace = $minify ? '' : ' ';
-		$EOL = PHP_EOL;
+		// If there are no selectors or declarations associated with the rule return empty string.
+		if ( empty( $this->selectorList ) || empty( $this->_declarations ) ) {
+			// De-referencing self.
+			unset( csscrush::$process->tokens->r[ $this->label ] );
+			return '';
+		}
 
 		// Tracing stubs.
 		$tracing_stub = '';
@@ -191,35 +192,21 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			$tracing_stub =& csscrush::$process->tokens->t[ $this->tracingStub ];
 		}
 
-		// If there are no selectors or declarations associated with the rule return empty string.
-		if ( empty( $this->selectorList ) || ! count( $this ) ) {
-			// De-referencing self.
-			unset( csscrush::$process->tokens->r[ $this->label ] );
-			return '';
-		}
-
-		// Build the selector; uses selector __toString method.
-		$selectors = implode( $minify ? ',' : ",$EOL", $this->selectorList );
-
-		// Build the block
-		$block = array();
-		foreach ( $this as $declaration ) {
-			$important = $declaration->important ? "$whitespace!important" : '';
-			$block[] = "$declaration->property:{$whitespace}$declaration->value{$important}";
-		}
-
-		// Return whole rule
-		if ( $minify ) {
-			$block = implode( ';', $block );
+		// Concat and return.
+		if ( csscrush::$process->options->minify ) {
+			$selectors = implode( ',', $this->selectorList );
+			$block = implode( ';', $this->_declarations );
 			return "$tracing_stub$selectors{{$block}}";
 		}
 		else {
-			// Include pre-rule comments.
-			$comments = implode( '', $this->comments );
+			$EOL = PHP_EOL;
 			if ( $tracing_stub ) {
 				$tracing_stub .= $EOL;
 			}
-			$block = implode( ";$EOL\t", $block );
+			// Include pre-rule comments.
+			$comments = implode( '', $this->comments );
+			$selectors = implode( ",$EOL", $this->selectorList );
+			$block = implode( ";$EOL\t", $this->_declarations );
 			return "$comments$tracing_stub$selectors {{$EOL}\t$block;$EOL\t}$EOL$EOL";
 		}
 	}
@@ -833,6 +820,19 @@ class csscrush_declaration {
 		$this->important         = $important;
 	}
 
+	public function __toString () {
+
+		if ( csscrush::$process->options->minify ) {
+			$whitespace = '';
+		}
+		else {
+			$whitespace = ' ';
+		}
+		$important = $this->important ? "$whitespace!important" : '';
+
+		return "$this->property:$whitespace$this->value$important";
+	}
+
 	public function getFullValue () {
 
 		return csscrush::$process->restoreTokens( $this->value, 'p' );
@@ -854,23 +854,23 @@ class csscrush_selector {
 
 	static function makeReadableSelector ( $selector_string ) {
 
-		// Quick test for paren tokens
+		// Quick test for paren tokens.
 		if ( strpos( $selector_string, '?p' ) !== false ) {
 			$selector_string = csscrush::$process->restoreTokens( $selector_string, 'p' );
 		}
 
-		// Create space around combinators, then normalize whitespace
+		// Create space around combinators, then normalize whitespace.
 		$selector_string = preg_replace( '#([>+]|~(?!=))#', ' $1 ', $selector_string );
 		$selector_string = csscrush_util::normalizeWhiteSpace( $selector_string );
 
-		// Quick test for string tokens
+		// Quick test for string tokens.
 		if ( strpos( $selector_string, '?s' ) !== false ) {
 			$selector_string = csscrush::$process->restoreTokens( $selector_string, 's' );
 		}
 
-		// Quick test for double-colons for backwards compat
+		// Quick test for double-colons for backwards compat.
 		if ( strpos( $selector_string, '::' ) !== false ) {
-			$selector_string = preg_replace( '!::(after|before|first-(?:letter|line))!', ':$1', $selector_string );
+			$selector_string = preg_replace( '!::(after|before|first-(?:letter|line))!iS', ':$1', $selector_string );
 		}
 
 		return $selector_string;

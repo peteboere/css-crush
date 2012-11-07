@@ -1,16 +1,20 @@
 <?php
 /**
- * 
- * Colour parsing and conversion
- * 
+ *
+ * Colour parsing and conversion.
+ *
  */
 class csscrush_color {
 
-	protected static $keywords = array();
-	
-	static public function getKeywords () {
-		// Load the keywords if necessary
-		if ( empty( self::$keywords ) ) {
+	// Cached color keyword tables.
+	static public $keywords;
+	static public $minifyableKeywords;
+
+	static public function &loadKeywords () {
+
+		if ( is_null( self::$keywords ) ) {
+
+			$table = array();
 			$path = csscrush::$config->location . '/misc/color-keywords.ini';
 			if ( $keywords = parse_ini_file( $path ) ) {
 				foreach ( $keywords as $word => $rgb ) {
@@ -21,11 +25,41 @@ class csscrush_color {
 		}
 		return self::$keywords;
 	}
-	
+
+	static public function &loadMinifyableKeywords () {
+
+		if ( is_null( self::$minifyableKeywords ) ) {
+
+			// If color name is longer than 4 and less than 8 test to see if its hex
+			// representation could be shortened.
+			$table = array();
+			$keywords =& csscrush_color::loadKeywords();
+
+			foreach ( $keywords as $name => &$rgb ) {
+				$name_len = strlen( $name );
+				if ( $name_len < 5 ) {
+					continue;
+				}
+
+				$hex = self::rgbToHex( $rgb );
+
+				if ( $name_len > 7 ) {
+					self::$minifyableKeywords[ $name ] = $hex;
+				}
+				else {
+					if ( preg_match( csscrush_regex::$patt->cruftyHex, $hex ) ) {
+						self::$minifyableKeywords[ $name ] = $hex;
+					}
+				}
+			}
+		}
+		return self::$minifyableKeywords;
+	}
+
 	/**
 	 * http://mjijackson.com/2008/02/
 	 * rgb-to-hsl-and-rgb-to-hsv-color-model-conversion-algorithms-in-javascript
-	 * 
+	 *
 	 * Converts an RGB color value to HSL. Conversion formula
 	 * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
 	 * Assumes r, g, and b are contained in the set [0, 255] and
@@ -120,10 +154,10 @@ class csscrush_color {
 			$val /= 100;
 		}
 		list( $s, $l ) = $hsl;
-		
+
 		$hsl = array( $h, $s, $l );
 		$rgb = self::hslToRgb( $hsl );
-		
+
 		return $rgb;
 	}
 
@@ -137,7 +171,7 @@ class csscrush_color {
 	}
 
 	static public function rgbToHex ( array $rgb ) {
-		$hex_out = '#'; 
+		$hex_out = '#';
 		foreach ( $rgb as $val ) {
 			$hex_out .= str_pad( dechex( $val ), 2, '0', STR_PAD_LEFT );
 		}
@@ -146,7 +180,7 @@ class csscrush_color {
 
 	static public function hexToRgb ( $hex ) {
 		$hex = substr( $hex, 1 );
-		
+
 		// Handle shortened format
 		if ( strlen( $hex ) === 3 ) {
 			$long_hex = array();
@@ -162,4 +196,3 @@ class csscrush_color {
 	}
 
 }
-
