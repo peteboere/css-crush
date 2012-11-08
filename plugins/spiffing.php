@@ -17,8 +17,8 @@ csscrush_hook::add( 'rule_preprocess', 'csscrush__spiffing' );
 
 function csscrush__spiffing ( $rule ) {
 
-	$find = array( 'colour', 'grey', '!please', 'transparency', 'centre', 'plump', 'photograph', 'capitalise' );
-	$replace = array( 'color', 'gray', '!important', 'opacity', 'center', 'bold', 'image', 'capitalize' );
-	
-	$rule->declaration_raw = str_ireplace( $find, $replace, $rule->declaration_raw );
+    $find = array( 'colour', 'grey', '!please', 'transparency', 'centre', 'plump', 'photograph', 'capitalise' );
+    $replace = array( 'color', 'gray', '!important', 'opacity', 'center', 'bold', 'image', 'capitalize' );
+    
+    $rule->declaration_raw = str_ireplace( $find, $replace, $rule->declaration_raw );
 }

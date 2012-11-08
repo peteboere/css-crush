@@ -19,23 +19,23 @@ csscrush_hook::add( 'rule_prealias', 'csscrush__initial' );
 
 function csscrush__initial ( csscrush_rule $rule ) {
 
-	static $initialValues = null;
-	if ( ! $initialValues ) {
-		if ( ! ( $initialValues = @parse_ini_file( CssCrush::$config->location . '/misc/initial-values.ini' ) ) ) {
-			trigger_error( __METHOD__ . ": Initial keywords file could not be parsed.\n", E_USER_NOTICE );
-			return;
-		}
-	}
+    static $initialValues = null;
+    if ( ! $initialValues ) {
+        if ( ! ( $initialValues = @parse_ini_file( CssCrush::$config->location . '/misc/initial-values.ini' ) ) ) {
+            trigger_error( __METHOD__ . ": Initial keywords file could not be parsed.\n", E_USER_NOTICE );
+            return;
+        }
+    }
 
-	foreach ( $rule as &$declaration ) {
-		if ( !$declaration->skip && 'initial' === $declaration->value ) {
-			if ( isset( $initialValues[ $declaration->property ] ) ) {
-				$declaration->value = $initialValues[ $declaration->property ];
-			}
-			else {
-				// Fallback to 'inherit'
-				$declaration->value = 'inherit';
-			}
-		}
-	}
+    foreach ( $rule as &$declaration ) {
+        if ( !$declaration->skip && 'initial' === $declaration->value ) {
+            if ( isset( $initialValues[ $declaration->property ] ) ) {
+                $declaration->value = $initialValues[ $declaration->property ];
+            }
+            else {
+                // Fallback to 'inherit'
+                $declaration->value = 'inherit';
+            }
+        }
+    }
 }

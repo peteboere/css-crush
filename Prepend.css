@@ -3,39 +3,38 @@
 Prepend.css contains library variables by default, but it could also contain reset styles such as reset.css or normalize.css that you would want prepended to every output file.
 
 */
-
 @define {
 
-	/* Font stacks
+    /* Font stacks
 
-	Sources:
-		http://cssfontstack.com
-		http://www.codestyle.org
-	---------------------------------------- */
+    Sources:
+        http://cssfontstack.com
+        http://www.codestyle.org
+    ---------------------------------------- */
 
-	/* Serif */
-	baskerville:    Baskerville, "Baskerville Old Face", "Hoefler Text", Garamond, "Times New Roman", serif;
-	georgia:        Georgia, Times, "Times New Roman", serif;
-	palatino:       Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
-	times:          TimesNewRoman, "Times New Roman", Times, serif;
+    /* Serif */
+    baskerville:    Baskerville, "Baskerville Old Face", "Hoefler Text", Garamond, "Times New Roman", serif;
+    georgia:        Georgia, Times, "Times New Roman", serif;
+    palatino:       Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+    times:          TimesNewRoman, "Times New Roman", Times, serif;
 
-	/* Sans-serif */
-	arial:          Arial, Helvetica, sans-serif;
-	arial-narrow:   "Arial Narrow", Arial, sans-serif;
-	gill-sans:      "Gill Sans", "Gill Sans MT", Calibri, sans-serif;
-	helvetica:      "Helvetica Neue", Helvetica, Arial, sans-serif;
-	lucida:         "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Verdana, sans-serif;
-	trebuchet-ms:   "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", "Lucida Sans", Arial, sans-serif;
-	verdana:        Verdana, Geneva, sans-serif;
+    /* Sans-serif */
+    arial:          Arial, Helvetica, sans-serif;
+    arial-narrow:   "Arial Narrow", Arial, sans-serif;
+    gill-sans:      "Gill Sans", "Gill Sans MT", Calibri, sans-serif;
+    helvetica:      "Helvetica Neue", Helvetica, Arial, sans-serif;
+    lucida:         "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Verdana, sans-serif;
+    trebuchet-ms:   "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", "Lucida Sans", Arial, sans-serif;
+    verdana:        Verdana, Geneva, sans-serif;
 
-	/* Monospace    */
-	consolas:       Consolas, Monaco, monospace;
-	courier:        "Courier New", Courier, monospace;
-	monaco:         Monaco, Consolas, "Lucida Console", monospace;
+    /* Monospace    */
+    consolas:       Consolas, Monaco, monospace;
+    courier:        "Courier New", Courier, monospace;
+    monaco:         Monaco, Consolas, "Lucida Console", monospace;
 
-	/* Generic defaults */
-	serif:          $( times );
-	sans-serif:     $( arial );
-	monospace:      $( courier );
+    /* Generic defaults */
+    serif:          $( times );
+    sans-serif:     $( arial );
+    monospace:      $( courier );
 
 }

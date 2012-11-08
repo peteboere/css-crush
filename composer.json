@@ -1,24 +1,24 @@
 {
-	"name": "css-crush/css-crush",
-	"type": "library",
-	"description": "CSS preprocessor",
-	"keywords": ["css", "preprocessor"],
-	"homepage": "http://the-echoplex.net/csscrush",
-	"license": "MIT",
-	"authors": [
-		{
-			"name": "Pete Boere",
-			"email": "pete@the-echoplex.net"
-		},
-		{
-			"name": "GitHub contributors",
-			"homepage": "https://github.com/peteboere/css-crush/contributors"
-		}
-	],
-	"require": {
-		"php": ">=5.2.4"
-	},
-	"autoload": {
-		"files": ["CssCrush.php"]
-	}
+    "name": "css-crush/css-crush",
+    "type": "library",
+    "description": "CSS preprocessor",
+    "keywords": ["css", "preprocessor"],
+    "homepage": "http://the-echoplex.net/csscrush",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Pete Boere",
+            "email": "pete@the-echoplex.net"
+        },
+        {
+            "name": "GitHub contributors",
+            "homepage": "https://github.com/peteboere/css-crush/contributors"
+        }
+    ],
+    "require": {
+        "php": ">=5.2.4"
+    },
+    "autoload": {
+        "files": ["CssCrush.php"]
+    }
 }
