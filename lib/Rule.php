@@ -453,6 +453,8 @@ class csscrush_rule implements IteratorAggregate, Countable {
 			return;
 		}
 
+		$used_value_aliases = array();
+
 		$new_set = array();
 		foreach ( $this->declarations as $declaration ) {
 			if ( !$declaration->skip ) {
@@ -460,12 +462,31 @@ class csscrush_rule implements IteratorAggregate, Countable {
 					if ( $this->propertyCount( $value_prop ) < 1 ) {
 						continue;
 					}
+
 					foreach ( $value_aliases as $value => $aliases ) {
-						if ( $declaration->value === $value ) {
-							foreach ( $aliases as $alias ) {
-								$copy = clone $declaration;
-								$copy->value = $alias;
-								$new_set[] = $copy;
+						if ( preg_match( '((?:^| )' . preg_quote($value) . '(?: |$))', $declaration->value ) ) {
+							if ( $declaration->vendor ) {
+								$value_search = '-' . $declaration->vendor . '-' . $value;
+
+								if ( in_array( $value_search, $aliases ) ) {
+									$declaration->value = preg_replace( '((^| )' . preg_quote($value) . '( |$))', '\1' . $value_search . '\2', $declaration->value );
+									$used_value_aliases[ $declaration->family ][] = $value_search;
+								}
+							} else {
+								foreach ( $aliases as $alias ) {
+									if (
+										isset( $used_value_aliases[ $declaration->family ] ) and
+										in_array( $alias, $used_value_aliases[ $declaration->family ] )
+									) {
+										// If the value alias has already been applied in a vendor property
+										// for the same declaration property assume all is good
+										continue;
+									}
+
+									$copy = clone $declaration;
+									$copy->value = preg_replace( '((^| )' . preg_quote($value) . '( |$))', '\1' . $alias . '\2', $declaration->value );
+									$new_set[] = $copy;
+								}
 							}
 						}
 					}
