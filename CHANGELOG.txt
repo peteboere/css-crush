@@ -1,14 +1,16 @@
 1.8
 -----
 Added selector aliasing with @selector-alias directive.
+Added output_dir option for specifying the destination of compiled files.
+Added doc_root option for working around problems with server aliases or path rewrites.
 Added viewport @-rule aliases.
-Improved minification.
-Improved cross OS support.
 Debug option renamed to 'minify'; debug option will still work as before but is deprecated.
 New minify option optionally takes an array of advanced minification parameters.
 Expanded trace option to take an optional array of log parameters;
-log params available are stubs, selector_count and compile_time.
+log params available are stubs, selector_count, errors and compile_time.
 Added csscrush::stat method to retrieve logged parameters.
+Improved cross OS support.
+Improved minification.
 Major refactoring.
 
 

@@ -45,6 +45,10 @@ class csscrush_process {
         $this->selectorAliases = $config->selectorAliases;
         $this->selectorAliasesPatt = null;
 
+        // Pick a doc root.
+        $this->docRoot = isset( $this->options->doc_root ) ?
+            csscrush_util::normalizePath( $this->options->doc_root ) : $config->docRoot;
+
         // Run process_init hook.
         csscrush_hook::run( 'process_init' );
     }
@@ -66,7 +70,7 @@ class csscrush_process {
     // Establish the input and output directories and optionally test output dir.
     public function setContext ( $input_dir, $test_output_dir = true ) {
 
-        $doc_root = csscrush::$config->docRoot;
+        $doc_root = $this->docRoot;
 
         if ( strpos( $input_dir, $doc_root ) !== 0 ) {
             // Not a system path.
@@ -124,6 +128,10 @@ class csscrush_process {
         // Resolve trace options.
         if ( array_key_exists( 'trace', $options ) && ! is_array( $options[ 'trace' ] ) ) {
             $options[ 'trace' ] = $options[ 'trace' ] ? array( 'stubs' ) : array();
+        }
+        // Legacy trace config option.
+        if ( ! is_array( $config->options->trace ) ) {
+            $config->options->trace = $config->options->trace ? array( 'stubs' ) : array();
         }
 
         // Keeping track of global vars internally to maintain cache integrity.
@@ -952,7 +960,7 @@ class csscrush_process {
                 }
 
                 if ( $url->convertToData ) {
-                    $url->toData();
+                    $url->evaluate()->toData();
                 }
                 else {
                     $url->simplify();

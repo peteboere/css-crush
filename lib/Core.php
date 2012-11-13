@@ -4,7 +4,6 @@
  * Main script. Includes core public API.
  *
  */
-
 class csscrush {
 
     // Global settings.
@@ -41,34 +40,40 @@ class csscrush {
         // Default options.
         self::$config->options = (object) array(
 
-            // Minify. Set false for formatting and comments
+            // Minify. Set false for formatting and comments.
             'minify' => true,
 
-            // Append 'checksum' to output file name
+            // Append 'checksum' to output file name.
             'versioning' => true,
 
-            // Use the template boilerplate
+            // Use the template boilerplate.
             'boilerplate' => true,
 
-            // Variables passed in at runtime
+            // Variables passed in at runtime.
             'vars' => array(),
 
-            // Enable/disable the cache
+            // Enable/disable the cache.
             'cache' => true,
 
-            // Output file. Defaults the host-filename
+            // Output filename. Defaults the host-filename.
             'output_file' => null,
 
-            // Vendor target. Only apply prefixes for a specific vendor, set to 'none' for no prefixes
+            // Output directory. Defaults to the same directory as the host file.
+            'output_dir' => null,
+
+            // Alternative document_root may be used to workaround server aliases and rewrites.
+            'doc_root' => null,
+
+            // Vendor target. Only apply prefixes for a specific vendor, set to 'none' for no prefixes.
             'vendor_target' => 'all',
 
-            // Whether to rewrite the url references inside imported files
+            // Whether to rewrite the url references inside imported files.
             'rewrite_import_urls' => true,
 
-            // List of plugins to enable (as Array of names)
+            // List of plugins to enable (as Array of names).
             'enable' => null,
 
-            // List of plugins to disable (as Array of names)
+            // List of plugins to disable (as Array of names).
             'disable' => null,
 
             // Debugging options.
@@ -210,7 +215,7 @@ class csscrush {
         $config = self::$config;
         $process = self::$process;
         $options = $process->options;
-        $doc_root = $config->docRoot;
+        $doc_root = $process->docRoot;
 
         // Since we're comparing strings, we need to iron out OS differences.
         $file = str_replace( '\\', '/', $file );
@@ -262,9 +267,9 @@ class csscrush {
         $stream = $process->compile();
 
         // Create file and return url. Return empty string on failure.
-        if ( file_put_contents( "{$process->output->dir}/{$process->output->filename}", $stream ) ) {
+        if ( $url = $process->ioCall( 'write', $stream ) ) {
             $timestamp = $options->versioning ? '?' . time() : '';
-            return "{$process->output->dirUrl}/{$process->output->filename}$timestamp";
+            return "$url$timestamp";
         }
         else {
             return '';
@@ -375,7 +380,7 @@ class csscrush {
             $process->setContext( $options->context, false );
         }
         else {
-            $process->setContext( $config->docRoot, false );
+            $process->setContext( $process->docRoot, false );
         }
 
         // Set the string on the input object.
@@ -432,7 +437,13 @@ class csscrush {
      */
     static public function stat ( $name = null ) {
 
-        $stat = csscrush::$process->stat;
+        $process = csscrush::$process;
+        $stat = $process->stat;
+
+        // Get logged errors as late as possible.
+        if ( in_array( 'errors', $process->options->trace ) && ( ! $name || 'errors' === $name ) ) {
+            $stat[ 'errors' ] = $process->errors;
+        }
 
         if ( $name && array_key_exists( $name, $stat ) ) {
             return array( $name => $stat[ $name ] );
@@ -508,7 +519,7 @@ class csscrush {
 
             case 'compile_time':
                 $time = microtime( true );
-                $process->stat[ 'compile_time' ] =  $time - $process->stat[ 'compile_start_time' ];
+                $process->stat[ 'compile_time' ] = $time - $process->stat[ 'compile_start_time' ];
                 break;
         }
     }

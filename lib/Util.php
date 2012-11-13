@@ -31,6 +31,17 @@ class csscrush_util {
             $path = substr( $path, 2 );
         }
 
+        return csscrush_util::simplifyPath( $path );
+    }
+
+    static public function simplifyPath ( $path ) {
+
+        // Reduce redundant path segments (issue #32):
+        // e.g 'foo/../bar' => 'bar'
+        $patt = '~[^/.]+/\.\./~S';
+        while ( preg_match( $patt, $path ) ) {
+            $path = preg_replace( $patt, '', $path );
+        }
         return $path;
     }
 
@@ -263,7 +274,7 @@ class csscrush_url {
         else {
             // Normalize './' led paths.
             $this->value = preg_replace( '!^\.\/+!i', '', $this->value );
-            if ( $this->value[0] === '/' ) {
+            if ( $this->value !== '' && $this->value[0] === '/' ) {
                 $this->isRooted = true;
             }
             elseif ( ! $leading_variable ) {
@@ -272,12 +283,13 @@ class csscrush_url {
             // Normalize slashes.
             $this->value = rtrim( preg_replace( '![\\\\/]+!', '/', $this->value ), '/' );
         }
+        return $this;
     }
 
     public function toData () {
 
         if ( $this->isRooted ) {
-            $file = csscrush::$config->docRoot . $this->value;
+            $file = csscrush::$process->docRoot . $this->value;
         }
         else {
             $file = csscrush::$process->input->dir . "/$this->value";
@@ -318,10 +330,9 @@ class csscrush_url {
 
     public function resolveRootedPath () {
 
-        $config = csscrush::$config;
         $process = csscrush::$process;
 
-        if ( ! file_exists ( $config->docRoot . $this->value ) ) {
+        if ( ! file_exists ( $process->docRoot . $this->value ) ) {
             return false;
         }
 
@@ -332,13 +343,7 @@ class csscrush_url {
 
     public function simplify () {
 
-        // Reduce redundant path segments (issue #32):
-        // e.g 'foo/../bar' => 'bar'
-        $patt = '![^/.]+/\.\./!';
-
-        while ( preg_match( $patt, $this->value ) ) {
-            $this->value = preg_replace( $patt, '', $this->value );
-        }
+        $this->value = csscrush_util::simplifyPath( $this->value );
     }
 }
 

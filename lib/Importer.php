@@ -85,7 +85,7 @@ class csscrush_importer {
 
             // Resolve import realpath.
             if ( $url->isRooted ) {
-                $import->path = realpath( $config->docRoot . $import->url->value );
+                $import->path = realpath( $process->docRoot . $import->url->value );
             }
             else {
                 $import->path = realpath( "$input->dir/{$import->url->value}" );
@@ -145,13 +145,12 @@ class csscrush_importer {
         }
 
         // Save only if caching is on and the hostfile object is associated with a real file.
-        if ( $input->path && $process->options->cache ) {
+        if ( $input->path && $options->cache ) {
 
-            // Write to config.
             $process->cacheData[ $process->output->filename ] = array(
-                'imports'      => $filenames,
-                'datem_sum'    => array_sum( $mtimes ) + $input->mtime,
-                'options'      => $options,
+                'imports'   => $filenames,
+                'datem_sum' => array_sum( $mtimes ) + $input->mtime,
+                'options'   => clone $options,
             );
 
             // Save config changes.

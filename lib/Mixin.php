@@ -114,7 +114,6 @@ class csscrush_mixin {
         if ( ! $mixin && ! $non_mixin ) {
 
             $selector_test = csscrush_selector::makeReadableSelector( $message );
-            // csscrush::log( array_keys( csscrush::$process->selectorRelationships ) );
 
             if ( isset( csscrush::$process->selectorRelationships[ $selector_test ] ) ) {
                 $non_mixin = csscrush::$process->selectorRelationships[ $selector_test ];

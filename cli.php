@@ -221,7 +221,7 @@ if ( $enable_plugins ) {
     }
 }
 
-// Disable plugin args
+// Disable plugin args.
 if ( $disable_plugins ) {
     foreach ( $disable_plugins as $arg ) {
         foreach ( preg_split( '!\s*,\s*!', $arg ) as $plugin ) {
@@ -230,41 +230,34 @@ if ( $disable_plugins ) {
     }
 }
 
-// Tracing
+// Tracing.
 if ( $trace_flag ) {
     $process_opts[ 'trace' ] = true;
 }
 
-// Vendor target args
+// Vendor target args.
 if ( $vendor_target ) {
     $process_opts[ 'vendor_target' ] = $vendor_target;
 }
 
-// Variables args
+// Variables args.
 if ( $variables ) {
     parse_str( $variables, $in_vars );
     $process_opts[ 'vars' ] = $in_vars;
 }
 
-// Resolve a context for URLs
+// Resolve a context for URLs.
 if ( ! $context ) {
     $context = $input_file ? dirname( realpath( $input_file ) ) : null;
 }
 
-// If there is an import context set it to the document root
+// If there is an import context set document root also.
 if ( $context ) {
-    $old_doc_root = csscrush::$config->docRoot;
-    csscrush::$config->docRoot = $context;
+    $process_opts[ 'doc_root' ] = $context;
     $process_opts[ 'context' ] = $context;
 }
 
-// Process the stream
 $output = csscrush::string( $input, $process_opts );
-
-// Reset the document root after processing
-if ( $context ) {
-    csscrush::$config->docRoot = $old_doc_root;
-}
 
 
 ##################################################################
