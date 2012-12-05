@@ -104,9 +104,14 @@ class csscrush_regex {
         return $count ? $matches : array();
     }
 
-    static public function createFunctionMatchPatt ( $list, $include_unnamed_function = false ) {
+    static public function createFunctionMatchPatt ( $list, $include_math_function = false ) {
 
-        $question = $include_unnamed_function ? '?' : '';
+        $question = '';
+        if ( $include_math_function ) {
+            $question = '?';
+            // Signing on math bare parens.
+            $list[] = '-';
+        }
 
         foreach ( $list as &$fn_name ) {
             $fn_name = preg_quote( $fn_name );

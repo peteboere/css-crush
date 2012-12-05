@@ -245,7 +245,7 @@ class csscrush_importer {
         $patt = '#
             @import\x{20}(\?s\d+\?)
             |
-            (?<!-) \b (url|data-uri)\(
+            (?<![\w-]) (url|data-uri)\(
         #ixS';
 
         $offset = 0;

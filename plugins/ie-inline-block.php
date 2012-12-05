@@ -11,7 +11,18 @@
  *     *zoom: 1;
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush__ie_inline_block' );
+csscrush_plugin::register( 'ie-inline-block', array(
+    'enable' => 'csscrush__enable_ie_inline_block',
+    'disable' => 'csscrush__disable_ie_inline_block',
+));
+
+function csscrush__enable_ie_inline_block () {
+    csscrush_hook::add( 'rule_postalias', 'csscrush__ie_inline_block' );
+}
+
+function csscrush__disable_ie_inline_block () {
+    csscrush_hook::remove( 'rule_postalias', 'csscrush__ie_inline_block' );
+}
 
 function csscrush__ie_inline_block ( csscrush_rule $rule ) {
 

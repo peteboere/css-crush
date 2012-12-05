@@ -12,7 +12,18 @@
  *     zoom: 1;
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush__ie_opacity' );
+csscrush_plugin::register( 'ie-opacity', array(
+    'enable' => 'csscrush__enable_ie_opacity',
+    'disable' => 'csscrush__disable_ie_opacity',
+));
+
+function csscrush__enable_ie_opacity () {
+    csscrush_hook::add( 'rule_postalias', 'csscrush__ie_opacity' );
+}
+
+function csscrush__disable_ie_opacity () {
+    csscrush_hook::remove( 'rule_postalias', 'csscrush__ie_opacity' );
+}
 
 function csscrush__ie_opacity ( csscrush_rule $rule ) {
 

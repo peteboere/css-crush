@@ -5,7 +5,6 @@
  * Command line application
  *
  */
-
 require_once 'CssCrush.php';
 
 // Exit status constants
@@ -256,7 +255,6 @@ if ( $context ) {
     $process_opts[ 'doc_root' ] = $context;
     $process_opts[ 'context' ] = $context;
 }
-
 $output = csscrush::string( $input, $process_opts );
 
 

@@ -6,32 +6,15 @@
  */
 class csscrush_function {
 
-    // Regex pattern for finding custom functions
+    // Regex pattern for finding custom functions.
     static public $functionPatt;
 
-    // Cache for function names
-    static public $functionList;
+    // Stack for function names.
+    static protected $customFunctions;
 
-    static public function init () {
+    static public function setMatchPatt () {
 
-        // Set the custom function regex pattern
-        self::$functionList = self::getFunctions();
-        self::$functionPatt = csscrush_regex::createFunctionMatchPatt( self::$functionList, true );
-    }
-
-    static public function getFunctions () {
-
-        // Fetch custom function names
-        // Include subtraction operator
-        $fn_methods = array( '-' );
-        $all_methods = get_class_methods( __CLASS__ );
-        foreach ( $all_methods as &$_method ) {
-            $prefix = 'css_fn__';
-            if ( ( $pos = strpos( $_method, $prefix ) ) === 0 ) {
-                $fn_methods[] = str_replace( '_', '-', substr( $_method, strlen( $prefix ) ) );
-            }
-        }
-        return $fn_methods;
+        self::$functionPatt = csscrush_regex::createFunctionMatchPatt( array_keys( self::$customFunctions ), true );
     }
 
     static public function executeCustomFunctions ( &$str, $patt = null, $process_callback = null, $property = null ) {
@@ -78,17 +61,15 @@ class csscrush_function {
             // Get the function arguments.
             $args = trim( $parens[1][0] );
 
-            // Workaround the minus.
-            $minus_before = '-' === $raw_fn_name ? '-' : '';
+            // Workaround the signs.
+            $before_operator = '-' === $raw_fn_name ? '-' : '';
 
             $func_returns = '';
 
             if ( ! $process_callback ) {
-
                 // If no callback reference it's a built-in.
-                if ( in_array( $fn_name, self::$functionList ) ) {
-                    $fn_name_clean = str_replace( '-', '_', $fn_name );
-                    $func_returns = call_user_func( array( 'self', "css_fn__$fn_name_clean" ), $args );
+                if ( array_key_exists( $fn_name, self::$customFunctions ) ) {
+                    $func_returns = call_user_func( self::$customFunctions[ $fn_name ], $args );
                 }
             }
             else {
@@ -97,14 +78,22 @@ class csscrush_function {
                 }
             }
 
-            // Join together the result.
-            $str = substr( $str, 0, $offset ) . $minus_before . $func_returns . substr( $str, $closing_paren );
+            // Splice in the function returns.
+            $str = substr_replace( $str, "$before_operator$func_returns", $offset, $closing_paren - $offset );
         }
     }
 
 
     #############################
-    #  Helpers.
+    #  API and helpers.
+
+    static public function register ( $name, $callback ) {
+        csscrush_function::$customFunctions[ $name ] = $callback;
+    }
+
+    static public function deRegister ( $name ) {
+        unset( csscrush_function::$customFunctions[ $name ] );
+    }
 
     static public function parseArgs ( $input, $allowSpaceDelim = false ) {
         return csscrush_util::splitDelimList(
@@ -112,12 +101,12 @@ class csscrush_function {
     }
 
     // Intended as a quick arg-list parse for function that take up-to 2 arguments
-    // with the proviso the first argument is a name
+    // with the proviso the first argument is an ident.
     static public function parseArgsSimple ( $input ) {
         return preg_split( csscrush_regex::$patt->argListSplit, $input, 2 );
     }
 
-    static protected function colorAdjust ( $color, array $adjustments ) {
+    static public function colorAdjust ( $color, array $adjustments ) {
 
         $fn_matched = preg_match( '!^(#|rgba?|hsla?)!', $color, $m );
         $keywords =& csscrush_color::loadKeywords();
@@ -203,96 +192,102 @@ class csscrush_function {
             return $color;
         }
     }
+}
 
 
-    #############################
-    #  CSS functions.
 
-    static protected function css_fn__math ( $input ) {
+#############################
+#  Stock custom CSS functions.
 
-        // Strip blacklisted characters
-        $input = preg_replace( csscrush_regex::$patt->mathBlacklist, '', $input );
+function csscrush_fn__math ( $input ) {
 
-        $result = @eval( "return $input;" );
+    // Strip blacklisted characters
+    $input = preg_replace( csscrush_regex::$patt->mathBlacklist, '', $input );
 
-        return $result === false ? 0 : round( $result, 5 );
-    }
+    $result = @eval( "return $input;" );
 
-    static protected function css_fn__percent ( $input ) {
+    return $result === false ? 0 : round( $result, 5 );
+}
 
-        // Strip non-numeric and non delimiter characters
-        $input = preg_replace( '![^\d\.\s,]!S', '', $input );
+function csscrush_fn__percent ( $input ) {
 
-        $args = preg_split( csscrush_regex::$patt->argListSplit, $input, -1, PREG_SPLIT_NO_EMPTY );
+    // Strip non-numeric and non delimiter characters
+    $input = preg_replace( '![^\d\.\s,]!S', '', $input );
 
-        // Use precision argument if it exists, use default otherwise
-        $precision = isset( $args[2] ) ? $args[2] : 5;
+    $args = preg_split( csscrush_regex::$patt->argListSplit, $input, -1, PREG_SPLIT_NO_EMPTY );
 
-        // Output zero on failure
-        $result = 0;
+    // Use precision argument if it exists, use default otherwise
+    $precision = isset( $args[2] ) ? $args[2] : 5;
 
-        // Need to check arguments or we may see divide by zero errors
-        if ( count( $args ) > 1 && ! empty( $args[0] ) && ! empty( $args[1] ) ) {
+    // Output zero on failure
+    $result = 0;
 
-            // Use bcmath if it's available for higher precision
+    // Need to check arguments or we may see divide by zero errors
+    if ( count( $args ) > 1 && ! empty( $args[0] ) && ! empty( $args[1] ) ) {
 
-            // Arbitary high precision division
-            if ( function_exists( 'bcdiv' ) ) {
-                $div = bcdiv( $args[0], $args[1], 25 );
-            }
-            else {
-                $div = $args[0] / $args[1];
-            }
+        // Use bcmath if it's available for higher precision
 
-            // Set precision percentage value
-            if ( function_exists( 'bcmul' ) ) {
-                $result = bcmul( (string) $div, '100', $precision );
-            }
-            else {
-                $result = round( $div * 100, $precision );
-            }
-
-            // Trim unnecessary zeros and decimals
-            $result = trim( (string) $result, '0' );
-            $result = rtrim( $result, '.' );
+        // Arbitary high precision division
+        if ( function_exists( 'bcdiv' ) ) {
+            $div = bcdiv( $args[0], $args[1], 25 );
+        }
+        else {
+            $div = $args[0] / $args[1];
         }
 
-        return $result . '%';
+        // Set precision percentage value
+        if ( function_exists( 'bcmul' ) ) {
+            $result = bcmul( (string) $div, '100', $precision );
+        }
+        else {
+            $result = round( $div * 100, $precision );
+        }
+
+        // Trim unnecessary zeros and decimals
+        $result = trim( (string) $result, '0' );
+        $result = rtrim( $result, '.' );
     }
 
-    // Percent function alias.
-    static protected function css_fn__pc ( $input ) {
-        return self::css_fn__percent( $input );
-    }
-
-    static protected function css_fn__hsla_adjust ( $input ) {
-        list( $color, $h, $s, $l, $a ) = array_pad( self::parseArgs( $input, true ), 5, 0 );
-        return self::colorAdjust( $color, array( $h, $s, $l, $a ) );
-    }
-
-    static protected function css_fn__hsl_adjust ( $input ) {
-        list( $color, $h, $s, $l ) = array_pad( self::parseArgs( $input, true ), 4, 0 );
-        return self::colorAdjust( $color, array( $h, $s, $l, 0 ) );
-    }
-
-    static protected function css_fn__h_adjust ( $input ) {
-        list( $color, $h ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
-        return self::colorAdjust( $color, array( $h, 0, 0, 0 ) );
-    }
-
-    static protected function css_fn__s_adjust ( $input ) {
-        list( $color, $s ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
-        return self::colorAdjust( $color, array( 0, $s, 0, 0 ) );
-    }
-
-    static protected function css_fn__l_adjust ( $input ) {
-        list( $color, $l ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
-        return self::colorAdjust( $color, array( 0, 0, $l, 0 ) );
-    }
-
-    static protected function css_fn__a_adjust ( $input ) {
-        list( $color, $a ) = array_pad( self::parseArgs( $input, true ), 2, 0 );
-        return self::colorAdjust( $color, array( 0, 0, 0, $a ) );
-    }
+    return $result . '%';
 }
+
+function csscrush_fn__hsla_adjust ( $input ) {
+    list( $color, $h, $s, $l, $a ) = array_pad( csscrush_function::parseArgs( $input, true ), 5, 0 );
+    return csscrush_function::colorAdjust( $color, array( $h, $s, $l, $a ) );
+}
+
+function csscrush_fn__hsl_adjust ( $input ) {
+    list( $color, $h, $s, $l ) = array_pad( csscrush_function::parseArgs( $input, true ), 4, 0 );
+    return csscrush_function::colorAdjust( $color, array( $h, $s, $l, 0 ) );
+}
+
+function csscrush_fn__h_adjust ( $input ) {
+    list( $color, $h ) = array_pad( csscrush_function::parseArgs( $input, true ), 2, 0 );
+    return csscrush_function::colorAdjust( $color, array( $h, 0, 0, 0 ) );
+}
+
+function csscrush_fn__s_adjust ( $input ) {
+    list( $color, $s ) = array_pad( csscrush_function::parseArgs( $input, true ), 2, 0 );
+    return csscrush_function::colorAdjust( $color, array( 0, $s, 0, 0 ) );
+}
+
+function csscrush_fn__l_adjust ( $input ) {
+    list( $color, $l ) = array_pad( csscrush_function::parseArgs( $input, true ), 2, 0 );
+    return csscrush_function::colorAdjust( $color, array( 0, 0, $l, 0 ) );
+}
+
+function csscrush_fn__a_adjust ( $input ) {
+    list( $color, $a ) = array_pad( csscrush_function::parseArgs( $input, true ), 2, 0 );
+    return csscrush_function::colorAdjust( $color, array( 0, 0, 0, $a ) );
+}
+
+csscrush_function::register( 'math', 'csscrush_fn__math' );
+csscrush_function::register( 'percent', 'csscrush_fn__percent' );
+csscrush_function::register( 'pc', 'csscrush_fn__percent' );
+csscrush_function::register( 'hsla-adjust', 'csscrush_fn__hsla_adjust' );
+csscrush_function::register( 'hsl-adjust', 'csscrush_fn__hsl_adjust' );
+csscrush_function::register( 'h-adjust', 'csscrush_fn__h_adjust' );
+csscrush_function::register( 's-adjust', 'csscrush_fn__s_adjust' );
+csscrush_function::register( 'l-adjust', 'csscrush_fn__l_adjust' );
+csscrush_function::register( 'a-adjust', 'csscrush_fn__a_adjust' );
 

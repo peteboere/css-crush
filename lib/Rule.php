@@ -398,32 +398,30 @@ class csscrush_rule implements IteratorAggregate, Countable {
     public function addFunctionAliases () {
 
         $function_aliases =& csscrush::$process->aliases[ 'functions' ];
-        $aliased_functions = array_keys( $function_aliases );
+        $aliased_func_names = array_keys( $function_aliases );
 
-        if ( empty( $aliased_functions ) ) {
+        if ( empty( $aliased_func_names ) ) {
             return;
         }
 
+        // The new modified set of declarations.
         $new_set = array();
 
         // Keep track of the function aliases we apply and to which property
         // they belong, so we can avoid un-unecessary duplications.
         $used_fn_aliases = array();
 
-        // Shim in aliased functions
+        // Shim in aliased functions.
         foreach ( $this->declarations as $declaration ) {
 
-            // No functions, skip
-            if (
-                $declaration->skip ||
-                empty( $declaration->functions )
-            ) {
+            // No functions, bail.
+            if ( $declaration->skip || empty( $declaration->functions ) ) {
                 $new_set[] = $declaration;
                 continue;
             }
 
-            // Get list of functions used in declaration that are alias-able, if none skip.
-            $intersect = array_intersect( $declaration->functions, $aliased_functions );
+            // Get list of functions used in declaration that are alias-able, if none bail.
+            $intersect = array_intersect( $declaration->functions, $aliased_func_names );
             if ( empty( $intersect ) ) {
                 $new_set[] = $declaration;
                 continue;
@@ -432,47 +430,41 @@ class csscrush_rule implements IteratorAggregate, Countable {
             // Loop the aliasable functions.
             foreach ( $intersect as $fn_name ) {
 
-                if ( $declaration->vendor ) {
-                    // If the property is vendor prefixed we use the vendor prefixed version
-                    // of the function if it exists.
-                    // Else we just skip and use the unprefixed version
-                    $fn_search = "-{$declaration->vendor}-$fn_name";
-                    if ( in_array( $fn_search, $function_aliases[ $fn_name ] ) ) {
-                        $declaration->value = preg_replace(
-                            '!(^| |,)' . $fn_name . '!',
-                            '${1}' . $fn_search,
-                            $declaration->value
-                        );
-                        $used_fn_aliases[ $declaration->canonicalProperty ][] = $fn_search;
-                    }
-                }
-                else {
+                // For each aliased function dupe the declaration.
+                // This pretty much limits the aliasing to one function per declaration.
+                $prefixed_copies = array();
+                foreach ( $function_aliases[ $fn_name ] as $fn_alias ) {
 
-                    // Duplicate the rule for each alias
-                    foreach ( $function_aliases[ $fn_name ] as $fn_alias ) {
-
-                        if (
-                            isset( $used_fn_aliases[ $declaration->canonicalProperty ] ) &&
-                            in_array( $fn_alias, $used_fn_aliases[ $declaration->canonicalProperty ] )
-                        ) {
-                            // If the function alias has already been applied in a vendor property
-                            // for the same declaration property assume all is good
+                    // If the declaration is vendor specific only create aliases for the same vendor.
+                    if ( $declaration->vendor ) {
+                        preg_match( csscrush_regex::$patt->vendorPrefix, $fn_alias, $m );
+                        if ( strtolower( $m[1] ) !== $declaration->vendor ) {
                             continue;
                         }
-                        $copy = clone $declaration;
-                        $copy->value = preg_replace(
-                            '!(^| |,)' . $fn_name . '!',
-                            '${1}' . $fn_alias,
-                            $copy->value
-                        );
-                        $new_set[] = $copy;
                     }
+
+                    $copy = clone $declaration;
+
+                    // Swap in the aliased function name.
+                    $copy->value = preg_replace(
+                        '~(?<![\w-])' . $fn_name . '(?=\?)~',
+                        $fn_alias,
+                        $copy->value
+                    );
+                    $prefixed_copies[] = $copy;
                 }
+
+                // Aliased function may require some additional fiddling.
+                if ( isset( csscrush_legacySyntax::$functions[ $fn_name ] ) ) {
+                    call_user_func( csscrush_legacySyntax::$functions[ $fn_name ], $prefixed_copies, $fn_name );
+                }
+
+                $new_set = array_merge( $new_set, $prefixed_copies );
             }
             $new_set[] = $declaration;
         }
 
-        // Re-assign
+        // Re-assign.
         $this->declarations = $new_set;
     }
 
@@ -733,6 +725,97 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
 /**
  *
+ * Fixes for aliasing to legacy syntaxes.
+ *
+ */
+class csscrush_legacySyntax {
+
+    static public $functions = array(
+        'linear-gradient'           => array( __CLASS__, 'linearGradients' ),
+        'linear-repeating-gradient' => array( __CLASS__, 'linearGradients' ),
+        'radial-gradient'           => array( __CLASS__, 'radialGradients' ),
+        'radial-repeating-gradient' => array( __CLASS__, 'radialGradients' ),
+    );
+
+    static public function linearGradients ( $prefixed_copies, $fn_name ) {
+
+        static $angles_new, $angles_old;
+        if ( ! $angles_new ) {
+            $angles = array(
+                'to top' => 'bottom',
+                'to right' => 'left',
+                'to bottom' => 'top',
+                'to left' => 'right',
+                // 'magic' corners.
+                'to top left' => 'bottom right',
+                'to left top' => 'bottom right',
+                'to top right' => 'bottom left',
+                'to right top' => 'bottom left',
+                'to bottom left' => 'top right',
+                'to left bottom' => 'top right',
+                'to bottom right' => 'top left',
+                'to right bottom' => 'top left',
+            );
+            $angles_new = array_keys( $angles );
+            $angles_old = array_values( $angles );
+        }
+
+        // Swap the new 'to' gradient syntax to the old 'from' syntax for the prefixed versions.
+        // 1. Create new paren tokens based on the first prefixed declaration.
+        // 2. Replace the new syntax with the legacy syntax.
+        // 3. Swap in the new tokens on all the prefixed declarations.
+
+        // 1, 2.
+        $patt = '~(?<![\w-])-[a-z]+-' . $fn_name . '(\?p\d+\?)~i';
+        $original_parens = array();
+        $replacement_parens = array();
+        foreach ( csscrush_regex::matchAll( $patt, $prefixed_copies[0]->value ) as $m ) {
+            $original_parens[] = $m[1][0];
+            $replacement_parens[] = csscrush::$process->addToken(
+                str_ireplace(
+                    $angles_new,
+                    $angles_old,
+                    csscrush::$process->fetchToken( $m[1][0] )
+                ), 'p' );
+        }
+
+        // 3.
+        foreach ( $prefixed_copies as $prefixed_copy ) {
+            $prefixed_copy->value = str_replace( $original_parens, $replacement_parens, $prefixed_copy->value );
+        }
+    }
+
+    static public function radialGradients ( $prefixed_copies, $fn_name ) {
+
+        // Remove the new 'at' keyword from gradient syntax for legacy implementations.
+        // 1. Create new paren tokens based on the first prefixed declaration.
+        // 2. Replace the new syntax with the legacy syntax.
+        // 3. Swap in the new tokens on all the prefixed declarations.
+
+        // 1, 2.
+        $patt = '~(?<![\w-])-[a-z]+-' . $fn_name . '(\?p\d+\?)~i';
+        $original_parens = array();
+        $replacement_parens = array();
+        foreach ( csscrush_regex::matchAll( $patt, $prefixed_copies[0]->value ) as $m ) {
+            $original_parens[] = $m[1][0];
+            $replacement_parens[] = csscrush::$process->addToken(
+                preg_replace(
+                    '~\bat +(top|left|bottom|right|center)\b~i',
+                    '$1',
+                    csscrush::$process->fetchToken( $m[1][0] )
+                ), 'p' );
+        }
+
+        // 3.
+        foreach ( $prefixed_copies as $prefixed_copy ) {
+            $prefixed_copy->value = str_replace( $original_parens, $replacement_parens, $prefixed_copy->value );
+        }
+    }
+}
+
+
+/**
+ *
  * Declaration objects.
  *
  */
@@ -802,9 +885,9 @@ class csscrush_declaration {
         if ( preg_match_all( $regex->function, $value, $functions ) > 0 ) {
             $out = array();
             foreach ( $functions[2] as $index => $fn_name ) {
-                $out[] = $fn_name;
+                $out[ strtolower( $fn_name ) ] = true;
             }
-            $functions = array_unique( $out );
+            $functions = array_keys( $out );
         }
         else {
             $functions = array();

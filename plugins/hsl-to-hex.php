@@ -10,7 +10,18 @@
  *    color: #6abf40
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush__hsl_to_hex' );
+csscrush_plugin::register( 'hsl-to-hex', array(
+    'enable' => 'csscrush__enable_hsl_to_hex',
+    'disable' => 'csscrush__disable_hsl_to_hex',
+));
+
+function csscrush__enable_hsl_to_hex () {
+    csscrush_hook::add( 'rule_postalias', 'csscrush__hsl_to_hex' );
+}
+
+function csscrush__disable_hsl_to_hex () {
+    csscrush_hook::remove( 'rule_postalias', 'csscrush__hsl_to_hex' );
+}
 
 function csscrush__hsl_to_hex ( csscrush_rule $rule ) {
 

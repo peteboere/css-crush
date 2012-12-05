@@ -16,7 +16,18 @@
  *     zoom: 1;
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush__ie_filter' );
+csscrush_plugin::register( 'ie-filter', array(
+    'enable' => 'csscrush__enable_ie_filter',
+    'disable' => 'csscrush__disable_ie_filter',
+));
+
+function csscrush__enable_ie_filter () {
+    csscrush_hook::add( 'rule_postalias', 'csscrush__ie_filter' );
+}
+
+function csscrush__disable_ie_filter () {
+    csscrush_hook::remove( 'rule_postalias', 'csscrush__ie_filter' );
+}
 
 function csscrush__ie_filter ( csscrush_rule $rule ) {
 

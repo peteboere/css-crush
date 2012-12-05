@@ -10,7 +10,18 @@
  *     *clip: rect(1px 1px 1px 1px);
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush__ie_clip' );
+csscrush_plugin::register( 'ie-clip', array(
+    'enable' => 'csscrush__enable_ie_clip',
+    'disable' => 'csscrush__disable_ie_clip',
+));
+
+function csscrush__enable_ie_clip () {
+    csscrush_hook::add( 'rule_postalias', 'csscrush__ie_clip' );
+}
+
+function csscrush__disable_ie_clip () {
+    csscrush_hook::remove( 'rule_postalias', 'csscrush__ie_clip' );
+}
 
 function csscrush__ie_clip ( csscrush_rule $rule ) {
 

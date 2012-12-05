@@ -1,5 +1,13 @@
+1.9
+---
+Added functions API for defining custom functions inside plugins.
+Updated plugin API to use distinct 'enable' and 'disable' handlers.
+Improved gradient function aliasing to handle new angle keywords ('to left', 'at center' etc.).
+Added svg-gradients plugin for simulating CSS3 gradients with data-uris.
+
+
 1.8
------
+---
 Added selector aliasing with @selector-alias directive.
 Added output_dir option for specifying the destination of compiled files.
 Added doc_root option for working around problems with server aliases or path rewrites.

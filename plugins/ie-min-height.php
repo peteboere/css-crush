@@ -10,7 +10,18 @@
  *     _height: 100px;
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush__ie_min_height' );
+csscrush_plugin::register( 'ie-min-height', array(
+    'enable' => 'csscrush__enable_ie_min_height',
+    'disable' => 'csscrush__disable_ie_min_height',
+));
+
+function csscrush__enable_ie_min_height () {
+    csscrush_hook::add( 'rule_postalias', 'csscrush__ie_min_height' );
+}
+
+function csscrush__disable_ie_min_height () {
+    csscrush_hook::remove( 'rule_postalias', 'csscrush__ie_min_height' );
+}
 
 function csscrush__ie_min_height ( csscrush_rule $rule ) {
 

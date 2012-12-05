@@ -83,7 +83,6 @@ class csscrush {
 
         // Initialise other classes.
         csscrush_regex::init();
-        csscrush_function::init();
     }
 
     static protected function setDocRoot ( $doc_root = null ) {
@@ -184,7 +183,7 @@ class csscrush {
                 foreach ( $result[ 'plugins' ] as $plugin_name ) {
                     // Backwards compat.
                     $plugin_name = basename( $plugin_name, '.php' );
-                    if ( csscrush_plugin::enable( $plugin_name ) ) {
+                    if ( csscrush_plugin::load( $plugin_name ) ) {
                         self::$config->plugins[ $plugin_name ] = true;
                     }
                 }
@@ -479,7 +478,7 @@ class csscrush {
         }
 
         if ( is_string( $arg ) ) {
-            $log .= $arg . '<hr>';
+            $log .= htmlspecialchars( $arg ) . '<hr>';
         }
         else {
             $out = '<pre>';

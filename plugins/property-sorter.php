@@ -24,7 +24,18 @@
  *
  */
 
-csscrush_hook::add( 'rule_prealias', 'csscrush__property_sorter' );
+csscrush_plugin::register( 'property-sorter', array(
+    'enable' => 'csscrush__enable_property_sorter',
+    'disable' => 'csscrush__disable_property_sorter',
+));
+
+function csscrush__enable_property_sorter () {
+    csscrush_hook::add( 'rule_prealias', 'csscrush__property_sorter' );
+}
+
+function csscrush__disable_property_sorter () {
+    csscrush_hook::remove( 'rule_prealias', 'csscrush__property_sorter' );
+}
 
 function csscrush__property_sorter ( csscrush_rule $rule ) {
 

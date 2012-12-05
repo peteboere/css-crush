@@ -15,7 +15,18 @@
  * 
  */
 
-csscrush_hook::add( 'rule_prealias', 'csscrush__initial' );
+csscrush_plugin::register( 'initial', array(
+    'enable' => 'csscrush__enable_initial',
+    'disable' => 'csscrush__disable_initial',
+));
+
+function csscrush__enable_initial () {
+    csscrush_hook::add( 'rule_prealias', 'csscrush__initial' );
+}
+
+function csscrush__disable_initial () {
+    csscrush_hook::remove( 'rule_prealias', 'csscrush__initial' );
+}
 
 function csscrush__initial ( csscrush_rule $rule ) {
 

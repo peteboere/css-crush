@@ -42,7 +42,7 @@ class csscrush_process {
         // Copy config values.
         $this->plugins = $config->plugins;
         $this->aliases = $config->aliases;
-        $this->selectorAliases = $config->selectorAliases;
+        $this->selectorAliases = array();
         $this->selectorAliasesPatt = null;
 
         // Pick a doc root.
@@ -157,16 +157,31 @@ class csscrush_process {
     }
 
     public function fetchToken ( $token ) {
-        $type = substr( $token, 1, 1 );
-        $path =& $this->tokens->{ $type };
+        $path =& $this->tokens->{ $token[1] };
         if ( isset( $path[ $token ] ) ) {
             return $path[ $token ];
         }
         return null;
     }
 
+    public function cloneToken ( $token ) {
+        $path =& $this->tokens->{ $token[1] };
+        if ( isset( $path[ $token ] ) ) {
+            return $this->addToken( $path[ $token ], $token[1] );
+        }
+        // Return empty token if passed token is unset.
+        return $this->addToken( '', $token[1] );
+    }
+
+    public function updateToken ( $token, $new_value ) {
+        $path =& $this->tokens->{ $token[1] };
+        if ( isset( $path[ $token ] ) ) {
+            $path[ $token ] = $new_value;
+        }
+    }
+
     public function releaseToken ( $token ) {
-        unset( $this->tokens->{ substr( $token, 1, 1 ) }[ $token ] );
+        unset( $this->tokens->{ $token[1] }[ $token ] );
     }
 
     public function restoreTokens ( $str, $type = 'p' ) {
@@ -283,8 +298,7 @@ class csscrush_process {
                     return isset( $table[ $m[1] ] ) ? $table[ $m[1] ] : "";
                 ');
             }
-            $str = preg_replace_callback(
-                csscrush::$process->selectorAliasesPatt, $callback, $str );
+            $str = preg_replace_callback( csscrush::$process->selectorAliasesPatt, $callback, $str );
         }
     }
 
@@ -297,6 +311,9 @@ class csscrush_process {
         }
 
         $this->stream->pregReplaceCallback( csscrush_regex::$patt->selectorAlias, $callback );
+
+        // Merge in global selector aliases.
+        $this->selectorAliases += csscrush::$config->selectorAliases;
 
         // Create the selector aliases pattern and store it.
         if ( $this->selectorAliases ) {
@@ -991,6 +1008,9 @@ class csscrush_process {
         // Resolve active aliases and plugins.
         $this->filterPlugins();
         $this->filterAliases();
+
+        // Create function matching regex.
+        csscrush_function::setMatchPatt();
 
         // Collate hostfile and imports.
         $this->stream = new csscrush_stream( csscrush_importer::hostfile( $this->input ) );

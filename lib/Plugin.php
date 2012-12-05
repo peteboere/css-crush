@@ -6,24 +6,22 @@
  */
 class csscrush_plugin {
 
-    // The required prefix to all plugin function names
-    static public $prefix = 'csscrush__';
+    static protected $plugins = array();
 
-    // The current loaded plugins
-    static protected $associated_hooks = array();
+    static public function show () {
 
-    // Externally associate a hook with the plugin
-    static public function registerHook ( $plugin_name, $hook ) {
-
-        self::$associated_hooks[ $plugin_name ] = $hook;
+        return self::$plugins;
     }
 
-    static public function enable ( $plugin_name ) {
+    static public function register ( $plugin_name, $callbacks ) {
 
-        $plugin_function = self::$prefix . $plugin_name;
+        self::$plugins[ $plugin_name ] = $callbacks;
+    }
 
-        // Require the plugin file if it hasn't been already
-        if ( ! function_exists( $plugin_function ) ) {
+    static public function load ( $plugin_name ) {
+
+        // Assume the the plugin file is not loaded if null.
+        if ( ! isset( self::$plugins[ $plugin_name ] ) ) {
 
             $path = csscrush::$config->location . "/plugins/$plugin_name.php";
 
@@ -31,29 +29,31 @@ class csscrush_plugin {
 
                 trigger_error( __METHOD__ .
                     ": <b>$plugin_name</b> plugin not found.\n", E_USER_NOTICE );
-                return false;
             }
-            require_once $path;
+            else {
+                require_once $path;
+            }
+        }
+        return isset( self::$plugins[ $plugin_name ] ) ? self::$plugins[ $plugin_name ] : null;;
+    }
+
+    static public function enable ( $plugin_name ) {
+
+        $plugin = self::load( $plugin_name );
+
+        if ( is_callable( $plugin[ 'enable' ] ) ) {
+            $plugin[ 'enable' ]();
         }
 
-        // If the plugin is associated with a hook, we make sure it is hooked
-        if ( isset( self::$associated_hooks[ $plugin_name ] ) ) {
-
-            csscrush_hook::add(
-                self::$associated_hooks[ $plugin_name ],
-                $plugin_function );
-        }
         return true;
     }
 
     static public function disable ( $plugin_name ) {
 
-        // If the plugin is associated with a hook, we 'un-hook' it
-        if ( isset( self::$associated_hooks[ $plugin_name ] ) ) {
+        $plugin = isset( self::$plugins[ $plugin_name ] ) ? self::$plugins[ $plugin_name ] : null;
 
-            csscrush_hook::remove(
-                self::$associated_hooks[ $plugin_name ],
-                self::$prefix . str_replace( '-', '_', $plugin_name ) );
+        if ( is_callable( $plugin[ 'disable' ] ) ) {
+            $plugin[ 'disable' ]();
         }
     }
 }

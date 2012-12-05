@@ -12,8 +12,18 @@
  *     background: rgba(0,0,0,.5);
  */
 
-csscrush_hook::add( 'rule_postalias', 'csscrush__rgba_fallback' );
+csscrush_plugin::register( 'rgba-fallback', array(
+    'enable' => 'csscrush__enable_rgba_fallback',
+    'disable' => 'csscrush__disable_rgba_fallback',
+));
 
+function csscrush__enable_rgba_fallback () {
+    csscrush_hook::add( 'rule_postalias', 'csscrush__rgba_fallback' );
+}
+
+function csscrush__disable_rgba_fallback () {
+    csscrush_hook::remove( 'rule_postalias', 'csscrush__rgba_fallback' );
+}
 
 function csscrush__rgba_fallback ( csscrush_rule $rule ) {
 
