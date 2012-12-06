@@ -1,7 +1,7 @@
 <?php
 /**
  *
- *  Mixin objects
+ *  Mixin objects.
  *
  */
 class csscrush_mixin {
@@ -177,7 +177,7 @@ class csscrush_mixin {
 
 /**
  *
- *  Fragment objects
+ *  Fragment objects.
  *
  */
 class csscrush_fragment {
@@ -214,18 +214,18 @@ class csscrush_fragment {
 
 /**
  *
- *  Argument list management for mixins and fragments
+ *  Argument list management for mixins and fragments.
  *
  */
 class csscrush_arglist implements Countable {
 
-    // Positional argument default values
+    // Positional argument default values.
     public $defaults = array();
 
-    // The number of expected arguments
+    // The number of expected arguments.
     public $argCount = 0;
 
-    // The string passed in with arg calls replaced by tokens
+    // The string passed in with arg calls replaced by tokens.
     public $string;
 
     public function __construct ( $str ) {

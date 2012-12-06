@@ -164,22 +164,6 @@ class csscrush_process {
         return null;
     }
 
-    public function cloneToken ( $token ) {
-        $path =& $this->tokens->{ $token[1] };
-        if ( isset( $path[ $token ] ) ) {
-            return $this->addToken( $path[ $token ], $token[1] );
-        }
-        // Return empty token if passed token is unset.
-        return $this->addToken( '', $token[1] );
-    }
-
-    public function updateToken ( $token, $new_value ) {
-        $path =& $this->tokens->{ $token[1] };
-        if ( isset( $path[ $token ] ) ) {
-            $path[ $token ] = $new_value;
-        }
-    }
-
     public function releaseToken ( $token ) {
         unset( $this->tokens->{ $token[1] }[ $token ] );
     }

@@ -80,7 +80,7 @@ class csscrush_regex {
         $patt->argListSplit  = '!\s*[,\s]\s*!S';
         $patt->mathBlacklist = '![^\.0-9\*\/\+\-\(\)]!S';
         $patt->charset       = '!@charset\s+(\?s\d+\?)\s*;!iS';
-        $patt->cruftyHex     = '!\#([0-9a-f])\1([0-9a-f])\2([0-9a-f])\3!iS';
+        $patt->cruftyHex     = '!\#([[:xdigit:]])\1([[:xdigit:]])\2([[:xdigit:]])\3!S';
     }
 
     static public function create ( $pattern_template, $flags = '', $delim = '!' ) {

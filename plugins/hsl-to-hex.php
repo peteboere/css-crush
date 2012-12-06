@@ -26,18 +26,13 @@ function csscrush__disable_hsl_to_hex () {
 function csscrush__hsl_to_hex ( csscrush_rule $rule ) {
 
     foreach ( $rule as &$declaration ) {
-        if ( 
-            ! $declaration->skip &&
-            ( ! empty( $declaration->functions ) && in_array( 'hsl', $declaration->functions ) )
-        ) {
+
+        if ( ! $declaration->skip && isset( $declaration->functions[ 'hsl' ] ) ) {
             while ( preg_match( '!hsl(\?p\d+\?)!', $declaration->value, $m ) ) {
-                $full_match = $m[0];
                 $token = $m[1];
-                $hsl = trim( csscrush::$process->tokens->p[ $token ], '()' );
-                $hsl = array_map( 'trim', explode( ',', $hsl ) );
-                $rgb = csscrush_color::cssHslToRgb( $hsl );
-                $hex = csscrush_color::rgbToHex( $rgb );
-                $declaration->value = str_replace( $full_match, $hex, $declaration->value );
+                $color = new csscrush_color( 'hsl' . csscrush::$process->fetchToken( $token ) );
+                csscrush::$process->releaseToken( $token );
+                $declaration->value = str_replace( $m[0], $color->getHex(), $declaration->value );
             }
         }
     }

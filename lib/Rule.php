@@ -4,7 +4,7 @@
  * CSS rule API.
  *
  */
-class csscrush_rule implements IteratorAggregate, Countable {
+class csscrush_rule implements IteratorAggregate {
 
     public $vendorContext;
     public $label;
@@ -97,21 +97,23 @@ class csscrush_rule implements IteratorAggregate, Countable {
             if ( preg_match( $regex->mixinExtend, $declaration, $m ) ) {
 
                 $prop = isset( $m[2] ) ? 'extends' : 'mixin';
-                $value = substr( $declaration, strlen( $m[0] ) );
+                $value = trim( substr( $declaration, strlen( $m[0] ) ) );
             }
             elseif ( ( $colonPos = strpos( $declaration, ':' ) ) !== false ) {
 
                 $prop = trim( substr( $declaration, 0, $colonPos ) );
                 // Extract the value part of the declaration.
-                $value = substr( $declaration, $colonPos + 1 );
+                $value = trim( substr( $declaration, $colonPos + 1 ) );
             }
             else {
                 // Must be malformed.
                 continue;
             }
 
-            // Some cleanup.
-            $value = $value !== false ? trim( $value ) : $value;
+            // Reject empty values.
+            if ( empty( $prop ) || ( empty( $value ) && $value != '0' ) ) {
+                continue;
+            }
 
             if ( $prop === 'mixin' ) {
 
@@ -133,6 +135,8 @@ class csscrush_rule implements IteratorAggregate, Countable {
             }
             else {
 
+                // Lowercase property values.
+                $prop = strtolower( $prop );
                 $this->declarationCheckin( $prop, $value, $pairs );
             }
         }
@@ -213,125 +217,51 @@ class csscrush_rule implements IteratorAggregate, Countable {
 
     public function declarationCheckin ( $prop, $value, &$pairs ) {
 
-        if ( $prop !== '' && $value !== '' ) {
+        // First resolve query() calls that reference earlier rules.
+        if ( preg_match( csscrush_regex::$patt->queryFunction, $value ) ) {
 
-            // First resolve query() calls that reference earlier rules
-            if ( preg_match( csscrush_regex::$patt->queryFunction, $value ) ) {
-
-                csscrush_function::executeCustomFunctions( $value,
-                    csscrush_regex::$patt->queryFunction, array(
-                        'query' => array( $this, 'cssQueryFunction' ),
-                    ), $prop );
-            }
-
-            if ( strpos( $prop, 'data-' ) === 0 ) {
-
-                // If it's with data prefix, we don't want to print it
-                // Just remove the prefix
-                $prop = substr( $prop, strlen( 'data-' ) );
-
-                // On first pass we want to store data properties on $this->data,
-                // as well as on local
-                $this->data[ $prop ] = $value;
-            }
-            else {
-
-                // Add to the stack
-                $pairs[] = array( $prop, $value );
-            }
-
-            // Set on $this->localData
-            $this->localData[ $prop ] = $value;
-
-            // Unset on data tables if the value has a this() call:
-            //   - Restriction to avoid circular references
-            if ( preg_match( csscrush_regex::$patt->thisFunction, $value ) ) {
-
-                unset( $this->localData[ $prop ], $this->data[ $prop ] );
-            }
+            csscrush_function::executeCustomFunctions( $value,
+                csscrush_regex::$patt->queryFunction, array(
+                    'query' => array( $this, 'cssQueryFunction' ),
+                ), $prop );
         }
-    }
 
-    public function cssThisFunction ( $input, $fn_name ) {
-
-        $args = csscrush_function::parseArgsSimple( $input );
-
-        if ( isset( $this->localData[ $args[0] ] ) ) {
-
-            return $this->localData[ $args[0] ];
+        // Now all referencing is done convert *most* values to lowercase.
+        // Internet Explorer JavaScript expressions need case preserved.
+        if ( strpos( $prop, 'expression' ) !== false ) {
+            $value = strtolower( $value );
         }
-        elseif ( isset( $args[1] ) ) {
 
-            return $args[1];
+        if ( strpos( $prop, 'data-' ) === 0 ) {
+
+            // If it's with data prefix, we don't want to print it
+            // Just remove the prefix
+            $prop = substr( $prop, strlen( 'data-' ) );
+
+            // On first pass we want to store data properties on $this->data,
+            // as well as on local
+            $this->data[ $prop ] = $value;
         }
         else {
 
-            return '';
-        }
-    }
-
-    public function cssQueryFunction ( $input, $fn_name, $call_property ) {
-
-        $result = '';
-        $args = csscrush_function::parseArgs( $input );
-
-        if ( count( $args ) < 1 ) {
-            return $result;
+            // Add to the stack
+            $pairs[] = array( $prop, $value );
         }
 
-        $abstracts =& csscrush::$process->abstracts;
-        $mixins =& csscrush::$process->mixins;
-        $selectorRelationships =& csscrush::$process->selectorRelationships;
+        // Set on $this->localData
+        $this->localData[ $prop ] = $value;
 
-        // Resolve arguments
-        $name = array_shift( $args );
-        $property = $call_property;
-        if ( isset( $args[0] ) ) {
-            if ( $args[0] !== 'default' ) {
-                $property = array_shift( $args );
-            }
-            else {
-                array_shift( $args );
-            }
+        // Unset on data tables if the value has a this() call:
+        //   - Restriction to avoid circular references
+        if ( preg_match( csscrush_regex::$patt->thisFunction, $value ) ) {
+
+            unset( $this->localData[ $prop ], $this->data[ $prop ] );
         }
-        $default = isset( $args[0] ) ? $args[0] : null;
-
-        // Try to match a abstract rule first
-        if ( preg_match( csscrush_regex::$patt->ident, $name ) ) {
-
-            // Search order: abstracts, mixins, rules
-            if ( isset( $abstracts[ $name ]->data[ $property ] ) ) {
-
-                $result = $abstracts[ $name ]->data[ $property ];
-            }
-            elseif ( isset( $mixins[ $name ]->data[ $property ] ) ) {
-
-                $result = $mixins[ $name ]->data[ $property ];
-            }
-            elseif ( isset( $selectorRelationships[ $name ]->data[ $property ] ) ) {
-
-                $result = $selectorRelationships[ $name ]->data[ $property ];
-            }
-        }
-        else {
-
-            // Look for a rule match
-            $name = csscrush_selector::makeReadableSelector( $name );
-            if ( isset( $selectorRelationships[ $name ]->data[ $property ] ) ) {
-
-                $result = $selectorRelationships[ $name ]->data[ $property ];
-            }
-        }
-
-        if ( $result === '' && ! is_null( $default ) ) {
-            $result = $default;
-        }
-        return $result;
     }
 
     public function updatePropertyTable () {
 
-        // Create a new table of properties
+        // Create a new table of properties.
         $new_properties_table = array();
 
         foreach ( $this as $declaration ) {
@@ -345,229 +275,12 @@ class csscrush_rule implements IteratorAggregate, Countable {
                 $new_properties_table[ $name ] = 1;
             }
         }
-
         $this->properties = $new_properties_table;
     }
 
-    public function addPropertyAliases () {
 
-        $regex = csscrush_regex::$patt;
-        $aliasedProperties =& csscrush::$process->aliases[ 'properties' ];
-
-        // First test for the existence of any aliased properties
-        $intersect = array_intersect( array_keys( $aliasedProperties ), array_keys( $this->properties ) );
-        if ( empty( $intersect ) ) {
-            return;
-        }
-
-        // Shim in aliased properties
-        $new_set = array();
-        foreach ( $this->declarations as $declaration ) {
-            $prop = $declaration->property;
-            if (
-                ! $declaration->skip &&
-                isset( $aliasedProperties[ $prop ] )
-            ) {
-                // There are aliases for the current property
-                foreach ( $aliasedProperties[ $prop ] as $prop_alias ) {
-
-                    // If an aliased version already exists to not create one.
-                    if ( $this->propertyCount( $prop_alias ) ) {
-                        continue;
-                    }
-
-                    // Create the aliased declaration.
-                    $copy = clone $declaration;
-                    $copy->property = $prop_alias;
-
-                    // Set the aliased declaration vendor property.
-                    $copy->vendor = null;
-                    if ( preg_match( $regex->vendorPrefix, $prop_alias, $vendor ) ) {
-                        $copy->vendor = $vendor[1];
-                    }
-                    $new_set[] = $copy;
-                }
-            }
-            // Un-aliased property or a property alias that has been manually set.
-            $new_set[] = $declaration;
-        }
-        // Re-assign.
-        $this->declarations = $new_set;
-    }
-
-    public function addFunctionAliases () {
-
-        $function_aliases =& csscrush::$process->aliases[ 'functions' ];
-        $aliased_func_names = array_keys( $function_aliases );
-
-        if ( empty( $aliased_func_names ) ) {
-            return;
-        }
-
-        // The new modified set of declarations.
-        $new_set = array();
-
-        // Keep track of the function aliases we apply and to which property
-        // they belong, so we can avoid un-unecessary duplications.
-        $used_fn_aliases = array();
-
-        // Shim in aliased functions.
-        foreach ( $this->declarations as $declaration ) {
-
-            // No functions, bail.
-            if ( $declaration->skip || empty( $declaration->functions ) ) {
-                $new_set[] = $declaration;
-                continue;
-            }
-
-            // Get list of functions used in declaration that are alias-able, if none bail.
-            $intersect = array_intersect( $declaration->functions, $aliased_func_names );
-            if ( empty( $intersect ) ) {
-                $new_set[] = $declaration;
-                continue;
-            }
-
-            // Loop the aliasable functions.
-            foreach ( $intersect as $fn_name ) {
-
-                // For each aliased function dupe the declaration.
-                // This pretty much limits the aliasing to one function per declaration.
-                $prefixed_copies = array();
-                foreach ( $function_aliases[ $fn_name ] as $fn_alias ) {
-
-                    // If the declaration is vendor specific only create aliases for the same vendor.
-                    if ( $declaration->vendor ) {
-                        preg_match( csscrush_regex::$patt->vendorPrefix, $fn_alias, $m );
-                        if ( strtolower( $m[1] ) !== $declaration->vendor ) {
-                            continue;
-                        }
-                    }
-
-                    $copy = clone $declaration;
-
-                    // Swap in the aliased function name.
-                    $copy->value = preg_replace(
-                        '~(?<![\w-])' . $fn_name . '(?=\?)~',
-                        $fn_alias,
-                        $copy->value
-                    );
-                    $prefixed_copies[] = $copy;
-                }
-
-                // Aliased function may require some additional fiddling.
-                if ( isset( csscrush_legacySyntax::$functions[ $fn_name ] ) ) {
-                    call_user_func( csscrush_legacySyntax::$functions[ $fn_name ], $prefixed_copies, $fn_name );
-                }
-
-                $new_set = array_merge( $new_set, $prefixed_copies );
-            }
-            $new_set[] = $declaration;
-        }
-
-        // Re-assign.
-        $this->declarations = $new_set;
-    }
-
-    public function addValueAliases () {
-
-        $aliasedValues =& csscrush::$process->aliases[ 'values' ];
-
-        // First test for the existence of any aliased properties
-        $intersect = array_intersect( array_keys( $aliasedValues ), array_keys( $this->properties ) );
-
-        if ( empty( $intersect ) ) {
-            return;
-        }
-
-        $new_set = array();
-        foreach ( $this->declarations as $declaration ) {
-            if ( !$declaration->skip ) {
-                foreach ( $aliasedValues as $value_prop => $value_aliases ) {
-                    if ( $this->propertyCount( $value_prop ) < 1 ) {
-                        continue;
-                    }
-                    foreach ( $value_aliases as $value => $aliases ) {
-                        if ( $declaration->value === $value ) {
-                            foreach ( $aliases as $alias ) {
-                                $copy = clone $declaration;
-                                $copy->value = $alias;
-                                $new_set[] = $copy;
-                            }
-                        }
-                    }
-                }
-            }
-            $new_set[] = $declaration;
-        }
-        // Re-assign
-        $this->declarations = $new_set;
-    }
-
-    public function expandSelectors () {
-
-        $new_set = array();
-        $reg_comma = '!\s*,\s*!';
-
-        foreach ( $this->selectorList as $readableValue => $selector ) {
-
-            $pos = strpos( $selector->value, ':any?' );
-
-            if ( $pos !== false ) {
-
-                // Contains an :any statement so we expand
-                $chain = array( '' );
-                do {
-                    if ( $pos === 0 ) {
-                        preg_match( '!:any(\?p\d+\?)!', $selector->value, $m );
-
-                        // Parse the arguments
-                        $expression = trim( csscrush::$process->tokens->p[ $m[1] ], '()' );
-                        $parts = preg_split( $reg_comma, $expression, null, PREG_SPLIT_NO_EMPTY );
-
-                        $tmp = array();
-                        foreach ( $chain as $rowCopy ) {
-                            foreach ( $parts as $part ) {
-                                $tmp[] = $rowCopy . $part;
-                            }
-                        }
-                        $chain = $tmp;
-                        $selector->value = substr( $selector->value, strlen( $m[0] ) );
-                    }
-                    else {
-                        foreach ( $chain as &$row ) {
-                            $row .= substr( $selector->value, 0, $pos );
-                        }
-                        $selector->value = substr( $selector->value, $pos );
-                    }
-                } while ( ( $pos = strpos( $selector->value, ':any?' ) ) !== false );
-
-                // Finish off
-                foreach ( $chain as &$row ) {
-
-                    // Not creating a named rule association with this expanded selector
-                    $new_set[] = new csscrush_selector( $row . $selector->value );
-                }
-
-                // Store the unexpanded selector to selectorRelationships
-                csscrush::$process->selectorRelationships[ $readableValue ] = $this;
-            }
-            else {
-
-                // Nothing to expand
-                $new_set[ $readableValue ] = $selector;
-            }
-
-        } // foreach
-
-        $this->selectorList = $new_set;
-    }
-
-    public function indexSelectors () {
-
-        foreach ( $this->selectorList as $selector ) {
-            csscrush::$process->selectorRelationships[ $selector->readableValue ] = $this;
-        }
-    }
+    #############################
+    #  Inheritance.
 
     public function setExtendSelectors ( $raw_value ) {
 
@@ -648,6 +361,157 @@ class csscrush_rule implements IteratorAggregate, Countable {
         }
     }
 
+
+    #############################
+    #  Referencing.
+
+    public function cssThisFunction ( $input, $fn_name ) {
+
+        $args = csscrush_function::parseArgsSimple( $input );
+
+        if ( isset( $this->localData[ $args[0] ] ) ) {
+
+            return $this->localData[ $args[0] ];
+        }
+        elseif ( isset( $args[1] ) ) {
+
+            return $args[1];
+        }
+        else {
+
+            return '';
+        }
+    }
+
+    public function cssQueryFunction ( $input, $fn_name, $call_property ) {
+
+        $result = '';
+        $args = csscrush_function::parseArgs( $input );
+
+        if ( count( $args ) < 1 ) {
+            return $result;
+        }
+
+        $abstracts =& csscrush::$process->abstracts;
+        $mixins =& csscrush::$process->mixins;
+        $selectorRelationships =& csscrush::$process->selectorRelationships;
+
+        // Resolve arguments
+        $name = array_shift( $args );
+        $property = $call_property;
+        if ( isset( $args[0] ) ) {
+            if ( $args[0] !== 'default' ) {
+                $property = array_shift( $args );
+            }
+            else {
+                array_shift( $args );
+            }
+        }
+        $default = isset( $args[0] ) ? $args[0] : null;
+
+        // Try to match a abstract rule first
+        if ( preg_match( csscrush_regex::$patt->ident, $name ) ) {
+
+            // Search order: abstracts, mixins, rules
+            if ( isset( $abstracts[ $name ]->data[ $property ] ) ) {
+
+                $result = $abstracts[ $name ]->data[ $property ];
+            }
+            elseif ( isset( $mixins[ $name ]->data[ $property ] ) ) {
+
+                $result = $mixins[ $name ]->data[ $property ];
+            }
+            elseif ( isset( $selectorRelationships[ $name ]->data[ $property ] ) ) {
+
+                $result = $selectorRelationships[ $name ]->data[ $property ];
+            }
+        }
+        else {
+
+            // Look for a rule match
+            $name = csscrush_selector::makeReadableSelector( $name );
+            if ( isset( $selectorRelationships[ $name ]->data[ $property ] ) ) {
+
+                $result = $selectorRelationships[ $name ]->data[ $property ];
+            }
+        }
+
+        if ( $result === '' && ! is_null( $default ) ) {
+            $result = $default;
+        }
+        return $result;
+    }
+
+
+    #############################
+    #  Selectors.
+
+    public function expandSelectors () {
+
+        $new_set = array();
+        $reg_comma = '!\s*,\s*!';
+
+        foreach ( $this->selectorList as $readableValue => $selector ) {
+
+            $pos = strpos( $selector->value, ':any?' );
+
+            if ( $pos !== false ) {
+
+                // Contains an :any statement so we expand
+                $chain = array( '' );
+                do {
+                    if ( $pos === 0 ) {
+                        preg_match( '!:any(\?p\d+\?)!', $selector->value, $m );
+
+                        // Parse the arguments
+                        $expression = trim( csscrush::$process->tokens->p[ $m[1] ], '()' );
+                        $parts = preg_split( $reg_comma, $expression, null, PREG_SPLIT_NO_EMPTY );
+
+                        $tmp = array();
+                        foreach ( $chain as $rowCopy ) {
+                            foreach ( $parts as $part ) {
+                                $tmp[] = $rowCopy . $part;
+                            }
+                        }
+                        $chain = $tmp;
+                        $selector->value = substr( $selector->value, strlen( $m[0] ) );
+                    }
+                    else {
+                        foreach ( $chain as &$row ) {
+                            $row .= substr( $selector->value, 0, $pos );
+                        }
+                        $selector->value = substr( $selector->value, $pos );
+                    }
+                } while ( ( $pos = strpos( $selector->value, ':any?' ) ) !== false );
+
+                // Finish off
+                foreach ( $chain as &$row ) {
+
+                    // Not creating a named rule association with this expanded selector
+                    $new_set[] = new csscrush_selector( $row . $selector->value );
+                }
+
+                // Store the unexpanded selector to selectorRelationships
+                csscrush::$process->selectorRelationships[ $readableValue ] = $this;
+            }
+            else {
+
+                // Nothing to expand
+                $new_set[ $readableValue ] = $selector;
+            }
+
+        } // foreach
+
+        $this->selectorList = $new_set;
+    }
+
+    public function indexSelectors () {
+
+        foreach ( $this->selectorList as $selector ) {
+            csscrush::$process->selectorRelationships[ $selector->readableValue ] = $this;
+        }
+    }
+
     public function addSelector ( $selector ) {
 
         $this->selectorList[ $selector->readableValue ] = $selector;
@@ -659,32 +523,171 @@ class csscrush_rule implements IteratorAggregate, Countable {
     }
 
 
-    ############
-    #  IteratorAggregate
+    #############################
+    #  Aliases
+
+    public function addPropertyAliases () {
+
+        $aliased_properties =& csscrush::$process->aliases[ 'properties' ];
+
+        // First test for the existence of any aliased properties.
+        if ( ! array_intersect_key( $aliased_properties, $this->properties ) ) {
+            return;
+        }
+
+        $regex = csscrush_regex::$patt;
+        $new_set = array();
+
+        // Shim in aliased properties
+        foreach ( $this->declarations as $declaration ) {
+
+            $prop = $declaration->property;
+            if ( ! $declaration->skip && isset( $aliased_properties[ $prop ] ) ) {
+
+                // There are aliases for the current property
+                foreach ( $aliased_properties[ $prop ] as $prop_alias ) {
+
+                    // If an aliased version already exists to not create one.
+                    if ( $this->propertyCount( $prop_alias ) ) {
+                        continue;
+                    }
+
+                    // Create the aliased declaration.
+                    $copy = clone $declaration;
+                    $copy->property = $prop_alias;
+
+                    // Set the aliased declaration vendor property.
+                    $copy->vendor = null;
+                    if ( preg_match( $regex->vendorPrefix, $prop_alias, $vendor ) ) {
+                        $copy->vendor = $vendor[1];
+                    }
+                    $new_set[] = $copy;
+                }
+            }
+            // Un-aliased property or a property alias that has been manually set.
+            $new_set[] = $declaration;
+        }
+        // Re-assign.
+        $this->declarations = $new_set;
+    }
+
+    public function addFunctionAliases () {
+
+        $function_aliases =& csscrush::$process->aliases[ 'functions' ];
+
+        if ( ! $function_aliases ) {
+            return;
+        }
+
+        // The new modified set of declarations.
+        $new_set = array();
+
+        // Shim in aliased functions.
+        foreach ( $this->declarations as $declaration ) {
+
+            // No functions, bail.
+            if ( $declaration->skip || ! $declaration->functions ) {
+                $new_set[] = $declaration;
+                continue;
+            }
+
+            // Get list of functions used in declaration that are alias-able, bail if none.
+            $intersect = array_intersect_key( $declaration->functions, $function_aliases );
+            if ( ! $intersect ) {
+                $new_set[] = $declaration;
+                continue;
+            }
+
+            // Loop the aliasable functions.
+            foreach ( array_keys( $intersect ) as $fn_name ) {
+
+                // For each aliased function dupe the declaration.
+                // This pretty much limits the aliasing to one function per declaration.
+                $prefixed_copies = array();
+                foreach ( $function_aliases[ $fn_name ] as $fn_alias ) {
+
+                    // If the declaration is vendor specific only create aliases for the same vendor.
+                    if ( $declaration->vendor ) {
+                        preg_match( csscrush_regex::$patt->vendorPrefix, $fn_alias, $m );
+                        if ( $m[1] !== $declaration->vendor ) {
+                            continue;
+                        }
+                    }
+
+                    $copy = clone $declaration;
+
+                    // Swap in the aliased function name.
+                    $copy->value = preg_replace(
+                        '~(?<![\w-])' . $fn_name . '(?=\?)~',
+                        $fn_alias,
+                        $copy->value
+                    );
+                    $prefixed_copies[] = $copy;
+                }
+
+                // Aliased function may require some additional fiddling.
+                if ( isset( csscrush_legacySyntax::$functions[ $fn_name ] ) ) {
+                    call_user_func( csscrush_legacySyntax::$functions[ $fn_name ], $prefixed_copies, $fn_name );
+                }
+
+                $new_set = array_merge( $new_set, $prefixed_copies );
+            }
+            $new_set[] = $declaration;
+        }
+
+        // Re-assign.
+        $this->declarations = $new_set;
+    }
+
+    public function addValueAliases () {
+
+        $aliased_values =& csscrush::$process->aliases[ 'values' ];
+
+        // First test for the existence of any aliased properties.
+        if ( ! array_intersect_key( $aliased_values, $this->properties ) ) {
+            return;
+        }
+
+        $new_set = array();
+        foreach ( $this->declarations as $declaration ) {
+            if ( ! $declaration->skip ) {
+                foreach ( $aliased_values as $value_prop => $value_aliases ) {
+                    if ( $this->propertyCount( $value_prop ) < 1 ) {
+                        continue;
+                    }
+                    foreach ( $value_aliases as $value => $aliases ) {
+                        if ( $declaration->value === $value ) {
+                            foreach ( $aliases as $alias ) {
+                                $copy = clone $declaration;
+                                $copy->value = $alias;
+                                $new_set[] = $copy;
+                            }
+                        }
+                    }
+                }
+            }
+            $new_set[] = $declaration;
+        }
+
+        // Re-assign.
+        $this->declarations = $new_set;
+    }
+
+
+    #############################
+    #  IteratorAggregate interface.
 
     public function getIterator () {
         return new ArrayIterator( $this->declarations );
     }
 
 
-    ############
-    #  Countable
-
-    public function count() {
-
-        return count( $this->_declarations );
-    }
-
-
-    ############
-    #  Rule API
+    #############################
+    #  Rule API.
 
     public function propertyCount ( $prop ) {
 
-        if ( isset( $this->properties[ $prop ] ) ) {
-            return $this->properties[ $prop ];
-        }
-        return 0;
+        return isset( $this->properties[ $prop ] ) ? $this->properties[ $prop ] : 0;
     }
 
     public function addProperty ( $prop ) {
@@ -835,17 +838,17 @@ class csscrush_declaration {
 
         $regex = csscrush_regex::$patt;
 
-        // Normalize input. Lowercase the property name
+        // Normalize input. Lowercase the property name.
         $prop = strtolower( trim( $prop ) );
         $value = trim( $value );
 
-        // Check the input
+        // Check the input.
         if ( $prop === '' || $value === '' || $value === null ) {
             $this->isValid = false;
             return;
         }
 
-        // Test for escape tilde
+        // Test for escape tilde.
         if ( $skip = strpos( $prop, '~' ) === 0 ) {
             $prop = substr( $prop, 1 );
         }
@@ -861,19 +864,19 @@ class csscrush_declaration {
             $canonical_property = $prop;
         }
 
-        // Check for !important keywords
-        if ( ( $important = strpos( $value, '!important' ) ) !== false ) {
+        // Check for !important.
+        if ( ( $important = stripos( $value, '!important' ) ) !== false ) {
             $value = rtrim( substr( $value, 0, $important ) );
             $important = true;
         }
 
-        // Ignore declarations with null css values
+        // Ignore declarations with null css values.
         if ( $value === false || $value === '' ) {
             $this->isValid = false;
             return;
         }
 
-        // Apply custom functions
+        // Apply custom functions.
         if ( ! $skip ) {
             csscrush_function::executeCustomFunctions( $value );
         }
@@ -882,15 +885,11 @@ class csscrush_declaration {
         csscrush::$process->captureParens( $value );
 
         // Create an index of all regular functions in the value.
-        if ( preg_match_all( $regex->function, $value, $functions ) > 0 ) {
-            $out = array();
-            foreach ( $functions[2] as $index => $fn_name ) {
-                $out[ strtolower( $fn_name ) ] = true;
+        $functions = array();
+        if ( preg_match_all( $regex->function, $value, $m ) ) {
+            foreach ( $m[2] as $index => $fn_name ) {
+                $functions[ strtolower( $fn_name ) ] = true;
             }
-            $functions = array_keys( $out );
-        }
-        else {
-            $functions = array();
         }
 
         $this->property          = $prop;

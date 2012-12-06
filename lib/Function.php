@@ -106,91 +106,12 @@ class csscrush_function {
         return preg_split( csscrush_regex::$patt->argListSplit, $input, 2 );
     }
 
-    static public function colorAdjust ( $color, array $adjustments ) {
+    static public function colorAdjust ( $raw_color, array $adjustments ) {
 
-        $fn_matched = preg_match( '!^(#|rgba?|hsla?)!', $color, $m );
-        $keywords =& csscrush_color::loadKeywords();
+        $hsla = new csscrush_color( $raw_color, true );
 
-        // Support for Hex, RGB, RGBa and keywords
-        // HSL and HSLa are passed over
-        if ( $fn_matched || isset( $keywords[ $color ] ) ) {
-
-            $alpha = 1;
-            $rgb = null;
-
-            // Get an RGB array from the color argument
-            if ( $fn_matched ) {
-                switch ( $m[1] ) {
-                    case '#':
-                        $rgb = csscrush_color::hexToRgb( $color );
-                        break;
-
-                    case 'rgb':
-                    case 'rgba':
-                    case 'hsl':
-                    case 'hsla':
-                        $function = $m[1];
-                        $alpha_channel = 4 === strlen( $function ) ? true : false;
-                        $vals = substr( $color, strlen( $function ) + 1 );  // Trim function name and start paren
-                        $vals = substr( $vals, 0, strlen( $vals ) - 1 );    // Trim end paren
-                        $vals = array_map( 'trim', explode( ',', $vals ) ); // Explode to array of arguments
-                        if ( $alpha_channel ) {
-                            $alpha = array_pop( $vals );
-                        }
-                        if ( 0 === strpos( $function, 'rgb' ) ) {
-                            $rgb = csscrush_color::normalizeCssRgb( $vals );
-                        }
-                        else {
-                            $rgb = csscrush_color::cssHslToRgb( $vals );
-                        }
-                        break;
-                }
-            }
-            else {
-                $rgb = $keywords[ $color ];
-            }
-
-            $hsl = csscrush_color::rgbToHsl( $rgb );
-
-            // Normalize adjustment parameters to floating point numbers
-            // then calculate the new HSL value
-            $index = 0;
-            foreach ( $adjustments as $val ) {
-                // Normalize argument
-                $_val = $val ? trim( str_replace( '%', '', $val ) ) : 0;
-
-                // Reduce value to float
-                $_val /= 100;
-
-                // Adjust alpha component if necessary
-                if ( 3 === $index ) {
-                    if ( 0 != $val ) {
-                        $alpha = max( 0, min( 1, $alpha + $_val ) );
-                    }
-                }
-                // Adjust HSL component value if necessary
-                else {
-                    if ( 0 != $val ) {
-                        $hsl[ $index ] = max( 0, min( 1, $hsl[ $index ] + $_val ) );
-                    }
-                }
-                $index++;
-            }
-
-            // Finally convert new HSL value to RGB
-            $rgb = csscrush_color::hslToRgb( $hsl );
-
-            // Return as hex if there is no modified alpha channel
-            // Otherwise return RGBA string
-            if ( 1 === $alpha ) {
-                return csscrush_color::rgbToHex( $rgb );
-            }
-            $rgb[] = $alpha;
-            return 'rgba(' . implode( ',', $rgb ) . ')';
-        }
-        else {
-            return $color;
-        }
+        // On failure to parse return input.
+        return $hsla->isValid ? $hsla->adjust( $adjustments )->__toString() : $raw_color;
     }
 }
 
