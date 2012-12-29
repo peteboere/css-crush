@@ -41,19 +41,19 @@
  *
  */
 
-csscrush_plugin::register( 'svg-gradients', array(
+CssCrush_Plugin::register( 'svg-gradients', array(
     'enable' => 'csscrush__enable_svg_gradients',
     'disable' => 'csscrush__disable_svg_gradients',
 ));
 
 function csscrush__enable_svg_gradients () {
-    csscrush_function::register( 'svg-linear-gradient', 'csscrush_fn__svg_linear_gradient' );
-    csscrush_function::register( 'svg-radial-gradient', 'csscrush_fn__svg_radial_gradient' );
+    CssCrush_Function::register( 'svg-linear-gradient', 'csscrush_fn__svg_linear_gradient' );
+    CssCrush_Function::register( 'svg-radial-gradient', 'csscrush_fn__svg_radial_gradient' );
 }
 
 function csscrush__disable_svg_gradients () {
-    csscrush_function::deRegister( 'svg-linear-gradient', 'csscrush_fn__svg_linear_gradient' );
-    csscrush_function::deRegister( 'svg-radial-gradient', 'csscrush_fn__svg_radial_gradient' );
+    CssCrush_Function::deRegister( 'svg-linear-gradient', 'csscrush_fn__svg_linear_gradient' );
+    CssCrush_Function::deRegister( 'svg-radial-gradient', 'csscrush_fn__svg_radial_gradient' );
 }
 
 function csscrush_fn__svg_linear_gradient ( $input ) {
@@ -81,7 +81,7 @@ function csscrush_fn__svg_linear_gradient ( $input ) {
         $angle_keywords[ 'to left bottom' ] = $angle_keywords[ 'to bottom left' ];
     }
 
-    $args = csscrush_function::parseArgs( $input );
+    $args = CssCrush_Function::parseArgs( $input );
 
     // If no angle argument is passed the default used is 0.
     $angle = 0;
@@ -186,7 +186,7 @@ function csscrush_fn__svg_linear_gradient ( $input ) {
     $svg .= '</svg>';
 
     // Create data-uri url and return token label.
-    $url = new csscrush_url( 'data:image/svg+xml;base64,' . base64_encode( $svg ) );
+    $url = new CssCrush_Url( 'data:image/svg+xml;base64,' . base64_encode( $svg ) );
 
     return $url->label;
 }
@@ -217,7 +217,7 @@ function csscrush_fn__svg_radial_gradient ( $input ) {
         $position_keywords[ 'at left bottom' ] = $position_keywords[ 'at bottom left' ];
     }
 
-    $args = csscrush_function::parseArgs( $input );
+    $args = CssCrush_Function::parseArgs( $input );
 
     // Default origin,
     $position = $position_keywords[ 'at center' ];
@@ -262,7 +262,7 @@ function csscrush_fn__svg_radial_gradient ( $input ) {
     $svg .= '</svg>';
 
     // Create data-uri url and return token label.
-    $url = new csscrush_url( 'data:image/svg+xml;base64,' . base64_encode( $svg ) );
+    $url = new CssCrush_Url( 'data:image/svg+xml;base64,' . base64_encode( $svg ) );
 
     return $url->label;
 }

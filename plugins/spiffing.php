@@ -13,17 +13,17 @@
  *
  */
 
-csscrush_plugin::register( 'spiffing', array(
+CssCrush_Plugin::register( 'spiffing', array(
     'enable' => 'csscrush__enable_spiffing',
     'disable' => 'csscrush__disable_spiffing',
 ));
 
 function csscrush__enable_spiffing () {
-    csscrush_hook::add( 'rule_preprocess', 'csscrush__spiffing' );
+    CssCrush_Hook::add( 'rule_preprocess', 'csscrush__spiffing' );
 }
 
 function csscrush__disable_spiffing () {
-    csscrush_hook::add( 'rule_preprocess', 'csscrush__spiffing' );
+    CssCrush_Hook::add( 'rule_preprocess', 'csscrush__spiffing' );
 }
 
 function csscrush__spiffing ( $rule ) {

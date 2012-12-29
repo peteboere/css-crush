@@ -4,14 +4,14 @@
  * Recursive file importing
  *
  */
-class csscrush_importer {
-
-    static public function hostfile () {
-
-        $config = csscrush::$config;
-        $process = csscrush::$process;
+class CssCrush_Importer
+{
+    static public function hostfile ()
+    {
+        $config = CssCrush::$config;
+        $process = CssCrush::$process;
         $options = $process->options;
-        $regex = csscrush_regex::$patt;
+        $regex = CssCrush_Regex::$patt;
         $input = $process->input;
 
         // Keep track of all import file info for cache data.
@@ -22,7 +22,7 @@ class csscrush_importer {
         $prepend_file_contents = '';
 
         // The prepend file.
-        if ( $prepend_file = csscrush_util::find( 'Prepend-local.css', 'Prepend.css' ) ) {
+        if ( $prepend_file = CssCrush_Util::find( 'Prepend-local.css', 'Prepend.css' ) ) {
             $prepend_file_contents = file_get_contents( $prepend_file );
             $process->currentFile = 'file://' . $prepend_file;
 
@@ -60,14 +60,14 @@ class csscrush_importer {
             $match_start = $match[0][1];
             $match_end = $match_start + $match_len;
 
-            // If just stripping the import statements
+            // If just stripping the import statements.
             if ( isset( $input->importIgnore ) ) {
                 $str = substr_replace( $str, '', $match_start, $match_len );
                 continue;
             }
 
             // Fetch the URL object.
-            $url = csscrush_url::get( $match[1][0] );
+            $url = CssCrush_Url::get( $match[1][0] );
 
             // Pass over protocoled import urls.
             if ( $url->protocol ) {
@@ -93,7 +93,7 @@ class csscrush_importer {
 
             // Get the import contents, if unsuccessful just continue with the import line removed.
             if ( ! ( $import->content = @file_get_contents( $import->path ) ) ) {
-                csscrush::log( "Import file '{$import->url->value}' not found" );
+                CssCrush::log( "Import file '{$import->url->value}' not found" );
                 $str = substr_replace( $str, '', $match_start, $match_len );
                 continue;
             }
@@ -116,10 +116,10 @@ class csscrush_importer {
             $filenames[] = $import->url->value;
 
             // Alter all the @import urls to be paths relative to the hostfile.
-            foreach ( csscrush_regex::matchAll( $regex->import, $import->content ) as $m ) {
+            foreach ( CssCrush_Regex::matchAll( $regex->import, $import->content ) as $m ) {
 
                 // Fetch the matched URL.
-                $url2 = csscrush_url::get( $m[1][0] );
+                $url2 = CssCrush_Url::get( $m[1][0] );
 
                 // Try to resolve absolute paths.
                 // On failure strip the @import statement.
@@ -136,7 +136,7 @@ class csscrush_importer {
                 self::rewriteImportedUrls( $import );
             }
 
-            // Add media context if it exists
+            // Add media context if it exists.
             if ( $import->mediaContext ) {
                 $import->content = "@media $import->mediaContext {{$import->content}}";
             }
@@ -150,7 +150,7 @@ class csscrush_importer {
             $process->cacheData[ $process->output->filename ] = array(
                 'imports'   => $filenames,
                 'datem_sum' => array_sum( $mtimes ) + $input->mtime,
-                'options'   => clone $options,
+                'options'   => $options->get(),
             );
 
             // Save config changes.
@@ -160,10 +160,10 @@ class csscrush_importer {
         return $str;
     }
 
-    static protected function rewriteImportedUrls ( $import ) {
-
-        $link = csscrush_util::getLinkBetweenDirs(
-            csscrush::$process->input->dir, dirname( $import->path ) );
+    static protected function rewriteImportedUrls ( $import )
+    {
+        $link = CssCrush_Util::getLinkBetweenDirs(
+            CssCrush::$process->input->dir, dirname( $import->path ) );
 
         if ( empty( $link ) ) {
             return;
@@ -175,7 +175,7 @@ class csscrush_importer {
         foreach ( $matches[0] as $token ) {
 
             // Fetch the matched URL.
-            $url = csscrush_url::get( $token );
+            $url = CssCrush_Url::get( $token );
 
             if ( $url->isRelative ) {
                 // Prepend the relative url prefix.
@@ -184,10 +184,10 @@ class csscrush_importer {
         }
     }
 
-    static protected function prepareForStream ( &$str ) {
-
-        $regex = csscrush_regex::$patt;
-        $process = csscrush::$process;
+    static protected function prepareForStream ( &$str )
+    {
+        $regex = CssCrush_Regex::$patt;
+        $process = CssCrush::$process;
 
         // Convert all end-of-lines to unix style.
         $str = preg_replace( '~\r\n?~', "\n", $str );
@@ -221,27 +221,27 @@ class csscrush_importer {
 
         if ( $parse_errors ) {
             foreach ( $parse_errors as $error_msg ) {
-                csscrush::logError( $error_msg );
+                CssCrush::logError( $error_msg );
                 trigger_error( "$error_msg\n", E_USER_WARNING );
             }
             return false;
         }
 
         // Optionally add tracing stubs.
-        if ( in_array( 'stubs', $process->options->trace ) ) {
+        if ( $process->addTracingStubs ) {
             self::addTracingStubs( $str );
         }
 
         // Strip unneeded whitespace.
-        $str = csscrush_util::normalizeWhiteSpace( $str );
+        $str = CssCrush_Util::normalizeWhiteSpace( $str );
 
         self::captureUrls( $str );
 
         return true;
     }
 
-    static protected function captureUrls ( &$str ) {
-
+    static protected function captureUrls ( &$str )
+    {
         $patt = '#
             @import\x{20}(\?s\d+\?)
             |
@@ -255,14 +255,14 @@ class csscrush_importer {
             $is_import_url = ! isset( $outer_m[2] );
 
             if ( $is_import_url ) {
-                $url = new csscrush_url( $outer_m[1][0] );
+                $url = new CssCrush_Url( $outer_m[1][0] );
                 $str = str_replace( $outer_m[1][0], $url->label, $str );
             }
             // Match parenthesis if not a string token.
             elseif (
-                preg_match( csscrush_regex::$patt->balancedParens, $str, $inner_m, PREG_OFFSET_CAPTURE, $outer_offset )
+                preg_match( CssCrush_Regex::$patt->balancedParens, $str, $inner_m, PREG_OFFSET_CAPTURE, $outer_offset )
             ) {
-                $url = new csscrush_url( $inner_m[1][0] );
+                $url = new CssCrush_Url( $inner_m[1][0] );
                 $func_name = strtolower( $outer_m[2][0] );
                 $url->convertToData = 'data-uri' === $func_name;
                 $str = substr_replace( $str, $url->label, $outer_offset,
@@ -275,19 +275,19 @@ class csscrush_importer {
         }
     }
 
-    static protected function cb_extractCommentAndString ( $match ) {
-
+    static protected function cb_extractCommentAndString ( $match )
+    {
         $full_match = $match[0];
-        $process = csscrush::$process;
+        $process = CssCrush::$process;
 
         // We return the newlines to maintain line numbering when tracing.
         $newlines = str_repeat( "\n", substr_count( $full_match, "\n" ) );
 
         if ( strpos( $full_match, '/*' ) === 0 ) {
 
-            // Bail without storing comment if in debug mode or a private comment.
+            // Bail without storing comment if output is minified or a private comment.
             if (
-                $process->options->minify ||
+                $process->minifyOutput ||
                 strpos( $full_match, '/*$' ) === 0
             ) {
                 return $newlines;
@@ -313,12 +313,12 @@ class csscrush_importer {
         return $newlines . $label;
     }
 
-    static protected function addTracingStubs ( &$str ) {
-
+    static protected function addTracingStubs ( &$str )
+    {
         $selector_patt = '! (^|;|\})+ ([^;{}]+) (\{) !xmS';
         $token_or_whitespace = '!(\s*\?c\d+\?\s*|\s+)!S';
 
-        $matches = csscrush_regex::matchAll( $selector_patt, $str );
+        $matches = CssCrush_Regex::matchAll( $selector_patt, $str );
 
         // Start from last match and move backwards.
         while ( $m = array_pop( $matches ) ) {
@@ -353,11 +353,11 @@ class csscrush_importer {
                         }
 
                         // Get the currently processed file path, and escape it.
-                        $current_file = str_replace( ' ', '%20', csscrush::$process->currentFile );
+                        $current_file = str_replace( ' ', '%20', CssCrush::$process->currentFile );
                         $current_file = preg_replace( '![^\w-]!', '\\\\$0', $current_file );
 
                         // Splice in tracing stub.
-                        $label = csscrush::$process->addToken( "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line_num}}", 't' );
+                        $label = CssCrush::$process->addToken( "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line_num}}", 't' );
 
                         $str = $str_before . $label . substr( $str, $selector_index );
                     }
@@ -373,5 +373,4 @@ class csscrush_importer {
             }
         }
     }
-
 }

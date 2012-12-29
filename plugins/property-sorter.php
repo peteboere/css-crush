@@ -24,20 +24,20 @@
  *
  */
 
-csscrush_plugin::register( 'property-sorter', array(
+CssCrush_Plugin::register( 'property-sorter', array(
     'enable' => 'csscrush__enable_property_sorter',
     'disable' => 'csscrush__disable_property_sorter',
 ));
 
 function csscrush__enable_property_sorter () {
-    csscrush_hook::add( 'rule_prealias', 'csscrush__property_sorter' );
+    CssCrush_Hook::add( 'rule_prealias', 'csscrush__property_sorter' );
 }
 
 function csscrush__disable_property_sorter () {
-    csscrush_hook::remove( 'rule_prealias', 'csscrush__property_sorter' );
+    CssCrush_Hook::remove( 'rule_prealias', 'csscrush__property_sorter' );
 }
 
-function csscrush__property_sorter ( csscrush_rule $rule ) {
+function csscrush__property_sorter ( CssCrush_Rule $rule ) {
 
     $new_set = array();
 
@@ -48,7 +48,7 @@ function csscrush__property_sorter ( csscrush_rule $rule ) {
 
     usort( $new_set, '_csscrush__property_sorter_callback' );
 
-    $rule->declarations = $new_set;
+    $rule->setDeclarations( $new_set );
 }
 
 
@@ -154,7 +154,7 @@ function &_csscrush__property_sorter_get_table () {
 
         // Load from property-sorting.ini.
         if ( $sorting_file_contents
-            = file_get_contents( csscrush::$config->location . '/misc/property-sorting.ini' ) ) {
+            = file_get_contents( CssCrush::$config->location . '/misc/property-sorting.ini' ) ) {
 
             $sorting_file_contents = preg_replace( '!;[^\r\n]*!', '', $sorting_file_contents );
             $table = preg_split( '!\s+!', trim( $sorting_file_contents ) );

@@ -4,18 +4,18 @@
  * Colour parsing and conversion.
  *
  */
-class csscrush_color {
-
+class CssCrush_Color
+{
     // Cached color keyword tables.
     static public $keywords;
     static public $minifyableKeywords;
 
-    static public function &loadKeywords () {
-
+    static public function &loadKeywords ()
+    {
         if ( is_null( self::$keywords ) ) {
 
             $table = array();
-            $path = csscrush::$config->location . '/misc/color-keywords.ini';
+            $path = CssCrush::$config->location . '/misc/color-keywords.ini';
             if ( $keywords = parse_ini_file( $path ) ) {
                 foreach ( $keywords as $word => $rgb ) {
                     $rgb = array_map( 'intval', explode( ',', $rgb ) );
@@ -26,14 +26,14 @@ class csscrush_color {
         return self::$keywords;
     }
 
-    static public function &loadMinifyableKeywords () {
-
+    static public function &loadMinifyableKeywords ()
+    {
         if ( is_null( self::$minifyableKeywords ) ) {
 
             // If color name is longer than 4 and less than 8 test to see if its hex
             // representation could be shortened.
             $table = array();
-            $keywords =& csscrush_color::loadKeywords();
+            $keywords =& CssCrush_Color::loadKeywords();
 
             foreach ( $keywords as $name => &$rgb ) {
                 $name_len = strlen( $name );
@@ -47,7 +47,7 @@ class csscrush_color {
                     self::$minifyableKeywords[ $name ] = $hex;
                 }
                 else {
-                    if ( preg_match( csscrush_regex::$patt->cruftyHex, $hex ) ) {
+                    if ( preg_match( CssCrush_Regex::$patt->cruftyHex, $hex ) ) {
                         self::$minifyableKeywords[ $name ] = $hex;
                     }
                 }
@@ -56,8 +56,8 @@ class csscrush_color {
         return self::$minifyableKeywords;
     }
 
-    static public function parse ( $color ) {
-
+    static public function parse ( $color )
+    {
         $rgba = null;
         $color = strtolower( $color );
 
@@ -73,7 +73,7 @@ class csscrush_color {
             switch ( $m[1] ) {
 
                 case '#':
-                    $rgba = csscrush_color::hexToRgb( $color );
+                    $rgba = CssCrush_Color::hexToRgb( $color );
                     break;
 
                 case 'rgb':
@@ -89,10 +89,10 @@ class csscrush_color {
                     $vals[3] = isset( $vals[3] ) ? floatval( $vals[3] ) : 1;
 
                     if ( strpos( $function, 'rgb' ) === 0 ) {
-                        $rgba = csscrush_color::normalizeCssRgb( $vals );
+                        $rgba = CssCrush_Color::normalizeCssRgb( $vals );
                     }
                     else {
-                        $rgba = csscrush_color::cssHslToRgb( $vals );
+                        $rgba = CssCrush_Color::cssHslToRgb( $vals );
                     }
                     break;
             }
@@ -121,8 +121,8 @@ class csscrush_color {
      * Assumes r, g, and b are contained in the set [0, 255] and
      * returns h, s, and l in the set [0, 1].
      */
-    static public function rgbToHsl ( array $rgba ) {
-
+    static public function rgbToHsl ( array $rgba )
+    {
         list( $r, $g, $b, $a ) = $rgba;
         $r /= 255;
         $g /= 255;
@@ -165,7 +165,8 @@ class csscrush_color {
      * Assumes h, s, and l are contained in the set [0, 1] and
      * returns r, g, and b in the set [0, 255].
      */
-    static public function hslToRgb ( array $hsla ) {
+    static public function hslToRgb ( array $hsla )
+    {
 
         // Populate unspecified alpha value.
         if ( ! isset( $hsla[3] ) ) {
@@ -190,7 +191,8 @@ class csscrush_color {
     }
 
     // Convert percentages to points (0-255).
-    static public function normalizeCssRgb ( array $rgba ) {
+    static public function normalizeCssRgb ( array $rgba )
+    {
         foreach ( $rgba as &$val ) {
             if ( strpos( $val, '%' ) !== false ) {
                 $val = str_replace( '%', '', $val );
@@ -200,8 +202,8 @@ class csscrush_color {
         return $rgba;
     }
 
-    static public function cssHslToRgb ( array $hsla ) {
-
+    static public function cssHslToRgb ( array $hsla )
+    {
         // Populate unspecified alpha value.
         if ( ! isset( $hsla[3] ) ) {
             $hsla[3] = 1;
@@ -228,8 +230,8 @@ class csscrush_color {
         return self::hslToRgb( array( $h, $s, $l, $a ) );
     }
 
-    static public function hueToRgb ( $p, $q, $t ) {
-
+    static public function hueToRgb ( $p, $q, $t )
+    {
         if ( $t < 0 ) $t += 1;
         if ( $t > 1 ) $t -= 1;
         if ( $t < 1/6 ) return $p + ( $q - $p ) * 6 * $t;
@@ -238,8 +240,8 @@ class csscrush_color {
         return $p;
     }
 
-    static public function rgbToHex ( array $rgba ) {
-
+    static public function rgbToHex ( array $rgba )
+    {
         // Drop alpha component.
         array_pop( $rgba );
 
@@ -250,8 +252,8 @@ class csscrush_color {
         return $hex_out;
     }
 
-    static public function hexToRgb ( $hex ) {
-
+    static public function hexToRgb ( $hex )
+    {
         $hex = substr( $hex, 1 );
 
         // Handle shortened format.
@@ -280,7 +282,8 @@ class csscrush_color {
     protected $hslColorSpace;
     public $isValid;
 
-    public function __construct ( $color, $use_hsl_color_space = false ) {
+    public function __construct ( $color, $use_hsl_color_space = false )
+    {
         $this->value = is_array( $color ) ? $color : self::parse( $color );
         $this->isValid = isset( $this->value );
         if ( $use_hsl_color_space && $this->isValid ) {
@@ -288,7 +291,8 @@ class csscrush_color {
         }
     }
 
-    public function __toString () {
+    public function __toString ()
+    {
         if ( $this->value[3] !== 1 ) {
             return 'rgba(' . implode( ',', $this->hslColorSpace ? $this->getRgb() : $this->value ) . ')';
         }
@@ -297,7 +301,8 @@ class csscrush_color {
         }
     }
 
-    public function toRgb () {
+    public function toRgb ()
+    {
         if ( $this->hslColorSpace ) {
             $this->hslColorSpace = false;
             $this->value = self::hslToRgb( $this->value );
@@ -305,7 +310,8 @@ class csscrush_color {
         return $this;
     }
 
-    public function toHsl () {
+    public function toHsl ()
+    {
         if ( ! $this->hslColorSpace ) {
             $this->hslColorSpace = true;
             $this->value = self::rgbToHsl( $this->value );
@@ -313,32 +319,36 @@ class csscrush_color {
         return $this;
     }
 
-    public function getHex () {
+    public function getHex ()
+    {
         return self::rgbToHex( $this->getRgb() );
     }
 
-    public function getHsl () {
+    public function getHsl ()
+    {
         return ! $this->hslColorSpace ? self::rgbToHsl( $this->value ) : $this->value;
     }
 
-    public function getRgb () {
+    public function getRgb ()
+    {
         return $this->hslColorSpace ? self::hslToRgb( $this->value ) : $this->value;
     }
 
-    public function getComponent ( $index ) {
+    public function getComponent ( $index )
+    {
         return $this->value[ $index ];
     }
 
-    public function setComponent ( $index, $new_component_value ) {
+    public function setComponent ( $index, $new_component_value )
+    {
         $this->value[ $index ] = $new_component_value;
     }
 
-    public function adjust ( array $adjustments ) {
-
+    public function adjust ( array $adjustments )
+    {
         $was_hsl_color_space = $this->hslColorSpace;
 
         $this->toHsl();
-
         // Normalize percentage adjustment parameters to floating point numbers.
         foreach ( $adjustments as $index => $val ) {
 

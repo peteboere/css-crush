@@ -4,21 +4,21 @@
  *  Mixin objects.
  *
  */
-class csscrush_mixin {
-
+class CssCrush_Mixin
+{
     public $declarationsTemplate = array();
 
     public $arguments;
 
     public $data = array();
 
-    public function __construct ( $block ) {
-
+    public function __construct ( $block )
+    {
         // Strip comment markers
-        $block = csscrush_util::stripCommentTokens( $block );
+        $block = CssCrush_Util::stripCommentTokens( $block );
 
         // Prepare the arguments object
-        $this->arguments = new csscrush_arglist( $block );
+        $this->arguments = new CssCrush_ArgList( $block );
 
         // Re-assign with the parsed arguments string
         $block = $this->arguments->string;
@@ -42,7 +42,7 @@ class csscrush_mixin {
             if ( $declaration['property'] === 'mixin' ) {
 
                 // Mixin can contain other mixins if they are available
-                if ( $mixin_declarations = csscrush_mixin::parseValue( $declaration['value'] ) ) {
+                if ( $mixin_declarations = CssCrush_Mixin::parseValue( $declaration['value'] ) ) {
 
                     // Add mixin result to the stack
                     $this->declarationsTemplate = array_merge( $this->declarationsTemplate, $mixin_declarations );
@@ -56,15 +56,15 @@ class csscrush_mixin {
         // Create data table for the mixin.
         // Values that use arg() are excluded
         foreach ( $this->declarationsTemplate as &$declaration ) {
-            if ( ! preg_match( csscrush_regex::$patt->aToken, $declaration['value'] ) ) {
+            if ( ! preg_match( CssCrush_Regex::$patt->aToken, $declaration['value'] ) ) {
                 $this->data[ $declaration['property'] ] = $declaration['value'];
             }
         }
         return '';
     }
 
-    public function call ( array $args ) {
-
+    public function call ( array $args )
+    {
         // Copy the template
         $declarations = $this->declarationsTemplate;
 
@@ -82,8 +82,8 @@ class csscrush_mixin {
         return $declarations;
     }
 
-    static public function parseSingleValue ( $message ) {
-
+    static public function parseSingleValue ( $message )
+    {
         $message = ltrim( $message );
         $mixin = null;
         $non_mixin = null;
@@ -98,25 +98,25 @@ class csscrush_mixin {
 
             $name = $name_match[0];
 
-            if ( isset( csscrush::$process->mixins[ $name ] ) ) {
+            if ( isset( CssCrush::$process->mixins[ $name ] ) ) {
 
                 // Mixin match
-                $mixin = csscrush::$process->mixins[ $name ];
+                $mixin = CssCrush::$process->mixins[ $name ];
             }
-            elseif ( isset( csscrush::$process->abstracts[ $name ] ) ) {
+            elseif ( isset( CssCrush::$process->abstracts[ $name ] ) ) {
 
                 // Abstract rule match
-                $non_mixin = csscrush::$process->abstracts[ $name ];
+                $non_mixin = CssCrush::$process->abstracts[ $name ];
             }
         }
 
         // If no mixin or abstract rule matched, look for matching selector
         if ( ! $mixin && ! $non_mixin ) {
 
-            $selector_test = csscrush_selector::makeReadableSelector( $message );
+            $selector_test = CssCrush_Selector::makeReadableSelector( $message );
 
-            if ( isset( csscrush::$process->selectorRelationships[ $selector_test ] ) ) {
-                $non_mixin = csscrush::$process->selectorRelationships[ $selector_test ];
+            if ( isset( CssCrush::$process->selectorRelationships[ $selector_test ] ) ) {
+                $non_mixin = CssCrush::$process->selectorRelationships[ $selector_test ];
             }
         }
 
@@ -152,18 +152,18 @@ class csscrush_mixin {
         // Determine what raw arguments there are to pass to the mixin
         $args = array();
         if ( $message !== '' ) {
-            $args = csscrush_util::splitDelimList( $message );
+            $args = CssCrush_Util::splitDelimList( $message );
         }
 
         return $mixin->call( $args );
     }
 
-    static public function parseValue ( $message ) {
-
+    static public function parseValue ( $message )
+    {
         // Call the mixin and return the list of declarations
         $declarations = array();
 
-        foreach ( csscrush_util::splitDelimList( $message ) as $item ) {
+        foreach ( CssCrush_Util::splitDelimList( $message ) as $item ) {
 
             if ( $result = self::parseSingleValue( $item ) ) {
 
@@ -173,137 +173,3 @@ class csscrush_mixin {
         return $declarations;
     }
 }
-
-
-/**
- *
- *  Fragment objects.
- *
- */
-class csscrush_fragment {
-
-    public $template = array();
-
-    public $arguments;
-
-    public function __construct ( $block ) {
-
-        // Prepare the arguments object
-        $this->arguments = new csscrush_arglist( $block );
-
-        // Re-assign with the parsed arguments string
-        $this->template = $this->arguments->string;
-    }
-
-    public function call ( array $args ) {
-
-        // Copy the template
-        $template = $this->template;
-
-        if ( count( $this->arguments ) ) {
-
-            list( $find, $replace ) = $this->arguments->getSubstitutions( $args );
-            $template = str_replace( $find, $replace, $template );
-        }
-
-        // Return fragment css
-        return $template;
-    }
-}
-
-
-/**
- *
- *  Argument list management for mixins and fragments.
- *
- */
-class csscrush_arglist implements Countable {
-
-    // Positional argument default values.
-    public $defaults = array();
-
-    // The number of expected arguments.
-    public $argCount = 0;
-
-    // The string passed in with arg calls replaced by tokens.
-    public $string;
-
-    public function __construct ( $str ) {
-
-        // Parse all arg function calls in the passed string, callback creates default values
-        csscrush_function::executeCustomFunctions( $str, 
-                csscrush_regex::$patt->argFunction, array(
-                    'arg' => array( $this, 'store' )
-                ));
-        $this->string = $str;
-    }
-
-    public function store ( $raw_argument ) {
-
-        $args = csscrush_function::parseArgsSimple( $raw_argument );
-
-        // Match the argument index integer
-        if ( ! ctype_digit( $args[0] ) ) {
-
-            // On failure to match an integer, return an empty string
-            return '';
-        }
-
-        // Get the match from the array
-        $position_match = $args[0];
-
-        // Store the default value
-        $default_value = isset( $args[1] ) ? $args[1] : null;
-
-        if ( ! is_null( $default_value ) ) {
-            $this->defaults[ $position_match ] = trim( $default_value );
-        }
-
-        // Update the mixin argument count
-        $argNumber = ( (int) $position_match ) + 1;
-        $this->argCount = max( $this->argCount, $argNumber );
-
-        // Return the argument token
-        return "?arg$position_match?";
-    }
-
-    public function getArgValue ( $index, &$args ) {
-
-        // First lookup a passed value
-        if ( isset( $args[ $index ] ) && $args[ $index ] !== 'default' ) {
-            return $args[ $index ];
-        }
-
-        // Get a default value
-        $default = isset( $this->defaults[ $index ] ) ? $this->defaults[ $index ] : '';
-
-        // Recurse for nested arg() calls
-        if ( preg_match( csscrush_regex::$patt->aToken, $default, $m ) ) {
-
-            $default = $this->getArgValue( (int) $m[1], $args );
-        }
-        return $default;
-    }
-
-    public function getSubstitutions ( $args ) {
-
-        $argIndexes = range( 0, $this->argCount-1 );
-
-        // Create table of substitutions
-        $find = array();
-        $replace = array();
-
-        foreach ( $argIndexes as $index ) {
-
-            $find[] = "?arg$index?";
-            $replace[] = $this->getArgValue( $index, $args );
-        }
-
-        return array( $find, $replace );
-    }
-
-    public function count () {
-        return $this->argCount;
-    }
-}
-

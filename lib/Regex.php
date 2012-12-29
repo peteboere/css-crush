@@ -4,16 +4,16 @@
  * Regex management.
  *
  */
-class csscrush_regex {
-
+class CssCrush_Regex
+{
     // Patterns.
     static public $patt;
 
     // Character classes.
     static public $classes;
 
-    static public function init () {
-
+    static public function init ()
+    {
         self::$patt = $patt = new stdclass();
         self::$classes = $classes = new stdclass();
 
@@ -27,11 +27,11 @@ class csscrush_regex {
         $patt->import        = '~@import\s+(\?u\d+\?)\s?([^;]*);~iS';
         $patt->variables     = '~@(?:define|variables) *([^\{]*)\{ *(.*?) *\};?~iS';
         $patt->mixin         = '~@mixin *([^\{]*)\{ *(.*?) *\};?~iS';
-        $patt->abstract      = csscrush_regex::create( '^@abstract\s+(<ident>)', 'i' );
-        $patt->selectorAlias = csscrush_regex::create( '@selector-alias +\:(<ident>) +([^;]+) *;', 'iS' );
-        $patt->ifDefine      = csscrush_regex::create( '@ifdefine +(not +)?(<ident>) *\{', 'iS' );
-        $patt->fragmentDef   = csscrush_regex::create( '@fragment +(<ident>) *\{', 'iS' );
-        $patt->fragmentCall  = csscrush_regex::create( '@fragment +(<ident>) *(\(|;)', 'iS' );
+        $patt->abstract      = CssCrush_Regex::create( '^@abstract\s+(<ident>)', 'i' );
+        $patt->selectorAlias = CssCrush_Regex::create( '@selector-alias +\:(<ident>) +([^;]+) *;', 'iS' );
+        $patt->ifDefine      = CssCrush_Regex::create( '@ifdefine +(not +)?(<ident>) *\{', 'iS' );
+        $patt->fragmentDef   = CssCrush_Regex::create( '@fragment +(<ident>) *\{', 'iS' );
+        $patt->fragmentCall  = CssCrush_Regex::create( '@fragment +(<ident>) *(\(|;)', 'iS' );
 
         $patt->commentAndString = '~
             # Quoted string (to EOF if unmatched).
@@ -68,11 +68,11 @@ class csscrush_regex {
 
         // Functions.
         $patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(\?p\d+\?)!iS';
-        $patt->varFunction = csscrush_regex::create( '\$\(\s*(<ident>)\s*\)', 'iS' );
+        $patt->varFunction = CssCrush_Regex::create( '\$\(\s*(<ident>)\s*\)', 'iS' );
         $patt->varFunctionStart = '!(\$)\(!';
-        $patt->argFunction = csscrush_regex::createFunctionMatchPatt( array( 'arg' ) );
-        $patt->queryFunction = csscrush_regex::createFunctionMatchPatt( array( 'query' ) );
-        $patt->thisFunction = csscrush_regex::createFunctionMatchPatt( array( 'this' ) );
+        $patt->argFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'arg' ) );
+        $patt->queryFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'query' ) );
+        $patt->thisFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'this' ) );
 
         // Misc.
         $patt->vendorPrefix  = '!^-([a-z]+)-([a-z-]+)!iS';
@@ -83,8 +83,8 @@ class csscrush_regex {
         $patt->cruftyHex     = '!\#([[:xdigit:]])\1([[:xdigit:]])\2([[:xdigit:]])\3!S';
     }
 
-    static public function create ( $pattern_template, $flags = '', $delim = '!' ) {
-
+    static public function create ( $pattern_template, $flags = '', $delim = '!' )
+    {
         // Sugar.
         $pattern = str_replace(
                         array( '<ident>' ),
@@ -93,8 +93,8 @@ class csscrush_regex {
         return "$delim{$pattern}$delim{$flags}";
     }
 
-    static public function matchAll ( $patt, $subject, $preprocess_patt = false, $offset = 0 ) {
-
+    static public function matchAll ( $patt, $subject, $preprocess_patt = false, $offset = 0 )
+    {
         if ( $preprocess_patt ) {
             // Assume case-insensitive.
             $patt = self::create( $patt, 'i' );
@@ -104,8 +104,8 @@ class csscrush_regex {
         return $count ? $matches : array();
     }
 
-    static public function createFunctionMatchPatt ( $list, $include_math_function = false ) {
-
+    static public function createFunctionMatchPatt ( $list, $include_math_function = false )
+    {
         $question = '';
         if ( $include_math_function ) {
             $question = '?';

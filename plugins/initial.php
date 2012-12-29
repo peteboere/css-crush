@@ -15,36 +15,36 @@
  * 
  */
 
-csscrush_plugin::register( 'initial', array(
+CssCrush_Plugin::register( 'initial', array(
     'enable' => 'csscrush__enable_initial',
     'disable' => 'csscrush__disable_initial',
 ));
 
 function csscrush__enable_initial () {
-    csscrush_hook::add( 'rule_prealias', 'csscrush__initial' );
+    CssCrush_Hook::add( 'rule_prealias', 'csscrush__initial' );
 }
 
 function csscrush__disable_initial () {
-    csscrush_hook::remove( 'rule_prealias', 'csscrush__initial' );
+    CssCrush_Hook::remove( 'rule_prealias', 'csscrush__initial' );
 }
 
-function csscrush__initial ( csscrush_rule $rule ) {
+function csscrush__initial ( CssCrush_Rule $rule ) {
 
-    static $initialValues = null;
-    if ( ! $initialValues ) {
-        if ( ! ( $initialValues = @parse_ini_file( CssCrush::$config->location . '/misc/initial-values.ini' ) ) ) {
+    static $initial_values;
+    if ( ! $initial_values ) {
+        if ( ! ( $initial_values = @parse_ini_file( CssCrush::$config->location . '/misc/initial-values.ini' ) ) ) {
             trigger_error( __METHOD__ . ": Initial keywords file could not be parsed.\n", E_USER_NOTICE );
             return;
         }
     }
 
     foreach ( $rule as &$declaration ) {
-        if ( !$declaration->skip && 'initial' === $declaration->value ) {
-            if ( isset( $initialValues[ $declaration->property ] ) ) {
-                $declaration->value = $initialValues[ $declaration->property ];
+        if ( ! $declaration->skip && 'initial' === $declaration->value ) {
+            if ( isset( $initial_values[ $declaration->property ] ) ) {
+                $declaration->value = $initial_values[ $declaration->property ];
             }
             else {
-                // Fallback to 'inherit'
+                // Fallback to 'inherit'.
                 $declaration->value = 'inherit';
             }
         }

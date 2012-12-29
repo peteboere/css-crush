@@ -10,22 +10,22 @@
  *     *clip: rect(1px 1px 1px 1px);
  */
 
-csscrush_plugin::register( 'ie-clip', array(
+CssCrush_Plugin::register( 'ie-clip', array(
     'enable' => 'csscrush__enable_ie_clip',
     'disable' => 'csscrush__disable_ie_clip',
 ));
 
 function csscrush__enable_ie_clip () {
-    csscrush_hook::add( 'rule_postalias', 'csscrush__ie_clip' );
+    CssCrush_Hook::add( 'rule_postalias', 'csscrush__ie_clip' );
 }
 
 function csscrush__disable_ie_clip () {
-    csscrush_hook::remove( 'rule_postalias', 'csscrush__ie_clip' );
+    CssCrush_Hook::remove( 'rule_postalias', 'csscrush__ie_clip' );
 }
 
-function csscrush__ie_clip ( csscrush_rule $rule ) {
+function csscrush__ie_clip ( CssCrush_Rule $rule ) {
 
-    // Assume it's been dealt with if the property occurs more than once 
+    // Assume it's been dealt with if the property occurs more than once.
     if ( $rule->propertyCount( 'clip' ) !== 1 ) {
         return;
     }
@@ -38,7 +38,7 @@ function csscrush__ie_clip ( csscrush_rule $rule ) {
         ) {
             continue;
         }
-        $new_set[] = new csscrush_declaration( '*clip', str_replace( ',', ' ', $declaration->getFullValue() ) );
+        $new_set[] = new CssCrush_Declaration( '*clip', str_replace( ',', ' ', $declaration->getFullValue() ) );
     }
-    $rule->declarations = $new_set;
+    $rule->setDeclarations( $new_set );
 }

@@ -1,9 +1,17 @@
 1.9
 ---
-Added functions API for defining custom functions inside plugins.
+Added flexbox aliases for both 2009 and 2012 edition specs.
+Added a legacy-flexbox plugin for auto-generating the flexbox 2009 spec equivilant properties.
+Updated selector aliases to take arguments at runtime.
 Updated plugin API to use distinct 'enable' and 'disable' handlers.
+The disable option is now resolved before the enable option so you can easily disable all plugins
+and then specify the plugins you want to apply.
+Added functions API for defining custom functions inside plugins.
 Improved gradient function aliasing to handle new angle keywords ('to left', 'at center' etc.).
 Added svg-gradients plugin for simulating CSS3 gradients with data-uris.
+Added formatting option so custom formatters can be defined for un-minified output (see wiki for options).
+Added newlines option to force the style of newlines in output (see wiki for options).
+Updated command line utility to employ the new options.
 
 
 1.8
@@ -16,7 +24,7 @@ Debug option renamed to 'minify'; debug option will still work as before but is 
 New minify option optionally takes an array of advanced minification parameters.
 Expanded trace option to take an optional array of log parameters;
 log params available are stubs, selector_count, errors and compile_time.
-Added csscrush::stat method to retrieve logged parameters.
+Added CssCrush::stat method to retrieve logged parameters.
 Improved cross OS support.
 Improved minification.
 Major refactoring.
@@ -31,7 +39,7 @@ Added options for enabling and disabling plugins at runtime.
 Added property sorter plugin.
 Added support for SASS-like @include/@extend syntax for invoking mixins and extends.
 Boilerplate option now accepts a filename string as a boilerplate template.
-csscrush::string method now uses document_root as a default context for finding linked resources.
+CssCrush::string method now uses document_root as a default context for finding linked resources.
 Updated command line appication.
 Updated aliases and initial value files.
 Fixed parsing issue introduced in 1.6.1.
@@ -65,7 +73,7 @@ Fixed some test cases.
 1.5.2
 -----
 Resolved issue #32.
-csscrush::inline method now defaults to not printing a boilerplate.
+CssCrush::inline method now defaults to not printing a boilerplate.
 Updated aliases file.
 
 
@@ -108,7 +116,7 @@ Added Prepend.css - Optionally prepend css to every input.
 Fix for issue #21.
 Reorganized aliases file with some additions.
 Initial-values updated.
-Updated csscrush::string method to correctly handle import statements.
+Updated CssCrush::string method to correctly handle import statements.
 
 
 1.4

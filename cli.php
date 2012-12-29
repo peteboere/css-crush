@@ -2,23 +2,18 @@
 <?php
 /**
  *
- * Command line application
+ * Command line utility.
  *
  */
 require_once 'CssCrush.php';
 
-// Exit status constants
+// Exit status constants.
 define( 'STATUS_OK', 0 );
 define( 'STATUS_ERROR', 1 );
 
-// Open stream handles
-$stdin  = fopen( 'php://stdin', 'r' );
-$stdout = fopen( 'php://stdout', 'w' );
-$stderr = fopen( 'php://stderr', 'w' );
-
-// Get stdin contents
+// Get stdin content.
+$stdin = fopen( 'php://stdin', 'r' );
 if ( ! stream_set_blocking( $stdin, false ) ) {
-
     stderr( 'Failed to disable stdin blocking' );
     exit( STATUS_ERROR );
 }
@@ -27,25 +22,21 @@ fclose( $stdin );
 
 
 ##################################################################
-##  Helpers
+##  Helpers.
 
 function stderr ( $lines, $closing_newline = true ) {
-    global $stderr;
-    fwrite( $stderr,
-        implode( PHP_EOL, (array) $lines ) . ( $closing_newline ? PHP_EOL : '' )
-    );
+    $out = implode( PHP_EOL, (array) $lines ) . ( $closing_newline ? PHP_EOL : '' );
+    fwrite( STDERR, $out );
 }
 
 function stdout ( $lines, $closing_newline = true ) {
-    global $stdout;
-    fwrite( $stdout,
-        implode( PHP_EOL, (array) $lines ) . ( $closing_newline ? PHP_EOL : '' )
-    );
+    $out = implode( PHP_EOL, (array) $lines ) . ( $closing_newline ? PHP_EOL : '' );
+    fwrite( STDOUT, $out );
 }
 
 
 ##################################################################
-##  Version detection
+##  Version detection.
 
 $version = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
 $required_version = 5.3;
@@ -64,26 +55,28 @@ if ( $version < $required_version ) {
 ##  Options
 
 $short_opts = array(
-    "f:",  // Input file. Defaults to sdtin
-    "o:",  // Output file. Defaults to stdout
-    "p",   // Pretty formatting
-    'b',   // Output boilerplate
-    'h',   // Display help
+    "f:",  // Input file. Defaults to sdtin.
+    "o:",  // Output file. Defaults to stdout.
+    "p",   // Pretty formatting.
+    'b',   // Output boilerplate.
+    'h',   // Display help.
 );
 
 $long_opts = array(
-    'file:',           // Input file. Defaults to sdtin
-    'output:',         // Output file. Defaults to stdout
-    'pretty',          // Pretty formatting
-    'boilerplate',     // Output boilerplate
-    'help',            // Display help
-    'version',         // Display version
-    'trace',           // Output sass tracing stubs
-    'vendor-target:',  // Vendor target
-    'variables:',      // Map of variable names in an http query string format
-    'enable:',         // List of plugins to enable
-    'disable:',        // List of plugins to disable
-    'context:',        // Context for resolving URLs
+    'file:',           // Input file. Defaults to sdtin.
+    'output:',         // Output file. Defaults to stdout.
+    'pretty',          // Pretty formatting.
+    'boilerplate',     // Output boilerplate.
+    'help',            // Display help.
+    'version',         // Display version.
+    'trace',           // Output sass tracing stubs.
+    'formatter:',      // Formatter name for formatted output.
+    'vendor-target:',  // Vendor target.
+    'variables:',      // Map of variable names in an http query string format.
+    'enable:',         // List of plugins to enable.
+    'disable:',        // List of plugins to disable.
+    'context:',        // Context for resolving URLs.
+    'newlines:',       // Newline style.
 );
 
 $opts = getopt( implode( $short_opts ), $long_opts );
@@ -95,15 +88,17 @@ $boilerplate = @( isset( $opts['b'] ) ?: isset( $opts['boilerplate'] ) );
 $help_flag = @( isset( $opts['h'] ) ?: isset( $opts['help'] ) );
 $version_flag = @isset( $opts['version'] );
 $trace_flag = @isset( $opts['trace'] );
+$formatter = @$opts['formatter'];
 $vendor_target = @$opts['vendor-target'];
 $variables = @$opts['variables'];
+$newlines = @$opts['newlines'];
 $enable_plugins = isset( $opts['enable'] ) ? (array) $opts['enable'] : null;
 $disable_plugins = isset( $opts['disable'] ) ? (array) $opts['disable'] : null;
 $context = isset( $opts['context'] ) ? (array) $opts['context'] : null;
 
 
 ##################################################################
-##  Help page
+##  Help page.
 
 $command = 'csscrush';
 
@@ -111,46 +106,62 @@ $help = <<<TPL
 
 Usage:
     csscrush [-f|--file] [-o|--output-file] [-p|--pretty] [-b|--boilerplate]
-             [-h|--help] [--variables] [--vendor-target] [--version]
+             [-h|--help] [--formatter] [--variables] [--vendor-target]
+             [--version] [--newlines]
 
 Options:
     -f, --file:
-        The input file, if omitted takes input from stdin
+        The input file, if omitted takes input from stdin.
 
     -o, --output:
-        The output file, if omitted prints to stdout
+        The output file, if omitted prints to stdout.
 
     -p, --pretty:
-        Formatted, unminified output
+        Formatted, unminified output.
 
     -b, --boilerplate:
-        Whether or not to output a boilerplate
+        Whether or not to output a boilerplate.
 
     -h, --help:
-        Display this help mesasge
-
-    --enable:
-        List of plugins to enable
-
-    --disable:
-        List of plugins to disable
+        Display this help mesasge.
 
     --context:
-        Filepath context for resolving URLs
+        Filepath context for resolving URLs.
+
+    --disable:
+        List of plugins to disable. Pass 'all' to disable all.
+
+    --enable:
+        List of plugins to enable. Overrides --disable.
+
+    --formatter:
+        Formatter to use for formatted (--pretty) output.
+        Available formatters:
+
+        'block' (default) -
+            Rules are block formatted.
+        'single-line' -
+            Rules are printed in single lines.
+        'padded' -
+            Rules are printed in single lines with right padded selectors.
+
+    --newlines:
+        Force newline style on output css. Defaults to the current platform
+        newline. Possible values: 'windows' (or 'win'), 'unix', 'use-platform'.
 
     --trace:
-        Output debug-info stubs compatible with sass development tools
+        Output debug-info stubs compatible with client-side sass debuggers.
 
     --variables:
-        Map of variable names in an http query string format
+        Map of variable names in an http query string format.
 
     --vendor-target:
-        Set to 'all' for all vendor prefixes (default)
-        Set to 'none' for no vendor prefixes
-        Set to a specific vendor prefix
+        Set to 'all' for all vendor prefixes (default).
+        Set to 'none' for no vendor prefixes.
+        Set to a specific vendor prefix.
 
     --version:
-        Version number
+        Print version number.
 
 Examples:
     $command -f styles.css --pretty --vendor-target webkit
@@ -167,7 +178,7 @@ TPL;
 
 if ( $version_flag ) {
 
-    stdout( 'CSS Crush ' . csscrush::$config->version );
+    stdout( 'CSS Crush ' . CssCrush::$config->version );
     exit( STATUS_OK );
 }
 
@@ -179,7 +190,7 @@ if ( $help_flag ) {
 
 
 ##################################################################
-##  Input
+##  Input.
 
 $input = null;
 
@@ -197,21 +208,27 @@ elseif ( $stdin_contents ) {
 }
 else {
 
-    // No input, just output help screen
+    // No input, just output help screen.
     stdout( $help );
     exit( STATUS_OK );
 }
 
 
 ##################################################################
-##  Processing
+##  Processing.
 
 $process_opts = array();
 $process_opts[ 'boilerplate' ] = $boilerplate ? true : false;
 $process_opts[ 'minify' ] = $pretty ? false : true;
+$process_opts[ 'formatter' ] = $formatter ?: null;
 $process_opts[ 'rewrite_import_urls' ] = true;
 
-// Enable plugin args
+// Newlines.
+if ( isset( $newlines ) ) {
+    $process_opts[ 'newlines' ] = $newlines;
+}
+
+// Enable plugin args.
 if ( $enable_plugins ) {
     foreach ( $enable_plugins as $arg ) {
         foreach ( preg_split( '!\s*,\s*!', $arg ) as $plugin ) {
@@ -255,11 +272,12 @@ if ( $context ) {
     $process_opts[ 'doc_root' ] = $context;
     $process_opts[ 'context' ] = $context;
 }
-$output = csscrush::string( $input, $process_opts );
+
+$output = CssCrush::string( $input, $process_opts );
 
 
 ##################################################################
-##  Output
+##  Output.
 
 if ( $output_file ) {
 
@@ -277,8 +295,8 @@ if ( $output_file ) {
 }
 else {
 
-    if ( csscrush::$process->errors ) {
-        stderr( csscrush::$process->errors );
+    if ( CssCrush::$process->errors ) {
+        stderr( CssCrush::$process->errors );
     }
 
     stdout( $output );

@@ -4,8 +4,8 @@
  * Main script. Includes core public API.
  *
  */
-class csscrush {
-
+class CssCrush
+{
     // Global settings.
     static public $config;
 
@@ -13,8 +13,8 @@ class csscrush {
     static public $process;
 
     // Init called once manually post class definition.
-    static public function init ( $seed_file ) {
-
+    static public function init ( $seed_file )
+    {
         self::$config = new stdclass();
 
         // Path to this installation.
@@ -22,26 +22,29 @@ class csscrush {
 
         // Get version ID from seed file.
         $seed_file_contents = file_get_contents( $seed_file );
-        $match_count = preg_match( '!@version\s+([\d\.\w-]+)!', $seed_file_contents, $version_match );
-        self::$config->version = $match_count ? new csscrush_version( $version_match[1] ) : null;
+        $match_count = preg_match( '~@version\s+([\d\.\w-]+)~', $seed_file_contents, $version_match );
+        self::$config->version = $match_count ? new CssCrush_Version( $version_match[1] ) : null;
 
         // Set the docRoot reference.
         self::setDocRoot();
 
         // Set the default IO handler.
-        self::$config->io = 'csscrush_io';
+        self::$config->io = 'CssCrush_IO';
 
-        // Global storage.
+        // Shared resources.
         self::$config->vars = array();
         self::$config->aliases = array();
         self::$config->selectorAliases = array();
         self::$config->plugins = array();
 
         // Default options.
-        self::$config->options = (object) array(
+        self::$config->options = new CssCrush_Options( array(
 
             // Minify. Set false for formatting and comments.
             'minify' => true,
+
+            // Alternative formatter to use for un-minified output.
+            'formatter' => null,
 
             // Append 'checksum' to output file name.
             'versioning' => true,
@@ -79,14 +82,27 @@ class csscrush {
             // Debugging options.
             // Set true to output sass debug-info stubs that work with development tools like FireSass.
             'trace' => array(),
+
+            // Force newline type on output files. Defaults to the current platform newline.
+            // Options: 'windows' (or 'win'), 'unix', 'use-platform'
+            'newlines' => 'use-platform',
+        ));
+
+        // Register default formatters.
+        self::$config->formatters = array(
+            'single-line' => 'csscrush__fmtr_single',
+            'padded' => 'csscrush__fmtr_padded',
+            'nested' => 'csscrush__fmtr_nested',
         );
 
         // Initialise other classes.
-        csscrush_regex::init();
+        CssCrush_Regex::init();
+        CssCrush_Function::init();
+        CssCrush_PostAliasFix::init();
     }
 
-    static protected function setDocRoot ( $doc_root = null ) {
-
+    static protected function setDocRoot ( $doc_root = null )
+    {
         // Get document_root reference
         // $_SERVER['DOCUMENT_ROOT'] is unreliable in certain CGI/Apache/IIS setups
 
@@ -120,17 +136,17 @@ class csscrush {
 
                 // If doc_root is still falsy, log an error
                 $error = "Could not get a document_root reference.";
-                csscrush::logError( $error );
+                CssCrush::logError( $error );
                 trigger_error( __METHOD__ . ": $error\n", E_USER_NOTICE );
             }
         }
 
-        self::$config->docRoot = csscrush_util::normalizePath( $doc_root );
+        self::$config->docRoot = CssCrush_Util::normalizePath( $doc_root );
     }
 
     // Aliases and macros loader.
-    static public function loadAssets () {
-
+    static public function loadAssets ()
+    {
         static $called;
         if ( $called ) {
             return;
@@ -138,7 +154,7 @@ class csscrush {
 
         // Find an aliases file in the root directory
         // a local file overrides the default
-        $aliases_file = csscrush_util::find( 'Aliases-local.ini', 'Aliases.ini' );
+        $aliases_file = CssCrush_Util::find( 'Aliases-local.ini', 'Aliases.ini' );
 
         // Load aliases file if it exists
         if ( $aliases_file ) {
@@ -147,23 +163,27 @@ class csscrush {
 
                 self::$config->aliases = $result;
 
-                // Value aliases require a little preprocessing
+                // Value aliases require a little preprocessing.
                 if ( isset( self::$config->aliases[ 'values' ] ) ) {
                     $store = array();
                     foreach ( self::$config->aliases[ 'values' ] as $prop_val => $aliases ) {
                         list( $prop, $value ) = array_map( 'trim', explode( ':', $prop_val ) );
+                        foreach ( $aliases as &$alias ) {
+                            $alias = explode( ':', $alias );
+                        }
                         $store[ $prop ][ $value ] = $aliases;
                     }
                     self::$config->aliases[ 'values' ] = $store;
                 }
 
                 // Ensure all alias groups are at least set (issue #34)
-                self::$config->aliases += array(
+                self::$config->bareAliasGroups = array(
                     'properties' => array(),
                     'functions'  => array(),
                     'values'     => array(),
                     'at-rules'   => array(),
                 );
+                self::$config->aliases += self::$config->bareAliasGroups;
             }
             else {
                 trigger_error( __METHOD__ . ": Aliases file could not be parsed.\n", E_USER_NOTICE );
@@ -175,7 +195,7 @@ class csscrush {
 
         // Find a plugins file in the root directory,
         // a local file overrides the default
-        $plugins_file = csscrush_util::find( 'Plugins-local.ini', 'Plugins.ini' );
+        $plugins_file = CssCrush_Util::find( 'Plugins-local.ini', 'Plugins.ini' );
 
         // Load plugins
         if ( $plugins_file ) {
@@ -183,7 +203,7 @@ class csscrush {
                 foreach ( $result[ 'plugins' ] as $plugin_name ) {
                     // Backwards compat.
                     $plugin_name = basename( $plugin_name, '.php' );
-                    if ( csscrush_plugin::load( $plugin_name ) ) {
+                    if ( CssCrush_Plugin::load( $plugin_name ) ) {
                         self::$config->plugins[ $plugin_name ] = true;
                     }
                 }
@@ -207,9 +227,9 @@ class csscrush {
      * @param mixed $options  An array of options or null.
      * @return string  The public path to the compiled file or an empty string.
      */
-    static public function file ( $file, $options = null ) {
-
-        self::$process = new csscrush_process( $options );
+    static public function file ( $file, $options = null )
+    {
+        self::$process = new CssCrush_Process( $options );
 
         $config = self::$config;
         $process = self::$process;
@@ -240,7 +260,7 @@ class csscrush {
         }
 
         // Validate file input.
-        if ( ! csscrush_io::registerInputFile( $file ) ) {
+        if ( ! CssCrush_IO::registerInputFile( $file ) ) {
             return '';
         }
 
@@ -283,8 +303,8 @@ class csscrush {
      * @param array $attributes  An array of HTML attributes.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    static public function tag ( $file, $options = null, $attributes = array() ) {
-
+    static public function tag ( $file, $options = null, $attributes = array() )
+    {
         $file = self::file( $file, $options );
 
         if ( ! empty( $file ) ) {
@@ -297,7 +317,7 @@ class csscrush {
             if ( ! isset( $attributes[ 'media' ] ) ) {
                 $attributes[ 'media' ] = 'all';
             }
-            $attr_string = csscrush_util::htmlAttributes( $attributes );
+            $attr_string = CssCrush_Util::htmlAttributes( $attributes );
             return "<link$attr_string />\n";
         }
         else {
@@ -317,8 +337,8 @@ class csscrush {
      * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    static public function inline ( $file, $options = null, $attributes = array() ) {
-
+    static public function inline ( $file, $options = null, $attributes = array() )
+    {
         // For inline output set boilerplate to not display by default
         if ( ! is_array( $options ) ) {
             $options = array();
@@ -338,7 +358,7 @@ class csscrush {
             $tag_close = '';
 
             if ( is_array( $attributes ) ) {
-                $attr_string = csscrush_util::htmlAttributes( $attributes );
+                $attr_string = CssCrush_Util::htmlAttributes( $attributes );
                 $tag_open = "<style$attr_string>";
                 $tag_close = '</style>';
             }
@@ -360,14 +380,14 @@ class csscrush {
      * @param mixed $options  An array of options or null.
      * @return string  CSS text.
      */
-    static public function string ( $string, $options = null ) {
-
+    static public function string ( $string, $options = null )
+    {
         // For strings set boilerplate to not display by default
         if ( ! isset( $options[ 'boilerplate' ] ) ) {
             $options[ 'boilerplate' ] = false;
         }
 
-        self::$process = new csscrush_process( $options );
+        self::$process = new CssCrush_Process( $options );
 
         $config = self::$config;
         $process = self::$process;
@@ -385,7 +405,7 @@ class csscrush {
         // Set the string on the input object.
         $process->input->string = $string;
 
-        // Import files may be ignored
+        // Import files may be ignored.
         if ( isset( $options->no_import ) ) {
             $process->input->importIgnore = true;
         }
@@ -399,8 +419,8 @@ class csscrush {
      *
      * @param mixed $var  Assoc array of variable names and values, a php ini filename or null.
      */
-    static public function globalVars ( $vars ) {
-
+    static public function globalVars ( $vars )
+    {
         $config = self::$config;
 
         // Merge into the stack, overrides existing variables of the same name
@@ -424,7 +444,8 @@ class csscrush {
      *
      * @param string $dir  System path to the directory.
      */
-    static public function clearCache ( $dir = '' ) {
+    static public function clearCache ( $dir = '' )
+    {
         return $process->ioCall( 'clearCache', $dir );
     }
 
@@ -434,9 +455,9 @@ class csscrush {
      *
      * @param string $name  Name of stat to retrieve. Leave blank to retrieve all.
      */
-    static public function stat ( $name = null ) {
-
-        $process = csscrush::$process;
+    static public function stat ( $name = null )
+    {
+        $process = CssCrush::$process;
         $stat = $process->stat;
 
         // Get logged errors as late as possible.
@@ -460,8 +481,8 @@ class csscrush {
 
     static public $logging = false;
 
-    static public function log ( $arg = null, $label = '' ) {
-
+    static public function log ( $arg = null, $label = '' )
+    {
         if ( ! self::$logging ) {
             return;
         }
@@ -490,16 +511,18 @@ class csscrush {
         }
     }
 
-    static public function logError ( $msg ) {
+    static public function logError ( $msg )
+    {
         self::$process->errors[] = $msg;
         self::log( $msg );
     }
 
-    static public function runStat ( $name ) {
+    static public function runStat ( $name )
+    {
+        $process = CssCrush::$process;
+        $trace = $process->options->trace;
 
-        $process = csscrush::$process;
-
-        if ( ! $process->options->trace || ! in_array( $name, $process->options->trace ) ) {
+        if ( ! $trace || ! in_array( $name, $trace ) ) {
             return;
         }
 
@@ -508,7 +531,7 @@ class csscrush {
             case 'selector_count':
                 $process->stat[ 'selector_count' ] = 0;
                 foreach ( $process->tokens->r as $rule ) {
-                    $process->stat[ 'selector_count' ] += count( $rule->selectorList );
+                    $process->stat[ 'selector_count' ] += count( $rule->selectors );
                 }
                 break;
 
@@ -526,23 +549,82 @@ class csscrush {
 
 
 #############################
+#  Default formatters.
+
+function csscrush__fmtr_single ( $rule ) {
+
+    $EOL = CssCrush::$process->newline;
+    if ( $stub = $rule->tracingStub ) {
+        $stub .= $EOL;
+    }
+
+    $comments = implode( '', $rule->comments );
+    if ( $comments ) {
+      $comments = "$EOL$comments";
+    }
+    $selectors = implode( ", ", $rule->selectors );
+    $block = implode( "; ", $rule->declarations );
+    return "$comments$stub$selectors { $block; }$EOL";
+}
+
+function csscrush__fmtr_padded ( $rule ) {
+
+    $EOL = CssCrush::$process->newline;
+    if ( $stub = $rule->tracingStub ) {
+        $stub .= $EOL;
+    }
+
+    $comments = implode( '', $rule->comments );
+    if ( $comments ) {
+        $comments = "$EOL$comments";
+    }
+
+    $cutoff = 40;
+    $selectors = implode( ", ", $rule->selectors );
+    $block = implode( "; ", $rule->declarations );
+
+    if ( strlen( $selectors ) > $cutoff ) {
+        $padding = str_repeat( ' ', $cutoff );
+        return "$comments$stub$selectors$EOL$padding { $block; }$EOL";
+    }
+    else {
+        $selectors = str_pad( $selectors, $cutoff );
+        return "$comments$stub$selectors { $block; }$EOL";
+    }
+}
+
+function csscrush__fmtr_block ( $rule, $indent = '    ' ) {
+
+    $EOL = CssCrush::$process->newline;
+    if ( $stub = $rule->tracingStub ) {
+        $stub .= $EOL;
+    }
+
+    $comments = implode( '', $rule->comments );
+    $selectors = implode( ",$EOL", $rule->selectors );
+    $block = implode( ";$EOL$indent", $rule->declarations );
+    return "$comments$stub$selectors {{$EOL}$indent$block;$EOL$indent}$EOL$EOL";
+}
+
+
+#############################
 #  Procedural style external API.
 
 function csscrush_file ( $file, $options = null ) {
-    return csscrush::file( $file, $options );
+    return CssCrush::file( $file, $options );
 }
 function csscrush_tag ( $file, $options = null, $attributes = array() ) {
-    return csscrush::tag( $file, $options, $attributes );
+    return CssCrush::tag( $file, $options, $attributes );
 }
 function csscrush_inline ( $file, $options = null, $attributes = array() ) {
-    return csscrush::inline( $file, $options, $attributes );
+    return CssCrush::inline( $file, $options, $attributes );
 }
 function csscrush_string ( $string, $options = null ) {
-    return csscrush::string( $string, $options );
+    return CssCrush::string( $string, $options );
 }
 function csscrush_globalvars ( $vars ) {
-    return csscrush::globalVars( $vars );
+    return CssCrush::globalVars( $vars );
 }
 function csscrush_clearcache ( $dir = '' ) {
-    return csscrush::clearcache( $dir );
+    return CssCrush::clearcache( $dir );
 }

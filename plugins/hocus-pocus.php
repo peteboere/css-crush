@@ -13,17 +13,17 @@
  * 
  */
 
-csscrush_plugin::register( 'hocus-pocus', array(
+CssCrush_Plugin::register( 'hocus-pocus', array(
     'enable' => 'csscrush__enable_hocus_pocus',
     'disable' => 'csscrush__disable_hocus_pocus',
 ));
 
 function csscrush__enable_hocus_pocus () {
-    csscrush::$config->selectorAliases[ 'hocus' ] = ':any(:hover,:focus)';
-    csscrush::$config->selectorAliases[ 'pocus' ] = ':any(:hover,:focus,:active)';
+    CssCrush::$config->selectorAliases[ 'hocus' ] = ':any(:hover,:focus)';
+    CssCrush::$config->selectorAliases[ 'pocus' ] = ':any(:hover,:focus,:active)';
 }
 
 function csscrush__disable_hocus_pocus () {
-    unset( csscrush::$config->selectorAliases[ 'hocus' ] );
-    unset( csscrush::$config->selectorAliases[ 'pocus' ] );
+    unset( CssCrush::$config->selectorAliases[ 'hocus' ] );
+    unset( CssCrush::$config->selectorAliases[ 'pocus' ] );
 }
