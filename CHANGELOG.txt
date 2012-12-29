@@ -11,7 +11,8 @@ Improved gradient function aliasing to handle new angle keywords ('to left', 'at
 Added svg-gradients plugin for simulating CSS3 gradients with data-uris.
 Added formatting option so custom formatters can be defined for un-minified output (see wiki for options).
 Added newlines option to force the style of newlines in output (see wiki for options).
-Updated command line utility to employ the new options.
+Updated command line utility to use the new options.
+Classes now loaded via an autoloader, also some other refactoring for moving towards PSR-0 compliance.
 
 
 1.8
