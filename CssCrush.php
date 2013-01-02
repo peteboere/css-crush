@@ -18,20 +18,16 @@ function csscrush_autoload ( $class ) {
     }
     $class = ltrim( substr( $class, 8 ), '_' );
 
-    if ( empty( $class ) ) {
-        $subpath = 'Core';
-    }
     // Tolerate some cases of lowercasing from external use.
-    elseif ( strpos( $class, '_' ) !== false ) {
-        $subpath = implode( '/', array_map( 'ucfirst', explode( '_', $class ) ) );
-    }
-    else {
-        $subpath = ucfirst( $class );
-    }
+    $subpath = implode( '/', array_map( 'ucfirst', explode( '_', $class ) ) );
 
-    require dirname( __FILE__ ) . "/lib/$subpath.php";
+    require_once dirname( __FILE__ ) . "/lib/$subpath.php";
 }
 
 spl_autoload_register( 'csscrush_autoload' );
+
+
+// Core.php will also be PSR-0 autoloaded with API changes in v2.x
+require_once 'lib/Core.php';
 
 CssCrush::init( __FILE__ );

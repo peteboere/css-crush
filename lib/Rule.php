@@ -639,10 +639,10 @@ class CssCrush_Rule implements IteratorAggregate
 
     public function addPropertyValueAliases ()
     {
-        $prop_value_aliases =& CssCrush::$process->aliases[ 'values' ];
+        $declaration_aliases =& CssCrush::$process->aliases[ 'declarations' ];
 
         // First test for the existence of any aliased properties.
-        if ( ! ( $intersect = array_intersect_key( $prop_value_aliases, $this->properties ) ) ) {
+        if ( ! ( $intersect = array_intersect_key( $declaration_aliases, $this->properties ) ) ) {
             return;
         }
 
@@ -658,7 +658,7 @@ class CssCrush_Rule implements IteratorAggregate
             if ( isset( $intersect[ $declaration->property ] ) && ! $declaration->skip ) {
 
                 // Iterate on the current declaration property for value matches.
-                foreach ( $prop_value_aliases[ $declaration->property ] as $value_match => $replacements ) {
+                foreach ( $declaration_aliases[ $declaration->property ] as $value_match => $replacements ) {
 
                     // Create new alias declaration if the property and value match.
                     if ( $declaration->value === $value_match ) {

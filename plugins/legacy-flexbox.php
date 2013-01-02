@@ -97,7 +97,7 @@ function csscrush__legacy_flexbox ( CssCrush_Rule $rule ) {
         return;
     }
 
-    $prop_value_aliases =& CssCrush::$process->aliases[ 'values' ];
+    $declaration_aliases =& CssCrush::$process->aliases[ 'declarations' ];
 
     $stack = array();
     $rule_updated = false;
@@ -119,8 +119,8 @@ function csscrush__legacy_flexbox ( CssCrush_Rule $rule ) {
                 if (
                     // Treat flex and inline-flex the same in this case.
                     ( $value === 'flex' || $value === 'inline-flex' ) &&
-                    isset( $prop_value_aliases[ 'display' ][ 'box' ] ) ) {
-                    foreach ( $prop_value_aliases[ 'display' ][ 'box' ] as $pair ) {
+                    isset( $declaration_aliases[ 'display' ][ 'box' ] ) ) {
+                    foreach ( $declaration_aliases[ 'display' ][ 'box' ] as $pair ) {
                         $stack[] = new CssCrush_Declaration( $pair[0], $pair[1] );
                         $rule_updated = true;
                     }
@@ -171,7 +171,7 @@ function csscrush__legacy_flexbox ( CssCrush_Rule $rule ) {
                 $wrap = isset( $args[1] ) ? $args[1] : 'initial';
 
                 $rule_updated = csscrush__flex_direction( $direction, $stack );
-                $rule_updated = csscrush__flex_wrap( $wrap, $stack );
+                // $rule_updated = csscrush__flex_wrap( $wrap, $stack );
                 break;
         }
 
@@ -285,6 +285,14 @@ function csscrush__flex_order ( $value, &$stack ) {
     // box-ordinal-group: <integer>
 
     $prop_aliases =& CssCrush::$process->aliases[ 'properties' ];
+
+    // Bump value as box-ordinal-group requires a positive integer:
+    // http://www.w3.org/TR/2009/WD-css3-flexbox-20090723/#displayorder
+    //
+    // Spec suggests a 'natural number' as valid value which Webkit seems
+    // to interpret as integer > 0, whereas Firefox interprets as
+    // integer > -1.
+    $value = $value < 1 ? 1 : $value + 1;
 
     $rule_updated = false;
     if ( isset( $prop_aliases[ 'box-ordinal-group' ] ) ) {

@@ -377,8 +377,8 @@ class CssCrush_Process
         // Loop the aliases array, filter down to the target vendor.
         foreach ( $this->aliases as $group_name => $group_array ) {
 
-            // Property/value aliases are special.
-            if ( 'values' === $group_name ) {
+            // Declarations aliases are special.
+            if ( 'declarations' === $group_name ) {
                 foreach ( $group_array as $property => $values ) {
                     $result = array();
                     foreach ( $values as $value => $prefix_values ) {
@@ -392,7 +392,7 @@ class CssCrush_Process
                             }
                         }
                     }
-                    $this->aliases[ 'values' ][ $property ][ $value ] = $result;
+                    $this->aliases[ 'declarations' ][ $property ][ $value ] = $result;
                 }
                 continue;
             }
@@ -734,7 +734,7 @@ class CssCrush_Process
             if ( $aliases[ 'functions' ] ) {
                 $rule->addFunctionAliases();
             }
-            if ( $aliases[ 'values' ] ) {
+            if ( $aliases[ 'declarations' ] ) {
                 $rule->addPropertyValueAliases();
             }
 

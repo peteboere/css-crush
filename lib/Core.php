@@ -88,12 +88,11 @@ class CssCrush
             'newlines' => 'use-platform',
         ));
 
-        // Register default formatters.
-        self::$config->formatters = array(
-            'single-line' => 'csscrush__fmtr_single',
-            'padded' => 'csscrush__fmtr_padded',
-            'nested' => 'csscrush__fmtr_nested',
-        );
+        // Include and register stock formatters.
+        require_once self::$config->location . '/misc/formatters.php';
+
+        // Include the procedural API functions.
+        require_once self::$config->location . '/misc/proc-api-functions.php';
 
         // Initialise other classes.
         CssCrush_Regex::init();
@@ -163,25 +162,25 @@ class CssCrush
 
                 self::$config->aliases = $result;
 
-                // Value aliases require a little preprocessing.
-                if ( isset( self::$config->aliases[ 'values' ] ) ) {
+                // Declaration aliases require a little preprocessing.
+                if ( isset( self::$config->aliases[ 'declarations' ] ) ) {
                     $store = array();
-                    foreach ( self::$config->aliases[ 'values' ] as $prop_val => $aliases ) {
+                    foreach ( self::$config->aliases[ 'declarations' ] as $prop_val => $aliases ) {
                         list( $prop, $value ) = array_map( 'trim', explode( ':', $prop_val ) );
                         foreach ( $aliases as &$alias ) {
                             $alias = explode( ':', $alias );
                         }
                         $store[ $prop ][ $value ] = $aliases;
                     }
-                    self::$config->aliases[ 'values' ] = $store;
+                    self::$config->aliases[ 'declarations' ] = $store;
                 }
 
                 // Ensure all alias groups are at least set (issue #34)
                 self::$config->bareAliasGroups = array(
                     'properties' => array(),
-                    'functions'  => array(),
-                    'values'     => array(),
-                    'at-rules'   => array(),
+                    'functions' => array(),
+                    'declarations' => array(),
+                    'at-rules' => array(),
                 );
                 self::$config->aliases += self::$config->bareAliasGroups;
             }
@@ -545,86 +544,4 @@ class CssCrush
                 break;
         }
     }
-}
-
-
-#############################
-#  Default formatters.
-
-function csscrush__fmtr_single ( $rule ) {
-
-    $EOL = CssCrush::$process->newline;
-    if ( $stub = $rule->tracingStub ) {
-        $stub .= $EOL;
-    }
-
-    $comments = implode( '', $rule->comments );
-    if ( $comments ) {
-      $comments = "$EOL$comments";
-    }
-    $selectors = implode( ", ", $rule->selectors );
-    $block = implode( "; ", $rule->declarations );
-    return "$comments$stub$selectors { $block; }$EOL";
-}
-
-function csscrush__fmtr_padded ( $rule ) {
-
-    $EOL = CssCrush::$process->newline;
-    if ( $stub = $rule->tracingStub ) {
-        $stub .= $EOL;
-    }
-
-    $comments = implode( '', $rule->comments );
-    if ( $comments ) {
-        $comments = "$EOL$comments";
-    }
-
-    $cutoff = 40;
-    $selectors = implode( ", ", $rule->selectors );
-    $block = implode( "; ", $rule->declarations );
-
-    if ( strlen( $selectors ) > $cutoff ) {
-        $padding = str_repeat( ' ', $cutoff );
-        return "$comments$stub$selectors$EOL$padding { $block; }$EOL";
-    }
-    else {
-        $selectors = str_pad( $selectors, $cutoff );
-        return "$comments$stub$selectors { $block; }$EOL";
-    }
-}
-
-function csscrush__fmtr_block ( $rule, $indent = '    ' ) {
-
-    $EOL = CssCrush::$process->newline;
-    if ( $stub = $rule->tracingStub ) {
-        $stub .= $EOL;
-    }
-
-    $comments = implode( '', $rule->comments );
-    $selectors = implode( ",$EOL", $rule->selectors );
-    $block = implode( ";$EOL$indent", $rule->declarations );
-    return "$comments$stub$selectors {{$EOL}$indent$block;$EOL$indent}$EOL$EOL";
-}
-
-
-#############################
-#  Procedural style external API.
-
-function csscrush_file ( $file, $options = null ) {
-    return CssCrush::file( $file, $options );
-}
-function csscrush_tag ( $file, $options = null, $attributes = array() ) {
-    return CssCrush::tag( $file, $options, $attributes );
-}
-function csscrush_inline ( $file, $options = null, $attributes = array() ) {
-    return CssCrush::inline( $file, $options, $attributes );
-}
-function csscrush_string ( $string, $options = null ) {
-    return CssCrush::string( $string, $options );
-}
-function csscrush_globalvars ( $vars ) {
-    return CssCrush::globalVars( $vars );
-}
-function csscrush_clearcache ( $dir = '' ) {
-    return CssCrush::clearcache( $dir );
 }
