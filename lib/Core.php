@@ -92,7 +92,7 @@ class CssCrush
         require_once self::$config->location . '/misc/formatters.php';
 
         // Include the procedural API functions.
-        require_once self::$config->location . '/misc/proc-api-functions.php';
+        require_once self::$config->location . '/misc/functions.php';
 
         // Initialise other classes.
         CssCrush_Regex::init();
