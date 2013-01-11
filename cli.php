@@ -11,15 +11,6 @@ require_once 'CssCrush.php';
 define( 'STATUS_OK', 0 );
 define( 'STATUS_ERROR', 1 );
 
-// Get stdin content.
-$stdin = fopen( 'php://stdin', 'r' );
-if ( ! stream_set_blocking( $stdin, false ) ) {
-    stderr( 'Failed to disable stdin blocking' );
-    exit( STATUS_ERROR );
-}
-$stdin_contents = stream_get_contents( $stdin );
-fclose( $stdin );
-
 
 ##################################################################
 ##  Helpers.
@@ -34,6 +25,14 @@ function stdout ( $lines, $closing_newline = true ) {
     // On OSX terminal is sometimes truncating 'visual' output to terminal
     // with fwrite to STDOUT.
     echo $out;
+}
+
+function get_stdin_contents () {
+    $stdin = fopen( 'php://stdin', 'r' );
+    stream_set_blocking( $stdin, false );
+    $stdin_contents = stream_get_contents( $stdin );
+    fclose( $stdin );
+    return $stdin_contents;
 }
 
 
@@ -204,7 +203,7 @@ if ( $input_file ) {
     }
     $input = file_get_contents( $input_file );
 }
-elseif ( $stdin_contents ) {
+elseif ( $stdin_contents = get_stdin_contents() ) {
 
     $input = $stdin_contents;
 }
