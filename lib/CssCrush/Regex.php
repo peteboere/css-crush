@@ -119,3 +119,6 @@ class CssCrush_Regex
         return '~(?<![\w-])(' . implode( '|', $list ) . ')' . $question . '\(~iS';
     }
 }
+
+CssCrush_Regex::init();
+

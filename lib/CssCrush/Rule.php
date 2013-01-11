@@ -150,7 +150,7 @@ class CssCrush_Rule implements IteratorAggregate
             list( $prop, $value ) = $pair;
 
             // Resolve self references, aka this()
-            CssCrush_Function::executeCustomFunctions( $value,
+            CssCrush_Function::executeOnString( $value,
                     CssCrush_Regex::$patt->thisFunction, array(
                         'this'  => array( $this, 'cssThisFunction' ),
                     ), $prop );
@@ -176,6 +176,7 @@ class CssCrush_Rule implements IteratorAggregate
 
             // De-reference this instance.
             unset( $process->tokens->r[ $this->label ] );
+
             return '';
         }
 
@@ -201,7 +202,7 @@ class CssCrush_Rule implements IteratorAggregate
         // First resolve query() calls that reference earlier rules.
         if ( preg_match( CssCrush_Regex::$patt->queryFunction, $value ) ) {
 
-            CssCrush_Function::executeCustomFunctions( $value,
+            CssCrush_Function::executeOnString( $value,
                 CssCrush_Regex::$patt->queryFunction, array(
                     'query' => array( $this, 'cssQueryFunction' ),
                 ), $prop );
@@ -240,14 +241,6 @@ class CssCrush_Rule implements IteratorAggregate
         }
     }
 
-    public function setDeclarations ( array $declaration_stack )
-    {
-        $this->declarations = $declaration_stack;
-
-        // Update the property index.
-        $this->updatePropertyIndex();
-    }
-
     public function updatePropertyIndex ()
     {
         // Create a new table of properties.
@@ -269,7 +262,7 @@ class CssCrush_Rule implements IteratorAggregate
 
 
     #############################
-    #  Inheritance.
+    #  Rule inheritance.
 
     public function setExtendSelectors ( $raw_value )
     {
@@ -637,12 +630,13 @@ class CssCrush_Rule implements IteratorAggregate
         }
     }
 
-    public function addPropertyValueAliases ()
+    public function addDeclarationAliases ()
     {
         $declaration_aliases =& CssCrush::$process->aliases[ 'declarations' ];
 
         // First test for the existence of any aliased properties.
         if ( ! ( $intersect = array_intersect_key( $declaration_aliases, $this->properties ) ) ) {
+
             return;
         }
 
@@ -726,6 +720,14 @@ class CssCrush_Rule implements IteratorAggregate
         }
 
         return false;
+    }
+
+    public function setDeclarations ( array $declaration_stack )
+    {
+        $this->declarations = $declaration_stack;
+
+        // Update the property index.
+        $this->updatePropertyIndex();
     }
 
     static public function get ( $token )

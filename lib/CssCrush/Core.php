@@ -6,6 +6,8 @@
  */
 class CssCrush
 {
+    const VERSION = '1.9';
+
     // Global settings.
     static public $config;
 
@@ -13,17 +15,15 @@ class CssCrush
     static public $process;
 
     // Init called once manually post class definition.
-    static public function init ( $seed_file )
+    static public function init ()
     {
         self::$config = new stdclass();
 
-        // Path to this installation.
-        self::$config->location = dirname( $seed_file );
+        // Path to the project root folder.
+        self::$config->location = dirname(dirname(dirname(__FILE__)));
 
-        // Get version ID from seed file.
-        $seed_file_contents = file_get_contents( $seed_file );
-        $match_count = preg_match( '~@version\s+([\d\.\w-]+)~', $seed_file_contents, $version_match );
-        self::$config->version = $match_count ? new CssCrush_Version( $version_match[1] ) : null;
+        // Establish version id.
+        self::$config->version = new CssCrush_Version( self::VERSION );
 
         // Set the docRoot reference.
         self::setDocRoot();
@@ -90,14 +90,6 @@ class CssCrush
 
         // Include and register stock formatters.
         require_once self::$config->location . '/misc/formatters.php';
-
-        // Include the procedural API functions.
-        require_once self::$config->location . '/misc/functions.php';
-
-        // Initialise other classes.
-        CssCrush_Regex::init();
-        CssCrush_Function::init();
-        CssCrush_PostAliasFix::init();
     }
 
     static protected function setDocRoot ( $doc_root = null )
@@ -545,3 +537,5 @@ class CssCrush
         }
     }
 }
+
+CssCrush::init();

@@ -27,6 +27,7 @@ class CssCrush_Declaration
         // Check the input.
         if ( $prop === '' || $value === '' || $value === null ) {
             $this->isValid = false;
+
             return;
         }
 
@@ -55,12 +56,13 @@ class CssCrush_Declaration
         // Ignore declarations with null css values.
         if ( $value === false || $value === '' ) {
             $this->isValid = false;
+
             return;
         }
 
         // Apply custom functions.
         if ( ! $skip ) {
-            CssCrush_Function::executeCustomFunctions( $value );
+            CssCrush_Function::executeOnString( $value );
         }
 
         // Capture all remaining paren pairs.

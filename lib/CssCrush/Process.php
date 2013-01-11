@@ -484,7 +484,7 @@ class CssCrush_Process
 
             // Variable values can be escaped from function parsing with a tilde prefix.
             if ( strpos( $value, '~' ) !== 0 ) {
-                CssCrush_Function::executeCustomFunctions( $value );
+                CssCrush_Function::executeOnString( $value );
             }
         }
     }
@@ -519,7 +519,7 @@ class CssCrush_Process
         if ( strpos( $value, '$(' ) !== false ) {
 
             // Variables with default value.
-            CssCrush_Function::executeCustomFunctions( $value, $regex->varFunctionStart,
+            CssCrush_Function::executeOnString( $value, $regex->varFunctionStart,
                 array( '$' => array( 'CssCrush_Process', 'cb_placeVariablesWithDefault' ) ) );
 
             // Assume at least 1 replace.
@@ -735,7 +735,7 @@ class CssCrush_Process
                 $rule->addFunctionAliases();
             }
             if ( $aliases[ 'declarations' ] ) {
-                $rule->addPropertyValueAliases();
+                $rule->addDeclarationAliases();
             }
 
             CssCrush_Hook::run( 'rule_postalias', $rule );

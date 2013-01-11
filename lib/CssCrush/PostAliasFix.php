@@ -114,3 +114,4 @@ function csscrush__post_alias_fix_radialgradients ( $declaration_copies, $fn_nam
     }
 }
 
+CssCrush_PostAliasFix::init();

@@ -27,3 +27,7 @@ function csscrush_globalvars ( $vars ) {
 function csscrush_clearcache ( $dir = '' ) {
     return CssCrush::clearcache( $dir );
 }
+
+function csscrush_stat ( $name = null ) {
+    return CssCrush::stat( $name );
+}

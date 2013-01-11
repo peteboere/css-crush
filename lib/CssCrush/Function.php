@@ -30,7 +30,7 @@ class CssCrush_Function
         self::$functionPatt = CssCrush_Regex::createFunctionMatchPatt( array_keys( self::$customFunctions ), true );
     }
 
-    static public function executeCustomFunctions ( &$str, $patt = null, $process_callback = null, $property = null )
+    static public function executeOnString ( &$str, $patt = null, $process_callback = null, $property = null )
     {
         // No bracketed expressions, early return.
         if ( false === strpos( $str, '(' ) ) {
@@ -217,3 +217,5 @@ function csscrush_fn__a_adjust ( $input ) {
     list( $color, $a ) = array_pad( CssCrush_Function::parseArgs( $input, true ), 2, 0 );
     return CssCrush_Function::colorAdjust( $color, array( 0, 0, 0, $a ) );
 }
+
+CssCrush_Function::init();

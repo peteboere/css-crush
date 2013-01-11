@@ -18,7 +18,7 @@ class CssCrush_ArgList implements Countable
     public function __construct ( $str )
     {
         // Parse all arg function calls in the passed string, callback creates default values
-        CssCrush_Function::executeCustomFunctions( $str, 
+        CssCrush_Function::executeOnString( $str, 
                 CssCrush_Regex::$patt->argFunction, array(
                     'arg' => array( $this, 'store' )
                 ));

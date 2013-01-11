@@ -26,7 +26,7 @@ function csscrush__fmtr_single ( $rule ) {
     return "$comments$stub$selectors { $block; }$EOL";
 }
 
-function csscrush__fmtr_padded ( $rule ) {
+function csscrush__fmtr_padded ( $rule, $padding = 40 ) {
 
     $EOL = CssCrush::$process->newline;
     if ( $stub = $rule->tracingStub ) {
@@ -38,16 +38,15 @@ function csscrush__fmtr_padded ( $rule ) {
         $comments = "$EOL$comments";
     }
 
-    $cutoff = 40;
     $selectors = implode( ", ", $rule->selectors );
     $block = implode( "; ", $rule->declarations );
 
-    if ( strlen( $selectors ) > $cutoff ) {
-        $padding = str_repeat( ' ', $cutoff );
+    if ( strlen( $selectors ) > $padding ) {
+        $padding = str_repeat( ' ', $padding );
         return "$comments$stub$selectors$EOL$padding { $block; }$EOL";
     }
     else {
-        $selectors = str_pad( $selectors, $cutoff );
+        $selectors = str_pad( $selectors, $padding );
         return "$comments$stub$selectors { $block; }$EOL";
     }
 }

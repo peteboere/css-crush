@@ -3,43 +3,55 @@
 * Added flexbox aliases for both 2009 and 2012 edition specs.
 * Added a legacy-flexbox plugin for auto-generating the flexbox 2009 spec equivilant properties.
 * Updated selector aliases to take arguments at runtime.
-* Updated plugin API to use distinct 'enable' and 'disable' handlers.
-* The disable option is now resolved before the enable option so you can easily disable all plugins
+* Updated plugin API to use distinct "enable" and "disable" handlers.
+* `disable` option is now resolved before the `enable` option so you can easily disable all plugins
   and then specify the plugins you want to apply.
 * Added functions API for defining custom functions inside plugins.
-* Improved gradient function aliasing to handle new angle keywords ('to left', 'at center' etc.).
+* Improved gradient function aliasing to handle new angle keywords (to left, at center, etc.).
 * Added svg-gradients plugin for simulating CSS3 gradients with data-uris.
-* Added formatting option so custom formatters can be defined for un-minified output (see wiki for options).
-* Added newlines option to force the style of newlines in output (see wiki for options).
+* Added `formatting` option for un-minified output. Possible values (custom formatters can also be defined):
+    * "block" (default) - Rules are block formatted.
+    * "single-line" - Rules are printed in single lines.
+    * "padded" - Rules are printed in single lines with right padded selectors.
+  Custom formatters can also be defined.
+* Added `newlines` option to set the style of newlines in output. Possible values:
+    * "use-platform" (default)
+    * "unix"
+    * "windows" or "win"
 * Updated command line utility to use the new options.
-* Property/value aliases renamed as declaration aliases.
+* Property/value aliases expanded and renamed as declaration aliases.
 * Classes now loaded via an autoloader, also some other refactoring for moving towards PSR-0 compliance.
 
 1.8 (13th November 2012)
 ---
-* Added selector aliasing with the @selector-alias directive.
-* Added output_dir option for specifying the destination of compiled files.
-* Added doc_root option for working around problems with server aliases or path rewrites.
+* Added selector aliasing with the `@selector-alias` directive.
+* Added `output_dir` option for specifying the destination of compiled files.
+* Added `doc_root` option for working around problems with server aliases or path rewrites.
 * Added viewport @-rule aliases.
-* Debug option renamed to 'minify'; debug option will still work as before but is deprecated.
-* New minify option optionally takes an array of advanced minification parameters.
-* Expanded trace option to take an optional array of log parameters;
-* log params available are stubs, selector_count, errors and compile_time.
-* Added CssCrush::stat method to retrieve logged parameters.
+* `debug` option renamed to `minify`; `debug` option will still work as before but is deprecated.
+* `minify` option takes an optional array of advanced minification parameters. Possible values:
+    * `colors`
+* Expanded `trace` option to take an optional array of log parameters. Possible values:
+    * `stubs`
+    * `selector_count`
+    * `errors`
+    * `compile_time`
+* Added `CssCrush::stat` method to retrieve logged parameters.
 * Improved cross OS support.
 * Improved minification.
 * Major refactoring.
 
 1.7 (28th September 2012)
 ---
-* Added trace option to output SASS compatible debug-info stubs for use with tools like FireSass.
-* Added @ifdefine directive for dynamically including/excluding parts of a CSS file based on the existence of variables.
+* Added `trace` option to output SASS compatible debug-info stubs for use with tools like FireSass.
+* Added `@ifdefine` directive for dynamically including/excluding parts of a CSS file based on the
+  existence of variables.
 * Updated plugin API.
 * Added options for enabling and disabling plugins at runtime.
 * Added property sorter plugin.
 * Added support for SASS-like @include/@extend syntax for invoking mixins and extends.
 * Boilerplate option now accepts a filename string as a boilerplate template.
-* CssCrush::string method now uses document_root as a default context for finding linked resources.
+* `CssCrush::string` method now uses document\_root as a default context for finding linked resources.
 * Updated command line appication.
 * Updated aliases and initial value files.
 * Fixed parsing issue introduced in 1.6.1.
@@ -51,14 +63,14 @@
 1.6 (1st August 2012)
 ---
 * Inheritance model improved to support adoption of pseudo classes and elements (see wiki).
-* Added rule self-referencing function this() and complimentary data-- properties.
-* Added rule referencing function query().
+* Added rule self-referencing function `this()` and complimentary data-* properties.
+* Added rule referencing function `query()`.
 * Added default value argument for variables.
-* Added hsl-adjust() and hsla-adjust() color functions.
-* Mixin and fragment arg() function can now be nested.
+* Added `hsl-adjust()` and `hsla-adjust()` color functions.
+* Mixin and fragment `arg()` function can now be nested.
 * Commas are now optional when specifying arguments for most custom functions.
 * Double-colon plugin moved to core.
-* Option rewrite_import_urls now defaults to true.
+* Option `rewrite_import_urls` now defaults to true.
 
 1.5.3 (13th June 2012)
 -----
@@ -68,7 +80,7 @@
 1.5.2 (8th June 2012)
 -----
 * Resolved issue #32.
-* CssCrush::inline method now defaults to not printing a boilerplate.
+* `CssCrush::inline` method now defaults to not printing a boilerplate.
 * Updated aliases file.
 
 1.5.1 (1st June 2012)
@@ -85,7 +97,7 @@
 * Abstracted IO interface.
 * Added some error reporting.
 * Added spiffing.css plugin.
-* csscrush_tag method now uses media type 'all' by default.
+* `CssCrush::tag` method now uses media type 'all' by default.
 * Updated alias and initial-value tables.
 * Internal refactoring.
 * Resolved issues #23, #24, #27, #28 and #29.
@@ -98,12 +110,12 @@
 1.4.1 (10th February 2012)
 -----
 * Added command line application.
-* Added 'rewrite_import_urls' option - Ability to rewrite relative url references inside imported css files.
+* Added `rewrite_import_urls` option - Ability to rewrite relative url references inside imported css files.
 * Added Prepend.css - Optionally prepend css to every input.
 * Fix for issue #21.
 * Reorganized aliases file with some additions.
 * Initial-values updated.
-* Updated CssCrush::string method to correctly handle import statements.
+* Updated `CssCrush::string` method to correctly handle import statements.
 
 1.4 (24th January 2012)
 ---
@@ -111,7 +123,7 @@
 * Added inline method (Issue #18).
 * Added ability to escape declarations from aliasing or plugins by prefixing with tilde.
 * Added procedural style public API to mirror the static class API.
-* Deprecated @variables syntax for @define. @variables still supported.
+* Deprecated `@variables` directive for `@define`. @variables still supported for next few releases.
 * Adjusted color functions to accept a space delimiter (as well as comma) in the arguments list.
 * Surpressed some benign PHP warning messages.
 * Some internal cleaning up.
@@ -120,7 +132,7 @@
 1.3.6 (9th November 2011)
 -----
 * Improved color functions.
-* Added a-adjust function for altering a color's opacity.
+* Added `a-adjust()` function for altering a color's opacity.
 * Deprecated hsl-adjust function (you can use nested color functions instead).
 * Added the ability to use local versions of alias and plugin files so pull updates don't clobber local settings.
 
@@ -158,7 +170,7 @@
 
 1.3 (20th September 2011)
 ---
-* Added the public function CssCrush::string for processing raw strings of CSS.
+* Added the public function `CssCrush::string` for processing raw strings of CSS.
 * Added color functions.
 * Added aliases for IE10.
 
@@ -170,7 +182,7 @@
 ---
 * Added support for global variables.
 * Added support for variable interpolation within string literals.
-* Added 'tag' method for outputting an html link tag instead of returning a filename.
+* Added `CssCrush::tag` method for outputting an html link tag instead of returning a filename.
 * Added values aliases, dynamic 'runtime' variables.
 * Added RGBA macro.
 * Added IE clip macro.
