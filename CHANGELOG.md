@@ -1,4 +1,4 @@
-1.9 (5th January 2013)
+1.9 (11th January 2013)
 ---
 * Added flexbox aliases for both 2009 and 2012 edition specs.
 * Added a legacy-flexbox plugin for auto-generating the flexbox 2009 spec equivilant properties.

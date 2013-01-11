@@ -31,7 +31,9 @@ function stderr ( $lines, $closing_newline = true ) {
 
 function stdout ( $lines, $closing_newline = true ) {
     $out = implode( PHP_EOL, (array) $lines ) . ( $closing_newline ? PHP_EOL : '' );
-    fwrite( STDOUT, $out );
+    // On OSX terminal is sometimes truncating 'visual' output to terminal
+    // with fwrite to STDOUT.
+    echo $out;
 }
 
 
@@ -197,7 +199,7 @@ $input = null;
 if ( $input_file ) {
 
     if ( ! file_exists( $input_file ) ) {
-        stdout( 'Input file not found' . PHP_EOL );
+        stderr( 'Input file not found' . PHP_EOL );
         exit( STATUS_ERROR );
     }
     $input = file_get_contents( $input_file );
