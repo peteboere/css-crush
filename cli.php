@@ -95,7 +95,7 @@ $variables = @$opts['variables'];
 $newlines = @$opts['newlines'];
 $enable_plugins = isset( $opts['enable'] ) ? (array) $opts['enable'] : null;
 $disable_plugins = isset( $opts['disable'] ) ? (array) $opts['disable'] : null;
-$context = isset( $opts['context'] ) ? (array) $opts['context'] : null;
+$context = isset( $opts['context'] ) ? $opts['context'] : null;
 
 
 ##################################################################

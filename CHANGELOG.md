@@ -1,3 +1,8 @@
+1.9.1 (? January 2013)
+-----
+* Resolved issue #42.
+* Fixed command line context option.
+
 1.9 (12th January 2013)
 ---
 * Added flexbox aliases for both 2009 and 2012 edition specs.

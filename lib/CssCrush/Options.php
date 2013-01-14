@@ -48,6 +48,7 @@ class CssCrush_Options
                 break;
 
             // Sanitize path options.
+            case 'context':
             case 'doc_root':
                 if ( is_string( $value ) ) {
                     $value = CssCrush_Util::normalizePath( $value );

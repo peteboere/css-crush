@@ -6,7 +6,7 @@
  */
 class CssCrush
 {
-    const VERSION = '1.9';
+    const VERSION = '1.9.1';
 
     // Global settings.
     static public $config;
@@ -113,7 +113,16 @@ class CssCrush
                 // Check $script_filename ends with $script_name
                 if ( substr( $script_filename, $len_diff ) === $script_name ) {
 
-                    $doc_root = realpath( substr( $script_filename, 0, $len_diff ) );
+                    $path = substr( $script_filename, 0, $len_diff );
+
+                    // An empty string passed to realpath gives unpredictable results
+                    // on command line.
+                    if ( $path === '' ) {
+                        $doc_root = dirname( realpath( $script_filename ) );
+                    }
+                    else {
+                        $doc_root = realpath( $path );
+                    }
                 }
             }
 
