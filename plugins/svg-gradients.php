@@ -52,8 +52,8 @@ function csscrush__enable_svg_gradients () {
 }
 
 function csscrush__disable_svg_gradients () {
-    CssCrush_Function::deRegister( 'svg-linear-gradient', 'csscrush_fn__svg_linear_gradient' );
-    CssCrush_Function::deRegister( 'svg-radial-gradient', 'csscrush_fn__svg_radial_gradient' );
+    CssCrush_Function::deRegister( 'svg-linear-gradient' );
+    CssCrush_Function::deRegister( 'svg-radial-gradient' );
 }
 
 function csscrush_fn__svg_linear_gradient ( $input ) {

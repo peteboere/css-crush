@@ -116,7 +116,8 @@ class CssCrush_Util
         }
 
         if ( $trim ) {
-            $list = array_map( 'trim', $list );
+            // Trim items and remove empty strings.
+            $list = array_filter( array_map( 'trim', $list ), 'strlen' );
         }
 
         return $list;

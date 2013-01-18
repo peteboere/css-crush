@@ -19,9 +19,11 @@ class CssCrush_Regex
 
         // Character classes.
         $classes->ident = '[a-zA-Z0-9_-]+';
+        $classes->number = '[+-]?\d*\.?\d+';
 
         // Patterns.
-        $patt->ident = '!^' . $classes->ident . '$!';
+        $patt->ident = '~^' . $classes->ident . '$~';
+        $patt->number = '~^' . $classes->number . '$~';
 
         // @-rule blocks.
         $patt->import        = '~@import\s+(\?u\d+\?)\s?([^;]*);~iS';

@@ -2,6 +2,7 @@
 -----
 * Resolved issue #42.
 * Fixed command line context option.
+* Added noise/texture generating functions with the noise plugin.
 
 1.9 (12th January 2013)
 ---
