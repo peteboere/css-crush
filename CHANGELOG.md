@@ -15,7 +15,7 @@
 * Added functions API for defining custom functions inside plugins.
 * Improved gradient function aliasing to handle new angle keywords (to left, at center, etc.).
 * Added svg-gradients plugin for simulating CSS3 gradients with data-uris.
-* Added `formatting` option for un-minified output. Possible values (custom formatters can also be defined):
+* Added `formatter` option for un-minified output. Possible values (custom formatters can also be defined):
     * "block" (default) - Rules are block formatted.
     * "single-line" - Rules are printed in single lines.
     * "padded" - Rules are printed in single lines with right padded selectors.

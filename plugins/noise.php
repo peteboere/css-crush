@@ -71,7 +71,7 @@
  *      background: turbulence();
  * 
  *      // Sand effect.
- *      background: turbulence( wheat 400x400, .35:.2 4 sharpen, normal, saturate .4 );;
+ *      background: turbulence( wheat 400x400, .35:.2 4 sharpen, normal, saturate .4 );
  */
 
 CssCrush_Plugin::register( 'noise', array(
