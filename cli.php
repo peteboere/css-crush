@@ -263,7 +263,7 @@ if ( $variables ) {
 
 // Resolve a context for URLs.
 if ( ! $context ) {
-    $context = $input_file ? dirname( realpath( $input_file ) ) : null;
+    $context = $input_file ? dirname( realpath( $input_file ) ) : getcwd();
 }
 
 // If there is an import context set document root also.
