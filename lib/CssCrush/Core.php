@@ -6,7 +6,7 @@
  */
 class CssCrush
 {
-    const VERSION = '1.9.1';
+    const VERSION = '1.9.2';
 
     // Global settings.
     static public $config;
@@ -114,15 +114,7 @@ class CssCrush
                 if ( substr( $script_filename, $len_diff ) === $script_name ) {
 
                     $path = substr( $script_filename, 0, $len_diff );
-
-                    // An empty string passed to realpath gives unpredictable results
-                    // on command line.
-                    if ( $path === '' ) {
-                        $doc_root = dirname( realpath( $script_filename ) );
-                    }
-                    else {
-                        $doc_root = realpath( $path );
-                    }
+                    $doc_root = realpath( $path );
                 }
             }
 
@@ -159,22 +151,23 @@ class CssCrush
         // Load aliases file if it exists
         if ( $aliases_file ) {
 
-            if ( $result = @parse_ini_file( $aliases_file, true ) ) {
-
-                self::$config->aliases = $result;
+            $result = @parse_ini_file( $aliases_file, true );
+            if ( $result !== false ) {
 
                 // Declaration aliases require a little preprocessing.
-                if ( isset( self::$config->aliases[ 'declarations' ] ) ) {
+                if ( isset( $result[ 'declarations' ] ) ) {
                     $store = array();
-                    foreach ( self::$config->aliases[ 'declarations' ] as $prop_val => $aliases ) {
+                    foreach ( $result[ 'declarations' ] as $prop_val => $aliases ) {
                         list( $prop, $value ) = array_map( 'trim', explode( ':', $prop_val ) );
                         foreach ( $aliases as &$alias ) {
                             $alias = explode( ':', $alias );
                         }
                         $store[ $prop ][ $value ] = $aliases;
                     }
-                    self::$config->aliases[ 'declarations' ] = $store;
+                    $result[ 'declarations' ] = $store;
                 }
+
+                self::$config->aliases = $result;
 
                 // Ensure all alias groups are at least set (issue #34)
                 self::$config->bareAliasGroups = array(
@@ -199,12 +192,15 @@ class CssCrush
 
         // Load plugins
         if ( $plugins_file ) {
-            if ( $result = @parse_ini_file( $plugins_file ) ) {
-                foreach ( $result[ 'plugins' ] as $plugin_name ) {
-                    // Backwards compat.
-                    $plugin_name = basename( $plugin_name, '.php' );
-                    if ( CssCrush_Plugin::load( $plugin_name ) ) {
-                        self::$config->plugins[ $plugin_name ] = true;
+            $result = @parse_ini_file( $plugins_file );
+            if ( $result !== false ) {
+                if ( isset( $result[ 'plugins' ] ) ) {
+                    foreach ( $result[ 'plugins' ] as $plugin_name ) {
+                        // Backwards compat.
+                        $plugin_name = basename( $plugin_name, '.php' );
+                        if ( CssCrush_Plugin::load( $plugin_name ) ) {
+                            self::$config->plugins[ $plugin_name ] = true;
+                        }
                     }
                 }
             }

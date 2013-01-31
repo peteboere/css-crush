@@ -1,3 +1,8 @@
+1.9.2 (? 2013)
+-----
+* Fixed error notice with no enabled plugins in Plugins.ini file.
+* Updated aliases file.
+
 1.9.1 (30th January 2013)
 -----
 * Resolved issues #42 and #43.
