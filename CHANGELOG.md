@@ -1,13 +1,10 @@
-1.9.2 (? 2013)
+1.9.1 (31th January 2013)
 -----
-* Fixed error notice with no enabled plugins in Plugins.ini file.
-* Updated aliases file.
-
-1.9.1 (30th January 2013)
------
+* Added noise plugin (noise/texture generating functions).
 * Resolved issues #42 and #43.
 * Fixed command line context option.
-* Added noise plugin (noise/texture generating functions).
+* Fixed error notice with no enabled plugins in Plugins.ini file.
+* Updated aliases file.
 
 1.9 (12th January 2013)
 ---
