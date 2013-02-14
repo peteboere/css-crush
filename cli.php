@@ -57,6 +57,7 @@ if ( $version < $required_version ) {
 
 $short_opts = array(
     "f:",  // Input file. Defaults to sdtin.
+    "i:",  // Input file alias.
     "o:",  // Output file. Defaults to stdout.
     "p",   // Pretty formatting.
     'b',   // Output boilerplate.
@@ -82,7 +83,7 @@ $long_opts = array(
 
 $opts = getopt( implode( $short_opts ), $long_opts );
 
-$input_file = @( $opts['f'] ?: $opts['file'] );
+$input_file = @( $opts['f'] ?: $opts['i'] ?: $opts['file'] );
 $output_file = @( $opts['o'] ?: $opts['output'] );
 $pretty = @( isset( $opts['p'] ) ?: isset( $opts['pretty'] ) );
 $boilerplate = @( isset( $opts['b'] ) ?: isset( $opts['boilerplate'] ) );
@@ -104,12 +105,12 @@ $context = isset( $opts['context'] ) ? $opts['context'] : null;
 $help = <<<TPL
 
 Usage:
-    csscrush [-f|--file] [-o|--output-file] [-p|--pretty] [-b|--boilerplate]
+    csscrush [-f|-i|--file] [-o|--output-file] [-p|--pretty] [-b|--boilerplate]
              [-h|--help] [--formatter] [--variables] [--vendor-target]
              [--version] [--newlines]
 
 Options:
-    -f, --file:
+    -f, -i, --file:
         The input file, if omitted takes input from stdin.
 
     -o, --output:
@@ -177,7 +178,7 @@ TPL;
 
 if ( $version_flag ) {
 
-    stdout( 'CSS Crush ' . CssCrush::$config->version );
+    stdout( 'CSS-Crush ' . CssCrush::$config->version );
     exit( STATUS_OK );
 }
 

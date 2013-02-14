@@ -1,3 +1,7 @@
+1.10 (?)
+----
+* Added `-i` alias to `--file` option for the command line utility.
+
 1.9.1 (31th January 2013)
 -----
 * Added noise plugin (noise/texture generating functions).

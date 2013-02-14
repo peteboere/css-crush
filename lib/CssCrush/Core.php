@@ -6,7 +6,7 @@
  */
 class CssCrush
 {
-    const VERSION = '1.9.1';
+    const VERSION = '1.10';
 
     // Global settings.
     static public $config;

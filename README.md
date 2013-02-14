@@ -1,7 +1,7 @@
-CSS Crush
+CSS-Crush
 ===================================
 
-CSS Crush is an extensible PHP based CSS preprocessor that aims to alleviate many of the hacks and workarounds necessary in modern CSS development.
+CSS-Crush is an extensible PHP based CSS preprocessor that aims to alleviate many of the hacks and workarounds necessary in modern CSS development.
 
 
 Overview
@@ -34,4 +34,4 @@ If you think you've found a bug, please visit the Issue tracker — https://gith
 Submitting patches
 ===================================
 
-To contribute code and bug fixes fork this project on Github, make changes to the code in your fork, and then send a "pull request" to be reviewed for inclusion.
+To contribute code and bug fixes fork this project on Github, make changes to the code in your fork, and then send a "pull request" for review.
