@@ -26,10 +26,9 @@ class CssCrush_Process
         $this->uid = 0;
         $this->cacheData = array();
         $this->mixins = array();
-        $this->abstracts = array();
+        $this->references = array();
         $this->errors = array();
         $this->stat = array();
-        $this->selectorRelationships = array();
         $this->charset = null;
         $this->currentFile = null;
         $this->tokens = (object) array(
@@ -86,8 +85,7 @@ class CssCrush_Process
             $this->tokens,
             $this->variables,
             $this->mixins,
-            $this->abstracts,
-            $this->selectorRelationships,
+            $this->references,
             $this->misc,
             $this->plugins,
             $this->aliases,
@@ -716,15 +714,11 @@ class CssCrush_Process
 
     protected function processRules ()
     {
-        // Reset the selector relationships.
-        $this->selectorRelationships = array();
-
         $aliases =& $this->aliases;
 
         foreach ( $this->tokens->r as $rule ) {
 
-            // Store selector relationships.
-            $rule->indexSelectors();
+            $rule->processDeclarations();
 
             CssCrush_Hook::run( 'rule_prealias', $rule );
 
@@ -824,7 +818,7 @@ class CssCrush_Process
                             // Ampersand is the positional symbol for where the
                             // prefix will be placed.
 
-                            // Find and replace (once) the ampersand.
+                            // Find and replace the ampersand (once).
                             $new_value = preg_replace(
                                     '!&!',
                                     $arg_selector,
@@ -1087,6 +1081,7 @@ class CssCrush_Process
 
         // Parse rules.
         $this->extractRules();
+        // csscrush::log(array_keys( $this->references) );
 
         // Process @in blocks.
         $this->prefixSelectors();

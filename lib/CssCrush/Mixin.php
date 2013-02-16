@@ -10,17 +10,15 @@ class CssCrush_Mixin
 
     public $arguments;
 
-    public $data = array();
-
     public function __construct ( $block )
     {
-        // Strip comment markers
+        // Strip comment markers.
         $block = CssCrush_Util::stripCommentTokens( $block );
 
-        // Prepare the arguments object
+        // Prepare the arguments object.
         $this->arguments = new CssCrush_ArgList( $block );
 
-        // Re-assign with the parsed arguments string
+        // Re-assign with the parsed arguments string.
         $block = $this->arguments->string;
 
         // Split the block around semi-colons.
@@ -33,33 +31,31 @@ class CssCrush_Mixin
                 continue;
             }
 
-            // Store template declarations as arrays as they are copied by value not reference
+            // Store template declarations as arrays as they are copied by value not reference.
             $declaration = array();
 
-            $declaration['property'] = trim( substr( $raw_declaration, 0, $colon ) );
-            $declaration['value'] = trim( substr( $raw_declaration, $colon + 1 ) );
+            $property = strtolower( trim( substr( $raw_declaration, 0, $colon ) ) );
+            $value = trim( substr( $raw_declaration, $colon + 1 ) );
 
-            if ( $declaration['property'] === 'mixin' ) {
+            if ( $property === 'mixin' ) {
 
-                // Mixin can contain other mixins if they are available
-                if ( $mixin_declarations = CssCrush_Mixin::parseValue( $declaration['value'] ) ) {
+                // Mixin can contain other mixins if they are available.
+                if ( $mixin_declarations = CssCrush_Mixin::parseValue( $value ) ) {
 
-                    // Add mixin result to the stack
-                    $this->declarationsTemplate = array_merge( $this->declarationsTemplate, $mixin_declarations );
+                    // Add mixin result to the stack.
+                    $this->declarationsTemplate = array_merge(
+                        $this->declarationsTemplate, $mixin_declarations );
                 }
             }
-            elseif ( ! empty( $declaration['value'] ) ) {
-                $this->declarationsTemplate[] = $declaration;
+            elseif ( ! empty( $value ) ) {
+
+                $this->declarationsTemplate[] = array(
+                    'property' => $property,
+                    'value' => $value,
+                );
             }
         }
 
-        // Create data table for the mixin.
-        // Values that use arg() are excluded
-        foreach ( $this->declarationsTemplate as &$declaration ) {
-            if ( ! preg_match( CssCrush_Regex::$patt->aToken, $declaration['value'] ) ) {
-                $this->data[ $declaration['property'] ] = $declaration['value'];
-            }
-        }
         return '';
     }
 
@@ -103,10 +99,10 @@ class CssCrush_Mixin
                 // Mixin match
                 $mixin = CssCrush::$process->mixins[ $name ];
             }
-            elseif ( isset( CssCrush::$process->abstracts[ $name ] ) ) {
+            elseif ( isset( CssCrush::$process->references[ $name ] ) ) {
 
                 // Abstract rule match
-                $non_mixin = CssCrush::$process->abstracts[ $name ];
+                $non_mixin = CssCrush::$process->references[ $name ];
             }
         }
 
@@ -115,8 +111,8 @@ class CssCrush_Mixin
 
             $selector_test = CssCrush_Selector::makeReadableSelector( $message );
 
-            if ( isset( CssCrush::$process->selectorRelationships[ $selector_test ] ) ) {
-                $non_mixin = CssCrush::$process->selectorRelationships[ $selector_test ];
+            if ( isset( CssCrush::$process->references[ $selector_test ] ) ) {
+                $non_mixin = CssCrush::$process->references[ $selector_test ];
             }
         }
 

@@ -6,34 +6,42 @@
  */
 class CssCrush_Function
 {
-    static function init ()
-    {
-        CssCrush_Function::register( 'math', 'csscrush_fn__math' );
-        CssCrush_Function::register( 'percent', 'csscrush_fn__percent' );
-        CssCrush_Function::register( 'pc', 'csscrush_fn__percent' );
-        CssCrush_Function::register( 'hsla-adjust', 'csscrush_fn__hsla_adjust' );
-        CssCrush_Function::register( 'hsl-adjust', 'csscrush_fn__hsl_adjust' );
-        CssCrush_Function::register( 'h-adjust', 'csscrush_fn__h_adjust' );
-        CssCrush_Function::register( 's-adjust', 'csscrush_fn__s_adjust' );
-        CssCrush_Function::register( 'l-adjust', 'csscrush_fn__l_adjust' );
-        CssCrush_Function::register( 'a-adjust', 'csscrush_fn__a_adjust' );
-    }
-
     // Regex pattern for finding custom functions.
     static public $functionPatt;
 
-    // Stack for function names.
-    static protected $customFunctions;
+    static protected $functions;
+
+    static protected $customFunctions = array();
+
+    static protected $builtinFunctions = array(
+
+        // These functions must come first in this order.
+        'query' => 'csscrush_fn__query',
+
+        // These functions can be any order.
+        'math' => 'csscrush_fn__math',
+        'percent' => 'csscrush_fn__percent',
+        'pc' => 'csscrush_fn__percent',
+        'hsla-adjust' => 'csscrush_fn__hsla_adjust',
+        'hsl-adjust' => 'csscrush_fn__hsl_adjust',
+        'h-adjust' => 'csscrush_fn__h_adjust',
+        's-adjust' => 'csscrush_fn__s_adjust',
+        'l-adjust' => 'csscrush_fn__l_adjust',
+        'a-adjust' => 'csscrush_fn__a_adjust',
+    );
 
     static public function setMatchPatt ()
     {
-        self::$functionPatt = CssCrush_Regex::createFunctionMatchPatt( array_keys( self::$customFunctions ), true );
+        self::$functions = self::$builtinFunctions + self::$customFunctions;
+        self::$functionPatt = CssCrush_Regex::createFunctionMatchPatt(
+            array_keys( self::$functions ), true );
     }
 
-    static public function executeOnString ( &$str, $patt = null, $process_callback = null, $property = null )
+    static public function executeOnString ( &$str, $patt = null, $process_callback = null, $extra = null )
     {
+
         // No bracketed expressions, early return.
-        if ( false === strpos( $str, '(' ) ) {
+        if ( strpos( $str, '(' ) === false ) {
             return;
         }
 
@@ -81,17 +89,17 @@ class CssCrush_Function
 
             if ( ! $process_callback ) {
                 // If no callback reference it's a built-in.
-                if ( array_key_exists( $fn_name, self::$customFunctions ) ) {
-                    $func_returns = call_user_func( self::$customFunctions[ $fn_name ], $args );
+                if ( array_key_exists( $fn_name, self::$functions ) ) {
+                    $func_returns = call_user_func( self::$functions[ $fn_name ], $args, $extra );
                 }
             }
             else {
                 if ( isset( $process_callback[ $fn_name ] ) ) {
-                    $func_returns = call_user_func( $process_callback[ $fn_name ], $args, $fn_name, $property );
+                    $func_returns = call_user_func( $process_callback[ $fn_name ], $args, $extra );
                 }
             }
 
-            // Splice in the function returns.
+            // Splice in the function result.
             $str = substr_replace( $str, "$before_operator$func_returns", $offset, $closing_paren - $offset );
         }
     }
@@ -121,14 +129,6 @@ class CssCrush_Function
     static public function parseArgsSimple ( $input )
     {
         return preg_split( CssCrush_Regex::$patt->argListSplit, $input, 2 );
-    }
-
-    static public function colorAdjust ( $raw_color, array $adjustments )
-    {
-        $hsla = new CssCrush_Color( $raw_color, true );
-
-        // On failure to parse return input.
-        return $hsla->isValid ? $hsla->adjust( $adjustments )->__toString() : $raw_color;
     }
 }
 
@@ -190,32 +190,94 @@ function csscrush_fn__percent ( $input ) {
 
 function csscrush_fn__hsla_adjust ( $input ) {
     list( $color, $h, $s, $l, $a ) = array_pad( CssCrush_Function::parseArgs( $input, true ), 5, 0 );
-    return CssCrush_Function::colorAdjust( $color, array( $h, $s, $l, $a ) );
+    return CssCrush_Color::colorAdjust( $color, array( $h, $s, $l, $a ) );
 }
 
 function csscrush_fn__hsl_adjust ( $input ) {
     list( $color, $h, $s, $l ) = array_pad( CssCrush_Function::parseArgs( $input, true ), 4, 0 );
-    return CssCrush_Function::colorAdjust( $color, array( $h, $s, $l, 0 ) );
+    return CssCrush_Color::colorAdjust( $color, array( $h, $s, $l, 0 ) );
 }
 
 function csscrush_fn__h_adjust ( $input ) {
     list( $color, $h ) = array_pad( CssCrush_Function::parseArgs( $input, true ), 2, 0 );
-    return CssCrush_Function::colorAdjust( $color, array( $h, 0, 0, 0 ) );
+    return CssCrush_Color::colorAdjust( $color, array( $h, 0, 0, 0 ) );
 }
 
 function csscrush_fn__s_adjust ( $input ) {
     list( $color, $s ) = array_pad( CssCrush_Function::parseArgs( $input, true ), 2, 0 );
-    return CssCrush_Function::colorAdjust( $color, array( 0, $s, 0, 0 ) );
+    return CssCrush_Color::colorAdjust( $color, array( 0, $s, 0, 0 ) );
 }
 
 function csscrush_fn__l_adjust ( $input ) {
     list( $color, $l ) = array_pad( CssCrush_Function::parseArgs( $input, true ), 2, 0 );
-    return CssCrush_Function::colorAdjust( $color, array( 0, 0, $l, 0 ) );
+    return CssCrush_Color::colorAdjust( $color, array( 0, 0, $l, 0 ) );
 }
 
 function csscrush_fn__a_adjust ( $input ) {
     list( $color, $a ) = array_pad( CssCrush_Function::parseArgs( $input, true ), 2, 0 );
-    return CssCrush_Function::colorAdjust( $color, array( 0, 0, 0, $a ) );
+    return CssCrush_Color::colorAdjust( $color, array( 0, 0, 0, $a ) );
 }
 
-CssCrush_Function::init();
+function csscrush_fn__this ( $input, $extra ) {
+
+    $args = CssCrush_Function::parseArgsSimple( $input );
+    $rule = $extra[ 'rule' ];
+
+    if ( isset( $rule->thisData[ $args[0] ] ) ) {
+
+        return $rule->thisData[ $args[0] ];
+    }
+    // Fallback value.
+    elseif ( isset( $args[1] ) ) {
+
+        return $args[1];
+    }
+    else {
+
+        return '';
+    }
+}
+
+function csscrush_fn__query ( $input, $extra ) {
+
+    $result = '';
+    $args = CssCrush_Function::parseArgs( $input );
+
+    if ( count( $args ) < 1 ) {
+        return $result;
+    }
+
+    $call_property = $extra[ 'property' ];
+    $references =& CssCrush::$process->references;
+
+    // Resolve arguments.
+    $name = array_shift( $args );
+    $property = $call_property;
+    if ( isset( $args[0] ) ) {
+        if ( $args[0] !== 'default' ) {
+            $property = array_shift( $args );
+        }
+        else {
+            array_shift( $args );
+        }
+    }
+    $default = isset( $args[0] ) ? $args[0] : null;
+
+    if ( ! preg_match( CssCrush_Regex::$patt->ident, $name ) ) {
+        $name = CssCrush_Selector::makeReadableSelector( $name );
+    }
+
+    // If a rule reference is found, query its data.
+    if ( isset( $references[ $name ] ) ) {
+        $query_rule = $references[ $name ];
+        $query_rule->processDeclarations();
+        if ( isset( $query_rule->queryData[ $property ] ) ) {
+            $result = $query_rule->queryData[ $property ];
+        }
+    }
+
+    if ( $result === '' && ! is_null( $default ) ) {
+        $result = $default;
+    }
+    return $result;
+}

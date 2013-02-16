@@ -22,11 +22,11 @@ class CssCrush_Rule implements IteratorAggregate
     // Arugments passed via @extend.
     public $extendArgs = array();
 
-    // A table for storing the declarations as data for this() referencing.
-    public $localData = array();
+    // Declarations hash table for inter-rule this() referencing.
+    public $thisData = array();
 
-    // A table for storing the declarations as data for external query() referencing.
-    public $data = array();
+    // Declarations hash table for external query() referencing.
+    public $queryData = array();
 
     public function __construct ( $selector_string = null, $declarations_string )
     {
@@ -71,16 +71,17 @@ class CssCrush_Rule implements IteratorAggregate
 
                     $abstract_name = $m[1];
 
-                    // Link the rule to the abstract name and skip forward to declaration parsing
-                    $process->abstracts[ $abstract_name ] = $this;
+                    // Link the rule to the abstract name and skip forward to declaration parsing.
+                    $process->references[ $abstract_name ] = $this;
                     break;
                 }
 
                 $this->addSelector( new CssCrush_Selector( $selector ) );
 
-                // Store selector relationships
-                //  - This happens twice; on first pass for mixins, second pass is for inheritance
-                $this->indexSelectors();
+                // Link selectors as references.
+                foreach ( $this->selectors as $selector ) {
+                    $process->references[ $selector->readableValue ] = $this;
+                }
             }
         }
 
@@ -96,15 +97,24 @@ class CssCrush_Rule implements IteratorAggregate
             // Strip comments around the property
             $declaration = CssCrush_Util::stripCommentTokens( $declaration );
 
-            // Accept several different syntaxes for mixin and extends.
-            if ( preg_match( $regex->mixinExtend, $declaration, $m ) ) {
+            // Rule directives. Accept several different syntaxes for mixin and extends.
+            if ( preg_match( $regex->ruleDirective, $declaration, $m ) ) {
 
-                $prop = isset( $m[2] ) ? 'extends' : 'mixin';
+                if ( ! empty( $m[1] ) ) {
+                    $prop = 'mixin';
+                }
+                elseif ( ! empty( $m[2] ) ) {
+                    $prop = 'extends';
+                }
+                else {
+                    $prop = 'name';
+                }
                 $value = trim( substr( $declaration, strlen( $m[0] ) ) );
             }
             elseif ( ( $colonPos = strpos( $declaration, ':' ) ) !== false ) {
 
                 $prop = trim( substr( $declaration, 0, $colonPos ) );
+
                 // Extract the value part of the declaration.
                 $value = trim( substr( $declaration, $colonPos + 1 ) );
             }
@@ -114,57 +124,55 @@ class CssCrush_Rule implements IteratorAggregate
             }
 
             // Reject empty values.
-            if ( empty( $prop ) || ( empty( $value ) && $value != '0' ) ) {
+            if ( empty( $prop ) || ! strlen( $value ) ) {
                 continue;
             }
 
             if ( $prop === 'mixin' ) {
 
-                // Mixins are a special case
+                // Mixins are a special case.
                 if ( $mixin_declarations = CssCrush_Mixin::parseValue( $value ) ) {
 
-                    // Add mixin declarations to the stack
+                    // Add mixin declarations to the stack.
                     while ( $mixin_declaration = array_shift( $mixin_declarations ) ) {
 
-                        $this->declarationCheckin(
-                            $mixin_declaration['property'], $mixin_declaration['value'], $pairs );
+                        $pairs[] = array( $mixin_declaration['property'], $mixin_declaration['value'] );
                     }
                 }
             }
             elseif ( $prop === 'extends' ) {
 
-                // Extends are also a special case
+                // Extends are also a special case.
                 $this->setExtendSelectors( $value );
+            }
+            elseif ( $prop === 'name' ) {
+
+                // Link the rule as a reference.
+                $process->references[ $value ] = $this;
             }
             else {
 
-                // Lowercase property values.
-                $prop = strtolower( $prop );
-                $this->declarationCheckin( $prop, $value, $pairs );
+                $pairs[] = array( $prop, $value );
             }
         }
 
-        // Bind declaration objects on the rule
+        // Bind declaration objects on the rule.
         foreach ( $pairs as $index => &$pair ) {
 
             list( $prop, $value ) = $pair;
 
-            // Resolve self references, aka this()
-            CssCrush_Function::executeOnString( $value,
-                    CssCrush_Regex::$patt->thisFunction, array(
-                        'this'  => array( $this, 'cssThisFunction' ),
-                    ), $prop );
-
             if ( trim( $value ) !== '' ) {
 
-                // Add declaration and update the data table
-                $this->data[ $prop ] = $value;
+                // Only store to $this->thisData if the value does not itself make a
+                // this() call to avoid circular references.
+                if ( ! preg_match( CssCrush_Regex::$patt->thisFunction, $value ) ) {
+                    $this->thisData[ strtolower( $prop ) ] = $value;
+                }
+
+                // Add declaration.
                 $this->addDeclaration( $prop, $value, $index );
             }
         }
-
-        // localData no longer required
-        $this->localData = null;
     }
 
     public function __toString ()
@@ -197,67 +205,25 @@ class CssCrush_Rule implements IteratorAggregate
         }
     }
 
-    public function declarationCheckin ( $prop, $value, &$pairs )
+    public $declarationsProcessed = false;
+    public function processDeclarations ()
     {
-        // First resolve query() calls that reference earlier rules.
-        if ( preg_match( CssCrush_Regex::$patt->queryFunction, $value ) ) {
-
-            CssCrush_Function::executeOnString( $value,
-                CssCrush_Regex::$patt->queryFunction, array(
-                    'query' => array( $this, 'cssQueryFunction' ),
-                ), $prop );
+        if ( $this->declarationsProcessed ) {
+            return;
         }
 
-        // Now all referencing is done convert *most* values to lowercase.
-        // Internet Explorer JavaScript expressions need case preserved.
-        if ( strpos( $prop, 'expression' ) !== false ) {
-            $value = strtolower( $value );
-        }
+        foreach ( $this->declarations as $index => $declaration ) {
 
-        if ( strpos( $prop, 'data-' ) === 0 ) {
+            // Execute functions, store as data etc.
+            $declaration->process( $this );
 
-            // If it's with data prefix, we don't want to print it
-            // Just remove the prefix
-            $prop = substr( $prop, strlen( 'data-' ) );
-
-            // On first pass we want to store data properties on $this->data,
-            // as well as on local
-            $this->data[ $prop ] = $value;
-        }
-        else {
-
-            // Add to the stack
-            $pairs[] = array( $prop, $value );
-        }
-
-        // Set on $this->localData
-        $this->localData[ $prop ] = $value;
-
-        // Unset on data tables if the value has a this() call:
-        //   - Restriction to avoid circular references
-        if ( preg_match( CssCrush_Regex::$patt->thisFunction, $value ) ) {
-
-            unset( $this->localData[ $prop ], $this->data[ $prop ] );
-        }
-    }
-
-    public function updatePropertyIndex ()
-    {
-        // Create a new table of properties.
-        $new_properties_table = array();
-
-        foreach ( $this as $declaration ) {
-
-            $name = $declaration->property;
-
-            if ( isset( $new_properties_table[ $name ] ) ) {
-                $new_properties_table[ $name ]++;
-            }
-            else {
-                $new_properties_table[ $name ] = 1;
+            // Drop declaration if value is now empty.
+            if ( ! empty( $declaration->inValid ) ) {
+                unset( $this->declarations[ $index ] );
             }
         }
-        $this->properties = $new_properties_table;
+
+        $this->declarationsProcessed = true;
     }
 
 
@@ -266,9 +232,6 @@ class CssCrush_Rule implements IteratorAggregate
 
     public function setExtendSelectors ( $raw_value )
     {
-        $abstracts =& CssCrush::$process->abstracts;
-        $selectorRelationships =& CssCrush::$process->selectorRelationships;
-
         // Reset if called earlier, last call wins by intention.
         $this->extendArgs = array();
 
@@ -283,25 +246,17 @@ class CssCrush_Rule implements IteratorAggregate
             return;
         }
 
-        $abstracts =& CssCrush::$process->abstracts;
-        $selectorRelationships =& CssCrush::$process->selectorRelationships;
+        $references =& CssCrush::$process->references;
 
         // Filter the extendArgs list to usable references
         foreach ( $this->extendArgs as $key => $extend_arg ) {
 
             $name = $extend_arg->name;
 
-            if ( isset( $abstracts[ $name ] ) ) {
+            if ( isset( $references[ $name ] ) ) {
 
-                $parent_rule = $abstracts[ $name ];
+                $parent_rule = $references[ $name ];
                 $extend_arg->pointer = $parent_rule;
-
-            }
-            elseif ( isset( $selectorRelationships[ $name ] ) ) {
-
-                $parent_rule = $selectorRelationships[ $name ];
-                $extend_arg->pointer = $parent_rule;
-
             }
             else {
 
@@ -341,87 +296,6 @@ class CssCrush_Rule implements IteratorAggregate
 
             $ancestor->addSelectors( $extend_selectors );
         }
-    }
-
-
-    #############################
-    #  Referencing.
-
-    public function cssThisFunction ( $input, $fn_name )
-    {
-        $args = CssCrush_Function::parseArgsSimple( $input );
-
-        if ( isset( $this->localData[ $args[0] ] ) ) {
-
-            return $this->localData[ $args[0] ];
-        }
-        elseif ( isset( $args[1] ) ) {
-
-            return $args[1];
-        }
-        else {
-
-            return '';
-        }
-    }
-
-    public function cssQueryFunction ( $input, $fn_name, $call_property )
-    {
-        $result = '';
-        $args = CssCrush_Function::parseArgs( $input );
-
-        if ( count( $args ) < 1 ) {
-            return $result;
-        }
-
-        $abstracts =& CssCrush::$process->abstracts;
-        $mixins =& CssCrush::$process->mixins;
-        $selectorRelationships =& CssCrush::$process->selectorRelationships;
-
-        // Resolve arguments
-        $name = array_shift( $args );
-        $property = $call_property;
-        if ( isset( $args[0] ) ) {
-            if ( $args[0] !== 'default' ) {
-                $property = array_shift( $args );
-            }
-            else {
-                array_shift( $args );
-            }
-        }
-        $default = isset( $args[0] ) ? $args[0] : null;
-
-        // Try to match a abstract rule first
-        if ( preg_match( CssCrush_Regex::$patt->ident, $name ) ) {
-
-            // Search order: abstracts, mixins, rules
-            if ( isset( $abstracts[ $name ]->data[ $property ] ) ) {
-
-                $result = $abstracts[ $name ]->data[ $property ];
-            }
-            elseif ( isset( $mixins[ $name ]->data[ $property ] ) ) {
-
-                $result = $mixins[ $name ]->data[ $property ];
-            }
-            elseif ( isset( $selectorRelationships[ $name ]->data[ $property ] ) ) {
-
-                $result = $selectorRelationships[ $name ]->data[ $property ];
-            }
-        }
-        else {
-
-            // Look for a rule match
-            $name = CssCrush_Selector::makeReadableSelector( $name );
-            if ( isset( $selectorRelationships[ $name ]->data[ $property ] ) ) {
-
-                $result = $selectorRelationships[ $name ]->data[ $property ];
-            }
-        }
-
-        if ( $result === '' && ! is_null( $default ) ) {
-            $result = $default;
-        }
-        return $result;
     }
 
 
@@ -472,9 +346,6 @@ class CssCrush_Rule implements IteratorAggregate
                     // Not creating a named rule association with this expanded selector
                     $new_set[] = new CssCrush_Selector( $row . $selector->value );
                 }
-
-                // Store the unexpanded selector to selectorRelationships
-                CssCrush::$process->selectorRelationships[ $readableValue ] = $this;
             }
             else {
 
@@ -485,13 +356,6 @@ class CssCrush_Rule implements IteratorAggregate
         } // foreach
 
         $this->selectors = $new_set;
-    }
-
-    public function indexSelectors ()
-    {
-        foreach ( $this->selectors as $selector ) {
-            CssCrush::$process->selectorRelationships[ $selector->readableValue ] = $this;
-        }
     }
 
     public function addSelector ( $selector )
@@ -689,12 +553,7 @@ class CssCrush_Rule implements IteratorAggregate
 
 
     #############################
-    #  Rule API.
-
-    public function propertyCount ( $prop )
-    {
-        return isset( $this->properties[ $prop ] ) ? $this->properties[ $prop ] : 0;
-    }
+    #  Property indexing.
 
     public function indexProperty ( $prop )
     {
@@ -706,14 +565,42 @@ class CssCrush_Rule implements IteratorAggregate
         }
     }
 
+    public function updatePropertyIndex ()
+    {
+        // Create a new table of properties.
+        $new_properties_table = array();
+
+        foreach ( $this as $declaration ) {
+
+            $name = $declaration->property;
+
+            if ( isset( $new_properties_table[ $name ] ) ) {
+                $new_properties_table[ $name ]++;
+            }
+            else {
+                $new_properties_table[ $name ] = 1;
+            }
+        }
+        $this->properties = $new_properties_table;
+    }
+
+
+    #############################
+    #  Rule API.
+
+    public function propertyCount ( $prop )
+    {
+        return isset( $this->properties[ $prop ] ) ? $this->properties[ $prop ] : 0;
+    }
+
     public function addDeclaration ( $prop, $value, $contextIndex = 0 )
     {
         // Create declaration, add to the stack if it's valid
         $declaration = new CssCrush_Declaration( $prop, $value, $contextIndex );
 
-        if ( $declaration->isValid ) {
+        if ( empty( $declaration->inValid ) ) {
 
-            // Manually increment the property name since we're directly updating the _declarations list
+            // Increment the property name index.
             $this->indexProperty( $prop );
             $this->declarations[] = $declaration;
             return $declaration;

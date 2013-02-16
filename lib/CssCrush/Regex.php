@@ -73,12 +73,11 @@ class CssCrush_Regex
         $patt->varFunction = CssCrush_Regex::create( '\$\(\s*(<ident>)\s*\)', 'iS' );
         $patt->varFunctionStart = '!(\$)\(!';
         $patt->argFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'arg' ) );
-        $patt->queryFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'query' ) );
         $patt->thisFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'this' ) );
 
         // Misc.
         $patt->vendorPrefix  = '!^-([a-z]+)-([a-z-]+)!iS';
-        $patt->mixinExtend   = '!^(?:(@include|mixin)|(@?extends?))[\s\:]+!iS';
+        $patt->ruleDirective = '!^(?:(@include|mixin)|(@?extends?)|(@name))[\s\:]+!iS';
         $patt->argListSplit  = '!\s*[,\s]\s*!S';
         $patt->mathBlacklist = '![^\.0-9\*\/\+\-\(\)]!S';
         $patt->charset       = '!@charset\s+(\?s\d+\?)\s*;!iS';

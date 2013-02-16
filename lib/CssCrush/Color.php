@@ -274,6 +274,14 @@ class CssCrush_Color
         return $rgba;
     }
 
+    static public function colorAdjust ( $raw_color, array $adjustments )
+    {
+        $hsla = new CssCrush_Color( $raw_color, true );
+
+        // On failure to parse return input.
+        return $hsla->isValid ? $hsla->adjust( $adjustments )->__toString() : $raw_color;
+    }
+
 
     #############################
     #  Instances.

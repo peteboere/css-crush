@@ -14,7 +14,6 @@ class CssCrush_Declaration
     public $index;
     public $skip;
     public $important;
-    public $isValid = true;
 
     public function __construct ( $prop, $value, $contextIndex = 0 )
     {
@@ -26,7 +25,7 @@ class CssCrush_Declaration
 
         // Check the input.
         if ( $prop === '' || $value === '' || $value === null ) {
-            $this->isValid = false;
+            $this->inValid = true;
 
             return;
         }
@@ -53,33 +52,16 @@ class CssCrush_Declaration
             $important = true;
         }
 
-        // Ignore declarations with null css values.
+        // Reject declarations with empty CSS values.
         if ( $value === false || $value === '' ) {
-            $this->isValid = false;
+            $this->inValid = true;
 
             return;
-        }
-
-        // Apply custom functions.
-        if ( ! $skip ) {
-            CssCrush_Function::executeOnString( $value );
-        }
-
-        // Capture all remaining paren pairs.
-        CssCrush::$process->captureParens( $value );
-
-        // Create an index of all regular functions in the value.
-        $functions = array();
-        if ( preg_match_all( $regex->function, $value, $m ) ) {
-            foreach ( $m[2] as $index => $fn_name ) {
-                $functions[ strtolower( $fn_name ) ] = true;
-            }
         }
 
         $this->property          = $prop;
         $this->canonicalProperty = $canonical_property;
         $this->vendor            = $vendor;
-        $this->functions         = $functions;
         $this->index             = $contextIndex;
         $this->value             = $value;
         $this->skip              = $skip;
@@ -97,6 +79,69 @@ class CssCrush_Declaration
         $important = $this->important ? "$whitespace!important" : '';
 
         return "$this->property:$whitespace$this->value$important";
+    }
+
+    /*
+        Execute functions on value.
+        Capture parens.
+        Index functions.
+    */
+    public function process ( $parent_rule )
+    {
+        // Apply custom functions.
+        if ( ! $this->skip ) {
+
+            // this() function needs to be called exclusively because
+            // it's self referencing.
+            CssCrush_Function::executeOnString(
+                $this->value,
+                CssCrush_Regex::$patt->thisFunction,
+                array(
+                    'this' => 'csscrush_fn__this',
+                ),
+                array(
+                    'rule' => $parent_rule,
+                ));
+
+            CssCrush_Function::executeOnString( 
+                $this->value,
+                null,
+                null,
+                array(
+                    'rule' => $parent_rule,
+                    'property' => $this->property,
+                ));
+        }
+
+        // Trim whitespace that may have been introduced by functions.
+        $this->value = trim( $this->value );
+
+        // After functions have applied value may be empty.
+        if ( $this->value === '' ) {
+
+            $this->inValid = true;
+            return;
+        }
+
+        // Store raw value as data on the parent rule.
+        $parent_rule->queryData[ $this->property ] = $this->value;
+
+        // Capture top-level paren pairs.
+        CssCrush::$process->captureParens( $this->value );
+
+        $this->indexFunctions();
+    }
+
+    public function indexFunctions ()
+    {
+        // Create an index of all regular functions in the value.
+        $functions = array();
+        if ( preg_match_all( CssCrush_Regex::$patt->function, $this->value, $m ) ) {
+            foreach ( $m[2] as $index => $fn_name ) {
+                $functions[ strtolower( $fn_name ) ] = true;
+            }
+        }
+        $this->functions = $functions;
     }
 
     public function getFullValue ()

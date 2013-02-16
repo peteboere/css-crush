@@ -1,6 +1,11 @@
 1.10 (?)
 ----
 * Added `-i` alias to `--file` option for the command line utility.
+* Added `@name` in-rule directive for more flexible and robust rule referencing.
+* Rule references previously looked for the closest previous match. This behaviour has been changed
+  to a 'last wins' match to be more consistent with the way CSS works. This may affect users of `@extend`
+  or the `query()` function.
+* Removed data-* properties.
 
 1.9.1 (31th January 2013)
 -----
