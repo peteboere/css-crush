@@ -535,18 +535,8 @@ class CssCrush_Process
         // Strip comment markers.
         $block = trim( CssCrush_Util::stripCommentTokens( $m[2] ) );
 
-        $pairs = preg_split( '!\s*;\s*!', $block, null, PREG_SPLIT_NO_EMPTY );
-
-        // Loop through the pairs.
-        foreach ( $pairs as $var ) {
-            $colon = strpos( $var, ':' );
-            if ( $colon === -1 ) {
-                continue;
-            }
-            $name = trim( substr( $var, 0, $colon ) );
-            $value = trim( substr( $var, $colon + 1 ) );
-            CssCrush::$process->variables[ trim( $name ) ] = $value;
-        }
+        CssCrush::$process->variables =
+            array_merge( CssCrush::$process->variables, CssCrush_Util::parseBlock( $block, true ) );
     }
 
     static protected function cb_placeVariables ( $m )

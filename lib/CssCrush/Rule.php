@@ -86,16 +86,14 @@ class CssCrush_Rule implements IteratorAggregate
         }
 
         // Parse the declarations chunk.
-        $declarations = preg_split( '!\s*;\s*!', trim( $declarations_string ), null, PREG_SPLIT_NO_EMPTY );
+        $declarations_string = trim( CssCrush_Util::stripCommentTokens( $declarations_string ) );
+        $declarations = preg_split( '!\s*;\s*!', $declarations_string, null, PREG_SPLIT_NO_EMPTY );
 
         // First create a simple array of all properties and value pairs in raw state
         $pairs = array();
 
         // Split declarations in to property/value pairs
         foreach ( $declarations as $declaration ) {
-
-            // Strip comments around the property
-            $declaration = CssCrush_Util::stripCommentTokens( $declaration );
 
             // Rule directives. Accept several different syntaxes for mixin and extends.
             if ( preg_match( $regex->ruleDirective, $declaration, $m ) ) {

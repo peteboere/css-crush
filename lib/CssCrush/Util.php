@@ -123,6 +123,33 @@ class CssCrush_Util
         return $list;
     }
 
+    static public function parseBlock ( $str, $keyed = false, $strip_comment_tokens = true )
+    {
+        if ( $strip_comment_tokens ) {
+            $str = CssCrush_Util::stripCommentTokens( $str );
+        }
+
+        $declarations = preg_split( '~\s*;\s*~', $str, null, PREG_SPLIT_NO_EMPTY );
+        $out = array();
+
+        foreach ( $declarations as $declaration ) {
+            $colon_pos = strpos( $declaration, ':' );
+            if ( $colon_pos === -1 ) {
+                continue;
+            }
+            $property = trim( substr( $declaration, 0, $colon_pos ) );
+            $value = trim( substr( $declaration, $colon_pos + 1 ) );
+
+            if ( $keyed ) {
+                $out[ $property ] = $value;
+            }
+            else {
+                $out[] = array( $property, $value );
+            }
+        }
+        return $out;
+    }
+
     static public function getLinkBetweenDirs ( $dir1, $dir2 )
     {
         // Normalise the paths.

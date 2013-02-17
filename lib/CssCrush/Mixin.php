@@ -12,30 +12,14 @@ class CssCrush_Mixin
 
     public function __construct ( $block )
     {
-        // Strip comment markers.
-        $block = CssCrush_Util::stripCommentTokens( $block );
-
         // Prepare the arguments object.
         $this->arguments = new CssCrush_ArgList( $block );
 
-        // Re-assign with the parsed arguments string.
-        $block = $this->arguments->string;
+        // Parse into mixin template.
+        foreach ( CssCrush_Util::parseBlock( $this->arguments->string ) as $pair ) {
 
-        // Split the block around semi-colons.
-        $declarations = preg_split( '!\s*;\s*!', trim( $block ), null, PREG_SPLIT_NO_EMPTY );
-
-        foreach ( $declarations as $raw_declaration ) {
-
-            $colon = strpos( $raw_declaration, ':' );
-            if ( $colon === -1 ) {
-                continue;
-            }
-
-            // Store template declarations as arrays as they are copied by value not reference.
-            $declaration = array();
-
-            $property = strtolower( trim( substr( $raw_declaration, 0, $colon ) ) );
-            $value = trim( substr( $raw_declaration, $colon + 1 ) );
+            list( $property, $value ) = $pair;
+            $property = strtolower( $property );
 
             if ( $property === 'mixin' ) {
 
@@ -47,8 +31,9 @@ class CssCrush_Mixin
                         $this->declarationsTemplate, $mixin_declarations );
                 }
             }
-            elseif ( ! empty( $value ) ) {
+            elseif ( $value !== '' ) {
 
+                // Store template declarations as arrays as they are copied by value not reference.
                 $this->declarationsTemplate[] = array(
                     'property' => $property,
                     'value' => $value,
