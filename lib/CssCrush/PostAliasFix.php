@@ -7,20 +7,9 @@
 class CssCrush_PostAliasFix
 {
     // Currently only post fixing aliased functions.
-    static public $functions = array();
-
-    static public function init ()
-    {
-        // Register fix callbacks.
-        CssCrush_PostAliasFix::add( 'function', 'linear-gradient',
-            'csscrush__post_alias_fix_lineargradients' );
-        CssCrush_PostAliasFix::add( 'function', 'linear-repeating-gradient',
-            'csscrush__post_alias_fix_lineargradients' );
-        CssCrush_PostAliasFix::add( 'function', 'radial-gradient',
-            'csscrush__post_alias_fix_radialgradients' );
-        CssCrush_PostAliasFix::add( 'function', 'radial-repeating-gradient',
-            'csscrush__post_alias_fix_radialgradients' );
-    }
+    static public $functions = array(
+        ':gradients' => 'csscrush__post_alias_fix_gradients',
+    );
 
     static public function add ( $alias_type, $key, $callback )
     {
@@ -39,14 +28,20 @@ class CssCrush_PostAliasFix
     }
 }
 
-CssCrush_PostAliasFix::init();
+/**
+ * Post alias fix callback for all gradients.
+ */
+function csscrush__post_alias_fix_gradients ( $declaration_copies ) {
 
+    csscrush__post_alias_fix_lineargradients( $declaration_copies );
+    csscrush__post_alias_fix_radialgradients( $declaration_copies );
+}
 
 /**
  * Convert the new angle syntax (keyword and degree) on -x-linear-gradient() functions
  * to legacy equivalents.
  */
-function csscrush__post_alias_fix_lineargradients ( $declaration_copies, $fn_name ) {
+function csscrush__post_alias_fix_lineargradients ( $declaration_copies ) {
 
     static $angles_new, $angles_old;
     if ( ! $angles_new ) {
@@ -86,7 +81,7 @@ function csscrush__post_alias_fix_lineargradients ( $declaration_copies, $fn_nam
     // Replace the new syntax with the legacy syntax.
     $original_parens = array();
     $replacement_parens = array();
-    $fn_patt = '~(?<![\w-])-[a-z]+-' . $fn_name . '(\?p\d+\?)~i';
+    $fn_patt = '~(?<![\w-])-[a-z]+-(?:(?:repeating-)?linear-gradient)(\?p\d+\?)~iS';
 
     foreach ( CssCrush_Regex::matchAll( $fn_patt, $declaration_copies[0]->value ) as $m ) {
 
@@ -123,11 +118,11 @@ function csscrush__post_alias_fix_lineargradients ( $declaration_copies, $fn_nam
 /**
  * Remove the 'at' keyword from -x-radial-gradient() for legacy implementations.
  */
-function csscrush__post_alias_fix_radialgradients ( $declaration_copies, $fn_name ) {
+function csscrush__post_alias_fix_radialgradients ( $declaration_copies ) {
 
     // Create new paren tokens based on the first prefixed declaration.
     // Replace the new syntax with the legacy syntax.
-    $patt = '~(?<![\w-])-[a-z]+-' . $fn_name . '(\?p\d+\?)~i';
+    $patt = '~(?<![\w-])-[a-z]+-(?:(?:repeating-)?radial-gradient)(\?p\d+\?)~iS';
     $original_parens = array();
     $replacement_parens = array();
     foreach ( CssCrush_Regex::matchAll( $patt, $declaration_copies[0]->value ) as $m ) {

@@ -373,45 +373,76 @@ class CssCrush_Process
         $vendor = '-' . str_replace( '-', '', $vendor ) . '-';
 
         // Loop the aliases array, filter down to the target vendor.
-        foreach ( $this->aliases as $group_name => $group_array ) {
+        foreach ( $this->aliases as $section => $group_array ) {
 
-            // Declarations aliases are special.
-            if ( 'declarations' === $group_name ) {
+            // Declarations aliases.
+            if ( $section === 'declarations' ) {
+
                 foreach ( $group_array as $property => $values ) {
-                    $result = array();
                     foreach ( $values as $value => $prefix_values ) {
-                        foreach ( $prefix_values as $declaration ) {
-                            list( $prop, $value ) = $declaration;
-                            if (
-                                strpos( $prefix, $prop ) === 0 ||
-                                strpos( $prefix, $value ) === 0
+                        foreach ( $prefix_values as $index => $declaration ) {
+
+                            list( $prop, $val ) = $declaration;
+                            if ( !(
+                                strpos( $prop, $vendor ) === 0 ||
+                                strpos( $val, $vendor ) === 0
+                                )
                             ) {
-                                $result[] = $prefix;
+                                // Unset uneeded aliases.
+                                unset( $this->aliases[$section][$property][$value][$index] );
+
+                                if ( empty( $this->aliases[$section][$property][$value] ) ) {
+                                    unset( $this->aliases[$section][$property][$value] );
+                                }
+                                if ( empty( $this->aliases[$section][$property] ) ) {
+                                    unset( $this->aliases[$section][$property] );
+                                }
                             }
                         }
                     }
-                    $this->aliases[ 'declarations' ][ $property ][ $value ] = $result;
                 }
-                continue;
             }
 
-            foreach ( $group_array as $alias_keyword => $prefix_array ) {
+            // Function group aliases.
+            elseif ( $section === 'function_groups' ) {
 
-                $result = array();
-                foreach ( $prefix_array as $prefix ) {
-                    if ( strpos( $prefix, $vendor ) === 0 ) {
-                        $result[] = $prefix;
+                foreach ( $group_array as $func_group => $vendors ) {
+                    foreach ( $vendors as $fn_vendor => $replacements ) {
+
+                        if ( "-$fn_vendor-" !== $vendor ) {
+                            unset( $this->aliases[ 'function_groups' ][ $func_group ][ $fn_vendor ] );
+                        }
                     }
                 }
-                // Prune the whole alias keyword if there is no result.
-                if ( empty( $result ) ) {
-                    unset( $this->aliases[ $group_name ][ $alias_keyword ] );
-                }
-                else {
-                    $this->aliases[ $group_name ][ $alias_keyword ] = $result;
+            }
+
+            // Everything else.
+            else {
+                foreach ( $group_array as $alias_keyword => $prefix_array ) {
+
+                    // Skip over pointers to function groups.
+                    if ( $prefix_array[0] === ':' ) {
+                        continue;
+                    }
+
+                    $result = array();
+
+                    foreach ( $prefix_array as $prefix ) {
+                        if ( strpos( $prefix, $vendor ) === 0 ) {
+                            $result[] = $prefix;
+                        }
+                    }
+                    // Prune the whole alias keyword if there is no result.
+                    if ( empty( $result ) ) {
+                        unset( $this->aliases[ $section ][ $alias_keyword ] );
+                    }
+                    else {
+                        $this->aliases[ $section ][ $alias_keyword ] = $result;
+                    }
                 }
             }
         }
+        csscrush::log($this->aliases);
     }
 
 

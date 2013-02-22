@@ -63,16 +63,21 @@ class CssCrush_Util
 
     static public function normalizeWhiteSpace ( $str )
     {
-        $replacements = array(
-            // Convert all whitespace sequences to a single space.
-            '!\s+!S' => ' ',
-            // Trim bracket whitespace where it's safe to do it.
-            '!([\[(]) | ([\])])| ?([{}]) ?!S' => '${1}${2}${3}',
-            // Trim whitespace around delimiters and special characters.
-            '! ?([;,]) ?!S' => '$1',
-        );
-        return preg_replace(
-            array_keys( $replacements ), array_values( $replacements ), $str );
+        static $find, $replace;
+        if ( ! $find ) {
+            $replacements = array(
+                // Convert all whitespace sequences to a single space.
+                '!\s+!S' => ' ',
+                // Trim bracket whitespace where it's safe to do it.
+                '!([\[(]) | ([\])])| ?([{}]) ?!S' => '${1}${2}${3}',
+                // Trim whitespace around delimiters and special characters.
+                '! ?([;,]) ?!S' => '$1',
+            );
+            $find = array_keys( $replacements );
+            $replace = array_values( $replacements );
+        }
+
+        return preg_replace( $find, $replace, $str );
     }
 
     static public function splitDelimList ( $str, $delim = ',', $trim = true )

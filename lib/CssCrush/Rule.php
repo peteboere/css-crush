@@ -427,6 +427,7 @@ class CssCrush_Rule implements IteratorAggregate
     public function addFunctionAliases ()
     {
         $function_aliases =& CssCrush::$process->aliases[ 'functions' ];
+        $function_alias_groups =& CssCrush::$process->aliases[ 'function_groups' ];
 
         // The new modified set of declarations.
         $new_set = array();
@@ -448,37 +449,83 @@ class CssCrush_Rule implements IteratorAggregate
                 continue;
             }
 
-            // Loop the aliasable functions.
+            // Keep record of which groups have been applied.
+            $processed_groups = array();
+
             foreach ( array_keys( $intersect ) as $fn_name ) {
 
-                // For each aliased function dupe the declaration.
-                // This pretty much limits the aliasing to one function per declaration.
+                // Store for all the duplicated declarations.
                 $prefixed_copies = array();
-                foreach ( $function_aliases[ $fn_name ] as $fn_alias ) {
 
-                    // If the declaration is vendor specific only create aliases for the same vendor.
-                    if ( $declaration->vendor ) {
-                        preg_match( CssCrush_Regex::$patt->vendorPrefix, $fn_alias, $m );
-                        if ( $m[1] !== $declaration->vendor ) {
-                            continue;
-                        }
+                // Grouped function aliases.
+                if ( $function_aliases[ $fn_name ][0] === ':' ) {
+
+                    $group_id = $function_aliases[ $fn_name ];
+
+                    // If this group has been applied we can skip over.
+                    if ( isset( $processed_groups[ $group_id ] ) ) {
+                        continue;
                     }
 
-                    $copy = clone $declaration;
+                    // Mark group as applied.
+                    $processed_groups[ $group_id ] = true;
 
-                    // Swap in the aliased function name.
-                    $copy->value = preg_replace(
-                        '~(?<![\w-])' . $fn_name . '(?=\?)~',
-                        $fn_alias,
-                        $copy->value
-                    );
-                    $prefixed_copies[] = $copy;
-                    $rule_updated = true;
+                    $groups =& $function_alias_groups[ $group_id ];
+
+                    foreach ( $groups as $group_key => $replacements ) {
+
+                        // If the declaration is vendor specific only create aliases for the same vendor.
+                        if ( $declaration->vendor && $group_key !== $declaration->vendor ) {
+                            continue;
+                        }
+
+                        $copy = clone $declaration;
+
+                        // Make swaps.
+                        $copy->value = preg_replace(
+                            $replacements['find'],
+                            $replacements['replace'],
+                            $copy->value
+                        );
+                        $prefixed_copies[] = $copy;
+                        $rule_updated = true;
+                    }
+
+                    // Post fixes.
+                    if ( isset( CssCrush_PostAliasFix::$functions[ $group_id ] ) ) {
+                        call_user_func( CssCrush_PostAliasFix::$functions[ $group_id ], $prefixed_copies, $group_id );
+                    }
                 }
 
-                // Aliased function may require some additional fiddling.
-                if ( isset( CssCrush_PostAliasFix::$functions[ $fn_name ] ) ) {
-                    call_user_func( CssCrush_PostAliasFix::$functions[ $fn_name ], $prefixed_copies, $fn_name );
+                // Single function aliases.
+                else {
+
+                    foreach ( $function_aliases[ $fn_name ] as $fn_alias ) {
+
+                        // If the declaration is vendor specific only create aliases for the same vendor.
+                        if ( $declaration->vendor ) {
+                            preg_match( CssCrush_Regex::$patt->vendorPrefix, $fn_alias, $m );
+                            if ( $m[1] !== $declaration->vendor ) {
+                                continue;
+                            }
+                        }
+
+                        $copy = clone $declaration;
+
+                        // Make swaps.
+                        $copy->value = preg_replace(
+                            '~(?<![\w-])' . $fn_name . '(?=\?)~',
+                            $fn_alias,
+                            $copy->value
+                        );
+                        $prefixed_copies[] = $copy;
+                        $rule_updated = true;
+                    }
+
+                    // Post fixes.
+                    if ( isset( CssCrush_PostAliasFix::$functions[ $fn_name ] ) ) {
+                        call_user_func( CssCrush_PostAliasFix::$functions[ $fn_name ], $prefixed_copies, $fn_name );
+                    }
                 }
 
                 $new_set = array_merge( $new_set, $prefixed_copies );

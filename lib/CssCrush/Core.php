@@ -154,17 +154,42 @@ class CssCrush
             $result = @parse_ini_file( $aliases_file, true );
             if ( $result !== false ) {
 
-                // Declaration aliases require a little preprocessing.
-                if ( isset( $result[ 'declarations' ] ) ) {
-                    $store = array();
-                    foreach ( $result[ 'declarations' ] as $prop_val => $aliases ) {
-                        list( $prop, $value ) = array_map( 'trim', explode( ':', $prop_val ) );
-                        foreach ( $aliases as &$alias ) {
-                            $alias = explode( ':', $alias );
+                foreach ( $result as $section => $items ) {
+
+                    // Declaration aliases require a little preparation.
+                    if ( $section === 'declarations' ) {
+                        $store = array();
+                        foreach ( $items as $prop_val => $aliases ) {
+                            list( $prop, $value ) = array_map( 'trim', explode( ':', $prop_val ) );
+                            foreach ( $aliases as &$alias ) {
+                                $alias = explode( ':', $alias );
+                            }
+                            $store[ $prop ][ $value ] = $aliases;
                         }
-                        $store[ $prop ][ $value ] = $aliases;
+                        $result[ 'declarations' ] = $store;
                     }
-                    $result[ 'declarations' ] = $store;
+
+                    // Function groups.
+                    elseif ( strpos( $section, 'functions:' ) === 0 ) {
+                        $group = substr( $section, strlen( 'functions' ) );
+
+                        $vendor_grouped_aliases = array();
+                        foreach ( $items as $func_name => $aliases ) {
+
+                            // Assign group name to the aliasable function.
+                            $result[ 'functions' ][ $func_name ] = $group;
+
+                            foreach ( $aliases as $alias_func ) {
+                                // Only supporting vendor prefixed aliases, for now.
+                                if ( preg_match( CssCrush_Regex::$patt->vendorPrefix, $alias_func, $m ) ) {
+                                    // We'll cache the function matching regex here.
+                                    $vendor_grouped_aliases[$m[1]]['find'][] = '~(?<![\w-])' . $func_name . '(?=\?)~';
+                                    $vendor_grouped_aliases[$m[1]]['replace'][] = $alias_func;
+                                }
+                            }
+                        }
+                        $result[ 'function_groups' ][ $group ] = $vendor_grouped_aliases;
+                    }
                 }
 
                 self::$config->aliases = $result;
@@ -173,6 +198,7 @@ class CssCrush
                 self::$config->bareAliasGroups = array(
                     'properties' => array(),
                     'functions' => array(),
+                    'function_groups' => array(),
                     'declarations' => array(),
                     'at-rules' => array(),
                 );

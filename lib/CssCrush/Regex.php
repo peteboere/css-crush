@@ -122,4 +122,3 @@ class CssCrush_Regex
 }
 
 CssCrush_Regex::init();
-
