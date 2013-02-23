@@ -830,18 +830,20 @@ class CssCrush_Process
 
                     foreach ( $rule->selectors as $rule_selector ) {
 
-                        if ( ! $rule_selector->allowPrefix ) {
+                        $use_parent_symbol = strpos( $rule_selector->value, '&' ) !== false;
+
+                        // Skipping the prefix.
+                        if ( ! $rule_selector->allowPrefix && ! $use_parent_symbol ) {
 
                             $new_selector_list[ $rule_selector->readableValue ] = $rule_selector;
                         }
-                        elseif ( strpos( $rule_selector->value, '&' ) !== false ) {
 
-                            // Ampersand is the positional symbol for where the
-                            // prefix will be placed.
+                        // Positioning the prefix with parent symbol "&".
+                        elseif ( $use_parent_symbol ) {
 
-                            // Find and replace the ampersand (once).
+                            // Find and replace the ampersand (only once).
                             $new_value = preg_replace(
-                                    '!&!',
+                                    '~&~',
                                     $arg_selector,
                                     $rule_selector->value,
                                     1 );
@@ -849,6 +851,8 @@ class CssCrush_Process
                             // Not storing the selector as named.
                             $new_selector_list[] = new CssCrush_Selector( $new_value );
                         }
+
+                        // Prepending the prefix.
                         else {
 
                             // Not storing the selector as named.

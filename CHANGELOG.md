@@ -8,6 +8,7 @@
   to a 'last wins' match to be more consistent with the way CSS works. This may affect users of `@extend`
   or the `query()` function.
 * Removed data-* properties.
+* Nested rules that use the parent symbol (&) can now work in conjunction with the rooting symbol (^).
 
 1.9.1 (31th January 2013)
 -----

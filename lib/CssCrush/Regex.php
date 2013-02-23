@@ -49,7 +49,7 @@ class CssCrush_Regex
             \n(
                 [^@{}]+
                 |
-                (?: [^@{}]+ )? @(?: font-face|page|abstract ) (?!-)\b [^{]*
+                (?: [^@{}]+ )? @(?: font-face|abstract|page ) (?!-)\b [^{]*
             )
             # The declaration block.
             \{ ([^{}]*) \}

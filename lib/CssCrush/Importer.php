@@ -340,7 +340,7 @@ class CssCrush_Importer
                 if ( ! preg_match( $token_or_whitespace, $part ) ) {
 
                     // Match to a valid selector.
-                    if ( preg_match( '!^([^@]|@(?:page|abstract))!iS', $part ) ) {
+                    if ( preg_match( '!^([^@]|@(?:abstract|page))!iS', $part ) ) {
 
                         // Count line breaks between the start of stream and
                         // the matched selector to get the line number.
