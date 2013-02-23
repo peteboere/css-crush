@@ -9,6 +9,7 @@
   or the `query()` function.
 * Removed data-* properties.
 * Nested rules that use the parent symbol (&) can now work in conjunction with the rooting symbol (^).
+* Fixed issue with empty imported files not registering.
 
 1.9.1 (31th January 2013)
 -----

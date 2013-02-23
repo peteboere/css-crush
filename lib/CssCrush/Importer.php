@@ -92,7 +92,9 @@ class CssCrush_Importer
             }
 
             // Get the import contents, if unsuccessful just continue with the import line removed.
-            if ( ! ( $import->content = @file_get_contents( $import->path ) ) ) {
+            $import->content = @file_get_contents( $import->path );
+            if ( $import->content === false ) {
+
                 CssCrush::log( "Import file '{$import->url->value}' not found" );
                 $str = substr_replace( $str, '', $match_start, $match_len );
                 continue;
@@ -105,6 +107,7 @@ class CssCrush_Importer
 
             // If there are unmatched brackets inside the import, strip it.
             if ( ! self::prepareForStream( $import->content ) ) {
+
                 $str = substr_replace( $str, '', $match_start, $match_len );
                 continue;
             }
