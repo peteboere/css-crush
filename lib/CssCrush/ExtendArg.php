@@ -17,7 +17,7 @@ class CssCrush_ExtendArg
         if ( ! preg_match( CssCrush_Regex::$patt->ident, $this->name ) ) {
 
             // Not a regular name: Some kind of selector so normalize it for later comparison
-            $this->name = CssCrush_Selector::makeReadableSelector( $this->name );
+            $this->name = CssCrush_Selector::makeReadable( $this->name );
 
             // If applying the pseudo on output store
             if ( substr( $this->name, -1 ) === '!' ) {

@@ -218,65 +218,71 @@ function csscrush_fn__a_adjust ( $input ) {
     return CssCrush_Color::colorAdjust( $color, array( 0, 0, 0, $a ) );
 }
 
-function csscrush_fn__this ( $input, $extra ) {
+function csscrush_fn__this ($input, $extra) {
 
     $args = CssCrush_Function::parseArgsSimple( $input );
-    $rule = $extra[ 'rule' ];
+    $property = $args[0];
+    $rule = $extra['rule'];
 
-    if ( isset( $rule->thisData[ $args[0] ] ) ) {
+    $rule->expandDataSet('selfData', $property);
 
-        return $rule->thisData[ $args[0] ];
+    if (isset($rule->selfData[$property])) {
+
+        return $rule->selfData[$property];
     }
+
     // Fallback value.
-    elseif ( isset( $args[1] ) ) {
+    elseif (isset($args[1])) {
 
         return $args[1];
     }
-    else {
 
-        return '';
-    }
+    return '';
 }
 
-function csscrush_fn__query ( $input, $extra ) {
+function csscrush_fn__query ($input, $extra) {
 
-    $result = '';
-    $args = CssCrush_Function::parseArgs( $input );
+    $args = CssCrush_Function::parseArgs($input);
 
-    if ( count( $args ) < 1 ) {
-        return $result;
+    if (count($args) < 1) {
+        return '';
     }
 
-    $call_property = $extra[ 'property' ];
+    $call_property = $extra['property'];
     $references =& CssCrush::$process->references;
 
     // Resolve arguments.
-    $name = array_shift( $args );
+    $name = array_shift($args);
     $property = $call_property;
-    if ( isset( $args[0] ) ) {
-        if ( $args[0] !== 'default' ) {
-            $property = array_shift( $args );
+
+    if (isset($args[0])) {
+        $args[0] = strtolower($args[0]);
+        if ($args[0] !== 'default') {
+            $property = array_shift($args);
         }
         else {
-            array_shift( $args );
+            array_shift($args);
         }
     }
-    $default = isset( $args[0] ) ? $args[0] : null;
+    $default = isset($args[0]) ? $args[0] : null;
 
-    if ( ! preg_match( CssCrush_Regex::$patt->ident, $name ) ) {
-        $name = CssCrush_Selector::makeReadableSelector( $name );
+    if (! preg_match(CssCrush_Regex::$patt->ident, $name)) {
+        $name = CssCrush_Selector::makeReadable($name);
     }
 
     // If a rule reference is found, query its data.
-    if ( isset( $references[ $name ] ) ) {
+    $result = '';
+    if (isset($references[$name])) {
         $query_rule = $references[ $name ];
         $query_rule->processDeclarations();
-        if ( isset( $query_rule->queryData[ $property ] ) ) {
-            $result = $query_rule->queryData[ $property ];
+        $query_rule->expandDataSet('queryData', $property);
+
+        if (isset($query_rule->queryData[$property])) {
+            $result = $query_rule->queryData[$property];
         }
     }
 
-    if ( $result === '' && ! is_null( $default ) ) {
+    if ($result === '' && ! is_null($default)) {
         $result = $default;
     }
     return $result;

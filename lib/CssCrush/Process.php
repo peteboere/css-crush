@@ -277,63 +277,7 @@ class CssCrush_Process
 
 
     #############################
-    #  Aliases.
-
-    static protected function applySelectorAliases ( &$str )
-    {
-        if ( CssCrush::$process->selectorAliases ) {
-
-            $process = CssCrush::$process;
-            $has_parens = strpos( $str, '(' ) !== false;
-
-            if ( $has_parens ) {
-                $process->captureParens( $str );
-            }
-
-            static $callback;
-            if ( ! $callback ) {
-
-                // Thankfully this will be updated to use a real callback when support for
-                // php 5.2 is dropped.
-                $callback = create_function( '$m',
-
-                    '$process = CssCrush::$process;
-                    $table =& $process->selectorAliases;
-                    $value = isset( $table[ $m[1] ] ) ? $table[ $m[1] ] : "";
-
-                    // Test for available arguments.
-                    if ( isset( $m[2] ) && $value ) {
-
-                        // Create search and replace arrays from the arguments.
-                        $args = trim( $process->popToken( $m[2] ), "()" );
-                        $args = CssCrush_Util::splitDelimList( $args );
-                        foreach ( $args as $index => $arg ) {
-                            $search[] = "#($index)";
-                        }
-
-                        // Apply arguments to the selector-alias value.
-                        $value = str_replace( $search, $args, $value );
-
-                        // Apply arguments to string tokens within the selector-alias value.
-                        preg_match_all( CssCrush_Regex::$patt->sToken, $value, $matches );
-                        foreach ( $matches as $m ) {
-                            $label = $m[0];
-                            if ( isset( $process->tokens->s[ $label ] ) ) {
-                                $process->tokens->s[ $label ] =
-                                    str_replace( $search, $args, $process->tokens->s[ $label ] );
-                            }
-                        }
-                    }
-                    return $value;'
-                );
-            }
-
-            $str = preg_replace_callback( CssCrush::$process->selectorAliasesPatt, $callback, $str );
-            if ( $has_parens ) {
-                $process->restoreParens( $str );
-            }
-        }
-    }
+    #  Selector aliases.
 
     protected function resolveSelectorAliases ()
     {
@@ -349,9 +293,78 @@ class CssCrush_Process
         // Create the selector aliases pattern and store it.
         if ( $this->selectorAliases ) {
             $names = implode( '|', array_keys( $this->selectorAliases ) );
-            $this->selectorAliasesPatt = '#\:(' . $names . ')\b(?!-)(\?p\d+\?)?#iS';
+            $this->selectorAliasesPatt = '~
+              \:(' . $names . ')\b(?!-)
+              (\()?
+            ~xiS';
         }
     }
+
+    static public function applySelectorAliases ( &$str )
+    {
+        $process = CssCrush::$process;
+
+        // Early bail conditions.
+        if (! $process->selectorAliases || ! preg_match($process->selectorAliasesPatt, $str)) {
+            return;
+        }
+
+        // Find all selector-alias matches.
+        $matches = CssCrush_Regex::matchAll($process->selectorAliasesPatt, $str);
+
+        $table =& $process->selectorAliases;
+
+        // Step through the matches from last to first.
+        while ($match = array_pop($matches)) {
+
+            $selector_alias_name = $match[1][0];
+
+            if (! isset($table[$selector_alias_name])) {
+                continue;
+            }
+
+            $value = $table[$selector_alias_name];
+            $start = $match[0][1];
+            $length = strlen($match[0][0]);
+
+            // It's a function alias if a start paren is matched.
+            if (isset($match[2])) {
+
+                if (! preg_match(CssCrush_Regex::$patt->balancedParens, $str,
+                    $parens, PREG_OFFSET_CAPTURE, $start)) {
+                    continue;
+                }
+                $paren_start = $parens[0][1];
+                $paren_len = strlen($parens[0][0]);
+                $length = ($paren_start + $paren_len) - $start;
+
+                // Create substitutions list and apply.
+                $args = CssCrush_Util::splitDelimList($parens[1][0]);
+                foreach ($args as $index => $arg) {
+                    $search[] = "#($index)";
+                }
+                $value = str_replace($search, $args, $value);
+
+                // Apply substitutions to string tokens within the value.
+                preg_match_all(CssCrush_Regex::$patt->sToken, $value, $_matches);
+                foreach ($_matches as $m) {
+                    $label = $m[0];
+                    if (isset($process->tokens->s[$label])) {
+                        $process->tokens->s[$label] =
+                            str_replace($search, $args, $process->tokens->s[$label]);
+                    }
+                }
+            }
+
+            // Splice in the result.
+            $str = substr_replace($str, $value, $start, $length);
+        }
+        csscrush::log($str);
+    }
+
+
+    #############################
+    #  Aliases.
 
     protected function filterAliases ()
     {
@@ -770,9 +783,6 @@ class CssCrush_Process
         $rule->selector_raw = trim( $m[1] );
         $rule->declaration_raw = trim( $m[2] );
 
-        // Apply any selector aliases.
-        CssCrush_Process::applySelectorAliases( $rule->selector_raw );
-
         // Run rule_preprocess hook.
         CssCrush_Hook::run( 'rule_preprocess', $rule );
 
@@ -1095,6 +1105,9 @@ class CssCrush_Process
 
         // Pull out @fragment blocks, and invoke.
         $this->resolveFragments();
+
+        // Run extract phase hooks.
+        CssCrush_Hook::run( 'process_extract', $this );
 
         // Adjust meta characters so we can extract the rules cleanly.
         $this->stream->replaceHash( array(

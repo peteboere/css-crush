@@ -94,7 +94,7 @@ class CssCrush_Mixin
         // If no mixin or abstract rule matched, look for matching selector
         if ( ! $mixin && ! $non_mixin ) {
 
-            $selector_test = CssCrush_Selector::makeReadableSelector( $message );
+            $selector_test = CssCrush_Selector::makeReadable( $message );
 
             if ( isset( CssCrush::$process->references[ $selector_test ] ) ) {
                 $non_mixin = CssCrush::$process->references[ $selector_test ];

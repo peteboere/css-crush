@@ -23,7 +23,7 @@ class CssCrush_Rule implements IteratorAggregate
     public $extendArgs = array();
 
     // Declarations hash table for inter-rule this() referencing.
-    public $thisData = array();
+    public $selfData = array();
 
     // Declarations hash table for external query() referencing.
     public $queryData = array();
@@ -51,7 +51,6 @@ class CssCrush_Rule implements IteratorAggregate
         // Parse the selectors chunk
         if ( ! empty( $selector_string ) ) {
 
-            $process->captureParens( $selector_string );
             $selectors = CssCrush_Util::splitDelimList( $selector_string );
 
             // Remove and store comments that sit above the first selector
@@ -73,14 +72,9 @@ class CssCrush_Rule implements IteratorAggregate
 
                     // Link the rule to the abstract name and skip forward to declaration parsing.
                     $process->references[ $abstract_name ] = $this;
-                    break;
                 }
-
-                $this->addSelector( new CssCrush_Selector( $selector ) );
-
-                // Link selectors as references.
-                foreach ( $this->selectors as $selector ) {
-                    $process->references[ $selector->readableValue ] = $this;
+                else {
+                    $this->addSelector( new CssCrush_Selector( $selector ) );
                 }
             }
         }
@@ -161,10 +155,10 @@ class CssCrush_Rule implements IteratorAggregate
 
             if ( trim( $value ) !== '' ) {
 
-                // Only store to $this->thisData if the value does not itself make a
+                // Only store to $this->selfData if the value does not itself make a
                 // this() call to avoid circular references.
                 if ( ! preg_match( CssCrush_Regex::$patt->thisFunction, $value ) ) {
-                    $this->thisData[ strtolower( $prop ) ] = $value;
+                    $this->selfData[ strtolower( $prop ) ] = $value;
                 }
 
                 // Add declaration.
@@ -221,7 +215,113 @@ class CssCrush_Rule implements IteratorAggregate
             }
         }
 
+        // selfData is done with, reclaim memory.
+        unset($this->selfData);
+
         $this->declarationsProcessed = true;
+    }
+
+    public function expandDataSet ($dataset, $property)
+    {
+        // Expand shorthand properties to make them available
+        // as data for this() and query().
+        static $expandables = array(
+            'margin-top' => 'margin',
+            'margin-right' => 'margin',
+            'margin-bottom' => 'margin',
+            'margin-left' => 'margin',
+            'padding-top' => 'padding',
+            'padding-right' => 'padding',
+            'padding-bottom' => 'padding',
+            'padding-left' => 'padding',
+            'border-top-width' => 'border-width',
+            'border-right-width' => 'border-width',
+            'border-bottom-width' => 'border-width',
+            'border-left-width' => 'border-width',
+            'border-top-left-radius' => 'border-radius',
+            'border-top-right-radius' => 'border-radius',
+            'border-bottom-right-radius' => 'border-radius',
+            'border-bottom-left-radius' => 'border-radius',
+            'border-top-color' => 'border-color',
+            'border-right-color' => 'border-color',
+            'border-bottom-color' => 'border-color',
+            'border-left-color' => 'border-color',
+        );
+
+        $dataset =& $this->{$dataset};
+        $property_group = isset($expandables[$property]) ? $expandables[$property] : null;
+
+        // Bail if property non-expandable or already set.
+        if (! $property_group || isset($dataset[$property]) || ! isset($dataset[$property_group])) {
+            return;
+        }
+
+        // Get the expandable property value.
+        $value = $dataset[$property_group];
+
+        // Top-Right-Bottom-Left "trbl" expandable properties.
+        $trbl_fmt = null;
+        switch ($property_group) {
+            case 'margin':
+                $trbl_fmt = 'margin-%s';
+                break;
+            case 'padding':
+                $trbl_fmt = 'padding-%s';
+                break;
+            case 'border-width':
+                $trbl_fmt = 'border-%s-width';
+                break;
+            case 'border-radius':
+                $trbl_fmt = 'border-%s-radius';
+                break;
+            case 'border-color':
+                $trbl_fmt = 'border-%s-color';
+                break;
+        }
+        if ($trbl_fmt) {
+            $parts = explode(' ', $value);
+            $placeholders = array();
+
+            // 4 values.
+            if (isset($parts[3])) {
+                $placeholders = $parts;
+            }
+            // 3 values.
+            elseif (isset($parts[2])) {
+                $placeholders = array($parts[0], $parts[1], $parts[2], $parts[1]);
+            }
+            // 2 values.
+            elseif (isset($parts[1])) {
+                $placeholders = array($parts[0], $parts[1], $parts[0], $parts[1]);
+            }
+            // 1 value.
+            else {
+                $placeholders = array_pad($placeholders, 4, $parts[0]);
+            }
+
+            // Set positional variants.
+            if ($property_group === 'border-radius') {
+                $positions = array(
+                    'top-left',
+                    'top-right',
+                    'bottom-right',
+                    'bottom-left',
+                );
+            }
+            else {
+                $positions = array(
+                    'top',
+                    'right',
+                    'bottom',
+                    'left',
+                );
+            }
+
+            foreach ($positions as $index => $position) {
+                $prop = sprintf($trbl_fmt, $position);
+                $dataset += array($prop => $placeholders[$index]);
+            }
+        }
     }
 
 
@@ -272,8 +372,6 @@ class CssCrush_Rule implements IteratorAggregate
         // Merge this rule's extendArgs with parent extendArgs
         $this->extendArgs = array_merge( $this->extendArgs, $parent_extend_args );
 
-        // Filter now?
-
         // Add this rule's selectors to all extendArgs
         foreach ( $this->extendArgs as $extend_arg ) {
 
@@ -318,12 +416,30 @@ class CssCrush_Rule implements IteratorAggregate
                         preg_match( '!:any(\?p\d+\?)!', $selector->value, $m );
 
                         // Parse the arguments
-                        $expression = trim( CssCrush::$process->tokens->p[ $m[1] ], '()' );
+                        $expression = CssCrush::$process->tokens->p[$m[1]];
+
+                        // Remove outer parens.
+                        $expression = substr($expression, 1, strlen($expression) - 2);
+
+                        // Test for nested :any() expressions.
+                        $has_nesting = strpos($expression, ':any(') !== false;
+
                         $parts = preg_split( $reg_comma, $expression, null, PREG_SPLIT_NO_EMPTY );
 
                         $tmp = array();
                         foreach ( $chain as $rowCopy ) {
                             foreach ( $parts as $part ) {
+
+                                // Flatten nested :any() expressions in a hacky kind of way.
+                                if ($has_nesting) {
+                                    $part = str_replace(':any(', '', $part);
+
+                                    // If $part has unbalanced parens trim closing parens to match.
+                                    $diff = substr_count($part, ')') - substr_count($part, '(');
+                                    if ($diff > 0) {
+                                        $part = preg_replace('~\){1,'. $diff .'}$~', '', $part);
+                                    }
+                                }
                                 $tmp[] = $rowCopy . $part;
                             }
                         }
@@ -359,6 +475,9 @@ class CssCrush_Rule implements IteratorAggregate
     public function addSelector ( $selector )
     {
         $this->selectors[ $selector->readableValue ] = $selector;
+
+        // Link reference.
+        CssCrush::$process->references[ $selector->readableValue ] = $this;
     }
 
     public function addSelectors ( $list )

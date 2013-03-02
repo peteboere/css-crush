@@ -103,6 +103,9 @@ class CssCrush_Declaration
                     'rule' => $parent_rule,
                 ));
 
+            // Add result to $rule->selfData.
+            $parent_rule->selfData += array($this->property => $this->value);
+
             CssCrush_Function::executeOnString( 
                 $this->value,
                 null,
@@ -114,20 +117,20 @@ class CssCrush_Declaration
         }
 
         // Trim whitespace that may have been introduced by functions.
-        $this->value = trim( $this->value );
+        $this->value = trim($this->value);
 
         // After functions have applied value may be empty.
-        if ( $this->value === '' ) {
+        if ($this->value === '') {
 
             $this->inValid = true;
             return;
         }
 
         // Store raw value as data on the parent rule.
-        $parent_rule->queryData[ $this->property ] = $this->value;
+        $parent_rule->queryData[$this->property] = $this->value;
 
         // Capture top-level paren pairs.
-        CssCrush::$process->captureParens( $this->value );
+        CssCrush::$process->captureParens($this->value);
 
         $this->indexFunctions();
     }

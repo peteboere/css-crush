@@ -10,45 +10,31 @@ class CssCrush_Selector
     public $readableValue;
     public $allowPrefix = true;
 
-    static function makeReadableSelector ( $selector_string )
-    {
-        // Quick test for paren tokens.
-        if ( strpos( $selector_string, '?p' ) !== false ) {
-            $selector_string = CssCrush::$process->restoreTokens( $selector_string, 'p' );
-        }
-
-        // Create space around combinators, then normalize whitespace.
-        $selector_string = preg_replace( '#([>+]|~(?!=))#', ' $1 ', $selector_string );
-        $selector_string = CssCrush_Util::normalizeWhiteSpace( $selector_string );
-
-        // Quick test for string tokens.
-        if ( strpos( $selector_string, '?s' ) !== false ) {
-            $selector_string = CssCrush::$process->restoreTokens( $selector_string, 's' );
-        }
-
-        // Quick test for double-colons for backwards compat.
-        if ( strpos( $selector_string, '::' ) !== false ) {
-            $selector_string = preg_replace( '!::(after|before|first-(?:letter|line))!iS', ':$1', $selector_string );
-        }
-
-        return $selector_string;
-    }
-
     public function __construct ( $raw_selector, $associated_rule = null )
     {
+        // Look for rooting prefix.
         if ( strpos( $raw_selector, '^' ) === 0 ) {
-
             $raw_selector = ltrim( $raw_selector, "^ \n\r\t" );
             $this->allowPrefix = false;
         }
 
-        $this->readableValue = self::makeReadableSelector( $raw_selector );
+        // Take readable value from original un-altered state.
+        $this->readableValue = CssCrush_Selector::makeReadable( $raw_selector );
+
+        CssCrush_Process::applySelectorAliases( $raw_selector );
+
+        // Capture top-level paren groups.
+        CssCrush::$process->captureParens( $raw_selector );
+
         $this->value = $raw_selector;
     }
 
     public function __toString ()
     {
-        return $this->readableValue;
+        if ( ! CssCrush::$process->minifyOutput ) {
+            $this->value = CssCrush_Selector::normalizeWhiteSpace( $this->value );
+        }
+        return CssCrush_Selector::compatFilter( $this->value );
     }
 
     public function appendPseudo ( $pseudo )
@@ -60,5 +46,39 @@ class CssCrush_Selector
             $this->value .= $pseudo;
         }
         return $this->readableValue;
+    }
+
+    static public function compatFilter ( $str )
+    {
+        // Replace double-colons for backwards compatability.
+        if ( strpos( $str, '::' ) !== false ) {
+            $str = preg_replace(
+                '~::(after|before|first-(?:letter|line))~iS', ':$1', $str );
+        }
+        return $str;
+    }
+
+    static public function normalizeWhiteSpace ( $str )
+    {
+        // Create space around combinators, then normalize whitespace.
+        $str = preg_replace( '~([>+]|\~(?!=))~S', ' $1 ', $str );
+        return CssCrush_Util::normalizeWhiteSpace( $str );
+    }
+
+    static function makeReadable ( $str )
+    {
+        // Quick test for paren tokens.
+        if ( strpos( $str, '?p' ) !== false ) {
+            $str = CssCrush::$process->restoreTokens( $str, 'p' );
+        }
+
+        $str = CssCrush_Selector::normalizeWhiteSpace( $str );
+
+        // Quick test for string tokens.
+        if ( strpos( $str, '?s' ) !== false ) {
+            $str = CssCrush::$process->restoreTokens( $str, 's' );
+        }
+
+        return $str;
     }
 }
