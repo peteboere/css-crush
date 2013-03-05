@@ -231,7 +231,7 @@ if ( isset( $newlines ) ) {
 // Enable plugin args.
 if ( $enable_plugins ) {
     foreach ( $enable_plugins as $arg ) {
-        foreach ( preg_split( '!\s*,\s*!', $arg ) as $plugin ) {
+        foreach ( preg_split( '~\s*,\s*~', $arg ) as $plugin ) {
             $process_opts[ 'enable' ][] = $plugin;
         }
     }
@@ -240,7 +240,7 @@ if ( $enable_plugins ) {
 // Disable plugin args.
 if ( $disable_plugins ) {
     foreach ( $disable_plugins as $arg ) {
-        foreach ( preg_split( '!\s*,\s*!', $arg ) as $plugin ) {
+        foreach ( preg_split( '~\s*,\s*~', $arg ) as $plugin ) {
             $process_opts[ 'disable' ][] = $plugin;
         }
     }

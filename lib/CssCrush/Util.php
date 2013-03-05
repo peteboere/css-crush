@@ -20,10 +20,10 @@ class CssCrush_Util
     static public function normalizePath ( $path, $strip_drive_letter = false )
     {
         if ( $strip_drive_letter ) {
-            $path = preg_replace( '!^[a-z]\:!i', '', $path );
+            $path = preg_replace( '~^[a-z]\:~i', '', $path );
         }
         // Backslashes and repeat slashes to a single forward slash.
-        $path = rtrim( preg_replace( '![\\\\/]+!', '/', $path ), '/' );
+        $path = rtrim( preg_replace( '~[\\\\/]+~', '/', $path ), '/' );
 
         // Removing redundant './'.
         $path = str_replace( '/./', '/', $path );
@@ -58,7 +58,7 @@ class CssCrush_Util
 
     static public function stripCommentTokens ( $str )
     {
-        return preg_replace( CssCrush_Regex::$patt->cToken, '', $str );
+        return preg_replace( CssCrush_Regex::$patt->c_token, '', $str );
     }
 
     static public function normalizeWhiteSpace ( $str )
@@ -67,11 +67,11 @@ class CssCrush_Util
         if ( ! $find ) {
             $replacements = array(
                 // Convert all whitespace sequences to a single space.
-                '!\s+!S' => ' ',
+                '~\s+~S' => ' ',
                 // Trim bracket whitespace where it's safe to do it.
-                '!([\[(]) | ([\])])| ?([{}]) ?!S' => '${1}${2}${3}',
+                '~([\[(]) | ([\])])| ?([{}]) ?~S' => '${1}${2}${3}',
                 // Trim whitespace around delimiters and special characters.
-                '! ?([;,]) ?!S' => '$1',
+                '~ ?([;,]) ?~S' => '$1',
             );
             $find = array_keys( $replacements );
             $replace = array_values( $replacements );
@@ -108,7 +108,7 @@ class CssCrush_Util
         }
 
         if ( $do_preg_split ) {
-            $list = preg_split( '!' . $delim . '!', $str );
+            $list = preg_split( '~' . $delim . '~', $str );
         }
         else {
             $list = explode( $delim, $str );

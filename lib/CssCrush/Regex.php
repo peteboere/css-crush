@@ -12,28 +12,64 @@ class CssCrush_Regex
     // Character classes.
     static public $classes;
 
+    static public $classSwaps = array();
+
     static public function init ()
     {
         self::$patt = $patt = new stdclass();
         self::$classes = $classes = new stdclass();
 
-        // Character classes.
+        // CSS type classes.
         $classes->ident = '[a-zA-Z0-9_-]+';
         $classes->number = '[+-]?\d*\.?\d+';
+        $classes->percentage = $classes->number . '%';
+        $classes->length_unit = '(?i)(?:e[mx]|c[hm]|rem|v[hwm]|in|p[tcx])(?-i)';
+        $classes->length = $classes->number . $classes->length_unit;
+        $classes->color_hex = '#[[:xdigit:]]{3}(?:[[:xdigit:]]{3})?';
 
-        // Patterns.
-        $patt->ident = '~^' . $classes->ident . '$~';
-        $patt->number = '~^' . $classes->number . '$~';
+        // Tokens.
+        $classes->c_token = '\?c\d+\?'; // Comments.
+        $classes->s_token = '\?s\d+\?'; // Strings.
+        $classes->r_token = '\?r\d+\?'; // Rules.
+        $classes->p_token = '\?p\d+\?'; // Parens.
+        $classes->u_token = '\?u\d+\?'; // URLs.
+        $classes->t_token = '\?t\d+\?'; // Traces.
+        $classes->a_token = '\?arg(\d+)\?'; // Args.
 
-        // @-rule blocks.
-        $patt->import        = '~@import\s+(\?u\d+\?)\s?([^;]*);~iS';
-        $patt->variables     = '~@(?:define|variables) *([^\{]*)\{ *(.*?) *\};?~iS';
-        $patt->mixin         = '~@mixin *([^\{]*)\{ *(.*?) *\};?~iS';
-        $patt->abstract      = CssCrush_Regex::create( '^@abstract\s+(<ident>)', 'i' );
+        // Boundries.
+        $classes->LB = '(?<![\w-])'; // Left ident boundry.
+        $classes->RB = '(?![\w-])'; // Right ident boundry.
+        $classes->RTB = '(?=\?[a-z])'; // Right token boundry.
+
+        // Misc.
+        $classes->vendor = '-[a-zA-Z]+-';
+
+        // Create standalone class patterns, add classes as class swaps.
+        foreach ($classes as $name => $class) {
+            self::$classSwaps['<' . str_replace('_', '-', $name) . '>'] = $class;
+            $patt->{$name} = '~' . $class . '~';
+        }
+
+        // Rooted classes.
+        $patt->rooted_ident = '~^' . $classes->ident . '$~';
+        $patt->rooted_number = '~^' . $classes->number . '$~';
+
+        // @-rules.
+        $patt->import = CssCrush_Regex::create( '@import\s+(<u-token>)\s?([^;]*);', 'iS' );
+        $patt->charset = CssCrush_Regex::create('@charset\s+(<s-token>)\s*;', 'iS');
+        $patt->variables = CssCrush_Regex::create( '@(?:define|variables) *\{ *(.*?) *\};?', 'iS' );
+        $patt->mixin = CssCrush_Regex::create( '@mixin +(<ident>) *\{ *(.*?) *\};?', 'iS' );
+        $patt->abstract = CssCrush_Regex::create( '^@abstract +(<ident>)', 'i' );
         $patt->selectorAlias = CssCrush_Regex::create( '@selector-alias +\:(<ident>) +([^;]+) *;', 'iS' );
-        $patt->ifDefine      = CssCrush_Regex::create( '@ifdefine +(not +)?(<ident>) *\{', 'iS' );
-        $patt->fragmentDef   = CssCrush_Regex::create( '@fragment +(<ident>) *\{', 'iS' );
-        $patt->fragmentCall  = CssCrush_Regex::create( '@fragment +(<ident>) *(\(|;)', 'iS' );
+        $patt->ifDefine = CssCrush_Regex::create( '@ifdefine +(not +)?(<ident>) *\{', 'iS' );
+        $patt->fragmentDef = CssCrush_Regex::create( '@fragment +(<ident>) *\{', 'iS' );
+        $patt->fragmentCall = CssCrush_Regex::create( '@fragment +(<ident>) *(\(|;)', 'iS' );
+
+        // Functions.
+        $patt->function = CssCrush_Regex::create( '<LB>(<ident>)(<p-token>)', 'S' );
+        $patt->varFunction = CssCrush_Regex::create( '\$\( *(<ident>) *\)', 'S' );
+        $patt->argFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'arg' ) );
+        $patt->thisFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'this' ) );
 
         $patt->commentAndString = '~
             # Quoted string (to EOF if unmatched).
@@ -56,52 +92,37 @@ class CssCrush_Regex
         ~xiS';
 
         // Balanced bracket matching.
-        $patt->balancedParens  = '!\(\s* ( (?: (?>[^()]+) | (?R) )* ) \s*\)!xS';
-        $patt->balancedCurlies = '!\{\s* ( (?: (?>[^{}]+) | (?R) )* ) \s*\}!xS';
-
-        // Tokens.
-        $patt->cToken = '!\?c\d+\?!'; // Comments
-        $patt->sToken = '!\?s\d+\?!'; // Strings
-        $patt->rToken = '!\?r\d+\?!'; // Rules
-        $patt->pToken = '!\?p\d+\?!'; // Parens
-        $patt->uToken = '!\?u\d+\?!'; // URLs
-        $patt->tToken = '!\?t\d+\?!'; // Traces
-        $patt->aToken = '!\?arg(\d+)\?!'; // Args
-
-        // Functions.
-        $patt->function = '!(^|[^a-z0-9_-])([a-z_-]+)(\?p\d+\?)!iS';
-        $patt->varFunction = CssCrush_Regex::create( '\$\(\s*(<ident>)\s*\)', 'iS' );
-        $patt->varFunctionStart = '!(\$)\(!';
-        $patt->argFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'arg' ) );
-        $patt->thisFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'this' ) );
+        $patt->balancedParens  = '~\(\s* ( (?: (?>[^()]+) | (?R) )* ) \s*\)~xS';
+        $patt->balancedCurlies = '~\{\s* ( (?: (?>[^{}]+) | (?R) )* ) \s*\}~xS';
 
         // Misc.
-        $patt->vendorPrefix  = '!^-([a-z]+)-([a-z-]+)!iS';
-        $patt->ruleDirective = '!^(?:(@include|mixin)|(@?extends?)|(@name))[\s\:]+!iS';
-        $patt->argListSplit  = '!\s*[,\s]\s*!S';
-        $patt->mathBlacklist = '![^\.0-9\*\/\+\-\(\)]!S';
-        $patt->charset       = '!@charset\s+(\?s\d+\?)\s*;!iS';
-        $patt->cruftyHex     = '!\#([[:xdigit:]])\1([[:xdigit:]])\2([[:xdigit:]])\3!S';
+        $patt->vendorPrefix = '~^-([a-z]+)-([a-z-]+)~iS';
+        $patt->ruleDirective = '~^(?:(@include|mixin)|(@?extends?)|(@name))[\s\:]+~iS';
+        $patt->argListSplit = '~\s*[,\s]\s*~S';
+        $patt->mathBlacklist = '~[^\.0-9\*\/\+\-\(\)]~S';
+        $patt->cruftyHex = '~\#([[:xdigit:]])\1([[:xdigit:]])\2([[:xdigit:]])\3~S';
     }
 
-    static public function create ( $pattern_template, $flags = '', $delim = '!' )
+    static public function create ( $pattern_template, $flags = '', $delim = '~' )
     {
-        // Sugar.
-        $pattern = str_replace(
-                        array( '<ident>' ),
-                        array( self::$classes->ident ),
-                        $pattern_template );
+        static $find, $replace;
+        if (! $find) {
+            $find = array_keys(self::$classSwaps);
+            $replace = array_values(self::$classSwaps);
+        }
+
+        $pattern = str_replace($find, $replace, $pattern_template);
         return "$delim{$pattern}$delim{$flags}";
     }
 
     static public function matchAll ( $patt, $subject, $preprocess_patt = false, $offset = 0 )
     {
-        if ( $preprocess_patt ) {
+        if ($preprocess_patt) {
             // Assume case-insensitive.
-            $patt = self::create( $patt, 'i' );
+            $patt = self::create($patt, 'i');
         }
 
-        $count = preg_match_all( $patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset );
+        $count = preg_match_all($patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset);
         return $count ? $matches : array();
     }
 
@@ -117,7 +138,7 @@ class CssCrush_Regex
         foreach ( $list as &$fn_name ) {
             $fn_name = preg_quote( $fn_name );
         }
-        return '~(?<![\w-])(' . implode( '|', $list ) . ')' . $question . '\(~iS';
+        return CssCrush_Regex::create( '<LB>(' . implode( '|', $list ) . ')' . $question . '\(', 'iS' );
     }
 }
 

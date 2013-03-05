@@ -165,6 +165,11 @@ class CssCrush_Importer
 
     static protected function rewriteImportedUrls ( $import )
     {
+        static $non_import_urls_patt;
+        if (! $non_import_urls_patt) {
+            $non_import_urls_patt = CssCrush_Regex::create( '(?<!@import )<u-token>', 'iS' );
+        }
+
         $link = CssCrush_Util::getLinkBetweenDirs(
             CssCrush::$process->input->dir, dirname( $import->path ) );
 
@@ -173,7 +178,7 @@ class CssCrush_Importer
         }
 
         // Match all urls that are not imports.
-        preg_match_all( '#(?<!@import )\?u\d+\?#iS', $import->content, $matches );
+        preg_match_all($non_import_urls_patt, $import->content, $matches);
 
         foreach ( $matches[0] as $token ) {
 
@@ -245,14 +250,13 @@ class CssCrush_Importer
 
     static protected function captureUrls ( &$str )
     {
-        $patt = '#
-            @import\x{20}(\?s\d+\?)
-            |
-            (?<![\w-]) (url|data-uri)\(
-        #ixS';
+        static $url_patt;
+        if (! $url_patt) {
+            $url_patt = CssCrush_Regex::create('@import +(<s-token>)|<LB>(url|data-uri)\(', 'iS');
+        }
 
         $offset = 0;
-        while ( preg_match( $patt, $str, $outer_m, PREG_OFFSET_CAPTURE, $offset ) ) {
+        while (preg_match($url_patt, $str, $outer_m, PREG_OFFSET_CAPTURE, $offset)) {
 
             $outer_offset = $outer_m[0][1];
             $is_import_url = ! isset( $outer_m[2] );
@@ -261,6 +265,7 @@ class CssCrush_Importer
                 $url = new CssCrush_Url( $outer_m[1][0] );
                 $str = str_replace( $outer_m[1][0], $url->label, $str );
             }
+
             // Match parenthesis if not a string token.
             elseif (
                 preg_match( CssCrush_Regex::$patt->balancedParens, $str, $inner_m, PREG_OFFSET_CAPTURE, $outer_offset )
@@ -271,6 +276,7 @@ class CssCrush_Importer
                 $str = substr_replace( $str, $url->label, $outer_offset,
                     strlen( $func_name ) + strlen( $inner_m[0][0] ) );
             }
+
             // If brackets cannot be matched, skip over the original match.
             else {
                 $offset += strlen( $outer_m[0][0] );
@@ -298,7 +304,7 @@ class CssCrush_Importer
 
             // Fix broken comments as they will break any subsquent
             // imported files that are inlined.
-            if ( ! preg_match( '!\*/$!', $full_match ) ) {
+            if ( ! preg_match( '~\*/$~', $full_match ) ) {
                 $full_match .= '*/';
             }
             $label = $process->addToken( $full_match, 'c' );
@@ -318,8 +324,8 @@ class CssCrush_Importer
 
     static protected function addTracingStubs ( &$str )
     {
-        $selector_patt = '! (^|;|\})+ ([^;{}]+) (\{) !xmS';
-        $token_or_whitespace = '!(\s*\?c\d+\?\s*|\s+)!S';
+        $selector_patt = '~ (^|;|\})+ ([^;{}]+) (\{) ~xmS';
+        $token_or_whitespace = '~(\s*\?c\d+\?\s*|\s+)~S';
 
         $matches = CssCrush_Regex::matchAll( $selector_patt, $str );
 
@@ -343,7 +349,7 @@ class CssCrush_Importer
                 if ( ! preg_match( $token_or_whitespace, $part ) ) {
 
                     // Match to a valid selector.
-                    if ( preg_match( '!^([^@]|@(?:abstract|page))!iS', $part ) ) {
+                    if ( preg_match( '~^([^@]|@(?:abstract|page))~iS', $part ) ) {
 
                         // Count line breaks between the start of stream and
                         // the matched selector to get the line number.
@@ -357,7 +363,7 @@ class CssCrush_Importer
 
                         // Get the currently processed file path, and escape it.
                         $current_file = str_replace( ' ', '%20', CssCrush::$process->currentFile );
-                        $current_file = preg_replace( '![^\w-]!', '\\\\$0', $current_file );
+                        $current_file = preg_replace( '~[^\w-]~', '\\\\$0', $current_file );
 
                         // Splice in tracing stub.
                         $label = CssCrush::$process->addToken( "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line_num}}", 't' );

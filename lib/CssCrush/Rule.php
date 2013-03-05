@@ -37,7 +37,7 @@ class CssCrush_Rule implements IteratorAggregate
         // If tracing store the last tracing stub, then strip all.
         if (
             $process->addTracingStubs &&
-            preg_match_all( $regex->tToken, $selector_string, $trace_tokens )
+            preg_match_all( $regex->t_token, $selector_string, $trace_tokens )
         ) {
             $trace_token = array_pop( $trace_tokens );
             $this->tracingStub = $process->fetchToken( $trace_token[0] );
@@ -45,7 +45,7 @@ class CssCrush_Rule implements IteratorAggregate
                 $process->releaseToken( $trace_token[0] );
             }
 
-            $selector_string = preg_replace( $regex->tToken, '', $selector_string );
+            $selector_string = preg_replace( $regex->t_token, '', $selector_string );
         }
 
         // Parse the selectors chunk
@@ -56,7 +56,7 @@ class CssCrush_Rule implements IteratorAggregate
             // Remove and store comments that sit above the first selector
             // remove all comments between the other selectors
             if ( strpos( $selectors[0], '?c' ) !== false ) {
-                preg_match_all( $regex->cToken, $selectors[0], $m );
+                preg_match_all( $regex->c_token, $selectors[0], $m );
                 $this->comments = $m[0];
             }
 
@@ -81,7 +81,7 @@ class CssCrush_Rule implements IteratorAggregate
 
         // Parse the declarations chunk.
         $declarations_string = trim( CssCrush_Util::stripCommentTokens( $declarations_string ) );
-        $declarations = preg_split( '!\s*;\s*!', $declarations_string, null, PREG_SPLIT_NO_EMPTY );
+        $declarations = preg_split( '~\s*;\s*~', $declarations_string, null, PREG_SPLIT_NO_EMPTY );
 
         // First create a simple array of all properties and value pairs in raw state
         $pairs = array();
@@ -401,19 +401,24 @@ class CssCrush_Rule implements IteratorAggregate
     public function expandSelectors ()
     {
         $new_set = array();
-        $reg_comma = '!\s*,\s*!';
+
+        static $any_patt, $reg_comma;
+        if (! $any_patt) {
+            $any_patt = CssCrush_Regex::create(':any(<p-token>)', 'i');
+            $reg_comma = '~\s*,\s*~';
+        }
 
         foreach ( $this->selectors as $readableValue => $selector ) {
 
-            $pos = strpos( $selector->value, ':any?' );
+            $pos = stripos( $selector->value, ':any?' );
 
             if ( $pos !== false ) {
 
                 // Contains an :any statement so we expand
-                $chain = array( '' );
+                $chain = array('');
                 do {
                     if ( $pos === 0 ) {
-                        preg_match( '!:any(\?p\d+\?)!', $selector->value, $m );
+                        preg_match( $any_patt, $selector->value, $m );
 
                         // Parse the arguments
                         $expression = CssCrush::$process->tokens->p[$m[1]];
@@ -422,7 +427,7 @@ class CssCrush_Rule implements IteratorAggregate
                         $expression = substr($expression, 1, strlen($expression) - 2);
 
                         // Test for nested :any() expressions.
-                        $has_nesting = strpos($expression, ':any(') !== false;
+                        $has_nesting = stripos($expression, ':any(') !== false;
 
                         $parts = preg_split( $reg_comma, $expression, null, PREG_SPLIT_NO_EMPTY );
 
@@ -432,7 +437,7 @@ class CssCrush_Rule implements IteratorAggregate
 
                                 // Flatten nested :any() expressions in a hacky kind of way.
                                 if ($has_nesting) {
-                                    $part = str_replace(':any(', '', $part);
+                                    $part = str_ireplace(':any(', '', $part);
 
                                     // If $part has unbalanced parens trim closing parens to match.
                                     $diff = substr_count($part, ')') - substr_count($part, '(');
@@ -452,7 +457,7 @@ class CssCrush_Rule implements IteratorAggregate
                         }
                         $selector->value = substr( $selector->value, $pos );
                     }
-                } while ( ( $pos = strpos( $selector->value, ':any?' ) ) !== false );
+                } while ( ( $pos = stripos( $selector->value, ':any?' ) ) !== false );
 
                 // Finish off
                 foreach ( $chain as &$row ) {

@@ -64,25 +64,22 @@ function csscrush__post_alias_fix_lineargradients ( $declaration_copies ) {
         $angles_old = array_values( $angles );
     }
 
-    // Degree angle regex and replace callback.
-    static $deg_patt; 
-    static $deg_convert_callback;
-    if ( ! $deg_convert_callback ) {
-        $deg_patt = '~(?<=[\( ])(' . CssCrush_Regex::$classes->number . ')deg\b~i';
+    static $deg_patt, $deg_convert_callback, $fn_patt;
+    if ( ! $deg_patt ) {
+        $deg_patt = CssCrush_Regex::create('(?<=[\( ])(<number>)deg', 'i');
         // Legacy angles move anti-clockwise and start from East, not North.
         $deg_convert_callback = create_function( '$m', '
             $angle = floatval( $m[1] );
             $angle = ( $angle + 90 ) - ( $angle * 2 );
             return ( $angle < 0 ? $angle + 360 : $angle ) . \'deg\';
         ');
+        $fn_patt = CssCrush_Regex::create('<LB><vendor>(?:(?:repeating-)?linear-gradient)(<p-token>)', 'iS');
     }
 
     // Create new paren tokens based on the first prefixed declaration.
     // Replace the new syntax with the legacy syntax.
     $original_parens = array();
     $replacement_parens = array();
-    $fn_patt = '~(?<![\w-])-[a-z]+-(?:(?:repeating-)?linear-gradient)(\?p\d+\?)~iS';
-
     foreach ( CssCrush_Regex::matchAll( $fn_patt, $declaration_copies[0]->value ) as $m ) {
 
         $original_parens[] = $m[1][0];
@@ -122,10 +119,14 @@ function csscrush__post_alias_fix_radialgradients ( $declaration_copies ) {
 
     // Create new paren tokens based on the first prefixed declaration.
     // Replace the new syntax with the legacy syntax.
-    $patt = '~(?<![\w-])-[a-z]+-(?:(?:repeating-)?radial-gradient)(\?p\d+\?)~iS';
+    static $fn_patt;
+    if (! $fn_patt) {
+        $fn_patt = CssCrush_Regex::create('<LB><vendor>(?:(?:repeating-)?radial-gradient)(<p-token>)', 'iS');
+    }
     $original_parens = array();
     $replacement_parens = array();
-    foreach ( CssCrush_Regex::matchAll( $patt, $declaration_copies[0]->value ) as $m ) {
+    foreach (CssCrush_Regex::matchAll($fn_patt, $declaration_copies[0]->value) as $m) {
+
         $original_parens[] = $m[1][0];
         $replacement_parens[] = CssCrush::$process->addToken(
             preg_replace(

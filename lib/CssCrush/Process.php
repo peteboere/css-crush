@@ -148,10 +148,10 @@ class CssCrush_Process
         return "?$type$counter?";
     }
 
-    public function addToken ( $value, $type )
+    public function addToken ($value, $type)
     {
-        $label = $this->createTokenLabel( $type );
-        $this->tokens->{ $type }[ $label ] = $value;
+        $label = $this->createTokenLabel($type);
+        $this->tokens->{$type}[$label] = $value;
         return $label;
     }
 
@@ -179,10 +179,10 @@ class CssCrush_Process
     public function restoreTokens ( $str, $type = 'p' )
     {
         // Reference the token table.
-        $token_table =& $this->tokens->{ $type };
+        $token_table =& $this->tokens->{$type};
 
         // Find matching tokens.
-        $matches = CssCrush_Regex::matchAll( CssCrush_Regex::$patt->{ "{$type}Token" }, $str );
+        $matches = CssCrush_Regex::matchAll(CssCrush_Regex::$patt->{"{$type}_token"}, $str);
 
         foreach ( $matches as $m ) {
             $token = $m[0][0];
@@ -210,7 +210,7 @@ class CssCrush_Process
     {
         $token_table =& $this->tokens->p;
 
-        foreach ( CssCrush_Regex::matchAll( CssCrush_Regex::$patt->pToken, $str ) as $m ) {
+        foreach ( CssCrush_Regex::matchAll( CssCrush_Regex::$patt->p_token, $str ) as $m ) {
             $token = $m[0][0];
             if ( isset( $token_table[ $token ] ) ) {
                 $str = str_replace( $token, $token_table[ $token ], $str );
@@ -249,7 +249,7 @@ class CssCrush_Process
         $boilerplate = file_get_contents( $file );
 
         // Substitute any tags
-        if ( preg_match_all( '!\{\{([^}]+)\}\}!', $boilerplate, $boilerplate_matches ) ) {
+        if ( preg_match_all( '~\{\{([^}]+)\}\}~', $boilerplate, $boilerplate_matches ) ) {
 
             $replacements = array();
             foreach ( $boilerplate_matches[0] as $index => $tag ) {
@@ -269,7 +269,7 @@ class CssCrush_Process
 
         // Pretty print.
         $EOL = $this->newline;
-        $boilerplate = preg_split( '![\t ]*(\r\n?|\n)[\t ]*!S', $boilerplate );
+        $boilerplate = preg_split( '~[\t ]*(\r\n?|\n)[\t ]*~', $boilerplate );
         $boilerplate = array_map( 'trim', $boilerplate );
         $boilerplate = "$EOL * " . implode( "$EOL * ", $boilerplate );
         return "/*{$boilerplate}$EOL */$EOL";
@@ -323,7 +323,7 @@ class CssCrush_Process
                 continue;
             }
 
-            $value = $table[$selector_alias_name];
+            $replacement = $table[$selector_alias_name];
             $start = $match[0][1];
             $length = strlen($match[0][0]);
 
@@ -343,23 +343,27 @@ class CssCrush_Process
                 foreach ($args as $index => $arg) {
                     $search[] = "#($index)";
                 }
-                $value = str_replace($search, $args, $value);
+                $replacement = str_replace($search, $args, $replacement);
 
-                // Apply substitutions to string tokens within the value.
-                preg_match_all(CssCrush_Regex::$patt->sToken, $value, $_matches);
+                // Apply substitutions to copies of string tokens within the replacement.
+                preg_match_all(CssCrush_Regex::$patt->s_token, $replacement, $_matches);
                 foreach ($_matches as $m) {
                     $label = $m[0];
                     if (isset($process->tokens->s[$label])) {
-                        $process->tokens->s[$label] =
-                            str_replace($search, $args, $process->tokens->s[$label]);
+
+                        // Create new token based on the value.
+                        $token_value = str_replace($search, $args, $process->tokens->s[$label]);
+                        $new_label = $process->addToken($token_value, 's');
+
+                        // Swap the old token label with new.
+                        $replacement = str_replace($label, $new_label, $replacement);
                     }
                 }
             }
 
             // Splice in the result.
-            $str = substr_replace($str, $value, $start, $length);
+            $str = substr_replace($str, $replacement, $start, $length);
         }
-        csscrush::log($str);
     }
 
 
@@ -455,7 +459,6 @@ class CssCrush_Process
                 }
             }
         }
-        csscrush::log($this->aliases);
     }
 
 
@@ -561,7 +564,7 @@ class CssCrush_Process
         if ( strpos( $value, '$(' ) !== false ) {
 
             // Variables with default value.
-            CssCrush_Function::executeOnString( $value, $regex->varFunctionStart,
+            CssCrush_Function::executeOnString( $value, '~(\$)\(~',
                 array( '$' => array( 'CssCrush_Process', 'cb_placeVariablesWithDefault' ) ) );
 
             // Assume at least 1 replace.
@@ -577,7 +580,7 @@ class CssCrush_Process
         $regex = CssCrush_Regex::$patt;
 
         // Strip comment markers.
-        $block = trim( CssCrush_Util::stripCommentTokens( $m[2] ) );
+        $block = trim(CssCrush_Util::stripCommentTokens($m[1]));
 
         CssCrush::$process->variables =
             array_merge( CssCrush::$process->variables, CssCrush_Util::parseBlock( $block, true ) );
@@ -826,7 +829,7 @@ class CssCrush_Process
 
             // Match all the rule tokens.
             $rule_matches = CssCrush_Regex::matchAll(
-                CssCrush_Regex::$patt->rToken, $curly_match->inside() );
+                CssCrush_Regex::$patt->r_token, $curly_match->inside() );
 
             foreach ( $rule_matches as $rule_match ) {
 
@@ -920,7 +923,7 @@ class CssCrush_Process
                     $vendor = $vendor ? $vendor[1] : null;
 
                     // Duplicate rules.
-                    if ( preg_match_all( $regex->rToken, $copy_block, $copy_matches ) ) {
+                    if ( preg_match_all( $regex->r_token, $copy_block, $copy_matches ) ) {
 
                         $originals = array();
                         $replacements = array();
@@ -976,19 +979,19 @@ class CssCrush_Process
         $regex_replacements = array();
         $EOL = $this->newline;
 
-        // Strip newlines added during parsing.
-        $regex_replacements[ '!\n+!' ] = '';
+        // Strip newlines added during processing.
+        $regex_replacements[ '~\n+~' ] = '';
 
         if ( $minify ) {
             // Strip whitespace around colons used in @-rule arguments.
-            $regex_replacements[ '! ?\: ?!' ] = ':';
+            $regex_replacements[ '~ ?\: ?~' ] = ':';
         }
         else {
             // Pretty printing.
-            $regex_replacements[ '!}!' ] = "$0$EOL$EOL";
-            $regex_replacements[ '!([^\s])\{!' ] = "$1 {";
-            $regex_replacements[ '! ?(@[^{]+\{)!' ] = "$1$EOL";
-            $regex_replacements[ '! ?(@[^;]+\;)!' ] = "$1$EOL";
+            $regex_replacements[ '~}~' ] = "$0$EOL$EOL";
+            $regex_replacements[ '~([^\s])\{~' ] = "$1 {";
+            $regex_replacements[ '~ ?(@[^{]+\{)~' ] = "$1$EOL";
+            $regex_replacements[ '~ ?(@[^;]+\;)~' ] = "$1$EOL";
         }
 
         // Apply all replacements.
@@ -1014,7 +1017,7 @@ class CssCrush_Process
 
         if ( $minify ) {
             // Trim whitespace around selector combinators.
-            $this->stream->pregReplace( '! ?([>~+]) ?!S', '$1' );
+            $this->stream->pregReplace( '~ ?([>\~+]) ?~S', '$1' );
         }
         else {
 
@@ -1147,26 +1150,29 @@ class CssCrush_Process
 
     protected function decruft ()
     {
+        $patt =& CssCrush_Regex::$patt;
+        $classes =& CssCrush_Regex::$classes;
+
         return $this->stream->pregReplaceHash( array(
 
             // Strip leading zeros on floats.
-            '!([: \(,])(-?)0(\.\d+)!S' => '$1$2$3',
+            '~([: \(,])(-?)0(\.\d+)~S' => '$1$2$3',
 
             // Strip unnecessary units on zero values for length types.
-            '!([: \(,])\.?0(?:e[mx]|c[hm]|rem|v[hwm]|in|p[tcx])!iS' => '${1}0',
+            '~([: \(,])\.?0' . $classes->length_unit . '~iS' => '${1}0',
 
             // Collapse zero lists.
-            '!(\: *)(?:0 0 0|0 0 0 0) *([;}])!S' => '${1}0$2',
+            '~(\: *)(?:0 0 0|0 0 0 0) *([;}])~S' => '${1}0$2',
 
             // Collapse zero lists 2nd pass.
-            '!(padding|margin|border-radius) ?(\: *)0 0 *([;}])!iS' => '${1}${2}0$3',
+            '~(padding|margin|border-radius) ?(\: *)0 0 *([;}])~iS' => '${1}${2}0$3',
 
             // Dropping redundant trailing zeros on TRBL lists.
-            '!(\: *)(-?(?:\d+)?\.?\d+[a-z]{1,4}) 0 0 0 *([;}])!iS' => '$1$2 0 0$3',
-            '!(\: *)0 0 (-?(?:\d+)?\.?\d+[a-z]{1,4}) 0 *([;}])!iS' => '${1}0 0 $2$3',
+            '~(\: *)(-?(?:\d+)?\.?\d+[a-z]{1,4}) 0 0 0 *([;}])~iS' => '$1$2 0 0$3',
+            '~(\: *)0 0 (-?(?:\d+)?\.?\d+[a-z]{1,4}) 0 *([;}])~iS' => '${1}0 0 $2$3',
 
             // Compress hex codes.
-            CssCrush_Regex::$patt->cruftyHex => '#$1$2$3',
+            $patt->cruftyHex => '#$1$2$3',
         ));
     }
 
@@ -1176,24 +1182,18 @@ class CssCrush_Process
 
     protected function minifyColors ()
     {
-        static $keywords_patt;
-        if ( ! $keywords_patt ) {
+        static $keywords_patt, $keywords_callback, $functions_patt, $functions_callback;
+
+        if (! $keywords_patt) {
+
             $keywords =& CssCrush_Color::loadMinifyableKeywords();
-            $keywords_patt = '~(?<![\w-\.#])(' .
-                implode( '|', array_keys( $keywords ) ) . ')(?![\w-\.#\]])~iS';
-        }
 
-        static $keywords_callback;
-        if ( ! $keywords_callback ) {
-            $keywords_callback = create_function( '$m',
-                'return CssCrush_Color::$minifyableKeywords[ strtolower( $m[0] ) ];' );
-        }
+            $keywords_patt = '~(?<![\w-\.#])(' . implode('|', array_keys($keywords)) . ')(?![\w-\.#\]])~iS';
+            $keywords_callback = create_function('$m',
+                'return CssCrush_Color::$minifyableKeywords[ strtolower( $m[0] ) ];');
 
-        $this->stream->pregReplaceCallback( $keywords_patt, $keywords_callback );
-
-        static $functions_callback;
-        if ( ! $functions_callback ) {
-            $functions_callback = create_function( '$m', '
+            $functions_patt = CssCrush_Regex::create('<LB>(rgb|hsl)\(([^\)]{5,})\)', 'iS');
+            $functions_callback = create_function('$m', '
                 $args = CssCrush_Function::parseArgs( trim( $m[2] ) );
                 if ( stripos( $m[1], \'hsl\' ) === 0 ) {
                     $args = CssCrush_Color::cssHslToRgb( $args );
@@ -1202,7 +1202,7 @@ class CssCrush_Process
             ');
         }
 
-        $this->stream->pregReplaceCallback(
-            '~(?<![\w-])(rgb|hsl)\(([^\)]{5,})\)~iS', $functions_callback );
+        $this->stream->pregReplaceCallback($keywords_patt, $keywords_callback);
+        $this->stream->pregReplaceCallback($functions_patt, $functions_callback);
     }
 }

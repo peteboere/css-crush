@@ -180,10 +180,12 @@ class CssCrush
                             $result[ 'functions' ][ $func_name ] = $group;
 
                             foreach ( $aliases as $alias_func ) {
+
                                 // Only supporting vendor prefixed aliases, for now.
                                 if ( preg_match( CssCrush_Regex::$patt->vendorPrefix, $alias_func, $m ) ) {
+
                                     // We'll cache the function matching regex here.
-                                    $vendor_grouped_aliases[$m[1]]['find'][] = '~(?<![\w-])' . $func_name . '(?=\?)~';
+                                    $vendor_grouped_aliases[$m[1]]['find'][] = CssCrush_Regex::create( '<LB>' . $func_name . '<RTB>', 'i' );
                                     $vendor_grouped_aliases[$m[1]]['replace'][] = $alias_func;
                                 }
                             }

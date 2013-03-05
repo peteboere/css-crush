@@ -133,7 +133,6 @@ function csscrush__noise_generator ( $input, $defaults ) {
     $frequency = $defaults[ 'frequency' ];
     $octaves = 1;
     $sharpen = $defaults[ 'sharpen' ];
-    $number_patt = CssCrush_Regex::$patt->number;
 
     if ( ( $arg = array_shift( $args ) ) !== 'default' ) {
         foreach( explode( ' ', $arg ) as $index => $value ) {
@@ -144,7 +143,7 @@ function csscrush__noise_generator ( $input, $defaults ) {
                     break;
                 case 1:
                 case 2:
-                    if ( preg_match( $number_patt, $value ) ) {
+                    if ( preg_match( CssCrush_Regex::$patt->rooted_number, $value ) ) {
                         $octaves = $value;
                     }
                     elseif ( in_array( $value, $sharpen_modes ) ) {
@@ -224,7 +223,6 @@ function csscrush__noise_generator ( $input, $defaults ) {
     $svg .= "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"$fill_color\"/>";
     $svg .= "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"$fill_color\" filter=\"url(#f)\"/>";
     $svg .= '</svg>';
-    // csscrush::log($svg);
 
     // Create data-uri url and return token label.
     $url = new CssCrush_Url( 'data:image/svg+xml;base64,' . base64_encode( $svg ) );

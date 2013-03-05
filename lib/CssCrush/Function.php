@@ -149,7 +149,7 @@ function csscrush_fn__math ( $input ) {
 function csscrush_fn__percent ( $input ) {
 
     // Strip non-numeric and non delimiter characters
-    $input = preg_replace( '![^\d\.\s,]!S', '', $input );
+    $input = preg_replace( '~[^\d\.\s,]~S', '', $input );
 
     $args = preg_split( CssCrush_Regex::$patt->argListSplit, $input, -1, PREG_SPLIT_NO_EMPTY );
 
@@ -266,7 +266,7 @@ function csscrush_fn__query ($input, $extra) {
     }
     $default = isset($args[0]) ? $args[0] : null;
 
-    if (! preg_match(CssCrush_Regex::$patt->ident, $name)) {
+    if (! preg_match(CssCrush_Regex::$patt->rooted_ident, $name)) {
         $name = CssCrush_Selector::makeReadable($name);
     }
 

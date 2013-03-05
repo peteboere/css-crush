@@ -75,7 +75,7 @@ class CssCrush_Mixin
         //   - #selector
 
         // Test for leading name
-        if ( preg_match( '!^[\w-]+!', $message, $name_match ) ) {
+        if ( preg_match( '~^[\w-]+~', $message, $name_match ) ) {
 
             $name = $name_match[0];
 
@@ -126,7 +126,7 @@ class CssCrush_Mixin
         // We have a valid mixin.
         // Discard the name part and any wrapping parens and whitespace
         $message = substr( $message, strlen( $name ) );
-        $message = preg_replace( '!^\s*\(?\s*|\s*\)?\s*$!', '', $message );
+        $message = preg_replace( '~^\s*\(?\s*|\s*\)?\s*$~', '', $message );
 
         // e.g. "value, rgba(0,0,0,0), left 100%"
 

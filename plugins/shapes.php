@@ -23,7 +23,7 @@ function csscrush__shapes ( $process ) {
 
     static $callback, $patt;
     if ( ! $callback ) {
-        $patt = CssCrush_Regex::create( '@shape *(<ident>) *\{ *(.*?) *\};?', 'iS' );
+        $patt = CssCrush_Regex::create( '@shape +(<ident>) *\{ *(.*?) *\};?', 'iS' );
         $callback = create_function( '$m', '
             $name = $m[1];
             $block = $m[2];

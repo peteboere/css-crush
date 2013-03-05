@@ -140,7 +140,7 @@ class CssCrush_Declaration
         // Create an index of all regular functions in the value.
         $functions = array();
         if ( preg_match_all( CssCrush_Regex::$patt->function, $this->value, $m ) ) {
-            foreach ( $m[2] as $index => $fn_name ) {
+            foreach ( $m[1] as $index => $fn_name ) {
                 $functions[ strtolower( $fn_name ) ] = true;
             }
         }
@@ -149,6 +149,6 @@ class CssCrush_Declaration
 
     public function getFullValue ()
     {
-        return CssCrush::$process->restoreTokens( $this->value, 'p' );
+        return CssCrush::$process->restoreTokens($this->value, 'p');
     }
 }

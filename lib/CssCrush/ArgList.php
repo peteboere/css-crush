@@ -65,7 +65,7 @@ class CssCrush_ArgList implements Countable
         $default = isset( $this->defaults[ $index ] ) ? $this->defaults[ $index ] : '';
 
         // Recurse for nested arg() calls
-        if ( preg_match( CssCrush_Regex::$patt->aToken, $default, $m ) ) {
+        if ( preg_match( CssCrush_Regex::$patt->a_token, $default, $m ) ) {
 
             $default = $this->getArgValue( (int) $m[1], $args );
         }

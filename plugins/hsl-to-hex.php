@@ -25,10 +25,15 @@ function csscrush__disable_hsl_to_hex () {
 
 function csscrush__hsl_to_hex ( CssCrush_Rule $rule ) {
 
+    static $hsl_patt;
+    if (! $hsl_patt) {
+        $hsl_patt = CssCrush_Regex::create('<LB>hsl(<p-token>)', 'i');
+    }
+
     foreach ( $rule as &$declaration ) {
 
         if ( ! $declaration->skip && isset( $declaration->functions[ 'hsl' ] ) ) {
-            while ( preg_match( '!hsl(\?p\d+\?)!', $declaration->value, $m ) ) {
+            while ( preg_match( $hsl_patt, $declaration->value, $m ) ) {
                 $token = $m[1];
                 $color = new CssCrush_Color( 'hsl' . CssCrush::$process->fetchToken( $token ) );
                 CssCrush::$process->releaseToken( $token );

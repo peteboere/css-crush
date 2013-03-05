@@ -157,8 +157,8 @@ function &_csscrush__property_sorter_get_table () {
             file_get_contents( CssCrush::$config->location . '/misc/property-sorting.ini' );
         if ( $sorting_file_contents !== false ) {
 
-            $sorting_file_contents = preg_replace( '!;[^\r\n]*!', '', $sorting_file_contents );
-            $table = preg_split( '!\s+!', trim( $sorting_file_contents ) );
+            $sorting_file_contents = preg_replace( '~;[^\r\n]*~', '', $sorting_file_contents );
+            $table = preg_split( '~\s+~', trim( $sorting_file_contents ) );
         }
         else {
             trigger_error( __METHOD__ . ": Property sorting file not found.\n", E_USER_NOTICE );

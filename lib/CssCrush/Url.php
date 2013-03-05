@@ -18,7 +18,7 @@ class CssCrush_Url
         $regex = CssCrush_Regex::$patt;
         $process = CssCrush::$process;
 
-        if ( preg_match( $regex->sToken, $raw_value ) ) {
+        if ( preg_match( $regex->s_token, $raw_value ) ) {
             $this->value = trim( $process->fetchToken( $raw_value ), '\'"' );
             $process->releaseToken( $raw_value );
         }
@@ -33,7 +33,7 @@ class CssCrush_Url
     public function __toString ()
     {
         $quote = '';
-        if ( preg_match( '![()*]!', $this->value ) || 'data' === $this->protocol ) {
+        if ( preg_match( '~[()*]~', $this->value ) || 'data' === $this->protocol ) {
             $quote = '"';
         }
         return "url($quote$this->value$quote)";
@@ -48,12 +48,13 @@ class CssCrush_Url
     {
         $leading_variable = strpos( $this->value, '$(' ) === 0;
 
-        if ( preg_match( '!^([a-z]+)\:!i', $this->value, $m ) ) {
+        // Match a protocol.
+        if ( preg_match( '~^([a-z]+)\:~i', $this->value, $m ) ) {
             $this->protocol = strtolower( $m[1] );
         }
         else {
             // Normalize './' led paths.
-            $this->value = preg_replace( '!^\.\/+!i', '', $this->value );
+            $this->value = preg_replace( '~^\.\/+~i', '', $this->value );
             if ( $this->value !== '' && $this->value[0] === '/' ) {
                 $this->isRooted = true;
             }
@@ -61,7 +62,7 @@ class CssCrush_Url
                 $this->isRelative = true;
             }
             // Normalize slashes.
-            $this->value = rtrim( preg_replace( '![\\\\/]+!', '/', $this->value ), '/' );
+            $this->value = rtrim( preg_replace( '~[\\\\/]+~', '/', $this->value ), '/' );
         }
         return $this;
     }
