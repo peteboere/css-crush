@@ -1,12 +1,13 @@
 1.10 (?)
 ----
-* Added `-i` alias to `--file` option for the command line utility.
+* Added SVG plugin (define and embed SVG elements in CSS).
 * Added `@name` in-rule directive for more flexible and robust rule referencing.
 * Added grouping for function aliases so multiple related functions (e.g. gradients) can now be
   applied to one value.
 * Rule references previously looked for the closest previous match. This behaviour has been changed
   to a 'last wins' match to be more consistent with the way CSS works. This may affect users of `@extend`
   or the `query()` function.
+* Added `-i` alias to `--file` option for the command line utility.
 * Removed data-* properties.
 * Nested rules that use the parent symbol (&) can now work in conjunction with the rooting symbol (^).
 * Fixed issue with empty imported files not registering.
