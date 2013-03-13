@@ -666,76 +666,81 @@ class CssCrush_Process
     protected function resolveFragments ()
     {
         $regex = CssCrush_Regex::$patt;
-        $matches = $this->stream->matchAll( $regex->fragmentDef );
+        $matches = $this->stream->matchAll($regex->fragmentDef);
         $fragments = array();
 
         // Move through the matches last to first.
-        while ( $match = array_pop( $matches ) ) {
+        while ($match = array_pop($matches)) {
 
             $match_start_pos = $match[0][1];
             $fragment_name = $match[1][0];
 
-            $curly_match = new CssCrush_BalancedMatch( $this->stream, $match_start_pos );
+            $curly_match = new CssCrush_BalancedMatch($this->stream, $match_start_pos);
 
-            if ( ! $curly_match->match ) {
+            if (! $curly_match->match) {
+
                 // Couldn't match the block.
                 continue;
             }
             else {
                 // Reconstruct the stream without the fragment.
-                $curly_match->replace( '' );
+                $curly_match->replace('');
 
                 // Create the fragment and store it.
-                $fragments[ $fragment_name ] = new CssCrush_Fragment( $curly_match->inside() );
+                $fragments[$fragment_name] = new CssCrush_Template($curly_match->inside());
             }
         }
 
         // Now find all the fragment calls.
-        $matches = $this->stream->matchAll( $regex->fragmentCall );
+        $matches = $this->stream->matchAll($regex->fragmentCall);
 
         // Move through the matches last to first.
-        while ( $match = array_pop( $matches ) ) {
+        while ($match = array_pop($matches)) {
 
-            list( $match_string, $match_start_pos ) = $match[0];
+            list($match_string, $match_start_pos) = $match[0];
 
             // The matched fragment name.
             $fragment_name = $match[1][0];
 
             // The fragment object, or null if name not present.
-            $fragment = isset( $fragments[ $fragment_name ] ) ? $fragments[ $fragment_name ] : null;
+            $fragment = isset($fragments[$fragment_name]) ? $fragments[$fragment_name] : null;
 
             // Fragment may be called without any argument list.
             $with_arguments = $match[2][0] === '(';
 
-            if ( $with_arguments ) {
-                $paren_match = new CssCrush_BalancedMatch( $this->stream, $match_start_pos, '()' );
+            // Resolve end of the match.
+            if ($with_arguments) {
+                $paren_match = new CssCrush_BalancedMatch($this->stream, $match_start_pos, '()');
                 // Get offset of statement terminating semi-colon.
-                $match_end = $paren_match->nextIndexOf( ';' ) + 1;
+                $match_end = $paren_match->nextIndexOf(';') + 1;
                 $match_length = $match_end - $match_start_pos;
             }
             else {
-                $match_length = strlen( $match_string );
+                $match_length = strlen($match_string);
             }
 
-            if ( ! $fragment || ( $with_arguments && ! $paren_match->match ) ) {
+            // If invalid fragment or malformed argument list.
+            if (! $fragment || ($with_arguments && ! $paren_match->match)) {
 
-                // Invalid fragment or malformed argument list.
-                $this->stream->splice( '', $match_start_pos, $match_length );
+                $this->stream->splice('', $match_start_pos, $match_length);
+
                 continue;
             }
+
+            // Ok.
             else {
 
                 $args = array();
-                if ( $with_arguments ) {
+                if ($with_arguments) {
                     // Get the argument array to pass to the fragment.
-                    $args = CssCrush_Util::splitDelimList( $paren_match->inside() );
+                    $args = CssCrush_Function::parseArgs($paren_match->inside());
                 }
 
                 // Execute the fragment and get the return value.
-                $fragment_return = $fragment->call( $args );
+                $fragment_return = $fragment->apply($args);
 
                 // Recontruct the stream with the fragment return value.
-                $this->stream->splice( $fragment_return, $match_start_pos, $match_length );
+                $this->stream->splice($fragment_return, $match_start_pos, $match_length);
             }
         }
     }
@@ -1044,7 +1049,7 @@ class CssCrush_Process
                 if ( $url->isRelative ) {
                     // Optionally set the URLs to absolute.
                     if ( $make_urls_absolute ) {
-                        $url->prepend( $this->input->dirUrl . '/' );
+                        $url->toRoot();
                     }
                     // If output dir is different to input dir prepend a link between the two.
                     elseif ( $link ) {

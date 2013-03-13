@@ -11,22 +11,22 @@ class CssCrush_Version
     public $revision = 0;
     public $extra;
 
-    public function __construct ( $version_string )
+    public function __construct ($version_string)
     {
-        if ( ( $hyphen_pos = strpos( $version_string, '-' ) ) !== false ) {
-            $this->extra = substr( $version_string, $hyphen_pos + 1 );
-            $version_string = substr( $version_string, 0, $hyphen_pos );
+        if (($hyphen_pos = strpos($version_string, '-' )) !== false) {
+            $this->extra = substr($version_string, $hyphen_pos + 1);
+            $version_string = substr($version_string, 0, $hyphen_pos);
         }
 
-        $parts = explode( '.', $version_string );
+        $parts = explode('.', $version_string);
 
-        if ( ( $major = array_shift( $parts ) ) !== null ) {
+        if (! is_null($major = array_shift($parts))) {
             $this->major = (int) $major;
         }
-        if ( ( $minor = array_shift( $parts ) ) !== null ) {
+        if (! is_null($minor = array_shift($parts))) {
             $this->minor = (int) $minor;
         }
-        if ( ( $revision = array_shift( $parts ) ) !== null ) {
+        if (! is_null($revision = array_shift($parts))) {
             $this->revision = (int) $revision;
         }
     }
@@ -35,33 +35,35 @@ class CssCrush_Version
     {
         $out = (string) $this->major;
 
-        if ( ! is_null( $this->minor ) ) {
+        if (isset($this->minor)) {
             $out .= ".$this->minor";
         }
-        if ( ! is_null( $this->revision ) ) {
+        if (isset($this->revision)) {
             $out .= ".$this->revision";
         }
-        if ( ! is_null( $this->extra ) ) {
+        if (isset($this->extra)) {
             $out .= "-$this->extra";
         }
 
         return $out;
     }
 
-    public function compare ( $version_string )
+    public function compare ($version_string)
     {
-        $LESS  = -1;
-        $MORE  = 1;
+        $LESS = -1;
+        $MORE = 1;
         $EQUAL = 0;
 
-        $test = new CssCrush_Version( $version_string );
+        $test = new CssCrush_Version($version_string);
 
-        foreach ( array( 'major', 'minor', 'revision' ) as $level ) {
+        foreach (array('major', 'minor', 'revision') as $level) {
 
-            if ( $this->{ $level } < $test->{ $level } ) {
+            if ($this->{$level} < $test->{$level}) {
+
                 return $LESS;
             }
-            elseif ( $this->{ $level } > $test->{ $level } ) {
+            elseif ($this->{$level} > $test->{$level}) {
+
                 return $MORE;
             }
         }

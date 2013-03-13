@@ -118,7 +118,7 @@ function csscrush__noise_generator ( $input, $defaults ) {
     $dimensions = $defaults[ 'dimensions' ];
     if ( ( $arg = array_shift( $args ) ) !== 'default' ) {
         // May be a color function so explode(' ', $value) is not sufficient.
-        foreach( CssCrush_Function::parseArgs( $arg, true ) as $part ) {
+        foreach ( CssCrush_Function::parseArgs( $arg, true ) as $part ) {
             if ( preg_match( '~^(\d+)x(\d+)$~i', $part, $m ) ) {
                 $dimensions = array_slice( $m, 1 );
             }
@@ -135,7 +135,7 @@ function csscrush__noise_generator ( $input, $defaults ) {
     $sharpen = $defaults[ 'sharpen' ];
 
     if ( ( $arg = array_shift( $args ) ) !== 'default' ) {
-        foreach( explode( ' ', $arg ) as $index => $value ) {
+        foreach ( explode( ' ', $arg ) as $index => $value ) {
             switch ( $index ) {
                 case 0:
                     // x and y frequency values can be specified by joining with a colon.
@@ -158,7 +158,7 @@ function csscrush__noise_generator ( $input, $defaults ) {
     $blend_mode = 'normal';
     $opacity = 1;
     if ( ( $arg = array_shift( $args ) ) !== 'default' ) {
-        foreach( explode( ' ', $arg ) as $part ) {
+        foreach ( explode( ' ', $arg ) as $part ) {
             if ( ctype_alpha( $part ) ) {
                 if ( in_array( $part, $blend_modes ) ) {
                     $blend_mode = $part;
@@ -176,7 +176,7 @@ function csscrush__noise_generator ( $input, $defaults ) {
     if ( ( $arg = array_shift( $args ) ) !== 'default' ) {
         // Saturate by default.
         $color_filter = array( 'saturate', 1 );
-        foreach( explode( ' ', $arg ) as $part ) {
+        foreach ( explode( ' ', $arg ) as $part ) {
             if ( ctype_alpha( $part ) ) {
                 if ( in_array( $part, $color_filters ) ) {
                     $color_filter[0] = $part;

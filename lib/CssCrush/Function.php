@@ -9,7 +9,7 @@ class CssCrush_Function
     // Regex pattern for finding custom functions.
     static public $functionPatt;
 
-    static protected $functions;
+    static public $functions;
 
     static protected $customFunctions = array();
 
@@ -33,25 +33,26 @@ class CssCrush_Function
     static public function setMatchPatt ()
     {
         self::$functions = self::$builtinFunctions + self::$customFunctions;
-        self::$functionPatt = CssCrush_Regex::createFunctionMatchPatt(
+        self::$functionPatt = CssCrush_Regex::createFunctionPatt(
             array_keys( self::$functions ), true );
     }
 
-    static public function executeOnString ( &$str, $patt = null, $process_callback = null, $extra = null )
+    static public function executeOnString ( &$str, $patt = null, $process_callback = null, &$extra = null )
     {
-
         // No bracketed expressions, early return.
-        if ( strpos( $str, '(' ) === false ) {
+        if (strpos($str, '(') === false) {
+
             return;
         }
 
         // Set default pattern if not set.
-        if ( is_null( $patt ) ) {
+        if (! isset($patt)) {
             $patt = CssCrush_Function::$functionPatt;
         }
 
         // No custom functions, early return.
-        if ( ! preg_match( $patt, $str ) ) {
+        if (! preg_match($patt, $str)) {
+
             return;
         }
 
@@ -87,16 +88,15 @@ class CssCrush_Function
 
             $func_returns = '';
 
-            if ( ! $process_callback ) {
-                // If no callback reference it's a built-in.
-                if ( array_key_exists( $fn_name, self::$functions ) ) {
-                    $func_returns = call_user_func( self::$functions[ $fn_name ], $args, $extra );
-                }
+            // First look for function as directly passed.
+            if (isset($process_callback[$fn_name])) {
+
+                $func_returns = call_user_func_array($process_callback[$fn_name], array($args, &$extra));
             }
-            else {
-                if ( isset( $process_callback[ $fn_name ] ) ) {
-                    $func_returns = call_user_func( $process_callback[ $fn_name ], $args, $extra );
-                }
+            // Secondly look for built-in function.
+            elseif (isset(self::$functions[$fn_name])) {
+
+                $func_returns = call_user_func_array(self::$functions[$fn_name], array($args, &$extra));
             }
 
             // Splice in the function result.
@@ -134,7 +134,7 @@ class CssCrush_Function
 
 
 #############################
-#  Stock custom CSS functions.
+#  Stock CSS functions.
 
 function csscrush_fn__math ( $input ) {
 
@@ -222,6 +222,11 @@ function csscrush_fn__this ($input, $extra) {
 
     $args = CssCrush_Function::parseArgsSimple( $input );
     $property = $args[0];
+
+    // Function relies on a context rule, bail if none.
+    if (! isset($extra['rule'])) {
+        return '';
+    }
     $rule = $extra['rule'];
 
     $rule->expandDataSet('selfData', $property);
@@ -244,7 +249,8 @@ function csscrush_fn__query ($input, $extra) {
 
     $args = CssCrush_Function::parseArgs($input);
 
-    if (count($args) < 1) {
+    // Function relies on a context property, bail if none.
+    if (count($args) < 1 || ! isset($extra['property'])) {
         return '';
     }
 
@@ -282,8 +288,9 @@ function csscrush_fn__query ($input, $extra) {
         }
     }
 
-    if ($result === '' && ! is_null($default)) {
+    if ($result === '' && isset($default)) {
         $result = $default;
     }
+
     return $result;
 }

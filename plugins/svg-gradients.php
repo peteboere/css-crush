@@ -47,23 +47,61 @@ CssCrush_Plugin::register( 'svg-gradients', array(
 ));
 
 function csscrush__enable_svg_gradients () {
-    CssCrush_Function::register( 'svg-linear-gradient', 'csscrush_fn__svg_linear_gradient' );
-    CssCrush_Function::register( 'svg-radial-gradient', 'csscrush_fn__svg_radial_gradient' );
+    CssCrush_Function::register('svg-linear-gradient', 'csscrush_fn__svg_linear_gradient');
+    CssCrush_Function::register('svg-radial-gradient', 'csscrush_fn__svg_radial_gradient');
 }
 
 function csscrush__disable_svg_gradients () {
-    CssCrush_Function::deRegister( 'svg-linear-gradient' );
-    CssCrush_Function::deRegister( 'svg-radial-gradient' );
+    CssCrush_Function::deRegister('svg-linear-gradient');
+    CssCrush_Function::deRegister('svg-radial-gradient');
 }
 
-function csscrush_fn__svg_linear_gradient ( $input ) {
+function csscrush_fn__svg_linear_gradient ($input) {
 
-    // For inline SVG debugging.
-    // static $uid = 0; $uid++;
-    static $uid = '';
+    $gradient = csscrush__create_svg_linear_gradient($input);
+    $gradient_markup = reset($gradient);
+    $gradient_id = key($gradient);
 
-    static $angle_keywords;
-    if ( ! $angle_keywords ) {
+    // Creating the svg.
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">';
+    $svg .= '<defs>';
+    $svg .= $gradient_markup;
+    $svg .= '</defs>';
+    $svg .= "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"url(#$gradient_id)\"/>";
+    $svg .= '</svg>';
+
+    // Create data-uri url and return token label.
+    $url = new CssCrush_Url('data:image/svg+xml;base64,' . base64_encode($svg));
+
+    return $url->label;
+}
+
+
+function csscrush_fn__svg_radial_gradient ($input) {
+
+    $gradient = csscrush__create_svg_radial_gradient($input);
+    $gradient_markup = reset($gradient);
+    $gradient_id = key($gradient);
+
+    // Creating the svg.
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">';
+    $svg .= '<defs>';
+    $svg .= $gradient_markup;
+    $svg .= '</defs>';
+    $svg .= "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"url(#$gradient_id)\"/>";
+    $svg .= '</svg>';
+
+    // Create data-uri url and return token label.
+    $url = new CssCrush_Url('data:image/svg+xml;base64,' . base64_encode($svg));
+
+    return $url->label;
+}
+
+
+function csscrush__create_svg_linear_gradient ($input) {
+
+    static $angle_keywords, $deg_patt;
+    if (! $angle_keywords) {
         $angle_keywords = array(
             'to top'    => 180,
             'to right'  => 270,
@@ -79,6 +117,8 @@ function csscrush_fn__svg_linear_gradient ( $input ) {
         $angle_keywords[ 'to left top' ] = $angle_keywords[ 'to top left' ];
         $angle_keywords[ 'to right bottom' ] = $angle_keywords[ 'to bottom right' ];
         $angle_keywords[ 'to left bottom' ] = $angle_keywords[ 'to bottom left' ];
+
+        $deg_patt = CssCrush_Regex::create('^<number>deg$', 'i');
     }
 
     $args = CssCrush_Function::parseArgs( $input );
@@ -92,7 +132,7 @@ function csscrush_fn__svg_linear_gradient ( $input ) {
     $first_arg_is_angle = false;
 
     // Try to parse an angle value.
-    if ( preg_match( '~-?[\d\.]+deg~i', $first_arg ) ) {
+    if ( preg_match( $deg_patt, $first_arg ) ) {
         $angle = floatval( $first_arg );
         $first_arg_is_angle = true;
     }
@@ -106,19 +146,25 @@ function csscrush_fn__svg_linear_gradient ( $input ) {
         $first_arg_is_angle = true;
     }
 
+    $angle += 180;
+
     // Shift off the first argument if it has been recognised as an angle.
     if ( $first_arg_is_angle ) {
         array_shift( $args );
     }
 
     // If not using a magic corner, create start/end coordinates from the angle.
-    if ( ! $coords ) {
+    if (! $coords) {
+
+        // Quick fix to match standard linear-gradient() angle.
+        // $angle += 180;
+
         // Normalize the angle.
-        $angle = fmod( $angle, 360 );
-        if ( $angle < 0 ) {
+        $angle = fmod($angle, 360);
+        if ($angle < 0) {
             $angle = 360 + $angle;
         }
-        $angle = round( $angle, 2 );
+        $angle = round($angle, 2);
 
         $start_x = 0;
         $end_x = 0;
@@ -171,34 +217,23 @@ function csscrush_fn__svg_linear_gradient ( $input ) {
     //   for color stop offsets.
     $color_stops = csscrush__parse_gradient_color_stops( $args );
 
-    // Creating the svg.
-    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">';
-    $svg .= '<defs>';
-    $svg .= "<linearGradient id=\"g$uid\" gradientUnits=\"userSpaceOnUse\"";
-    $svg .= " x1=\"{$coords[0][0]}%\" x2=\"{$coords[1][0]}%\" y1=\"{$coords[0][1]}%\" y2=\"{$coords[1][1]}%\">";
+    // Create the gradient markup with a unique id.
+    static $uid = 0;
+    $uid++;
+    $gradient_id = "lg$uid";
+    $gradient = "<linearGradient id=\"$gradient_id\" gradientUnits=\"userSpaceOnUse\"";
+    $gradient .= " x1=\"{$coords[0][0]}%\" x2=\"{$coords[1][0]}%\" y1=\"{$coords[0][1]}%\" y2=\"{$coords[1][1]}%\">";
+    $gradient .= $color_stops;
+    $gradient .= '</linearGradient>';
 
-    foreach ( $color_stops as $offset => $color ) {
-        $svg .= "<stop offset=\"$offset%\" stop-color=\"$color\"/>";
-    }
-    $svg .= '</linearGradient>';
-    $svg .= '</defs>';
-    $svg .= "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"url(#g$uid)\"/>";
-    $svg .= '</svg>';
-
-    // Create data-uri url and return token label.
-    $url = new CssCrush_Url( 'data:image/svg+xml;base64,' . base64_encode( $svg ) );
-
-    return $url->label;
+    return array($gradient_id => $gradient);
 }
 
-function csscrush_fn__svg_radial_gradient ( $input ) {
 
-    // For inline SVG debugging.
-    // static $uid = 0; $uid++;
-    static $uid = '';
+function csscrush__create_svg_radial_gradient ($input) {
 
-    static $position_keywords;
-    if ( ! $position_keywords ) {
+    static $position_keywords, $origin_patt;
+    if (! $position_keywords) {
         $position_keywords = array(
             'at top'    => array('50%', '0%'),
             'at right'  => array('100%', '50%'),
@@ -215,6 +250,8 @@ function csscrush_fn__svg_radial_gradient ( $input ) {
         $position_keywords[ 'at left top' ] = $position_keywords[ 'at top left' ];
         $position_keywords[ 'at right bottom' ] = $position_keywords[ 'at bottom right' ];
         $position_keywords[ 'at left bottom' ] = $position_keywords[ 'at bottom left' ];
+
+        $origin_patt = CssCrush_Regex::create('^(<number>%?) +(<number>%?)$');
     }
 
     $args = CssCrush_Function::parseArgs( $input );
@@ -227,7 +264,7 @@ function csscrush_fn__svg_radial_gradient ( $input ) {
     $first_arg_is_position = false;
 
     // Try to parse an origin value.
-    if ( preg_match( '~^(-?[\d\.]+%?) +(-?[\d\.]+%?)$~', $first_arg, $m ) ) {
+    if ( preg_match( $origin_patt, $first_arg, $m ) ) {
         $position = array( $m[1], $m[2] );
         $first_arg_is_position = true;
     }
@@ -247,65 +284,63 @@ function csscrush_fn__svg_radial_gradient ( $input ) {
     //   for color stop offsets.
     $color_stops = csscrush__parse_gradient_color_stops( $args );
 
-    // Creating the svg.
-    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">';
-    $svg .= '<defs>';
-    $svg .= "<radialGradient id=\"g$uid\" gradientUnits=\"userSpaceOnUse\"";
-    $svg .= " cx=\"{$position[0]}\" cy=\"{$position[1]}\" r=\"100%\">";
+    // Create the gradient markup with a unique id.
+    static $uid = 0;
+    $uid++;
+    $gradient_id = "rg$uid";
+    $gradient = "<radialGradient id=\"$gradient_id\" gradientUnits=\"userSpaceOnUse\"";
+    $gradient .= " cx=\"{$position[0]}\" cy=\"{$position[1]}\" r=\"100%\">";
+    $gradient .= $color_stops;
+    $gradient .= '</radialGradient>';
 
-    foreach ( $color_stops as $offset => $color ) {
-        $svg .= "<stop offset=\"$offset%\" stop-color=\"$color\"/>";
-    }
-    $svg .= '</radialGradient>';
-    $svg .= '</defs>';
-    $svg .= "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"url(#g$uid)\"/>";
-    $svg .= '</svg>';
-
-    // Create data-uri url and return token label.
-    $url = new CssCrush_Url( 'data:image/svg+xml;base64,' . base64_encode( $svg ) );
-
-    return $url->label;
+    return array($gradient_id => $gradient);
 }
 
-function csscrush__parse_gradient_color_stops ( array $color_stop_args ) {
+
+function csscrush__parse_gradient_color_stops (array $color_stop_args) {
 
     $offsets = array();
     $colors = array();
     $offset_patt = '~ +([\d\.]+%)$~';
-    $last_index = count( $color_stop_args ) - 1;
+    $last_index = count($color_stop_args) - 1;
 
-    foreach ( $color_stop_args as $index => $color_arg ) {
+    foreach ($color_stop_args as $index => $color_arg) {
 
-        if ( preg_match( $offset_patt, $color_arg, $m ) ) {
-            $offsets[] = floatval( $m[1] );
-            $colors[] = preg_replace( $offset_patt, '', $color_arg );
+        if (preg_match($offset_patt, $color_arg, $m)) {
+            $offsets[] = floatval($m[1]);
+            $color = preg_replace($offset_patt, '', $color_arg);
         }
         else {
-            if ( $index === 0 ) {
+            if ($index === 0) {
                 $offsets[] = 0;
             }
-            elseif ( $index === $last_index ) {
+            elseif ($index === $last_index) {
                 $offsets[] = 100;
             }
             else {
                 $offsets[] = null;
             }
-            $colors[] = $color_arg;
+            $color = $color_arg;
         }
+
+        // For hsla()/rgba() extract alpha component from color values and
+        // convert to hsl()/rgb().
+        // Webkit doesn't support them for SVG colors.
+        $colors[] = CssCrush_Color::colorSplit($color);
     }
 
     // For unspecified color offsets fill in the blanks.
     $next_index_not_null = 0;
     $prev_index_not_null = 0;
-    $n = count( $offsets );
+    $n = count($offsets);
 
     foreach ( $offsets as $index => $offset ) {
 
-        if ( is_null( $offset ) ) {
+        if (! isset($offset)) {
 
             // Scan for next non-null offset.
             for ( $i = $index; $i < $n; $i++ ) {
-                if ( ! is_null( $offsets[$i] ) ) {
+                if (isset($offsets[$i])) {
                     $next_index_not_null = $i;
                     break;
                 }
@@ -319,7 +354,7 @@ function csscrush__parse_gradient_color_stops ( array $color_stop_args ) {
             $padding = $padding_increment;
 
             for ( $i = $index; $i < $n; $i++ ) {
-                if ( ! is_null( $offsets[$i] ) ) {
+                if (isset($offsets[$i])) {
                     break;
                 }
                 // Replace the null offset with the new padded value.
@@ -333,5 +368,12 @@ function csscrush__parse_gradient_color_stops ( array $color_stop_args ) {
         }
     }
 
-    return array_combine( $offsets, $colors );
+    $stops = '';
+    foreach ( array_combine( $offsets, $colors ) as $offset => $color ) {
+        list($color_value, $opacity) = $color;
+        $stop_opacity = $opacity < 1 ? " stop-opacity=\"$opacity\"" : '';
+        $stops .= "<stop offset=\"$offset%\" stop-color=\"$color_value\"$stop_opacity/>";
+    }
+
+    return $stops;
 }

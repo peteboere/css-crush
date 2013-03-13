@@ -451,12 +451,14 @@ class CssCrush
         if ( is_array( $vars ) ) {
             $config->vars = array_merge( $config->vars, $vars );
         }
+
         // Test for a file. If it is attempt to parse it
         elseif ( is_string( $vars ) && file_exists( $vars ) ) {
             if ( $result = @parse_ini_file( $vars ) ) {
                 $config->vars = array_merge( $config->vars, $result );
             }
         }
+
         // Clear the stack if the argument is explicitly null
         elseif ( is_null( $vars ) ) {
             $config->vars = array();

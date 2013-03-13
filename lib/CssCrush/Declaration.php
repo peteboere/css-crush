@@ -93,27 +93,29 @@ class CssCrush_Declaration
 
             // this() function needs to be called exclusively because
             // it's self referencing.
+            $extra = array(
+                'rule' => $parent_rule,
+            );
             CssCrush_Function::executeOnString(
                 $this->value,
                 CssCrush_Regex::$patt->thisFunction,
                 array(
                     'this' => 'csscrush_fn__this',
                 ),
-                array(
-                    'rule' => $parent_rule,
-                ));
+                $extra);
 
             // Add result to $rule->selfData.
             $parent_rule->selfData += array($this->property => $this->value);
 
+            $extra = array(
+                'rule' => $parent_rule,
+                'property' => $this->property
+            );
             CssCrush_Function::executeOnString( 
                 $this->value,
                 null,
                 null,
-                array(
-                    'rule' => $parent_rule,
-                    'property' => $this->property,
-                ));
+                $extra);
         }
 
         // Trim whitespace that may have been introduced by functions.

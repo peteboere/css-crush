@@ -34,7 +34,7 @@ class CssCrush_Regex
         $classes->p_token = '\?p\d+\?'; // Parens.
         $classes->u_token = '\?u\d+\?'; // URLs.
         $classes->t_token = '\?t\d+\?'; // Traces.
-        $classes->a_token = '\?arg(\d+)\?'; // Args.
+        $classes->a_token = '\?a(\d+)\?'; // Args.
 
         // Boundries.
         $classes->LB = '(?<![\w-])'; // Left ident boundry.
@@ -68,8 +68,8 @@ class CssCrush_Regex
         // Functions.
         $patt->function = CssCrush_Regex::create( '<LB>(<ident>)(<p-token>)', 'S' );
         $patt->varFunction = CssCrush_Regex::create( '\$\( *(<ident>) *\)', 'S' );
-        $patt->argFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'arg' ) );
-        $patt->thisFunction = CssCrush_Regex::createFunctionMatchPatt( array( 'this' ) );
+        $patt->argFunction = CssCrush_Regex::createFunctionPatt( array( 'arg' ) );
+        $patt->thisFunction = CssCrush_Regex::createFunctionPatt( array( 'this' ) );
 
         $patt->commentAndString = '~
             # Quoted string (to EOF if unmatched).
@@ -112,6 +112,7 @@ class CssCrush_Regex
         }
 
         $pattern = str_replace($find, $replace, $pattern_template);
+
         return "$delim{$pattern}$delim{$flags}";
     }
 
@@ -123,10 +124,11 @@ class CssCrush_Regex
         }
 
         $count = preg_match_all($patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset);
+
         return $count ? $matches : array();
     }
 
-    static public function createFunctionMatchPatt ( $list, $include_math_function = false )
+    static public function createFunctionPatt ( $list, $include_math_function = false )
     {
         $question = '';
         if ( $include_math_function ) {
@@ -138,6 +140,7 @@ class CssCrush_Regex
         foreach ( $list as &$fn_name ) {
             $fn_name = preg_quote( $fn_name );
         }
+
         return CssCrush_Regex::create( '<LB>(' . implode( '|', $list ) . ')' . $question . '\(', 'iS' );
     }
 }

@@ -69,19 +69,15 @@ class CssCrush_Url
 
     public function toData ()
     {
-        if ( $this->isRooted ) {
-            $file = CssCrush::$process->docRoot . $this->value;
-        }
-        else {
-            $file = CssCrush::$process->input->dir . "/$this->value";
-        }
+        $file = CssCrush::$process->docRoot . $this->toRoot()->value;
 
         // File not found.
-        if ( ! file_exists( $file ) ) {
-            return;
+        if (! file_exists($file)) {
+
+            return $this;
         }
 
-        $file_ext = pathinfo( $file, PATHINFO_EXTENSION );
+        $file_ext = pathinfo($file, PATHINFO_EXTENSION);
 
         // Only allow certain extensions
         static $allowed_file_extensions = array(
@@ -95,19 +91,17 @@ class CssCrush_Url
             'png'  => 'image/png',
         );
 
-        if ( ! isset( $allowed_file_extensions[ $file_ext ] ) ) {
-            return;
+        if (! isset($allowed_file_extensions[$file_ext])) {
+
+            return $this;
         }
 
         $mime_type = $allowed_file_extensions[ $file_ext ];
         $base64 = base64_encode( file_get_contents( $file ) );
         $this->value = "data:$mime_type;base64,$base64";
         $this->protocol = 'data';
-    }
 
-    public function prepend ( $path_fragment )
-    {
-        $this->value = $path_fragment . $this->value;
+        return $this;
     }
 
     public function resolveRootedPath ()
@@ -123,8 +117,26 @@ class CssCrush_Url
             substr( $this->value, 1 );
     }
 
+    public function prepend ( $path_fragment )
+    {
+        $this->value = $path_fragment . $this->value;
+        return $this;
+    }
+
+    public function toRoot ()
+    {
+        if ($this->isRelative) {
+            $this->prepend(CssCrush::$process->input->dirUrl . '/');
+            $this->isRooted = true;
+            $this->isRelative = false;
+        }
+
+        return $this;
+    }
+
     public function simplify ()
     {
         $this->value = CssCrush_Util::simplifyPath( $this->value );
+        return $this;
     }
 }

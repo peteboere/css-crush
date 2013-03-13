@@ -24,16 +24,19 @@ class CssCrush_Stream
     public function update ( $str )
     {
         $this->raw = $str;
+
         return $this;
     }
 
     public function substr ( $start, $length = null )
     {
-        if ( is_null( $length ) ) {
-            return substr( $this->raw, $start );
+        if (! isset($length)) {
+
+            return substr($this->raw, $start);
         }
         else {
-            return substr( $this->raw, $start, $length );
+
+            return substr($this->raw, $start, $length);
         }
     }
 
@@ -45,6 +48,7 @@ class CssCrush_Stream
     public function replace ( $find, $replacement )
     {
         $this->raw = str_replace( $find, $replacement, $this->raw );
+
         return $this;
     }
 

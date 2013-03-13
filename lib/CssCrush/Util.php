@@ -145,6 +145,11 @@ class CssCrush_Util
             $property = trim( substr( $declaration, 0, $colon_pos ) );
             $value = trim( substr( $declaration, $colon_pos + 1 ) );
 
+            // Empty strings are ignored.
+            if (! isset($property[0]) || ! isset($value[0])) {
+                continue;
+            }
+
             if ( $keyed ) {
                 $out[ $property ] = $value;
             }
