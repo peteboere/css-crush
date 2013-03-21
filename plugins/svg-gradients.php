@@ -108,10 +108,10 @@ function csscrush__create_svg_linear_gradient ($input) {
             'to bottom' => 0,
             'to left'   => 90,
             // Not very magic corners.
-            'to top right'    => array( array(0, 100), array(100, 0) ),
-            'to top left'     => array( array(100, 100), array(0, 0) ),
+            'to top right' => array( array(0, 100), array(100, 0) ),
+            'to top left' => array( array(100, 100), array(0, 0) ),
             'to bottom right' => array( array(0, 0), array(100, 100) ),
-            'to bottom left'  => array( array(100, 0), array(0, 100) ),
+            'to bottom left' => array( array(100, 0), array(0, 100) ),
         );
         $angle_keywords[ 'to right top' ] = $angle_keywords[ 'to top right' ];
         $angle_keywords[ 'to left top' ] = $angle_keywords[ 'to top left' ];
@@ -123,7 +123,7 @@ function csscrush__create_svg_linear_gradient ($input) {
 
     $args = CssCrush_Function::parseArgs( $input );
 
-    // If no angle argument is passed the default used is 0.
+    // If no angle argument is passed the default.
     $angle = 0;
 
     // Parse starting and ending coordinates from the first argument if it's an angle.
@@ -134,6 +134,9 @@ function csscrush__create_svg_linear_gradient ($input) {
     // Try to parse an angle value.
     if ( preg_match( $deg_patt, $first_arg ) ) {
         $angle = floatval( $first_arg );
+
+        // Quick fix to match standard linear-gradient() angle.
+        $angle += 180;
         $first_arg_is_angle = true;
     }
     elseif ( isset( $angle_keywords[ $first_arg ] ) ) {
@@ -146,8 +149,6 @@ function csscrush__create_svg_linear_gradient ($input) {
         $first_arg_is_angle = true;
     }
 
-    $angle += 180;
-
     // Shift off the first argument if it has been recognised as an angle.
     if ( $first_arg_is_angle ) {
         array_shift( $args );
@@ -155,9 +156,6 @@ function csscrush__create_svg_linear_gradient ($input) {
 
     // If not using a magic corner, create start/end coordinates from the angle.
     if (! $coords) {
-
-        // Quick fix to match standard linear-gradient() angle.
-        // $angle += 180;
 
         // Normalize the angle.
         $angle = fmod($angle, 360);
