@@ -155,11 +155,19 @@ class CssCrush_Process
         return $label;
     }
 
-    public function fetchToken ( $token )
+    public function isToken ($str, $of_type = null)
     {
-        $path =& $this->tokens->{ $token[1] };
-        if ( isset( $path[ $token ] ) ) {
-            return $path[ $token ];
+        if (preg_match('~^\?([a-z])\d+\?$~S', $str, $m)) {
+            return $of_type ? ($of_type === $m[1]) : true;
+        }
+        return false;
+    }
+
+    public function fetchToken ($token)
+    {
+        $path =& $this->tokens->{$token[1]};
+        if (isset($path[$token])) {
+            return $path[$token];
         }
         return null;
     }
@@ -176,7 +184,7 @@ class CssCrush_Process
         unset( $this->tokens->{ $token[1] }[ $token ] );
     }
 
-    public function restoreTokens ( $str, $type = 'p' )
+    public function restoreTokens ($str, $type = 'p', $release = false)
     {
         // Reference the token table.
         $token_table =& $this->tokens->{$type};
@@ -184,12 +192,16 @@ class CssCrush_Process
         // Find matching tokens.
         $matches = CssCrush_Regex::matchAll(CssCrush_Regex::$patt->{"{$type}_token"}, $str);
 
-        foreach ( $matches as $m ) {
+        foreach ($matches as $m) {
             $token = $m[0][0];
-            if ( isset( $token_table[ $token ] ) ) {
-                $str = str_replace( $token, $token_table[ $token ], $str );
+            if (isset($token_table[$token])) {
+                $str = str_replace($token, $token_table[$token], $str);
+                if ($release) {
+                    unset($token_table[$token]);
+                }
             }
         }
+
         return $str;
     }
 
@@ -251,18 +263,19 @@ class CssCrush_Process
         // Substitute any tags
         if ( preg_match_all( '~\{\{([^}]+)\}\}~', $boilerplate, $boilerplate_matches ) ) {
 
-            $replacements = array();
+            $tags = array(
+                'datetime' => @date( 'Y-m-d H:i:s O' ),
+                'year' => @date( 'Y' ),
+                'version' => 'v' . CssCrush::$config->version,
+            );
+
             foreach ( $boilerplate_matches[0] as $index => $tag ) {
                 $tag_name = $boilerplate_matches[1][$index];
-                if ( $tag_name === 'datetime' ) {
-                    $replacements[] = @date( 'Y-m-d H:i:s O' );
+                $replacement = '?';
+                if (isset($tags[$tag_name])) {
+                    $replacement = $tags[$tag_name];
                 }
-                elseif ( $tag_name === 'version' ) {
-                    $replacements[] = 'v' . CssCrush::$config->version;
-                }
-                else {
-                    $replacements[] = '?';
-                }
+                $replacements[] = $replacement;
             }
             $boilerplate = str_replace( $boilerplate_matches[0], $replacements, $boilerplate );
         }
@@ -309,26 +322,26 @@ class CssCrush_Process
             return;
         }
 
-        // Find all selector-alias matches.
-        $matches = CssCrush_Regex::matchAll($process->selectorAliasesPatt, $str);
-
         $table =& $process->selectorAliases;
 
-        // Step through the matches from last to first.
-        while ($match = array_pop($matches)) {
+        // Find all selector-alias matches.
+        $selector_alias_calls = CssCrush_Regex::matchAll($process->selectorAliasesPatt, $str);
 
-            $selector_alias_name = $match[1][0];
+        // Step through the matches from last to first.
+        while ($selector_alias_call = array_pop($selector_alias_calls)) {
+
+            $selector_alias_name = $selector_alias_call[1][0];
 
             if (! isset($table[$selector_alias_name])) {
                 continue;
             }
 
             $replacement = $table[$selector_alias_name];
-            $start = $match[0][1];
-            $length = strlen($match[0][0]);
+            $start = $selector_alias_call[0][1];
+            $length = strlen($selector_alias_call[0][0]);
 
             // It's a function alias if a start paren is matched.
-            if (isset($match[2])) {
+            if (isset($selector_alias_call[2])) {
 
                 if (! preg_match(CssCrush_Regex::$patt->balancedParens, $str,
                     $parens, PREG_OFFSET_CAPTURE, $start)) {
@@ -346,13 +359,13 @@ class CssCrush_Process
                 $replacement = str_replace($search, $args, $replacement);
 
                 // Apply substitutions to copies of string tokens within the replacement.
-                preg_match_all(CssCrush_Regex::$patt->s_token, $replacement, $_matches);
-                foreach ($_matches as $m) {
-                    $label = $m[0];
-                    if (isset($process->tokens->s[$label])) {
+                preg_match_all(CssCrush_Regex::$patt->s_token, $replacement, $s_tokens);
+                foreach ($s_tokens as $m) {
+                    foreach ($m as $label) {
+                        $old_token_value = $process->fetchToken($label);
 
                         // Create new token based on the value.
-                        $token_value = str_replace($search, $args, $process->tokens->s[$label]);
+                        $token_value = str_replace($search, $args, $old_token_value);
                         $new_label = $process->addToken($token_value, 's');
 
                         // Swap the old token label with new.
@@ -521,6 +534,12 @@ class CssCrush_Process
             $this->variables = array_merge( $this->variables, $option_vars );
         }
 
+        // Finally add state variables.
+        // $this->variables = array(
+        //     'input-path' => $this->input->dirUrl,
+        //     'output-path' => $this->output->dirUrl,
+        // ) + $this->variables;
+
         // Place variables referenced inside variables. Excecute custom functions.
         foreach ( $this->variables as $name => &$value ) {
 
@@ -546,7 +565,7 @@ class CssCrush_Process
 
         // Repeat above steps for variables embedded in URL tokens.
         foreach ( $this->tokens->u as $label => $url ) {
-            if ( self::placeVariables( $url->value ) ) {
+            if (! $url->isData && self::placeVariables($url->value)) {
                 // Re-evaluate $url->value if anything has been interpolated.
                 $url->evaluate();
             }
@@ -1039,32 +1058,24 @@ class CssCrush_Process
         }
 
         // Insert URLs.
-        if ( $this->tokens->u ) {
+        if ($this->tokens->u) {
 
-            $link = CssCrush_Util::getLinkBetweenDirs( $this->output->dir, $this->input->dir );
+            $link = CssCrush_Util::getLinkBetweenDirs($this->output->dir, $this->input->dir);
             $make_urls_absolute = $options->rewrite_import_urls === 'absolute';
 
-            foreach ( $this->tokens->u as $token => $url ) {
+            foreach ($this->tokens->u as $token => $url) {
 
-                if ( $url->isRelative ) {
-                    // Optionally set the URLs to absolute.
-                    if ( $make_urls_absolute ) {
+                if ($url->isRelative && ! $url->noRewrite) {
+                    if ($make_urls_absolute) {
                         $url->toRoot();
                     }
                     // If output dir is different to input dir prepend a link between the two.
-                    elseif ( $link ) {
-                        $url->prepend( $link );
+                    elseif ($link) {
+                        $url->prepend($link);
                     }
                 }
-
-                if ( $url->convertToData ) {
-                    $url->evaluate()->toData();
-                }
-                else {
-                    $url->simplify();
-                }
             }
-            $this->stream->replaceHash( $this->tokens->u );
+            $this->stream->replaceHash($this->tokens->u);
         }
 
         // Insert string literals.

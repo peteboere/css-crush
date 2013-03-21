@@ -134,8 +134,8 @@ class CssCrush_IO
                 if ( ! $options_changed && ! $files_changed ) {
 
                     // Files have not been modified and config is the same: return the old file.
-                    CssCrush::log( "Files and options have not been modified, returning existing
-                         file '$existingfile->URL'." );
+                    CssCrush::log(
+                        "Files and options have not been modified, returning existing file '$existingfile->URL'." );
                     return $existingfile->URL . ( $options->versioning !== false  ? "?$existing_datesum" : '' );
                 }
                 else {
@@ -153,10 +153,12 @@ class CssCrush_IO
                 }
             }
             else if ( file_exists( $existingfile->path ) ) {
+
                 // File exists but has no config.
                 CssCrush::log( 'File exists but no config, removing existing file.' );
                 unlink( $existingfile->path );
             }
+
             return false;
 
         } // foreach

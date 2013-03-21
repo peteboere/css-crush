@@ -503,44 +503,60 @@ class CssCrush
 
 
     #############################
-    #  Internal development.
+    #  Logging and stats.
 
     static public $logging = false;
 
-    static public function log ( $arg = null, $label = '' )
+    static public $log = array();
+
+    static public function log ($arg = null, $label = null, $var_dump = false)
     {
-        if ( ! self::$logging ) {
+        if (! self::$logging) {
+
             return;
         }
-        static $log = '';
 
-        $args = func_get_args();
-        if ( ! count( $args ) ) {
-            // No arguments, return the log
-            return $log;
+        // If no arguments are passed return the log.
+        if (! func_num_args()) {
+
+            if (PHP_SAPI !== 'cli') {
+                $out = array();
+                foreach (CssCrush::$log as $item) {
+                    $out[] = '<pre>' . htmlspecialchars($item) . '</pre>';
+                }
+                return implode('<hr>', $out);
+            }
+            else {
+                return implode(PHP_EOL, CssCrush::$log) . PHP_EOL;
+            }
         }
 
-        if ( $label ) {
-            $log .= "<h4>$label</h4>";
-        }
-
-        if ( is_string( $arg ) ) {
-            $log .= htmlspecialchars( $arg ) . '<hr>';
+        if ($label) {
+            $label = PHP_EOL . "$label" . PHP_EOL . str_repeat('=', strlen($label)) . PHP_EOL;
         }
         else {
-            $out = '<pre>';
+            $label = '';
+        }
+
+        if (is_string($arg)) {
+            CssCrush::$log[] = "$label$arg";
+        }
+        else {
             ob_start();
-            print_r( $arg );
-            $out .= ob_get_clean();
-            $out .= '</pre>';
-            $log .= $out . '<hr>';
+            $var_dump ? var_dump($arg) : print_r($arg);
+            CssCrush::$log[] = $label . ob_get_clean();
         }
     }
 
-    static public function logError ( $msg )
+    static public function clearLog ()
+    {
+        CssCrush::$log = array();
+    }
+
+    static public function logError ($msg)
     {
         self::$process->errors[] = $msg;
-        self::log( $msg );
+        self::log($msg);
     }
 
     static public function runStat ( $name )

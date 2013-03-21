@@ -23,7 +23,8 @@ class CssCrush_Importer
 
         // The prepend file.
         if ( $prepend_file = CssCrush_Util::find( 'Prepend-local.css', 'Prepend.css' ) ) {
-            $prepend_file_contents = file_get_contents( $prepend_file );
+
+            $prepend_file_contents = file_get_contents($prepend_file);
             $process->currentFile = 'file://' . $prepend_file;
 
             // If there's a parsing error inside the prepend file, wipe $prepend_file_contents.
@@ -44,6 +45,7 @@ class CssCrush_Importer
 
         // If there's a parsing error go no further.
         if ( ! self::prepareForStream( $str ) ) {
+
             return $str;
         }
 
@@ -70,7 +72,7 @@ class CssCrush_Importer
             $url = CssCrush_Url::get( $match[1][0] );
 
             // Pass over protocoled import urls.
-            if ( $url->protocol ) {
+            if ($url->protocol) {
                 $search_offset = $match_end;
                 continue;
             }

@@ -37,7 +37,7 @@ class CssCrush_Function
             array_keys( self::$functions ), true );
     }
 
-    static public function executeOnString ( &$str, $patt = null, $process_callback = null, &$extra = null )
+    static public function executeOnString ( &$str, $patt = null, $process_callback = null, $extra = null )
     {
         // No bracketed expressions, early return.
         if (strpos($str, '(') === false) {
@@ -71,7 +71,7 @@ class CssCrush_Function
 
             // No function name default to math expression.
             // Store the raw function name match.
-            $raw_fn_name = isset( $match[1] ) ? $match[1][0] : '';
+            $raw_fn_name = isset($match[1]) ? strtolower($match[1][0]) : '';
             $fn_name = $raw_fn_name ? $raw_fn_name : 'math';
             if ( '-' === $fn_name ) {
                 $fn_name = 'math';
@@ -91,12 +91,12 @@ class CssCrush_Function
             // First look for function as directly passed.
             if (isset($process_callback[$fn_name])) {
 
-                $func_returns = call_user_func_array($process_callback[$fn_name], array($args, &$extra));
+                $func_returns = call_user_func($process_callback[$fn_name], $args, $extra);
             }
             // Secondly look for built-in function.
             elseif (isset(self::$functions[$fn_name])) {
 
-                $func_returns = call_user_func_array(self::$functions[$fn_name], array($args, &$extra));
+                $func_returns = call_user_func(self::$functions[$fn_name], $args, $extra);
             }
 
             // Splice in the function result.
