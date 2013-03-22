@@ -397,21 +397,17 @@ function csscrush__svg_polyline ($element) {
 */
 function csscrush__svg_line ($element) {
 
-    // Ensure required attributes have defaults set.
-    $element->data += array(
-        'points' => '10,10 70,70',
-    );
-
     // Set a default stroke.
     $element->styles += array(
         'stroke' => '#000',
     );
 
-    $points = preg_split('~[, ]+~', $element->data['points']);
-    $element->attrs['x1'] = $points[0];
-    $element->attrs['y1'] = $points[1];
-    $element->attrs['x2'] = $points[2];
-    $element->attrs['y2'] = $points[3];
+    $element->attrs += array(
+        'x1' => 0,
+        'x2' => 0,
+        'y1' => 0,
+        'y2' => 0,
+    );
 }
 
 /*

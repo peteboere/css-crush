@@ -31,3 +31,31 @@ function csscrush_clearcache ( $dir = '' ) {
 function csscrush_stat ( $name = null ) {
     return CssCrush::stat( $name );
 }
+
+function csscrush_version () {
+    return CssCrush::$config->version;
+}
+
+/**
+ * Set default options and config settings.
+ *
+ * @param string $object_name  Name of object you want to modify: 'config' or 'options'.
+ * @param mixed $modifier  Assoc array of keys and values to set, or callable which is passed the object.
+ */
+function csscrush_set ($object_name, $modifier) {
+
+    if (in_array($object_name, array('options', 'config'))) {
+
+        $pointer = $object_name === 'options' ?
+            CssCrush::$config->options : CssCrush::$config;
+
+        if (is_callable($modifier)) {
+            call_user_func($modifier, $pointer);
+        }
+        elseif (is_array($modifier)) {
+            foreach ($modifier as $key => $value) {
+                $pointer->{$key} = $value;
+            }
+        }
+    }
+}

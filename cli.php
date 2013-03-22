@@ -277,7 +277,7 @@ if ($args->output_file) {
 if ($args->watch) {
 
     // Override the IO class.
-    CssCrush::$config->io = 'CssCrush_IOWatch';
+    csscrush_set('config', array('io' => 'CssCrush_IOWatch'));
 
     stdout('CONTROL-C to quit.');
 

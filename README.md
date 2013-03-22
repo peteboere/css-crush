@@ -16,7 +16,7 @@ Quick start
 ```php
 <?php
 
-require_once 'CssCrush/CssCrush.php';
+require_once 'path/to/CssCrush.php';
 $global_css = csscrush_file( '/css/global.css' );
 
 ?>

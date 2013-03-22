@@ -17,13 +17,13 @@ class CssCrush
     // Init called once manually post class definition.
     static public function init ()
     {
-        self::$config = new stdclass();
+        self::$config = new stdClass();
 
         // Path to the project root folder.
         self::$config->location = dirname(dirname(dirname(__FILE__)));
 
         // Establish version id.
-        self::$config->version = new CssCrush_Version( self::VERSION );
+        self::$config->version = new CssCrush_Version(self::VERSION);
 
         // Set the docRoot reference.
         self::setDocRoot();
