@@ -15,29 +15,29 @@ class CssCrush_Declaration
     public $skip;
     public $important;
 
-    public function __construct ( $prop, $value, $contextIndex = 0 )
+    public function __construct ($prop, $value, $contextIndex = 0)
     {
         $regex = CssCrush_Regex::$patt;
 
         // Normalize input. Lowercase the property name.
-        $prop = strtolower( trim( $prop ) );
-        $value = trim( $value );
+        $prop = strtolower(trim($prop));
+        $value = trim($value);
 
         // Check the input.
-        if ( $prop === '' || $value === '' || $value === null ) {
+        if ($prop === '' || $value === '' || $value === null) {
             $this->inValid = true;
 
             return;
         }
 
         // Test for escape tilde.
-        if ( $skip = strpos( $prop, '~' ) === 0 ) {
-            $prop = substr( $prop, 1 );
+        if ($skip = strpos($prop, '~') === 0) {
+            $prop = substr($prop, 1);
         }
 
         // Store the canonical property name.
         // Store the vendor mark if one is present.
-        if ( preg_match( $regex->vendorPrefix, $prop, $vendor ) ) {
+        if (preg_match($regex->vendorPrefix, $prop, $vendor)) {
             $canonical_property = $vendor[2];
             $vendor = $vendor[1];
         }
@@ -47,13 +47,13 @@ class CssCrush_Declaration
         }
 
         // Check for !important.
-        if ( ( $important = stripos( $value, '!important' ) ) !== false ) {
-            $value = rtrim( substr( $value, 0, $important ) );
+        if (($important = stripos($value, '!important')) !== false) {
+            $value = rtrim(substr($value, 0, $important));
             $important = true;
         }
 
         // Reject declarations with empty CSS values.
-        if ( $value === false || $value === '' ) {
+        if ($value === false || $value === '') {
             $this->inValid = true;
 
             return;
@@ -70,7 +70,7 @@ class CssCrush_Declaration
 
     public function __toString ()
     {
-        if ( CssCrush::$process->minifyOutput ) {
+        if (CssCrush::$process->minifyOutput) {
             $whitespace = '';
         }
         else {
@@ -86,22 +86,22 @@ class CssCrush_Declaration
         Capture parens.
         Index functions.
     */
-    public function process ( $parent_rule )
+    public function process ($parent_rule)
     {
         // Apply custom functions.
-        if ( ! $this->skip ) {
+        if (! $this->skip) {
 
             // this() function needs to be called exclusively because
             // it's self referencing.
             $extra = array(
                 'rule' => $parent_rule,
-            );
+           );
             CssCrush_Function::executeOnString(
                 $this->value,
                 CssCrush_Regex::$patt->thisFunction,
                 array(
                     'this' => 'csscrush_fn__this',
-                ),
+               ),
                 $extra);
 
             // Add result to $rule->selfData.
@@ -110,8 +110,8 @@ class CssCrush_Declaration
             $extra = array(
                 'rule' => $parent_rule,
                 'property' => $this->property
-            );
-            CssCrush_Function::executeOnString( 
+           );
+            CssCrush_Function::executeOnString(
                 $this->value,
                 null,
                 null,
@@ -141,9 +141,9 @@ class CssCrush_Declaration
     {
         // Create an index of all regular functions in the value.
         $functions = array();
-        if ( preg_match_all( CssCrush_Regex::$patt->function, $this->value, $m ) ) {
-            foreach ( $m[1] as $index => $fn_name ) {
-                $functions[ strtolower( $fn_name ) ] = true;
+        if (preg_match_all(CssCrush_Regex::$patt->function, $this->value, $m)) {
+            foreach ($m[1] as $index => $fn_name) {
+                $functions[strtolower($fn_name)] = true;
             }
         }
         $this->functions = $functions;

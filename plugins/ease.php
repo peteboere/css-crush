@@ -25,7 +25,7 @@ function csscrush__disable_ease () {
     CssCrush_Hook::remove( 'rule_prealias', 'csscrush__ease' );
 }
 
-function csscrush__ease ( CssCrush_Rule $rule ) {
+function csscrush__ease (CssCrush_Rule $rule) {
 
     static $find, $replace, $easing_properties;
     if (! $find) {

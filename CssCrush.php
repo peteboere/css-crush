@@ -4,21 +4,21 @@
   * Bootstrap file with autoloader.
   *
   */
-function csscrush_autoload ( $class ) {
+function csscrush_autoload ($class) {
 
     // Only autoload classes with the library prefix.
-    if ( stripos( $class, 'csscrush' ) !== 0 ) {
+    if (stripos($class, 'csscrush') !== 0) {
         return;
     }
 
     // Tolerate some cases of lowercasing.
-    $class = str_ireplace( 'csscrush', 'CssCrush', $class );
-    $subpath = implode( '/', array_map( 'ucfirst', explode( '_', $class ) ) );
+    $class = str_ireplace('csscrush', 'CssCrush', $class);
+    $subpath = implode('/', array_map('ucfirst', explode('_', $class)));
 
-    require_once dirname( __FILE__ ) . "/lib/$subpath.php";
+    require_once dirname(__FILE__) . "/lib/$subpath.php";
 }
 
-spl_autoload_register( 'csscrush_autoload' );
+spl_autoload_register('csscrush_autoload');
 
 
 // Core.php will also be autoloaded with API changes in v2.x.

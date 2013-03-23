@@ -41,7 +41,7 @@ class CssCrush
         self::$config->plugins = array();
 
         // Default options.
-        self::$config->options = new CssCrush_Options( array(
+        self::$config->options = new CssCrush_Options(array(
 
             // Minify. Set false for formatting and comments.
             'minify' => true,
@@ -89,111 +89,111 @@ class CssCrush
             // Force newline type on output files. Defaults to the current platform newline.
             // Options: 'windows' (or 'win'), 'unix', 'use-platform'
             'newlines' => 'use-platform',
-        ));
+       ));
 
         // Include and register stock formatters.
         require_once self::$config->location . '/misc/formatters.php';
     }
 
-    static protected function setDocRoot ( $doc_root = null )
+    static protected function setDocRoot ($doc_root = null)
     {
         // Get document_root reference
         // $_SERVER['DOCUMENT_ROOT'] is unreliable in certain CGI/Apache/IIS setups
 
-        if ( ! $doc_root ) {
+        if (! $doc_root) {
 
-            $script_filename = $_SERVER[ 'SCRIPT_FILENAME' ];
-            $script_name = $_SERVER[ 'SCRIPT_NAME' ];
+            $script_filename = $_SERVER['SCRIPT_FILENAME'];
+            $script_name = $_SERVER['SCRIPT_NAME'];
 
-            if ( $script_filename && $script_name ) {
+            if ($script_filename && $script_name) {
 
-                $len_diff = strlen( $script_filename ) - strlen( $script_name );
+                $len_diff = strlen($script_filename) - strlen($script_name);
 
                 // We're comparing the two strings so normalize OS directory separators
-                $script_filename = str_replace( '\\', '/', $script_filename );
-                $script_name = str_replace( '\\', '/', $script_name );
+                $script_filename = str_replace('\\', '/', $script_filename);
+                $script_name = str_replace('\\', '/', $script_name);
 
                 // Check $script_filename ends with $script_name
-                if ( substr( $script_filename, $len_diff ) === $script_name ) {
+                if (substr($script_filename, $len_diff) === $script_name) {
 
-                    $path = substr( $script_filename, 0, $len_diff );
-                    $doc_root = realpath( $path );
+                    $path = substr($script_filename, 0, $len_diff);
+                    $doc_root = realpath($path);
                 }
             }
 
-            if ( ! $doc_root ) {
+            if (! $doc_root) {
 
                 // If doc_root is still falsy, fallback to DOCUMENT_ROOT
-                $doc_root = realpath( $_SERVER[ 'DOCUMENT_ROOT' ] );
+                $doc_root = realpath($_SERVER['DOCUMENT_ROOT']);
             }
 
-            if ( ! $doc_root ) {
+            if (! $doc_root) {
 
                 // If doc_root is still falsy, log an error
                 $error = "Could not get a document_root reference.";
-                CssCrush::logError( $error );
-                trigger_error( __METHOD__ . ": $error\n", E_USER_NOTICE );
+                CssCrush::logError($error);
+                trigger_error(__METHOD__ . ": $error\n", E_USER_NOTICE);
             }
         }
 
-        self::$config->docRoot = CssCrush_Util::normalizePath( $doc_root );
+        self::$config->docRoot = CssCrush_Util::normalizePath($doc_root);
     }
 
     // Aliases and macros loader.
     static public function loadAssets ()
     {
         static $called;
-        if ( $called ) {
+        if ($called) {
             return;
         }
 
         // Find an aliases file in the root directory
         // a local file overrides the default
-        $aliases_file = CssCrush_Util::find( 'Aliases-local.ini', 'Aliases.ini' );
+        $aliases_file = CssCrush_Util::find('Aliases-local.ini', 'Aliases.ini');
 
         // Load aliases file if it exists
-        if ( $aliases_file ) {
+        if ($aliases_file) {
 
-            $result = @parse_ini_file( $aliases_file, true );
-            if ( $result !== false ) {
+            $result = @parse_ini_file($aliases_file, true);
+            if ($result !== false) {
 
-                foreach ( $result as $section => $items ) {
+                foreach ($result as $section => $items) {
 
                     // Declaration aliases require a little preparation.
-                    if ( $section === 'declarations' ) {
+                    if ($section === 'declarations') {
                         $store = array();
-                        foreach ( $items as $prop_val => $aliases ) {
-                            list( $prop, $value ) = array_map( 'trim', explode( ':', $prop_val ) );
-                            foreach ( $aliases as &$alias ) {
-                                $alias = explode( ':', $alias );
+                        foreach ($items as $prop_val => $aliases) {
+                            list($prop, $value) = array_map('trim', explode(':', $prop_val));
+                            foreach ($aliases as &$alias) {
+                                $alias = explode(':', $alias);
                             }
-                            $store[ $prop ][ $value ] = $aliases;
+                            $store[$prop][$value] = $aliases;
                         }
-                        $result[ 'declarations' ] = $store;
+                        $result['declarations'] = $store;
                     }
 
                     // Function groups.
-                    elseif ( strpos( $section, 'functions:' ) === 0 ) {
-                        $group = substr( $section, strlen( 'functions' ) );
+                    elseif (strpos($section, 'functions:') === 0) {
+                        $group = substr($section, strlen('functions'));
 
                         $vendor_grouped_aliases = array();
-                        foreach ( $items as $func_name => $aliases ) {
+                        foreach ($items as $func_name => $aliases) {
 
                             // Assign group name to the aliasable function.
-                            $result[ 'functions' ][ $func_name ] = $group;
+                            $result['functions'][$func_name] = $group;
 
-                            foreach ( $aliases as $alias_func ) {
+                            foreach ($aliases as $alias_func) {
 
                                 // Only supporting vendor prefixed aliases, for now.
-                                if ( preg_match( CssCrush_Regex::$patt->vendorPrefix, $alias_func, $m ) ) {
+                                if (preg_match(CssCrush_Regex::$patt->vendorPrefix, $alias_func, $m)) {
 
                                     // We'll cache the function matching regex here.
-                                    $vendor_grouped_aliases[$m[1]]['find'][] = CssCrush_Regex::create( '<LB>' . $func_name . '<RTB>', 'i' );
+                                    $vendor_grouped_aliases[$m[1]]['find'][] = CssCrush_Regex::create('<LB>' . $func_name . '<RTB>', 'i');
                                     $vendor_grouped_aliases[$m[1]]['replace'][] = $alias_func;
                                 }
                             }
                         }
-                        $result[ 'function_groups' ][ $group ] = $vendor_grouped_aliases;
+                        $result['function_groups'][$group] = $vendor_grouped_aliases;
                     }
                 }
 
@@ -206,37 +206,37 @@ class CssCrush
                     'function_groups' => array(),
                     'declarations' => array(),
                     'at-rules' => array(),
-                );
+               );
                 self::$config->aliases += self::$config->bareAliasGroups;
             }
             else {
-                trigger_error( __METHOD__ . ": Aliases file could not be parsed.\n", E_USER_NOTICE );
+                trigger_error(__METHOD__ . ": Aliases file could not be parsed.\n", E_USER_NOTICE);
             }
         }
         else {
-            trigger_error( __METHOD__ . ": Aliases file not found.\n", E_USER_NOTICE );
+            trigger_error(__METHOD__ . ": Aliases file not found.\n", E_USER_NOTICE);
         }
 
         // Find a plugins file in the root directory,
         // a local file overrides the default
-        $plugins_file = CssCrush_Util::find( 'Plugins-local.ini', 'Plugins.ini' );
+        $plugins_file = CssCrush_Util::find('Plugins-local.ini', 'Plugins.ini');
 
         // Load plugins
-        if ( $plugins_file ) {
-            $result = @parse_ini_file( $plugins_file );
-            if ( $result !== false ) {
-                if ( isset( $result[ 'plugins' ] ) ) {
-                    foreach ( $result[ 'plugins' ] as $plugin_name ) {
+        if ($plugins_file) {
+            $result = @parse_ini_file($plugins_file);
+            if ($result !== false) {
+                if (isset($result['plugins'])) {
+                    foreach ($result['plugins'] as $plugin_name) {
                         // Backwards compat.
-                        $plugin_name = basename( $plugin_name, '.php' );
-                        if ( CssCrush_Plugin::load( $plugin_name ) ) {
-                            self::$config->plugins[ $plugin_name ] = true;
+                        $plugin_name = basename($plugin_name, '.php');
+                        if (CssCrush_Plugin::load($plugin_name)) {
+                            self::$config->plugins[$plugin_name] = true;
                         }
                     }
                 }
             }
             else {
-                trigger_error( __METHOD__ . ": Plugin file could not be parsed.\n", E_USER_NOTICE );
+                trigger_error(__METHOD__ . ": Plugin file could not be parsed.\n", E_USER_NOTICE);
             }
         }
 
@@ -254,9 +254,9 @@ class CssCrush
      * @param mixed $options  An array of options or null.
      * @return string  The public path to the compiled file or an empty string.
      */
-    static public function file ( $file, $options = null )
+    static public function file ($file, $options = null)
     {
-        self::$process = new CssCrush_Process( $options );
+        self::$process = new CssCrush_Process($options);
 
         $config = self::$config;
         $process = self::$process;
@@ -264,47 +264,48 @@ class CssCrush
         $doc_root = $process->docRoot;
 
         // Since we're comparing strings, we need to iron out OS differences.
-        $file = str_replace( '\\', '/', $file );
+        $file = str_replace('\\', '/', $file);
 
         // Finding the system path of the input file and validating it.
         $pathtest = true;
-        if ( strpos( $file, $doc_root ) === 0 ) {
-            // System path.
-            $pathtest = $process->setContext( dirname( $file ) );
+
+        // System path.
+        if (strpos($file, $doc_root) === 0) {
+            $pathtest = $process->setContext(dirname($file));
         }
-        else if ( strpos( $file, '/' ) === 0 ) {
-            // WWW root path.
-            $pathtest = $process->setContext( dirname( $doc_root . $file ) );
+        // WWW root path.
+        else if (strpos($file, '/') === 0) {
+            $pathtest = $process->setContext(dirname($doc_root . $file));
         }
+        // Relative path.
         else {
-            // Relative path.
-            $pathtest = $process->setContext( dirname( dirname( __FILE__ ) . '/' . $file ) );
+            $pathtest = $process->setContext(dirname(dirname(__FILE__) . '/' . $file));
         }
 
-        if ( ! $pathtest ) {
+        if (! $pathtest) {
             // Main directory not found or is not writable return an empty string.
             return '';
         }
 
         // Validate file input.
-        if ( ! CssCrush_IO::registerInputFile( $file ) ) {
+        if (! CssCrush_IO::registerInputFile($file)) {
             return '';
         }
 
         // Create a filename that will be used later
         // Used in validateCache, and writing to filesystem
-        $process->output->filename = $process->ioCall( 'getOutputFileName' );
+        $process->output->filename = $process->ioCall('getOutputFileName');
 
         // Caching.
-        if ( $options->cache ) {
+        if ($options->cache) {
 
             // Load the cache data.
-            $process->cacheData = $process->ioCall( 'getCacheData' );
+            $process->cacheData = $process->ioCall('getCacheData');
 
             // If cache is enabled check for a valid compiled file.
-            $valid_compliled_file = $process->ioCall( 'validateExistingOutput' );
+            $valid_compliled_file = $process->ioCall('validateExistingOutput');
 
-            if ( is_string( $valid_compliled_file ) ) {
+            if (is_string($valid_compliled_file)) {
                 return $valid_compliled_file;
             }
         }
@@ -313,7 +314,7 @@ class CssCrush
         $stream = $process->compile();
 
         // Create file and return url. Return empty string on failure.
-        if ( $url = $process->ioCall( 'write', $stream ) ) {
+        if ($url = $process->ioCall('write', $stream)) {
             $timestamp = $options->versioning ? '?' . time() : '';
             return "$url$timestamp";
         }
@@ -330,28 +331,28 @@ class CssCrush
      * @param array $attributes  An array of HTML attributes.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    static public function tag ( $file, $options = null, $attributes = array() )
+    static public function tag ($file, $options = null, $attributes = array())
     {
-        $file = self::file( $file, $options );
+        $file = self::file($file, $options);
 
-        if ( ! empty( $file ) ) {
+        if (! empty($file)) {
 
             // On success return the tag with any custom attributes
-            $attributes[ 'rel' ] = 'stylesheet';
-            $attributes[ 'href' ] = $file;
+            $attributes['rel'] = 'stylesheet';
+            $attributes['href'] = $file;
 
             // Should media type be forced to 'all'?
-            if ( ! isset( $attributes[ 'media' ] ) ) {
-                $attributes[ 'media' ] = 'all';
+            if (! isset($attributes['media'])) {
+                $attributes['media'] = 'all';
             }
-            $attr_string = CssCrush_Util::htmlAttributes( $attributes );
+            $attr_string = CssCrush_Util::htmlAttributes($attributes);
             return "<link$attr_string />\n";
         }
         else {
 
             // Return an HTML comment with message on failure
             $class = __CLASS__;
-            $errors = implode( "\n", self::$process->errors );
+            $errors = implode("\n", self::$process->errors);
             return "<!-- $class: $errors -->\n";
         }
     }
@@ -364,28 +365,28 @@ class CssCrush
      * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    static public function inline ( $file, $options = null, $attributes = array() )
+    static public function inline ($file, $options = null, $attributes = array())
     {
         // For inline output set boilerplate to not display by default
-        if ( ! is_array( $options ) ) {
+        if (! is_array($options)) {
             $options = array();
         }
-        if ( ! isset( $options[ 'boilerplate' ] ) ) {
-            $options[ 'boilerplate' ] = false;
+        if (! isset($options['boilerplate'])) {
+            $options['boilerplate'] = false;
         }
 
-        $file = self::file( $file, $options );
+        $file = self::file($file, $options);
 
-        if ( ! empty( $file ) ) {
+        if (! empty($file)) {
 
             // On success fetch the CSS text
-            $content = file_get_contents( self::$process->output->dir . '/'
-                . self::$process->output->filename );
+            $content = file_get_contents(self::$process->output->dir . '/'
+                . self::$process->output->filename);
             $tag_open = '';
             $tag_close = '';
 
-            if ( is_array( $attributes ) ) {
-                $attr_string = CssCrush_Util::htmlAttributes( $attributes );
+            if (is_array($attributes)) {
+                $attr_string = CssCrush_Util::htmlAttributes($attributes);
                 $tag_open = "<style$attr_string>";
                 $tag_close = '</style>';
             }
@@ -395,7 +396,7 @@ class CssCrush
 
             // Return an HTML comment with message on failure
             $class = __CLASS__;
-            $errors = implode( "\n", self::$process->errors );
+            $errors = implode("\n", self::$process->errors);
             return "<!-- $class: $errors -->\n";
         }
     }
@@ -407,14 +408,14 @@ class CssCrush
      * @param mixed $options  An array of options or null.
      * @return string  CSS text.
      */
-    static public function string ( $string, $options = null )
+    static public function string ($string, $options = null)
     {
         // For strings set boilerplate to not display by default
-        if ( ! isset( $options[ 'boilerplate' ] ) ) {
-            $options[ 'boilerplate' ] = false;
+        if (! isset($options['boilerplate'])) {
+            $options['boilerplate'] = false;
         }
 
-        self::$process = new CssCrush_Process( $options );
+        self::$process = new CssCrush_Process($options);
 
         $config = self::$config;
         $process = self::$process;
@@ -422,18 +423,18 @@ class CssCrush
 
         // Set the path context if one is given.
         // Fallback to document root.
-        if ( ! empty( $options->context ) ) {
-            $process->setContext( $options->context, false );
+        if (! empty($options->context)) {
+            $process->setContext($options->context, false);
         }
         else {
-            $process->setContext( $process->docRoot, false );
+            $process->setContext($process->docRoot, false);
         }
 
         // Set the string on the input object.
         $process->input->string = $string;
 
         // Import files may be ignored.
-        if ( isset( $options->no_import ) ) {
+        if (isset($options->no_import)) {
             $process->input->importIgnore = true;
         }
 
@@ -446,24 +447,24 @@ class CssCrush
      *
      * @param mixed $var  Assoc array of variable names and values, a php ini filename or null.
      */
-    static public function globalVars ( $vars )
+    static public function globalVars ($vars)
     {
         $config = self::$config;
 
         // Merge into the stack, overrides existing variables of the same name
-        if ( is_array( $vars ) ) {
-            $config->vars = array_merge( $config->vars, $vars );
+        if (is_array($vars)) {
+            $config->vars = array_merge($config->vars, $vars);
         }
 
         // Test for a file. If it is attempt to parse it
-        elseif ( is_string( $vars ) && file_exists( $vars ) ) {
-            if ( $result = @parse_ini_file( $vars ) ) {
-                $config->vars = array_merge( $config->vars, $result );
+        elseif (is_string($vars) && file_exists($vars)) {
+            if ($result = @parse_ini_file($vars)) {
+                $config->vars = array_merge($config->vars, $result);
             }
         }
 
         // Clear the stack if the argument is explicitly null
-        elseif ( is_null( $vars ) ) {
+        elseif (is_null($vars)) {
             $config->vars = array();
         }
     }
@@ -473,9 +474,9 @@ class CssCrush
      *
      * @param string $dir  System path to the directory.
      */
-    static public function clearCache ( $dir = '' )
+    static public function clearCache ($dir = '')
     {
-        return $process->ioCall( 'clearCache', $dir );
+        return $process->ioCall('clearCache', $dir);
     }
 
     /**
@@ -484,22 +485,22 @@ class CssCrush
      *
      * @param string $name  Name of stat to retrieve. Leave blank to retrieve all.
      */
-    static public function stat ( $name = null )
+    static public function stat ($name = null)
     {
         $process = CssCrush::$process;
         $stat = $process->stat;
 
         // Get logged errors as late as possible.
-        if ( in_array( 'errors', $process->options->trace ) && ( ! $name || 'errors' === $name ) ) {
-            $stat[ 'errors' ] = $process->errors;
+        if (in_array('errors', $process->options->trace) && (! $name || 'errors' === $name)) {
+            $stat['errors'] = $process->errors;
         }
 
-        if ( $name && array_key_exists( $name, $stat ) ) {
-            return array( $name => $stat[ $name ] );
+        if ($name && array_key_exists($name, $stat)) {
+            return array($name => $stat[$name]);
         }
 
         // Lose stats that are only useful internally.
-        unset( $stat[ 'compile_start_time' ] );
+        unset($stat['compile_start_time']);
 
         return $stat;
     }
@@ -562,31 +563,31 @@ class CssCrush
         self::log($msg);
     }
 
-    static public function runStat ( $name )
+    static public function runStat ($name)
     {
         $process = CssCrush::$process;
         $trace = $process->options->trace;
 
-        if ( ! $trace || ! in_array( $name, $trace ) ) {
+        if (! $trace || ! in_array($name, $trace)) {
             return;
         }
 
-        switch ( $name ) {
+        switch ($name) {
 
             case 'selector_count':
-                $process->stat[ 'selector_count' ] = 0;
-                foreach ( $process->tokens->r as $rule ) {
-                    $process->stat[ 'selector_count' ] += count( $rule->selectors );
+                $process->stat['selector_count'] = 0;
+                foreach ($process->tokens->r as $rule) {
+                    $process->stat['selector_count'] += count($rule->selectors);
                 }
                 break;
 
             case 'rule_count':
-                $process->stat[ 'rule_count' ] = count( $process->tokens->r );
+                $process->stat['rule_count'] = count($process->tokens->r);
                 break;
 
             case 'compile_time':
-                $time = microtime( true );
-                $process->stat[ 'compile_time' ] = $time - $process->stat[ 'compile_start_time' ];
+                $time = microtime(true);
+                $process->stat['compile_time'] = $time - $process->stat['compile_start_time'];
                 break;
         }
     }
