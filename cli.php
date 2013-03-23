@@ -333,6 +333,7 @@ function stdout ($lines, $closing_newline = true) {
 
     // On OSX terminal is sometimes truncating 'visual' output to terminal
     // with fwrite to STDOUT.
+    // fwrite(STDOUT, $out);
     echo $out;
 }
 
@@ -370,48 +371,78 @@ function pick (array &$arr) {
     return null;
 }
 
+function colorize ($str) {
+
+    static $tags = array(
+        '<b>' => "\033[0;30m",
+        '<r>' => "\033[0;31m",
+        '<g>' => "\033[0;32m",
+        '<y>' => "\033[0;33m",
+        '<b>' => "\033[0;34m",
+        '<v>' => "\033[0;35m",
+        '<c>' => "\033[0;36m",
+        '<w>' => "\033[0;37m",
+
+        '<B>' => "\033[1;30m",
+        '<R>' => "\033[1;31m",
+        '<G>' => "\033[1;32m",
+        '<Y>' => "\033[1;33m",
+        '<B>' => "\033[1;34m",
+        '<V>' => "\033[1;35m",
+        '<C>' => "\033[1;36m",
+        '<W>' => "\033[1;37m",
+
+        '</>' => "\033[m",
+    );
+
+    $find = array_keys($tags);
+    $replace = array_values($tags);
+
+    return str_replace($find, $replace, $str);
+}
+
 function manpage () {
 
-    return <<<TPL
+    $manpage = <<<TPL
 
-Usage:
-    csscrush [-f|-i] [-o] [-p|--pretty] [-w|--watch] [-b|--boilerplate]
+<B>USAGE:</>
+    <B>csscrush</> <g>[<G>-f<g>|<G>-i<g>] [<G>-o<g>] [<G>-p<g>|--pretty] [<G>-w<g>|--watch] [<G>-b<g>|--boilerplate]
              [--help] [--formatter] [--vars] [--vendor-target]
-             [--version] [--newlines]
+             [--version] [--newlines]</>
 
-Options:
-    -f, -i:
+<B>OPTIONS:</>
+    <G>-f</>, <G>-i</>:
         The input file. If omitted takes input from STDIN.
 
-    -o:
+    <G>-o</>:
         The output file. If omitted prints to STDOUT.
 
-    -p, --pretty:
+    <G>-p</>, <g>--pretty</>:
         Formatted, un-minified output.
 
-    -w, --watch:
+    <G>-w</>, <g>--watch</>:
         Watch input file for changes.
         Writes to file specified with -o option or to the input file
         directory with a '.crush.css' file extension.
 
-    -b, --boilerplate:
+    <G>-b</>, <g>--boilerplate</>:
         Whether or not to output a boilerplate. Optionally accepts filepath
         to custom boilerplate template.
 
-    --help:
+    <g>--help</>:
         Display this help mesasge.
 
-    --context:
+    <g>--context</>:
         Filepath context for resolving URLs.
 
-    --disable:
+    <g>--disable</>:
         List of plugins to disable. Pass 'all' to disable all.
 
-    --enable:
-        List of plugins to enable. Overrides --disable.
+    <g>--enable</>:
+        List of plugins to enable. Overrides <g>--disable</>.
 
-    --formatter:
-        Formatter to use for formatted (--pretty) output.
+    <g>--formatter</>:
+        Formatter to use for formatted (<g>--pretty</>) output.
         Available formatters:
 
         'block' (default) -
@@ -421,25 +452,25 @@ Options:
         'padded' -
             Rules are printed in single lines with right padded selectors.
 
-    --newlines:
+    <g>--newlines</>:
         Force newline style on output css. Defaults to the current platform
         newline. Possible values: 'windows' (or 'win'), 'unix', 'use-platform'.
 
-    --trace:
+    <g>--trace</>:
         Output debug-info stubs compatible with client-side sass debuggers.
 
-    --vars:
+    <g>--vars</>:
         Map of variable names in an http query string format.
 
-    --vendor-target:
+    <g>--vendor-target</>:
         Set to 'all' for all vendor prefixes (default).
         Set to 'none' for no vendor prefixes.
         Set to a specific vendor prefix.
 
-    --version:
+    <g>--version</>:
         Print version number.
 
-Examples:
+<B>EXAMPLES:</>
     # Restrict vendor prefixing.
     csscrush --pretty --vendor-target webkit -i styles.css
 
@@ -454,5 +485,8 @@ Examples:
 
     # Using custom boilerplate template.
     csscrush --boilerplate=css/boilerplate.txt -i css/styles.css
+
 TPL;
+
+    return colorize($manpage);
 }

@@ -13,47 +13,55 @@ class CssCrush_Plugin
         return self::$plugins;
     }
 
-    static public function register ( $plugin_name, $callbacks )
+    static public function register ($plugin_name, $callbacks)
     {
-        self::$plugins[ $plugin_name ] = $callbacks;
+        self::$plugins[$plugin_name] = $callbacks;
     }
 
-    static public function load ( $plugin_name )
+    static public function load ($plugin_name)
     {
         // Assume the the plugin file is not loaded if null.
-        if ( ! isset( self::$plugins[ $plugin_name ] ) ) {
+        if (! isset(self::$plugins[$plugin_name])) {
 
-            $path = CssCrush::$config->location . "/plugins/$plugin_name.php";
+            $found = false;
 
-            if ( ! file_exists( $path ) ) {
+            // Loop plugin_dirs to find the plugin.
+            foreach (CssCrush::$config->plugin_dirs as $plugin_dir) {
 
-                trigger_error( __METHOD__ .
-                    ": <b>$plugin_name</b> plugin not found.\n", E_USER_NOTICE );
+                $path = "$plugin_dir/$plugin_name.php";
+                if (file_exists($path)) {
+                    require_once $path;
+                    $found = true;
+                    break;
+                }
             }
-            else {
-                require_once $path;
+
+            if (! $found) {
+                trigger_error(__METHOD__ .
+                        ": <b>$plugin_name</b> plugin not found.\n", E_USER_NOTICE);
             }
         }
-        return isset( self::$plugins[ $plugin_name ] ) ? self::$plugins[ $plugin_name ] : null;;
+
+        return isset(self::$plugins[$plugin_name]) ? self::$plugins[$plugin_name] : null;
     }
 
-    static public function enable ( $plugin_name )
+    static public function enable ($plugin_name)
     {
-        $plugin = self::load( $plugin_name );
+        $plugin = self::load($plugin_name);
 
-        if ( is_callable( $plugin[ 'enable' ] ) ) {
-            $plugin[ 'enable' ]();
+        if (is_callable($plugin['enable'])) {
+            $plugin['enable']();
         }
 
         return true;
     }
 
-    static public function disable ( $plugin_name )
+    static public function disable ($plugin_name)
     {
-        $plugin = isset( self::$plugins[ $plugin_name ] ) ? self::$plugins[ $plugin_name ] : null;
+        $plugin = isset(self::$plugins[$plugin_name]) ? self::$plugins[$plugin_name] : null;
 
-        if ( is_callable( $plugin[ 'disable' ] ) ) {
-            $plugin[ 'disable' ]();
+        if (is_callable($plugin['disable'])) {
+            $plugin['disable']();
         }
     }
 }

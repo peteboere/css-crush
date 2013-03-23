@@ -18,6 +18,7 @@ class CssCrush_Rule implements IteratorAggregate
 
     // Index of properties used in the rule for fast lookup.
     public $properties = array();
+    public $canonicalProperties = array();
 
     // Arugments passed via @extend.
     public $extendArgs = array();
@@ -724,33 +725,28 @@ class CssCrush_Rule implements IteratorAggregate
     #############################
     #  Property indexing.
 
-    public function indexProperty ( $prop )
+    public function indexProperty ($declaration)
     {
-        if ( isset( $this->properties[ $prop ] ) ) {
-            $this->properties[ $prop ]++;
+        $prop = $declaration->property;
+
+        if (isset($this->properties[$prop])) {
+            $this->properties[$prop]++;
         }
         else {
-            $this->properties[ $prop ] = 1;
+            $this->properties[$prop] = 1;
         }
+        $this->canonicalProperties[$declaration->canonicalProperty] = true;
     }
 
     public function updatePropertyIndex ()
     {
-        // Create a new table of properties.
-        $new_properties_table = array();
+        // Reset tables.
+        $this->properties = array();
+        $this->canonicalProperties = array();
 
-        foreach ( $this as $declaration ) {
-
-            $name = $declaration->property;
-
-            if ( isset( $new_properties_table[ $name ] ) ) {
-                $new_properties_table[ $name ]++;
-            }
-            else {
-                $new_properties_table[ $name ] = 1;
-            }
+        foreach ($this->declarations as $declaration) {
+            $this->indexProperty($declaration);
         }
-        $this->properties = $new_properties_table;
     }
 
 
@@ -769,8 +765,7 @@ class CssCrush_Rule implements IteratorAggregate
 
         if ( empty( $declaration->inValid ) ) {
 
-            // Increment the property name index.
-            $this->indexProperty( $prop );
+            $this->indexProperty($declaration);
             $this->declarations[] = $declaration;
             return $declaration;
         }

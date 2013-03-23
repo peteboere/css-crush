@@ -22,6 +22,9 @@ class CssCrush
         // Path to the project root folder.
         self::$config->location = dirname(dirname(dirname(__FILE__)));
 
+        // Plugin directories.
+        self::$config->plugin_dirs = array(self::$config->location . '/plugins');
+
         // Establish version id.
         self::$config->version = new CssCrush_Version(self::VERSION);
 
