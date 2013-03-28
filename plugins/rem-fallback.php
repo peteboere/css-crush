@@ -1,8 +1,8 @@
 <?php
 /**
- * px2rem
+ * rem-fallback
  *
- * Auto generate a pixel value fallback when using rem units for font-sizes.
+ * Auto-generates a declaration fallback when using rem units for font-sizes.
  * IE 7/8 don't support rem units. See http://caniuse.com/#feat=rem
  *
  * @before
@@ -13,20 +13,20 @@
  *      font: .6875rem/1rem sans-serif;
  */
 
-CssCrush_Plugin::register( 'rem2px', array(
-    'enable' => 'csscrush__enable_rem2px',
-    'disable' => 'csscrush__disable_rem2px',
+CssCrush_Plugin::register( 'rem-fallback', array(
+    'enable' => 'csscrush__enable_rem_fallback',
+    'disable' => 'csscrush__disable_rem_fallback',
 ));
 
-function csscrush__enable_rem2px () {
-    CssCrush_Hook::add( 'rule_prealias', 'csscrush__rem2px' );
+function csscrush__enable_rem_fallback () {
+    CssCrush_Hook::add( 'rule_prealias', 'csscrush__rem_fallback' );
 }
 
-function csscrush__disable_rem2px () {
-    CssCrush_Hook::remove( 'rule_prealias', 'csscrush__rem2px' );
+function csscrush__disable_rem_fallback () {
+    CssCrush_Hook::remove( 'rule_prealias', 'csscrush__rem_fallback' );
 }
 
-function csscrush__rem2px (CssCrush_Rule $rule) {
+function csscrush__rem_fallback (CssCrush_Rule $rule) {
 
     static $fontsize_properties, $rem_patt;
     if (! $fontsize_properties) {

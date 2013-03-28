@@ -34,56 +34,57 @@ if ($version < $required_version) {
 ##################################################################
 ##  Resolve options.
 
-$short_opts = array(
-
-    // Required value arguments.
-    'f:', // Input file. Defaults to SDTIN.
-    'i:', // Input file alias.
-    'o:', // Output file. Defaults to STDOUT.
-
-    // Optional value arguments.
-    'b::', // Output boilerplate (optional filepath).
-
-    // Flags.
-    'p', // Pretty (un-minified) output.
-    'w', // Enable file watching mode.
-
-    // Deprecated (removed in 2.x).
-    'h', // Display help. (deprecated)
+$required_value_opts = array(
+    'i|input|f|file', // Input file. Defaults to STDIN.
+    'o|output',       // Output file. Defaults to STDOUT.
+    'E|enable' ,      // List of plugins to enable.
+    'D|disable',      // List of plugins to disable.
+    'vars|variables', // Map of variable names in an http query string format.
+    'formatter',      // Formatter name for formatted output.
+    'vendor-target',  // Vendor target.
+    'context',        // Context for resolving URLs.
+    'newlines',       // Newline style.
 );
 
-$long_opts = array(
-
-    // Required value arguments.
-    'formatter:',     // Formatter name for formatted output.
-    'vendor-target:', // Vendor target.
-    'vars:',          // Map of variable names in an http query string format.
-    'enable:',        // List of plugins to enable.
-    'disable:',       // List of plugins to disable.
-    'context:',       // Context for resolving URLs.
-    'newlines:',      // Newline style.
-
-    // Optional value arguments.
-    'boilerplate::',  // Boilerplate alias.
-
-    // Flags.
-    'watch',          // Watch mode alias.
-    'pretty',         // Pretty output alias.
-    'help',           // Display help.
-    'version',        // Display version.
-    'trace',          // Output sass tracing stubs.
-
-    // Deprecated (removed in 2.x).
-    'output:',        // Output file alias.
-    'file:',          // Input file alias.
-    'variables:',     // Vars alias.
+$optional_value_opts = array(
+    'b|boilerplate', // Boilerplate.
 );
 
+$flag_opts = array(
+    'p|pretty', // Pretty output.
+    'w|watch',  // Watch mode.
+    'help',     // Display help.
+    'version',  // Display version.
+    'trace',    // Output sass tracing stubs.
+);
+
+// Create option strings for getopt().
+$short_opts = array();
+$long_opts = array();
+$join_opts = function ($opts_list, $modifier) use (&$short_opts, &$long_opts) {
+    foreach ($opts_list as $opt) {
+        foreach (explode('|', $opt) as $arg) {
+            if (strlen($arg) === 1) {
+                $short_opts[] = "$arg$modifier";
+            }
+            else {
+                $long_opts[] = "$arg$modifier";
+            }
+        }
+    }
+};
+$join_opts($required_value_opts, ':');
+$join_opts($optional_value_opts, '::');
+$join_opts($flag_opts, '');
+
+
+// Parse opts.
 $opts = getopt(implode($short_opts), $long_opts);
+
 $args = new stdClass();
 
 // File arguments.
-$args->input_file = pick($opts, 'f', 'i', 'file');
+$args->input_file = pick($opts, 'i', 'input', 'f', 'file');
 $args->output_file = pick($opts, 'o', 'output');
 $args->context = pick($opts, 'context');
 
@@ -104,8 +105,19 @@ $args->vars = pick($opts, 'vars', 'variables');
 $args->newlines = pick($opts, 'newlines');
 
 // Arguments that require a value but accept multiple values.
-$args->enable_plugins = pick($opts, 'enable');
-$args->disable_plugins = pick($opts, 'disable');
+$args->enable_plugins = pick($opts, 'E', 'enable');
+$args->disable_plugins = pick($opts, 'D', 'disable');
+
+// Detect trailing IO files from raw script arguments.
+list($trailing_input_file, $trailing_output_file) = get_trailing_io_args();
+
+// If detected apply, not overriding explicit IO file options.
+if (! $args->input_file && $trailing_input_file) {
+    $args->input_file = $trailing_input_file;
+}
+if (! $args->output_file && $trailing_output_file) {
+    $args->output_file = $trailing_output_file;
+}
 
 
 ##################################################################
@@ -113,8 +125,9 @@ $args->disable_plugins = pick($opts, 'disable');
 
 // Validate filepath arguments.
 if ($args->input_file) {
+    $input_file = $args->input_file;
     if (! ($args->input_file = realpath($args->input_file))) {
-        stderr('Input file does not exist.');
+        stderr("Input file '$input_file' does not exist.");
 
         exit(STATUS_ERROR);
     }
@@ -300,7 +313,7 @@ else {
 
     if ($args->output_file) {
 
-        if (! @file_put_contents($args->output_file, $output)) {
+        if (! @file_put_contents($args->output_file, $output, LOCK_EX)) {
 
             $message[] = "Could not write to path '{$args->output_file}'.";
             stderr($message);
@@ -401,45 +414,92 @@ function colorize ($str) {
     return str_replace($find, $replace, $str);
 }
 
+function get_trailing_io_args () {
+
+    $trailing_input_file = null;
+    $trailing_output_file = null;
+
+    // Get raw script args, shift off calling scriptname and reduce to last three.
+    $trailing_args = $GLOBALS['argv'];
+    array_shift($trailing_args);
+    $trailing_args = array_slice($trailing_args, -3);
+
+    // Create patterns to detecting options.
+    $required_values = implode('|', $GLOBALS['required_value_opts']);
+    $value_opt_patt = "~^-{1,2}($required_values)$~";
+    $other_opt_patt = "~^-{1,2}([a-z0-9\-]+)?(=|$)~ix";
+
+    // Step through the args.
+    $filtered = array();
+    for ($i = 0; $i < count($trailing_args); $i++) {
+
+        $current = $trailing_args[$i];
+
+        // If tests as a required value option, reset and skip next.
+        if (preg_match($value_opt_patt, $current)) {
+            $filtered = array();
+            $i++;
+        }
+        // If it looks like any other kind of flag, or optional value option, reset.
+        elseif (preg_match($other_opt_patt, $current)) {
+            $filtered = array();
+        }
+        else {
+            $filtered[] = $current;
+        }
+    }
+
+    // We're only interested in the last two values.
+    $filtered = array_slice($filtered, -2);
+
+    switch (count($filtered)) {
+        case 1:
+            $trailing_input_file = $filtered[0];
+            break;
+        case 2:
+            $trailing_input_file = $filtered[0];
+            $trailing_output_file = $filtered[1];
+            break;
+    }
+
+    return array($trailing_input_file, $trailing_output_file);
+}
+
 function manpage () {
 
     $manpage = <<<TPL
 
 <B>USAGE:</>
-    <B>csscrush</> <g>[<G>-f<g>|<G>-i<g>] [<G>-o<g>] [<G>-p<g>|--pretty] [<G>-w<g>|--watch] [<G>-b<g>|--boilerplate]
-             [--help] [--formatter] [--vars] [--vendor-target]
-             [--version] [--newlines]</>
+    <B>csscrush <G>[OPTIONS] <g>[input-file] [output-file]
 
 <B>OPTIONS:</>
-    <G>-f</>, <G>-i</>:
-        The input file. If omitted takes input from STDIN.
+    <G>-i<g>, --input</>:
+        Input file. If omitted takes input from STDIN.
 
-    <G>-o</>:
-        The output file. If omitted prints to STDOUT.
+    <G>-o<g>, --output</>:
+        Output file. If omitted prints to STDOUT.
 
-    <G>-p</>, <g>--pretty</>:
+    <G>-p<g>, --pretty</>:
         Formatted, un-minified output.
 
-    <G>-w</>, <g>--watch</>:
+    <G>-w<g>, --watch</>:
         Watch input file for changes.
         Writes to file specified with -o option or to the input file
         directory with a '.crush.css' file extension.
 
-    <G>-b</>, <g>--boilerplate</>:
-        Whether or not to output a boilerplate. Optionally accepts filepath
-        to custom boilerplate template.
-
-    <g>--help</>:
-        Display this help mesasge.
-
-    <g>--context</>:
-        Filepath context for resolving URLs.
-
-    <g>--disable</>:
+    <G>-D<g>, --disable</>:
         List of plugins to disable. Pass 'all' to disable all.
 
-    <g>--enable</>:
+    <G>-E<g>, --enable</>:
         List of plugins to enable. Overrides <g>--disable</>.
+
+    <g>--boilerplate</>:
+        Whether or not to output a boilerplate. Optionally accepts filepath
+        to a custom boilerplate template.
+
+    <g>--context</>:
+        Filepath context for resolving relative URLs. Only meaningful when
+        taking raw input from STDIN.
 
     <g>--formatter</>:
         Formatter to use for formatted (<g>--pretty</>) output.
@@ -451,6 +511,9 @@ function manpage () {
             Rules are printed in single lines.
         'padded' -
             Rules are printed in single lines with right padded selectors.
+
+    <g>--help</>:
+        Display this help mesasge.
 
     <g>--newlines</>:
         Force newline style on output css. Defaults to the current platform
@@ -478,13 +541,13 @@ function manpage () {
     cat styles.css | csscrush --vars 'foo=black&bar=white' > alt-styles.css
 
     # Linting.
-    csscrush --pretty --enable property-sorter -i styles.css -o linted.css
+    csscrush --pretty --E property-sorter -i styles.css -o linted.css
 
     # Watch mode.
     csscrush --watch -i styles.css -o compiled/styles.css
 
     # Using custom boilerplate template.
-    csscrush --boilerplate=css/boilerplate.txt -i css/styles.css
+    csscrush --boilerplate=css/boilerplate.txt css/styles.css
 
 TPL;
 

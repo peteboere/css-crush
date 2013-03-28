@@ -31,18 +31,34 @@ function csscrush__disable_px2rem () {
 }
 
 function csscrush_fn__px2rem ($input) {
-    return csscrush__px2rem($input, 'rem');
+
+    $base = 16;
+
+    // Override default base if variable is set.
+    if (isset(CssCrush::$process->variables['px2rem__base'])) {
+        $base = CssCrush::$process->variables['px2rem__base'];
+    }
+
+    return csscrush__px2rem($input, 'rem', $base);
 }
 
 function csscrush_fn__px2em ($input) {
-    return csscrush__px2rem($input, 'em');
+
+    $base = 16;
+
+    // Override default base if variable is set.
+    if (isset(CssCrush::$process->variables['px2em__base'])) {
+        $base = CssCrush::$process->variables['px2em__base'];
+    }
+
+    return csscrush__px2rem($input, 'em', $base);
 }
 
-function csscrush__px2rem ($input, $unit) {
+function csscrush__px2rem ($input, $unit, $default_base) {
 
     list($px, $base) = CssCrush_Function::parseArgsSimple($input) + array(
         16,
-        16,
+        $default_base,
     );
 
     return round($px / $base, 5) . $unit;
