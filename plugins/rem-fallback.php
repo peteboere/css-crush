@@ -1,9 +1,8 @@
 <?php
 /**
- * rem-fallback
+ * Auto-generate declaration fallback when using rem units for font-sizes.
  *
- * Auto-generates a declaration fallback when using rem units for font-sizes.
- * IE 7/8 don't support rem units. See http://caniuse.com/#feat=rem
+ * IE 7 and 8 don't support rem units. See http://caniuse.com/#feat=rem
  *
  * @before
  *      font: .6875rem/1rem sans-serif;

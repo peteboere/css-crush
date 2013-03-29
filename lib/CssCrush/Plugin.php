@@ -8,9 +8,38 @@ class CssCrush_Plugin
 {
     static protected $plugins = array();
 
-    static public function show ()
+    static public function info ()
     {
-        return self::$plugins;
+        $plugin_dirs = CssCrush::$config->plugin_dirs;
+        $plugin_data = array();
+
+        foreach ($plugin_dirs as $plugin_dir) {
+
+            foreach (glob("$plugin_dir/*.php") as $path) {
+                $name = basename($path, '.php');
+                $plugin_data += array($name => CssCrush_Plugin::parseDoc($path));
+            }
+        }
+
+        return $plugin_data;
+    }
+
+    static public function parseDoc ($plugin_path)
+    {
+        $contents = file_get_contents($plugin_path);
+        if (preg_match('~/\*\*(.*?)\*/~s', $contents, $m)) {
+
+            $lines = preg_split(CssCrush_Regex::$patt->newline, $m[1]);
+            foreach ($lines as &$line) {
+                $line = trim(ltrim($line, "* \t"));
+            }
+            // Remove empty strings and reset indexes.
+            $lines = array_values(array_filter($lines, 'strlen'));
+
+            return $lines;
+        }
+
+        return false;
     }
 
     static public function register ($plugin_name, $callbacks)

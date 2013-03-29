@@ -53,6 +53,7 @@ $optional_value_opts = array(
 $flag_opts = array(
     'p|pretty', // Pretty output.
     'w|watch',  // Watch mode.
+    'list',     // List plugins.
     'help',     // Display help.
     'version',  // Display version.
     'trace',    // Output sass tracing stubs.
@@ -91,6 +92,7 @@ $args->context = pick($opts, 'context');
 // Flags.
 $args->pretty = isset($opts['p']) ?: isset($opts['pretty']);
 $args->watch = isset($opts['w']) ?: isset($opts['watch']);
+$args->list = isset($opts['l']) ?: isset($opts['list']);
 $args->help = isset($opts['h']) ?: isset($opts['help']);
 $args->version = isset($opts['version']);
 $args->trace = isset($opts['trace']);
@@ -117,6 +119,36 @@ if (! $args->input_file && $trailing_input_file) {
 }
 if (! $args->output_file && $trailing_output_file) {
     $args->output_file = $trailing_output_file;
+}
+
+
+##################################################################
+##  Information options.
+
+if ($args->version) {
+
+    stdout('CSS-Crush ' . CssCrush::$config->version);
+
+    exit(STATUS_OK);
+}
+elseif ($args->help) {
+
+    stdout(manpage());
+
+    exit(STATUS_OK);
+}
+elseif ($args->list) {
+
+    $plugins = array();
+
+    foreach (CssCrush_Plugin::info() as $name => $docs) {
+        // Use first line of plugin doc for description.
+        $headline = isset($docs[0]) ? $docs[0] : false;
+        $plugins[] = colorize("<g>$name</>" . ($headline ? " - $headline" : ''));
+    }
+    stdout($plugins);
+
+    exit(STATUS_OK);
 }
 
 
@@ -166,24 +198,6 @@ foreach (array('enable_plugins', 'disable_plugins') as $arg) {
     if ($args->{$arg}) {
         $args->{$arg} = (array) $args->{$arg};
     }
-}
-
-
-##################################################################
-##  Help and version info.
-
-if ($args->version) {
-
-    stdout('CSS-Crush ' . CssCrush::$config->version);
-
-    exit(STATUS_OK);
-}
-
-elseif ($args->help) {
-
-    stdout(manpage());
-
-    exit(STATUS_OK);
 }
 
 
@@ -514,6 +528,9 @@ function manpage () {
 
     <g>--help</>:
         Display this help mesasge.
+
+     <g>--list</>:
+        Show plugins.
 
     <g>--newlines</>:
         Force newline style on output css. Defaults to the current platform

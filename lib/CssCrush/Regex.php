@@ -43,6 +43,7 @@ class CssCrush_Regex
 
         // Misc.
         $classes->vendor = '-[a-zA-Z]+-';
+        $classes->newline = '(?:\r\n?|\n)';
 
         // Create standalone class patterns, add classes as class swaps.
         foreach ($classes as $name => $class) {
@@ -97,7 +98,7 @@ class CssCrush_Regex
 
         // Misc.
         $patt->vendorPrefix = '~^-([a-z]+)-([a-z-]+)~iS';
-        $patt->ruleDirective = '~^(?:(@include|mixin)|(@?extends?)|(@name))[\s\:]+~iS';
+        $patt->ruleDirective = '~^(?:(@include)|(@extends?)|(@name))[\s]+~iS';
         $patt->argListSplit = '~\s*[,\s]\s*~S';
         $patt->mathBlacklist = '~[^\.0-9\*\/\+\-\(\)]~S';
         $patt->cruftyHex = '~\#([[:xdigit:]])\1([[:xdigit:]])\2([[:xdigit:]])\3~S';
