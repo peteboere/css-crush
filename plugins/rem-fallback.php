@@ -1,6 +1,6 @@
 <?php
 /**
- * Polyfill for using rem units in font-sizes
+ * Polyfill for rem units in font-sizes
  *
  * IE 7 and 8 don't support rem units. See http://caniuse.com/#feat=rem
  *

@@ -1,6 +1,6 @@
 <?php
 /**
- * Convert hsl() color values into hex that works in all browsers
+ * Polyfill for hsl() color values
  *
  * @before
  *     color: hsl( 100, 50%, 50%)

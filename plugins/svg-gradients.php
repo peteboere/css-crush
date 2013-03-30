@@ -1,6 +1,6 @@
 <?php
 /**
- * Functions for creating SVG gradients with a similar syntax to CSS3 gradients
+ * Functions for creating SVG gradients with a CSS gradient like syntax
  *
  * Primarily useful for supporting Internet Explorer 9.
  *

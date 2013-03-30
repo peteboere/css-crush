@@ -1,6 +1,6 @@
 <?php
 /**
- * Opacity polyfill for IE < 9
+ * Polyfill for opacity in IE < 9
  *
  * @before
  *     opacity: 0.45;

@@ -1,6 +1,6 @@
 <?php
 /**
- * display:inline-block polyfill for IE < 8
+ * Polyfill for display:inline-block in IE < 8
  *
  * @before
  *     display: inline-block;

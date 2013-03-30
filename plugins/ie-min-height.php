@@ -1,6 +1,6 @@
 <?php
 /**
- * min-height polyfill for IE 6
+ * Polyfill for min-height in IE 6
  * 
  * @before
  *     min-height: 100px;

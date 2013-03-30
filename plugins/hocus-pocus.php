@@ -1,6 +1,6 @@
 <?php
 /**
- * :hover/:focus composite pseudo class
+ * :hover/:focus and :hover/:focus/:active composite pseudo classes
  * 
  * @before
  *     a:hocus { color: red; }

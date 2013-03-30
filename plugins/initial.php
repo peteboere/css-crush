@@ -1,6 +1,6 @@
 <?php
 /**
- * Shim for CSS3 'initial' keyword value
+ * Polyfill for the 'initial' keyword
  * (http://www.w3.org/TR/css3-cascade/#initial0)
  * 
  * @before 

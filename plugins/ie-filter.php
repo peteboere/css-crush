@@ -1,6 +1,6 @@
 <?php
 /**
- * IE filter without the cruft
+ * IE filters with minimal cruft
  *
  * Using ms vendor prefix outputs expanded and quoted syntax for IE > 7
  * Outputs '*' escaped filter property for IE < 8

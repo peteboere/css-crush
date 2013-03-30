@@ -527,7 +527,7 @@ function manpage () {
             Rules are printed in single lines with right padded selectors.
 
     <g>--help</>:
-        Display this help mesasge.
+        Display this help message.
 
      <g>--list</>:
         Show plugins.

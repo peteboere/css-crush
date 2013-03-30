@@ -1,6 +1,6 @@
 <?php
 /**
- * Polyfill for CSS3 rgba() color values
+ * Polyfill for rgba() color values
  *
  * Only works with background shorthand IE < 8
  * (http://css-tricks.com/2151-rgba-browser-support/)

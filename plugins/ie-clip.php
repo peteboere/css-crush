@@ -1,6 +1,6 @@
 <?php
 /**
- * Polyfill for clip property in IE < 8
+ * Polyfill for the clip property in IE < 8
  *
  * @before
  *     clip: rect(1px,1px,1px,1px);

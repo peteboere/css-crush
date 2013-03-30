@@ -1,6 +1,6 @@
 <?php
 /**
- * Define and embed simple SVG elements inside CSS
+ * Define and embed simple SVG elements, paths and effects inside CSS
  *
  * @svg
  * ----

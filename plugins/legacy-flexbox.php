@@ -1,6 +1,6 @@
 <?php
 /**
- * Polyfill for legacy flexbox
+ * Polyfill to auto-generate legacy flexbox syntaxes
  *
  * Works in conjunction with aliases to support legacy
  * flexbox (flexbox 2009) syntax with CR flexbox.
