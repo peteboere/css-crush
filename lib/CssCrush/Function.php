@@ -28,7 +28,7 @@ class CssCrush_Function
         's-adjust' => 'csscrush_fn__s_adjust',
         'l-adjust' => 'csscrush_fn__l_adjust',
         'a-adjust' => 'csscrush_fn__a_adjust',
-   );
+    );
 
     static public function setMatchPatt ()
     {

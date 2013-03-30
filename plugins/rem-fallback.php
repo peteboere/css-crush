@@ -1,6 +1,6 @@
 <?php
 /**
- * Auto-generate declaration fallback when using rem units for font-sizes.
+ * Polyfill for using rem units in font-sizes
  *
  * IE 7 and 8 don't support rem units. See http://caniuse.com/#feat=rem
  *

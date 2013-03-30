@@ -38,7 +38,7 @@ class CssCrush_Process
             'p' => array(), // Parens
             'u' => array(), // URLs
             't' => array(), // Traces
-       );
+        );
         $this->variables = array();
         $this->misc = new stdclass();
         $this->input = new stdclass();
@@ -90,7 +90,7 @@ class CssCrush_Process
             $this->plugins,
             $this->aliases,
             $this->selectorAliases
-       );
+        );
     }
 
     // Establish the input and output directories and optionally test output dir.
@@ -267,7 +267,7 @@ class CssCrush_Process
                 'datetime' => @date('Y-m-d H:i:s O'),
                 'year' => @date('Y'),
                 'version' => 'v' . CssCrush::$config->version,
-           );
+            );
 
             foreach ($boilerplate_matches[0] as $index => $tag) {
                 $tag_name = $boilerplate_matches[1][$index];
@@ -416,8 +416,8 @@ class CssCrush_Process
                             if (!(
                                 strpos($prop, $vendor) === 0 ||
                                 strpos($val, $vendor) === 0
-                               )
-                           ) {
+                                )
+                            ) {
                                 // Unset uneeded aliases.
                                 unset($this->aliases[$section][$property][$value][$index]);
 
@@ -1134,7 +1134,7 @@ class CssCrush_Process
             '}' => "}\n",
             '{' => "{\n",
             ';' => ";\n",
-       ))->prepend("\n");
+        ))->prepend("\n");
 
         // Parse rules.
         $this->extractRules();
@@ -1189,7 +1189,7 @@ class CssCrush_Process
 
             // Compress hex codes.
             $patt->cruftyHex => '#$1$2$3',
-       ));
+        ));
     }
 
 

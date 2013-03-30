@@ -1,8 +1,6 @@
 <?php
 /**
- * SVG.
- *
- * Define and embed SVG elements inside CSS.
+ * Define and embed simple SVG elements inside CSS
  *
  * @svg
  * ----
@@ -99,9 +97,9 @@ function csscrush__svg_generator ($input, $fn_name) {
     }
 
     // Map types to element names.
-    static $ELEMENTS;
-    if (! $ELEMENTS) {
-        $ELEMENTS = array(
+    static $schemas;
+    if (! $schemas) {
+        $schemas = array(
             'circle' => array(
                 'tag' => 'circle',
                 'attrs' => 'cx cy r',
@@ -142,7 +140,7 @@ function csscrush__svg_generator ($input, $fn_name) {
 
         // Convert attributes to keyed array.
         // Add global attributes.
-        foreach ($ELEMENTS as $type => &$schema) {
+        foreach ($schemas as $type => &$schema) {
             $schema['attrs'] = array_flip(explode(' ', $schema['attrs']))
                 + array(
                     'transform' => true,
@@ -151,7 +149,7 @@ function csscrush__svg_generator ($input, $fn_name) {
     }
 
     // Non standard attributes.
-    static $CUSTOM_ATTRS = array(
+    static $custom_attrs = array(
         'type' => true,
         'data' => true,
         'twist' => true,
@@ -191,16 +189,14 @@ function csscrush__svg_generator ($input, $fn_name) {
     // Resolve the type.
     // Bail if type not recognised.
     $type = isset($raw_data['type']) ? strtolower($raw_data['type']) : 'rect';
-    if (! isset($ELEMENTS[$type])) {
+    if (! isset($schemas[$type])) {
 
         return '';
     }
 
-    $ATTRIBUTES = $ELEMENTS[$type]['attrs'];
-
     // Create element object for attaching all required rendering data.
     $element = (object) array(
-        'tag' => $ELEMENTS[$type]['tag'],
+        'tag' => $schemas[$type]['tag'],
         'fills' => array(
             'gradients' => array(),
             'patterns' => array(),
@@ -231,11 +227,11 @@ function csscrush__svg_generator ($input, $fn_name) {
     csscrush__svg_apply_css_funcs($element, $raw_data);
 
     // Initialize element attributes.
-    $element->attrs = array_intersect_key($raw_data, $ATTRIBUTES);
-    $element->data = array_intersect_key($raw_data, $CUSTOM_ATTRS);
+    $element->attrs = array_intersect_key($raw_data, $schemas[$type]['attrs']);
+    $element->data = array_intersect_key($raw_data, $custom_attrs);
 
     // Everything else is treated as CSS.
-    $element->styles = array_diff_key($raw_data, $CUSTOM_ATTRS, $ATTRIBUTES);
+    $element->styles = array_diff_key($raw_data, $custom_attrs, $schemas[$type]['attrs']);
 
     // Pre-populate common attributes.
     csscrush__svg_preprocess($element);
@@ -263,7 +259,8 @@ function csscrush__svg_generator ($input, $fn_name) {
         $flattened_svg = implode("\n", $svg);
 
         // Create fingerprint for the created file.
-        $generated_filename = substr(md5($flattened_svg), 0, 7) . ".$name.crush.svg";
+        $fingerprint = substr(md5($flattened_svg), 0, 7);
+        $generated_filename = "svg-$name-$fingerprint.svg";
 
         $generated_path = $process->output->dir . '/' . $generated_filename;
         file_put_contents($generated_path, $flattened_svg, LOCK_EX);
@@ -753,11 +750,9 @@ function csscrush__svg_render ($element) {
 */
 function csscrush__svg_fn_linear_gradient ($input, $element) {
 
-    static $booted;
-    if (! $booted) {
-        // Relies on functions from svg-gradients plugin.
-        CssCrush_Plugin::load('svg-gradients');
-    }
+    // Relies on functions from svg-gradients plugin.
+    CssCrush_Plugin::load('svg-gradients');
+
     $generated_gradient = csscrush__create_svg_linear_gradient($input);
     $element->fills['gradients'][] = reset($generated_gradient);
 
@@ -766,11 +761,9 @@ function csscrush__svg_fn_linear_gradient ($input, $element) {
 
 function csscrush__svg_fn_radial_gradient ($input, $element) {
 
-    static $booted;
-    if (! $booted) {
-        // Relies on functions from svg-gradients plugin.
-        CssCrush_Plugin::load('svg-gradients');
-    }
+    // Relies on functions from svg-gradients plugin.
+    CssCrush_Plugin::load('svg-gradients');
+
     $generated_gradient = csscrush__create_svg_radial_gradient($input);
     $element->fills['gradients'][] = reset($generated_gradient);
 

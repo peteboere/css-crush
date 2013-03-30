@@ -40,7 +40,7 @@ class CssCrush_Rule implements IteratorAggregate
         if (
             $process->addTracingStubs &&
             preg_match_all($regex->t_token, $selector_string, $trace_tokens)
-       ) {
+        ) {
             $trace_token = array_pop($trace_tokens);
             $this->tracingStub = $process->fetchToken($trace_token[0]);
             foreach ($trace_tokens as $trace_token) {
@@ -251,7 +251,7 @@ class CssCrush_Rule implements IteratorAggregate
             'border-right-color' => 'border-color',
             'border-bottom-color' => 'border-color',
             'border-left-color' => 'border-color',
-       );
+        );
 
         $dataset =& $this->{$dataset};
         $property_group = isset($expandables[$property]) ? $expandables[$property] : null;
@@ -311,7 +311,7 @@ class CssCrush_Rule implements IteratorAggregate
                     'top-right',
                     'bottom-right',
                     'bottom-left',
-               );
+                );
             }
             else {
                 $positions = array(
@@ -407,7 +407,6 @@ class CssCrush_Rule implements IteratorAggregate
                     $extend_selectors[$new_readable] = $new_selector;
                 }
             }
-
             $ancestor->addExtendSelectors($extend_selectors);
         }
     }
@@ -633,7 +632,7 @@ class CssCrush_Rule implements IteratorAggregate
                             $replacements['find'],
                             $replacements['replace'],
                             $copy->value
-                       );
+                        );
                         $prefixed_copies[] = $copy;
                         $rule_updated = true;
                     }
@@ -664,7 +663,7 @@ class CssCrush_Rule implements IteratorAggregate
                             '~(?<![\w-])' . $fn_name . '(?=\?)~',
                             $fn_alias,
                             $copy->value
-                       );
+                        );
                         $prefixed_copies[] = $copy;
                         $rule_updated = true;
                     }
@@ -719,7 +718,7 @@ class CssCrush_Rule implements IteratorAggregate
                             $new_set[] = new CssCrush_Declaration(
                                 ! empty($pair[0]) ? $pair[0] : $declaration->property,
                                 $pair[1]
-                               );
+                                );
                             $rule_updated = true;
                         }
                     }

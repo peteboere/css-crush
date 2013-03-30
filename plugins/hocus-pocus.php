@@ -1,7 +1,6 @@
 <?php
 /**
- * Hocus Pocus
- * Non-standard composite pseudo classes
+ * :hover/:focus composite pseudo class
  * 
  * @before
  *     a:hocus { color: red; }
@@ -13,17 +12,17 @@
  * 
  */
 
-CssCrush_Plugin::register( 'hocus-pocus', array(
+CssCrush_Plugin::register('hocus-pocus', array(
     'enable' => 'csscrush__enable_hocus_pocus',
     'disable' => 'csscrush__disable_hocus_pocus',
 ));
 
 function csscrush__enable_hocus_pocus () {
-    CssCrush::$config->selectorAliases[ 'hocus' ] = ':any(:hover,:focus)';
-    CssCrush::$config->selectorAliases[ 'pocus' ] = ':any(:hover,:focus,:active)';
+    CssCrush::$config->selectorAliases['hocus'] = ':any(:hover,:focus)';
+    CssCrush::$config->selectorAliases['pocus'] = ':any(:hover,:focus,:active)';
 }
 
 function csscrush__disable_hocus_pocus () {
-    unset( CssCrush::$config->selectorAliases[ 'hocus' ] );
-    unset( CssCrush::$config->selectorAliases[ 'pocus' ] );
+    unset( CssCrush::$config->selectorAliases['hocus']);
+    unset( CssCrush::$config->selectorAliases['pocus']);
 }

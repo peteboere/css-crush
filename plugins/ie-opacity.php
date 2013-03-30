@@ -1,10 +1,10 @@
 <?php
 /**
- * Opacity for IE < 9
- * 
- * @before 
+ * Opacity polyfill for IE < 9
+ *
+ * @before
  *     opacity: 0.45;
- * 
+ *
  * @after
  *     opacity: 0.45;
  *     -ms-filter: "alpha(opacity=45)";
@@ -12,26 +12,26 @@
  *     zoom: 1;
  */
 
-CssCrush_Plugin::register( 'ie-opacity', array(
+CssCrush_Plugin::register('ie-opacity', array(
     'enable' => 'csscrush__enable_ie_opacity',
     'disable' => 'csscrush__disable_ie_opacity',
 ));
 
 function csscrush__enable_ie_opacity () {
-    CssCrush_Hook::add( 'rule_postalias', 'csscrush__ie_opacity' );
+    CssCrush_Hook::add('rule_postalias', 'csscrush__ie_opacity');
 }
 
 function csscrush__disable_ie_opacity () {
-    CssCrush_Hook::remove( 'rule_postalias', 'csscrush__ie_opacity' );
+    CssCrush_Hook::remove('rule_postalias', 'csscrush__ie_opacity');
 }
 
-function csscrush__ie_opacity ( CssCrush_Rule $rule ) {
+function csscrush__ie_opacity (CssCrush_Rule $rule) {
 
-    if ( $rule->propertyCount( 'opacity' ) < 1 ) {
+    if ($rule->propertyCount('opacity') < 1) {
         return;
     }
     $new_set = array();
-    foreach ( $rule as $declaration ) {
+    foreach ($rule as $declaration) {
         $new_set[] = $declaration;
         if (
             $declaration->skip ||
@@ -41,15 +41,15 @@ function csscrush__ie_opacity ( CssCrush_Rule $rule ) {
         }
 
         $opacity = (float) $declaration->value;
-        $opacity = round( $opacity * 100 );
+        $opacity = round($opacity * 100);
 
-        if ( ! $rule->propertyCount( 'zoom' ) ) {
+        if (! $rule->propertyCount('zoom')) {
             // Filters need hasLayout
-            $new_set[] = new CssCrush_Declaration( 'zoom', 1 );
+            $new_set[] = new CssCrush_Declaration('zoom', 1);
         }
         $value = "alpha(opacity=$opacity)";
-        $new_set[] = new CssCrush_Declaration( '-ms-filter', "\"$value\"" );
-        $new_set[] = new CssCrush_Declaration( '*filter', $value );
+        $new_set[] = new CssCrush_Declaration('-ms-filter', "\"$value\"");
+        $new_set[] = new CssCrush_Declaration('*filter', $value);
     }
-    $rule->setDeclarations( $new_set );
+    $rule->setDeclarations($new_set);
 }

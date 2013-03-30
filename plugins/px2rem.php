@@ -1,8 +1,7 @@
 <?php
 /**
- * px2rem
+ * Functions for converting pixel values into rem (px2rem) or em (px2em) values
  *
- * Functions for converting pixel values into rem (px2rem) or em (px2em) values.
  * For both functions the optional second argument is base font-size for calculation
  * (16px by default) though usually not required when converting to rem values.
  *

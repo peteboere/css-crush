@@ -1,6 +1,6 @@
 <?php
 /**
- * Expanded easing keywords for transitions.
+ * Expanded easing keywords for transitions
  *
  * Ported from rework by @tjholowaychuk.
  * For easing demos see http://easings.net
@@ -12,17 +12,17 @@
  *    transition: .2s cubic-bezier(.550,.085,.680,.530)
  */
 
-CssCrush_Plugin::register( 'ease', array(
+CssCrush_Plugin::register('ease', array(
     'enable' => 'csscrush__enable_ease',
     'disable' => 'csscrush__disable_ease',
 ));
 
 function csscrush__enable_ease () {
-    CssCrush_Hook::add( 'rule_prealias', 'csscrush__ease' );
+    CssCrush_Hook::add('rule_prealias', 'csscrush__ease');
 }
 
 function csscrush__disable_ease () {
-    CssCrush_Hook::remove( 'rule_prealias', 'csscrush__ease' );
+    CssCrush_Hook::remove('rule_prealias', 'csscrush__ease');
 }
 
 function csscrush__ease (CssCrush_Rule $rule) {

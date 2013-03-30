@@ -89,7 +89,7 @@ class CssCrush
             // Force newline type on output files. Defaults to the current platform newline.
             // Options: 'windows' (or 'win'), 'unix', 'use-platform'
             'newlines' => 'use-platform',
-       ));
+        ));
 
         // Include and register stock formatters.
         require_once self::$config->location . '/misc/formatters.php';
@@ -206,7 +206,7 @@ class CssCrush
                     'function_groups' => array(),
                     'declarations' => array(),
                     'at-rules' => array(),
-               );
+                );
                 self::$config->aliases += self::$config->bareAliasGroups;
             }
             else {

@@ -95,13 +95,13 @@ class CssCrush_Declaration
             // it's self referencing.
             $extra = array(
                 'rule' => $parent_rule,
-           );
+            );
             CssCrush_Function::executeOnString(
                 $this->value,
                 CssCrush_Regex::$patt->thisFunction,
                 array(
                     'this' => 'csscrush_fn__this',
-               ),
+                ),
                 $extra);
 
             // Add result to $rule->selfData.
@@ -110,7 +110,7 @@ class CssCrush_Declaration
             $extra = array(
                 'rule' => $parent_rule,
                 'property' => $this->property
-           );
+            );
             CssCrush_Function::executeOnString(
                 $this->value,
                 null,

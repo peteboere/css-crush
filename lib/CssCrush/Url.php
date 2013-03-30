@@ -81,14 +81,14 @@ class CssCrush_Url
             $leading_variable = strpos($this->value, '$(') === 0;
 
             // Normalize './' led paths.
-            $this->value = preg_replace( '~^\.\/+~i', '', $this->value );
+            $this->value = preg_replace('~^\.\/+~i', '', $this->value);
 
             if ($leading_variable || ($this->value !== '' && $this->value[0] === '/')) {
                 $type = 'rooted';
             }
 
             // Normalize slashes.
-            $this->value = rtrim( preg_replace( '~[\\\\/]+~', '/', $this->value ), '/' );
+            $this->value = rtrim(preg_replace('~[\\\\/]+~', '/', $this->value), '/');
         }
 
         $this->setType($type);
@@ -160,8 +160,8 @@ class CssCrush_Url
             return $this;
         }
 
-        $mime_type = $allowed_file_extensions[ $file_ext ];
-        $base64 = base64_encode( file_get_contents( $file ) );
+        $mime_type = $allowed_file_extensions[$file_ext];
+        $base64 = base64_encode(file_get_contents($file));
         $this->value = "data:$mime_type;base64,$base64";
 
         $this->setType('data')->protocol = 'data';

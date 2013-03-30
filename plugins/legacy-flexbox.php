@@ -1,6 +1,6 @@
 <?php
 /**
- * Legacy flexbox.
+ * Polyfill for legacy flexbox
  *
  * Works in conjunction with aliases to support legacy
  * flexbox (flexbox 2009) syntax with CR flexbox.
@@ -44,20 +44,20 @@
  *     of flexbox: https://developer.mozilla.org/en-US/docs/Firefox_20_for_developers
  */
 
-CssCrush_Plugin::register( 'legacy-flexbox', array(
+CssCrush_Plugin::register('legacy-flexbox', array(
     'enable' => 'csscrush__enable_legacy_flexbox',
     'disable' => 'csscrush__disable_legacy_flexbox',
 ));
 
 function csscrush__enable_legacy_flexbox () {
-    CssCrush_Hook::add( 'rule_prealias', 'csscrush__legacy_flexbox' );
+    CssCrush_Hook::add('rule_prealias', 'csscrush__legacy_flexbox');
 }
 
 function csscrush__disable_legacy_flexbox () {
-    CssCrush_Hook::remove( 'rule_prealias', 'csscrush__legacy_flexbox' );
+    CssCrush_Hook::remove('rule_prealias', 'csscrush__legacy_flexbox');
 }
 
-function csscrush__legacy_flexbox ( CssCrush_Rule $rule ) {
+function csscrush__legacy_flexbox (CssCrush_Rule $rule) {
 
     static $flex_related_props = array(
         'align-items' => true,
@@ -77,70 +77,70 @@ function csscrush__legacy_flexbox ( CssCrush_Rule $rule ) {
     );
 
     $properties =& $rule->properties;
-    $intersect_props = array_intersect_key( $properties, $flex_related_props );
+    $intersect_props = array_intersect_key($properties, $flex_related_props);
 
     // Checking for flex related properties or 'display:flex'.
     // First checking the display property as it's pretty common.
-    if ( isset( $properties[ 'display' ] ) ) {
-        foreach ( $rule->declarations as $declaration ) {
-            if ( $declaration->property === 'display' &&
-                ( $declaration->value === 'flex' || $declaration->value === 'inline-flex' ) ) {
+    if (isset($properties['display'])) {
+        foreach ($rule->declarations as $declaration) {
+            if ($declaration->property === 'display' &&
+                ($declaration->value === 'flex' || $declaration->value === 'inline-flex')) {
                 // Add 'display' to the intersected properties.
-                $intersect_props[ 'display' ] = true;
+                $intersect_props['display'] = true;
                 break;
             }
         }
     }
 
     // Bail early if the rule has no flex related properties.
-    if ( ! $intersect_props ) {
+    if (! $intersect_props) {
         return;
     }
 
-    $declaration_aliases =& CssCrush::$process->aliases[ 'declarations' ];
+    $declaration_aliases =& CssCrush::$process->aliases['declarations'];
 
     $stack = array();
     $rule_updated = false;
 
-    foreach ( $rule as $declaration ) {
+    foreach ($rule as $declaration) {
 
         $prop = $declaration->property;
         $value = $declaration->value;
 
-        if ( ! isset( $intersect_props[ $prop ] ) ) {
+        if (! isset($intersect_props[$prop])) {
             $stack[] = $declaration;
             continue;
         }
 
-        switch ( $prop ) {
+        switch ($prop) {
 
             // display:flex => display:-*-box.
             case 'display':
                 if (
                     // Treat flex and inline-flex the same in this case.
-                    ( $value === 'flex' || $value === 'inline-flex' ) &&
-                    isset( $declaration_aliases[ 'display' ][ 'box' ] ) ) {
-                    foreach ( $declaration_aliases[ 'display' ][ 'box' ] as $pair ) {
-                        $stack[] = new CssCrush_Declaration( $pair[0], $pair[1] );
+                    ($value === 'flex' || $value === 'inline-flex') &&
+                    isset($declaration_aliases['display']['box'])) {
+                    foreach ($declaration_aliases['display']['box'] as $pair) {
+                        $stack[] = new CssCrush_Declaration($pair[0], $pair[1]);
                         $rule_updated = true;
                     }
                 }
                 break;
 
             case 'align-items':
-                $rule_updated = csscrush__flex_align_items( $value, $stack );
+                $rule_updated = csscrush__flex_align_items($value, $stack);
                 break;
 
             case 'flex':
-                $rule_updated = csscrush__flex( $value, $stack );
+                $rule_updated = csscrush__flex($value, $stack);
                 break;
 
             case 'flex-direction':
-                $rule_updated = csscrush__flex_direction( $value, $stack );
+                $rule_updated = csscrush__flex_direction($value, $stack);
                 break;
 
             case 'flex-grow':
-                $rule_updated = csscrush__flex_grow( $value, $stack );
+                $rule_updated = csscrush__flex_grow($value, $stack);
                 break;
 
             case 'flex-wrap':
@@ -150,15 +150,15 @@ function csscrush__legacy_flexbox ( CssCrush_Rule $rule ) {
                 // - http://stackoverflow.com/questions/5010083/\
                 //   css3-flex-box-specifying-multiple-box-lines-doesnt-work
 
-                // $rule_updated = csscrush__flex_wrap( $value, $stack );
+                // $rule_updated = csscrush__flex_wrap($value, $stack);
                 break;
 
             case 'justify-content':
-                $rule_updated = csscrush__flex_justify_content( $value, $stack );
+                $rule_updated = csscrush__flex_justify_content($value, $stack);
                 break;
 
             case 'order':
-                $rule_updated = csscrush__flex_order( $value, $stack );
+                $rule_updated = csscrush__flex_order($value, $stack);
                 break;
 
             // Shorthand values.
@@ -166,12 +166,12 @@ function csscrush__legacy_flexbox ( CssCrush_Rule $rule ) {
 
                 // <‘flex-direction’> || <‘flex-wrap’>
 
-                $args = explode( ' ', $value );
-                $direction = isset( $args[0] ) ? $args[0] : 'initial';
-                $wrap = isset( $args[1] ) ? $args[1] : 'initial';
+                $args = explode(' ', $value);
+                $direction = isset($args[0]) ? $args[0] : 'initial';
+                $wrap = isset($args[1]) ? $args[1] : 'initial';
 
-                $rule_updated = csscrush__flex_direction( $direction, $stack );
-                // $rule_updated = csscrush__flex_wrap( $wrap, $stack );
+                $rule_updated = csscrush__flex_direction($direction, $stack);
+                // $rule_updated = csscrush__flex_wrap($wrap, $stack);
                 break;
         }
 
@@ -180,19 +180,19 @@ function csscrush__legacy_flexbox ( CssCrush_Rule $rule ) {
     }
 
     // Re-assign if any updates have been made.
-    if ( $rule_updated ) {
-        $rule->setDeclarations( $stack );
+    if ($rule_updated) {
+        $rule->setDeclarations($stack);
     }
 }
 
 
-function csscrush__flex_direction ( $value, &$stack ) {
+function csscrush__flex_direction ($value, &$stack) {
 
     // flex-direction: row | row-reverse | column | column-reverse
     // box-orient:     horizontal | vertical | inline-axis | block-axis | inherit
     // box-direction:  normal | reverse | inherit
 
-    $prop_aliases =& CssCrush::$process->aliases[ 'properties' ];
+    $prop_aliases =& CssCrush::$process->aliases['properties'];
 
     static $directions = array(
         'row'            => 'normal',
@@ -211,15 +211,15 @@ function csscrush__flex_direction ( $value, &$stack ) {
     );
     $rule_updated = false;
 
-    if ( isset( $prop_aliases[ 'box-direction' ] ) ) {
-        foreach ( $prop_aliases[ 'box-direction' ] as $prop_alias ) {
-            $stack[] = new CssCrush_Declaration( $prop_alias, $directions[ $value ] );
+    if (isset($prop_aliases['box-direction'])) {
+        foreach ($prop_aliases['box-direction'] as $prop_alias) {
+            $stack[] = new CssCrush_Declaration($prop_alias, $directions[$value]);
             $rule_updated = true;
         }
     }
-    if ( isset( $prop_aliases[ 'box-orient' ] ) ) {
-        foreach ( $prop_aliases[ 'box-orient' ] as $prop_alias ) {
-            $stack[] = new CssCrush_Declaration( $prop_alias, $orientations[ $value ] );
+    if (isset($prop_aliases['box-orient'])) {
+        foreach ($prop_aliases['box-orient'] as $prop_alias) {
+            $stack[] = new CssCrush_Declaration($prop_alias, $orientations[$value]);
             $rule_updated = true;
         }
     }
@@ -227,12 +227,12 @@ function csscrush__flex_direction ( $value, &$stack ) {
 }
 
 
-function csscrush__flex_justify_content ( $value, &$stack ) {
+function csscrush__flex_justify_content ($value, &$stack) {
 
     // justify-content: flex-start | flex-end | center | space-between | space-around
     // box-pack:        start | end | center | justify
 
-    $prop_aliases =& CssCrush::$process->aliases[ 'properties' ];
+    $prop_aliases =& CssCrush::$process->aliases['properties'];
 
     static $positions = array(
         'flex-start'    => 'start',
@@ -243,9 +243,9 @@ function csscrush__flex_justify_content ( $value, &$stack ) {
     );
     $rule_updated = false;
 
-    if ( isset( $prop_aliases[ 'box-pack' ] ) && isset( $positions[ $value ] ) ) {
-        foreach ( $prop_aliases[ 'box-pack' ] as $prop_alias ) {
-            $stack[] = new CssCrush_Declaration( $prop_alias, $positions[ $value ] );
+    if (isset($prop_aliases['box-pack']) && isset($positions[$value])) {
+        foreach ($prop_aliases['box-pack'] as $prop_alias) {
+            $stack[] = new CssCrush_Declaration($prop_alias, $positions[$value]);
             $rule_updated = true;
         }
     }
@@ -253,12 +253,12 @@ function csscrush__flex_justify_content ( $value, &$stack ) {
 }
 
 
-function csscrush__flex_align_items ( $value, &$stack ) {
+function csscrush__flex_align_items ($value, &$stack) {
 
     // align-items: flex-start | flex-end | center | baseline | stretch
     // box-align:   start | end | center | baseline | stretch
 
-    $prop_aliases =& CssCrush::$process->aliases[ 'properties' ];
+    $prop_aliases =& CssCrush::$process->aliases['properties'];
 
     static $positions = array(
         'flex-start'    => 'start',
@@ -269,9 +269,9 @@ function csscrush__flex_align_items ( $value, &$stack ) {
     );
     $rule_updated = false;
 
-    if ( isset( $prop_aliases[ 'box-align' ] ) && isset( $positions[ $value ] ) ) {
-        foreach ( $prop_aliases[ 'box-align' ] as $prop_alias ) {
-            $stack[] = new CssCrush_Declaration( $prop_alias, $positions[ $value ] );
+    if (isset($prop_aliases['box-align']) && isset($positions[$value])) {
+        foreach ($prop_aliases['box-align'] as $prop_alias) {
+            $stack[] = new CssCrush_Declaration($prop_alias, $positions[$value]);
             $rule_updated = true;
         }
     }
@@ -279,12 +279,12 @@ function csscrush__flex_align_items ( $value, &$stack ) {
 }
 
 
-function csscrush__flex_order ( $value, &$stack ) {
+function csscrush__flex_order ($value, &$stack) {
 
     // order:             <integer>
     // box-ordinal-group: <integer>
 
-    $prop_aliases =& CssCrush::$process->aliases[ 'properties' ];
+    $prop_aliases =& CssCrush::$process->aliases['properties'];
 
     // Bump value as box-ordinal-group requires a positive integer:
     // http://www.w3.org/TR/2009/WD-css3-flexbox-20090723/#displayorder
@@ -295,9 +295,9 @@ function csscrush__flex_order ( $value, &$stack ) {
     $value = $value < 1 ? 1 : $value + 1;
 
     $rule_updated = false;
-    if ( isset( $prop_aliases[ 'box-ordinal-group' ] ) ) {
-        foreach ( $prop_aliases[ 'box-ordinal-group' ] as $prop_alias ) {
-            $stack[] = new CssCrush_Declaration( $prop_alias, $value );
+    if (isset($prop_aliases['box-ordinal-group'])) {
+        foreach ($prop_aliases['box-ordinal-group'] as $prop_alias) {
+            $stack[] = new CssCrush_Declaration($prop_alias, $value);
             $rule_updated = true;
         }
     }
@@ -305,12 +305,12 @@ function csscrush__flex_order ( $value, &$stack ) {
 }
 
 
-function csscrush__flex_wrap ( $value, &$stack ) {
+function csscrush__flex_wrap ($value, &$stack) {
 
     // flex-wrap: nowrap | wrap | wrap-reverse
     // box-lines: single | multiple
 
-    $prop_aliases =& CssCrush::$process->aliases[ 'properties' ];
+    $prop_aliases =& CssCrush::$process->aliases['properties'];
 
     static $wrap_behaviours = array(
         'nowrap'       => 'single',
@@ -320,9 +320,9 @@ function csscrush__flex_wrap ( $value, &$stack ) {
     );
     $rule_updated = false;
 
-    if ( isset( $prop_aliases[ 'box-lines' ] ) && isset( $wrap_behaviours[ $value ] ) ) {
-        foreach ( $prop_aliases[ 'box-lines' ] as $prop_alias ) {
-            $stack[] = new CssCrush_Declaration( $prop_alias, $wrap_behaviours[ $value ] );
+    if (isset($prop_aliases['box-lines']) && isset($wrap_behaviours[$value])) {
+        foreach ($prop_aliases['box-lines'] as $prop_alias) {
+            $stack[] = new CssCrush_Declaration($prop_alias, $wrap_behaviours[$value]);
             $rule_updated = true;
         }
     }
@@ -330,12 +330,12 @@ function csscrush__flex_wrap ( $value, &$stack ) {
 }
 
 
-function csscrush__flex ( $value, &$stack ) {
+function csscrush__flex ($value, &$stack) {
 
     // flex:     none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]
     // box-flex: <number>
 
-    $prop_aliases =& CssCrush::$process->aliases[ 'properties' ];
+    $prop_aliases =& CssCrush::$process->aliases['properties'];
 
     // Normalize keyword arguments.
     static $keywords = array(
@@ -343,21 +343,21 @@ function csscrush__flex ( $value, &$stack ) {
         'auto'    => '1 1 auto',
         'initial' => '0 1 auto',
     );
-    if ( isset( $keywords[ $value ] ) ) {
-        $value = $keywords[ $value ];
+    if (isset($keywords[$value])) {
+        $value = $keywords[$value];
     }
 
     // Grow (first value) not have a unit to avoid being interpreted as a basis:
     // https://developer.mozilla.org/en-US/docs/CSS/flex
     $grow = 1;
-    if ( preg_match( '~^(\d*\.?\d+) ~', $value, $m ) ) {
+    if (preg_match('~^(\d*\.?\d+) ~', $value, $m)) {
         $grow = $m[1];
     }
 
     $rule_updated = false;
-    if ( isset( $prop_aliases[ 'box-flex' ] ) ) {
-        foreach ( $prop_aliases[ 'box-flex' ] as $prop_alias ) {
-            $stack[] = new CssCrush_Declaration( $prop_alias, $grow );
+    if (isset($prop_aliases['box-flex'])) {
+        foreach ($prop_aliases['box-flex'] as $prop_alias) {
+            $stack[] = new CssCrush_Declaration($prop_alias, $grow);
             $rule_updated = true;
         }
     }
@@ -365,17 +365,17 @@ function csscrush__flex ( $value, &$stack ) {
 }
 
 
-function csscrush__flex_grow ( $value, &$stack ) {
+function csscrush__flex_grow ($value, &$stack) {
 
     // flex-grow: <number>
     // box-flex:  <number>
 
-    $prop_aliases =& CssCrush::$process->aliases[ 'properties' ];
+    $prop_aliases =& CssCrush::$process->aliases['properties'];
 
     $rule_updated = false;
-    if ( isset( $prop_aliases[ 'box-flex' ] ) ) {
-        foreach ( $prop_aliases[ 'box-flex' ] as $prop_alias ) {
-            $stack[] = new CssCrush_Declaration( $prop_alias, $value );
+    if (isset($prop_aliases['box-flex'])) {
+        foreach ($prop_aliases['box-flex'] as $prop_alias) {
+            $stack[] = new CssCrush_Declaration($prop_alias, $value);
             $rule_updated = true;
         }
     }

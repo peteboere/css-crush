@@ -8,23 +8,23 @@ class CssCrush_Options
 {
     public $data = array();
 
-    public function __construct ( $properties )
+    public function __construct ($properties)
     {
-        if ( $properties ) {
-            foreach ( $properties as $key => $value ) {
-                $this->__set( $key, $value );
+        if ($properties) {
+            foreach ($properties as $key => $value) {
+                $this->__set($key, $value);
             }
         }
     }
 
-    public function __set ( $name, $value )
+    public function __set ($name, $value)
     {
-        switch ( $name ) {
+        switch ($name) {
 
             // For legacy debug option, check minify has not been set then
             // flip the value and change property to minify.
             case 'debug':
-                if ( ! array_key_exists( 'minify', $this->data ) ) {
+                if (! array_key_exists('minify', $this->data)) {
                     $name = 'minify';
                     $value = ! $value;
                 }
@@ -32,17 +32,17 @@ class CssCrush_Options
 
             // If trace value is truthy set to stubs.
             case 'trace':
-                if ( ! is_array( $value ) ) {
-                    $value = $value ? array( 'stubs' ) : array();
+                if (! is_array($value)) {
+                    $value = $value ? array('stubs') : array();
                 }
                 break;
 
             // Resolve a formatter callback name and check it's callable.
             case 'formatter':
-                if ( isset( CssCrush::$config->formatters[ $value ] ) ) {
-                    $value = CssCrush::$config->formatters[ $value ];
+                if (isset(CssCrush::$config->formatters[$value])) {
+                    $value = CssCrush::$config->formatters[$value];
                 }
-                if ( ! is_callable( $value ) ) {
+                if (! is_callable($value)) {
                     $value = null;
                 }
                 break;
@@ -50,8 +50,8 @@ class CssCrush_Options
             // Sanitize path options.
             case 'context':
             case 'doc_root':
-                if ( is_string( $value ) ) {
-                    $value = CssCrush_Util::normalizePath( $value );
+                if (is_string($value)) {
+                    $value = CssCrush_Util::normalizePath($value);
                 }
                 break;
 
@@ -63,24 +63,24 @@ class CssCrush_Options
                 break;
         }
 
-        $this->data[ $name ] = $value;
+        $this->data[$name] = $value;
     }
 
-    public function __get ( $name )
+    public function __get ($name)
     {
-        return isset( $this->data[ $name ] ) ? $this->data[ $name ] : null;
+        return isset($this->data[$name]) ? $this->data[$name] : null;
     }
 
-    public function __isset ( $name )
+    public function __isset ($name)
     {
-        return isset( $this->data[ $name ] );
+        return isset($this->data[$name]);
     }
 
-    public function merge ( CssCrush_Options $options_instance )
+    public function merge (CssCrush_Options $options_instance)
     {
-        foreach ( $options_instance->data as $key => $value ) {
-            if ( ! array_key_exists( $key, $this->data ) ) {
-                $this->__set( $key, $value );
+        foreach ($options_instance->data as $key => $value) {
+            if (! array_key_exists($key, $this->data)) {
+                $this->__set($key, $value);
             }
         }
     }

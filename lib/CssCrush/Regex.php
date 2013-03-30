@@ -56,21 +56,21 @@ class CssCrush_Regex
         $patt->rooted_number = '~^' . $classes->number . '$~';
 
         // @-rules.
-        $patt->import = CssCrush_Regex::create( '@import\s+(<u-token>)\s?([^;]*);', 'iS' );
+        $patt->import = CssCrush_Regex::create('@import\s+(<u-token>)\s?([^;]*);', 'iS');
         $patt->charset = CssCrush_Regex::create('@charset\s+(<s-token>)\s*;', 'iS');
-        $patt->variables = CssCrush_Regex::create( '@(?:define|variables) *\{ *(.*?) *\};?', 'iS' );
-        $patt->mixin = CssCrush_Regex::create( '@mixin +(<ident>) *\{ *(.*?) *\};?', 'iS' );
-        $patt->abstract = CssCrush_Regex::create( '^@abstract +(<ident>)', 'i' );
-        $patt->selectorAlias = CssCrush_Regex::create( '@selector-alias +\:(<ident>) +([^;]+) *;', 'iS' );
-        $patt->ifDefine = CssCrush_Regex::create( '@ifdefine +(not +)?(<ident>) *\{', 'iS' );
-        $patt->fragmentDef = CssCrush_Regex::create( '@fragment +(<ident>) *\{', 'iS' );
-        $patt->fragmentCall = CssCrush_Regex::create( '@fragment +(<ident>) *(\(|;)', 'iS' );
+        $patt->variables = CssCrush_Regex::create('@(?:define|variables) *\{ *(.*?) *\};?', 'iS');
+        $patt->mixin = CssCrush_Regex::create('@mixin +(<ident>) *\{ *(.*?) *\};?', 'iS');
+        $patt->abstract = CssCrush_Regex::create('^@abstract +(<ident>)', 'i');
+        $patt->selectorAlias = CssCrush_Regex::create('@selector-alias +\:(<ident>) +([^;]+) *;', 'iS');
+        $patt->ifDefine = CssCrush_Regex::create('@ifdefine +(not +)?(<ident>) *\{', 'iS');
+        $patt->fragmentDef = CssCrush_Regex::create('@fragment +(<ident>) *\{', 'iS');
+        $patt->fragmentCall = CssCrush_Regex::create('@fragment +(<ident>) *(\(|;)', 'iS');
 
         // Functions.
-        $patt->function = CssCrush_Regex::create( '<LB>(<ident>)(<p-token>)', 'S' );
-        $patt->varFunction = CssCrush_Regex::create( '\$\( *(<ident>) *\)', 'S' );
-        $patt->argFunction = CssCrush_Regex::createFunctionPatt( array( 'arg' ) );
-        $patt->thisFunction = CssCrush_Regex::createFunctionPatt( array( 'this' ) );
+        $patt->function = CssCrush_Regex::create('<LB>(<ident>)(<p-token>)', 'S');
+        $patt->varFunction = CssCrush_Regex::create('\$\( *(<ident>) *\)', 'S');
+        $patt->argFunction = CssCrush_Regex::createFunctionPatt(array('arg'));
+        $patt->thisFunction = CssCrush_Regex::createFunctionPatt(array('this'));
 
         $patt->commentAndString = '~
             # Quoted string (to EOF if unmatched).
@@ -104,7 +104,7 @@ class CssCrush_Regex
         $patt->cruftyHex = '~\#([[:xdigit:]])\1([[:xdigit:]])\2([[:xdigit:]])\3~S';
     }
 
-    static public function create ( $pattern_template, $flags = '', $delim = '~' )
+    static public function create ($pattern_template, $flags = '', $delim = '~')
     {
         static $find, $replace;
         if (! $find) {
@@ -117,7 +117,7 @@ class CssCrush_Regex
         return "$delim{$pattern}$delim{$flags}";
     }
 
-    static public function matchAll ( $patt, $subject, $preprocess_patt = false, $offset = 0 )
+    static public function matchAll ($patt, $subject, $preprocess_patt = false, $offset = 0)
     {
         if ($preprocess_patt) {
             // Assume case-insensitive.
@@ -129,20 +129,20 @@ class CssCrush_Regex
         return $count ? $matches : array();
     }
 
-    static public function createFunctionPatt ( $list, $include_math_function = false )
+    static public function createFunctionPatt ($list, $include_math_function = false)
     {
         $question = '';
-        if ( $include_math_function ) {
+        if ($include_math_function) {
             $question = '?';
             // Signing on math bare parens.
             $list[] = '-';
         }
 
-        foreach ( $list as &$fn_name ) {
-            $fn_name = preg_quote( $fn_name );
+        foreach ($list as &$fn_name) {
+            $fn_name = preg_quote($fn_name);
         }
 
-        return CssCrush_Regex::create( '<LB>(' . implode( '|', $list ) . ')' . $question . '\(', 'iS' );
+        return CssCrush_Regex::create('<LB>(' . implode('|', $list) . ')' . $question . '\(', 'iS');
     }
 }
 
