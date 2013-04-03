@@ -194,7 +194,7 @@ if (is_string($args->boilerplate)) {
 
 
 // Run multiple value arguments through array cast.
-foreach (array('enable_plugins', 'disable_plugins') as $arg) {
+foreach (array('enable_plugins', 'disable_plugins', 'vendor_target') as $arg) {
     if ($args->{$arg}) {
         $args->{$arg} = (array) $args->{$arg};
     }
@@ -273,7 +273,7 @@ if ($args->trace) {
 
 // Vendor target arg.
 if ($args->vendor_target) {
-    $process_opts['vendor_target'] = $args->vendor_target;
+    $process_opts['vendor_target'] = parse_list($args->vendor_target);
 }
 
 // Variables args.
@@ -296,7 +296,6 @@ if ($args->output_file) {
     $process_opts['output_dir'] = dirname($args->output_file);
     $process_opts['output_file'] = basename($args->output_file);
 }
-
 
 ##################################################################
 ##  Output.

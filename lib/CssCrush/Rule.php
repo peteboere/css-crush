@@ -527,8 +527,15 @@ class CssCrush_Rule implements IteratorAggregate
 
         $stack = array();
         $rule_updated = false;
+        $vendor_context = $this->vendorContext;
+        $regex = CssCrush_Regex::$patt;
 
         foreach ($this->declarations as $declaration) {
+
+            // Check declaration against vendor context.
+            if ($vendor_context && $declaration->vendor && $declaration->vendor !== $vendor_context) {
+                continue;
+            }
 
             if ($declaration->skip) {
                 $stack[] = $declaration;
@@ -540,8 +547,16 @@ class CssCrush_Rule implements IteratorAggregate
 
                 foreach ($aliased_properties[$declaration->property] as $prop_alias) {
 
-                    // If an aliased version already exists to not create one.
+                    // If an aliased version already exists do not create one.
                     if ($this->propertyCount($prop_alias)) {
+                        continue;
+                    }
+
+                    // Get property alias vendor.
+                    preg_match($regex->vendorPrefix, $prop_alias, $alias_vendor);
+
+                    // Check against vendor context.
+                    if ($vendor_context && $alias_vendor && $alias_vendor[1] !== $vendor_context) {
                         continue;
                     }
 
@@ -551,8 +566,8 @@ class CssCrush_Rule implements IteratorAggregate
 
                     // Set the aliased declaration vendor property.
                     $copy->vendor = null;
-                    if (preg_match(CssCrush_Regex::$patt->vendorPrefix, $prop_alias, $vendor)) {
-                        $copy->vendor = $vendor[1];
+                    if ($alias_vendor) {
+                        $copy->vendor = $alias_vendor[1];
                     }
 
                     $stack[] = $copy;
@@ -574,6 +589,7 @@ class CssCrush_Rule implements IteratorAggregate
     {
         $function_aliases =& CssCrush::$process->aliases['functions'];
         $function_alias_groups =& CssCrush::$process->aliases['function_groups'];
+        $vendor_context = $this->vendorContext;
 
         // The new modified set of declarations.
         $new_set = array();
@@ -621,7 +637,10 @@ class CssCrush_Rule implements IteratorAggregate
                     foreach ($groups as $group_key => $replacements) {
 
                         // If the declaration is vendor specific only create aliases for the same vendor.
-                        if ($declaration->vendor && $group_key !== $declaration->vendor) {
+                        if (
+                            ($declaration->vendor && $group_key !== $declaration->vendor) ||
+                            ($vendor_context && $group_key !== $vendor_context)
+                        ) {
                             continue;
                         }
 
@@ -651,7 +670,10 @@ class CssCrush_Rule implements IteratorAggregate
                         // If the declaration is vendor specific only create aliases for the same vendor.
                         if ($declaration->vendor) {
                             preg_match(CssCrush_Regex::$patt->vendorPrefix, $fn_alias, $m);
-                            if ($m[1] !== $declaration->vendor) {
+                            if (
+                                $m[1] !== $declaration->vendor ||
+                                ($vendor_context && $m[1] !== $vendor_context)
+                            ) {
                                 continue;
                             }
                         }

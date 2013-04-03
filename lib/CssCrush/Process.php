@@ -386,21 +386,28 @@ class CssCrush_Process
     protected function filterAliases ()
     {
         // If a vendor target is given, we prune the aliases array.
-        $vendor = $this->options->vendor_target;
+        $vendors = $this->options->vendor_target;
 
         // Default vendor argument, so use all aliases as normal.
-        if ('all' === $vendor) {
+        if ('all' === $vendors) {
+
             return;
         }
 
         // For expicit 'none' argument turn off aliases.
-        if ('none' === $vendor) {
+        if ('none' === $vendors) {
             $this->aliases = CssCrush::$config->bareAliasGroups;
+
             return;
         }
 
-        // Normalize vendor_target argument.
-        $vendor = '-' . str_replace('-', '', $vendor) . '-';
+        // Normalize vendor names and create regex patt.
+        $vendor_names = (array) $vendors;
+        foreach ($vendor_names as &$vendor_name) {
+            $vendor_name = trim($vendor_name, '-');
+        }
+        $vendor_patt = '~^\-(' . implode($vendor_names, '|') . ')\-~i';
+
 
         // Loop the aliases array, filter down to the target vendor.
         foreach ($this->aliases as $section => $group_array) {
@@ -412,21 +419,18 @@ class CssCrush_Process
                     foreach ($values as $value => $prefix_values) {
                         foreach ($prefix_values as $index => $declaration) {
 
-                            list($prop, $val) = $declaration;
-                            if (!(
-                                strpos($prop, $vendor) === 0 ||
-                                strpos($val, $vendor) === 0
-                                )
-                            ) {
-                                // Unset uneeded aliases.
-                                unset($this->aliases[$section][$property][$value][$index]);
+                            if (in_array($declaration[2], $vendor_names)) {
+                                continue;
+                            }
 
-                                if (empty($this->aliases[$section][$property][$value])) {
-                                    unset($this->aliases[$section][$property][$value]);
-                                }
-                                if (empty($this->aliases[$section][$property])) {
-                                    unset($this->aliases[$section][$property]);
-                                }
+                            // Unset uneeded aliases.
+                            unset($this->aliases[$section][$property][$value][$index]);
+
+                            if (empty($this->aliases[$section][$property][$value])) {
+                                unset($this->aliases[$section][$property][$value]);
+                            }
+                            if (empty($this->aliases[$section][$property])) {
+                                unset($this->aliases[$section][$property]);
                             }
                         }
                     }
@@ -437,10 +441,10 @@ class CssCrush_Process
             elseif ($section === 'function_groups') {
 
                 foreach ($group_array as $func_group => $vendors) {
-                    foreach ($vendors as $fn_vendor => $replacements) {
+                    foreach ($vendors as $vendor => $replacements) {
 
-                        if ("-$fn_vendor-" !== $vendor) {
-                            unset($this->aliases['function_groups'][$func_group][$fn_vendor]);
+                        if (! in_array($vendor, $vendor_names)) {
+                            unset($this->aliases['function_groups'][$func_group][$vendor]);
                         }
                     }
                 }
@@ -458,10 +462,11 @@ class CssCrush_Process
                     $result = array();
 
                     foreach ($prefix_array as $prefix) {
-                        if (strpos($prefix, $vendor) === 0) {
+                        if (preg_match($vendor_patt, $prefix)) {
                             $result[] = $prefix;
                         }
                     }
+
                     // Prune the whole alias keyword if there is no result.
                     if (empty($result)) {
                         unset($this->aliases[$section][$alias_keyword]);
@@ -534,7 +539,7 @@ class CssCrush_Process
             $this->variables = array_merge($this->variables, $option_vars);
         }
 
-        // Finally add state variables.
+        // Add state variables.
         // $this->variables = array(
         //     'input-path' => $this->input->dirUrl,
         //     'output-path' => $this->output->dirUrl,
@@ -912,6 +917,7 @@ class CssCrush_Process
     protected function aliasAtRules ()
     {
         if (empty($this->aliases['at-rules'])) {
+
             return;
         }
 
@@ -961,19 +967,10 @@ class CssCrush_Process
                             // Set the vendor context.
                             $cloneRule->vendorContext = $vendor;
 
-                            // Filter out declarations that have different vendor context.
-                            $new_set = array();
-                            foreach ($cloneRule as $declaration) {
-                                if (! $declaration->vendor || $declaration->vendor === $vendor) {
-                                    $new_set[] = $declaration;
-                                }
-                            }
-                            $cloneRule->setDeclarations($new_set);
-
                             // Store the clone.
                             $replacements[] = $this->addToken($cloneRule, 'r');
-
                         }
+
                         // Finally replace the original labels with the cloned rule labels.
                         $copy_block = str_replace($originals, $replacements, $copy_block);
                     }
@@ -1143,11 +1140,11 @@ class CssCrush_Process
         // Process @in blocks.
         $this->prefixSelectors();
 
-        // Main processing on the rule objects.
-        $this->processRules();
-
         // Alias any @-rules.
         $this->aliasAtRules();
+
+        // Main processing on the rule objects.
+        $this->processRules();
 
         // Print rules, optionally minify.
         $this->collate();

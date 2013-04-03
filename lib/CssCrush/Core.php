@@ -157,15 +157,32 @@ class CssCrush
             $result = @parse_ini_file($aliases_file, true);
             if ($result !== false) {
 
+                $regex = CssCrush_Regex::$patt;
+
                 foreach ($result as $section => $items) {
 
                     // Declaration aliases require a little preparation.
+                    // Also extracting vendor context (if any).
                     if ($section === 'declarations') {
+
                         $store = array();
                         foreach ($items as $prop_val => $aliases) {
+
                             list($prop, $value) = array_map('trim', explode(':', $prop_val));
+
                             foreach ($aliases as &$alias) {
-                                $alias = explode(':', $alias);
+
+                                list($p, $v) = explode(':', $alias);
+                                $vendor = null;
+
+                                // Try to detect the vendor from property and value in turn.
+                                if (
+                                    preg_match($regex->vendorPrefix, $p, $m) ||
+                                    preg_match($regex->vendorPrefix, $v, $m)
+                                ) {
+                                    $vendor = $m[1];
+                                }
+                                $alias = array($p, $v, $vendor);
                             }
                             $store[$prop][$value] = $aliases;
                         }
@@ -185,10 +202,11 @@ class CssCrush
                             foreach ($aliases as $alias_func) {
 
                                 // Only supporting vendor prefixed aliases, for now.
-                                if (preg_match(CssCrush_Regex::$patt->vendorPrefix, $alias_func, $m)) {
+                                if (preg_match($regex->vendorPrefix, $alias_func, $m)) {
 
                                     // We'll cache the function matching regex here.
-                                    $vendor_grouped_aliases[$m[1]]['find'][] = CssCrush_Regex::create('<LB>' . $func_name . '<RTB>', 'i');
+                                    $vendor_grouped_aliases[$m[1]]['find'][] =
+                                        CssCrush_Regex::create('<LB>' . $func_name . '<RTB>', 'i');
                                     $vendor_grouped_aliases[$m[1]]['replace'][] = $alias_func;
                                 }
                             }

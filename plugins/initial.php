@@ -1,18 +1,19 @@
 <?php
 /**
  * Polyfill for the 'initial' keyword
+ *
  * (http://www.w3.org/TR/css3-cascade/#initial0)
- * 
- * @before 
+ *
+ * @before
  *     opacity: initial;
  *     white-space: initial;
  *     min-height: initial;
- * 
+ *
  * @after
  *     opacity: 1;
  *     white-space: normal;
  *     max-height: auto;
- * 
+ *
  */
 
 CssCrush_Plugin::register('initial', array(
