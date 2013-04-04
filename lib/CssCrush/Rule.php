@@ -176,12 +176,12 @@ class CssCrush_Rule implements IteratorAggregate
         // Merge the extend selectors.
         $this->selectors += $this->extendSelectors;
 
-        // If there are no selectors or declarations associated with the rule return empty string.
+        // If there are no selectors or declarations associated with the rule
+        // return empty string.
         if (empty($this->selectors) || empty($this->declarations)) {
 
             // De-reference this instance.
             unset($process->tokens->r[$this->label]);
-
             return '';
         }
 
@@ -344,32 +344,34 @@ class CssCrush_Rule implements IteratorAggregate
     }
 
     public $resolvedExtendables = false;
-    public function resolveExtendables () {
-
-        if (! $this->extendArgs || $this->resolvedExtendables) {
+    public function resolveExtendables ()
+    {
+        if (! $this->extendArgs) {
 
             return false;
         }
+        elseif (! $this->resolvedExtendables) {
 
-        $references =& CssCrush::$process->references;
+            $references =& CssCrush::$process->references;
 
-        // Filter the extendArgs list to usable references.
-        $filtered = array();
-        foreach ($this->extendArgs as $key => $extend_arg) {
+            // Filter the extendArgs list to usable references.
+            $filtered = array();
+            foreach ($this->extendArgs as $key => $extend_arg) {
 
-            $name = $extend_arg->name;
+                $name = $extend_arg->name;
 
-            if (isset($references[$name])) {
+                if (isset($references[$name])) {
 
-                $parent_rule = $references[$name];
-                $parent_rule->resolveExtendables();
-                $extend_arg->pointer = $parent_rule;
-                $filtered[$parent_rule->label] = $extend_arg;
+                    $parent_rule = $references[$name];
+                    $parent_rule->resolveExtendables();
+                    $extend_arg->pointer = $parent_rule;
+                    $filtered[$parent_rule->label] = $extend_arg;
+                }
             }
-        }
 
-        $this->resolvedExtendables = true;
-        $this->extendArgs = $filtered;
+            $this->resolvedExtendables = true;
+            $this->extendArgs = $filtered;
+        }
 
         return true;
     }

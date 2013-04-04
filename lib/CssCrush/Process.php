@@ -890,16 +890,15 @@ class CssCrush_Process
                                     $rule_selector->value,
                                     1);
 
-                            // Not storing the selector as named.
-                            $new_selector_list[] = new CssCrush_Selector($new_value);
+                            $new = new CssCrush_Selector($new_value);
+                            $new_selector_list[$new->readableValue] = $new;
                         }
 
                         // Prepending the prefix.
                         else {
 
-                            // Not storing the selector as named.
-                            $new_selector_list[]
-                                = new CssCrush_Selector("$arg_selector {$rule_selector->value}");
+                            $new = new CssCrush_Selector("$arg_selector {$rule_selector->value}");
+                            $new_selector_list[$new->readableValue] = $new;
                         }
                     }
                 }
@@ -1135,7 +1134,7 @@ class CssCrush_Process
 
         // Parse rules.
         $this->extractRules();
-        //  csscrush::log($this->references);
+        // csscrush::log(array_keys($this->references));
 
         // Process @in blocks.
         $this->prefixSelectors();

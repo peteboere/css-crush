@@ -153,9 +153,9 @@ elseif ($args->list) {
 
 
 ##################################################################
-##  Filter option values.
+##  Validate option values.
 
-// Validate filepath arguments.
+// Filepath arguments.
 if ($args->input_file) {
     $input_file = $args->input_file;
     if (! ($args->input_file = realpath($args->input_file))) {
@@ -202,7 +202,7 @@ foreach (array('enable_plugins', 'disable_plugins', 'vendor_target') as $arg) {
 
 
 ##################################################################
-##  Input.
+##  Resolve input.
 
 $input = null;
 
@@ -359,7 +359,6 @@ function stdout ($lines, $closing_newline = true) {
 
     // On OSX terminal is sometimes truncating 'visual' output to terminal
     // with fwrite to STDOUT.
-    // fwrite(STDOUT, $out);
     echo $out;
 }
 
