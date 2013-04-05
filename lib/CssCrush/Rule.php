@@ -433,7 +433,7 @@ class CssCrush_Rule implements IteratorAggregate
 
             if ($pos !== false) {
 
-                // Contains an :any statement so we expand
+                // Contains an :any statement so expand.
                 $chain = array('');
                 do {
                     if ($pos === 0) {
@@ -478,16 +478,16 @@ class CssCrush_Rule implements IteratorAggregate
                     }
                 } while (($pos = stripos($selector->value, ':any?')) !== false);
 
-                // Finish off
+                // Finish off.
                 foreach ($chain as &$row) {
 
-                    // Not creating a named rule association with this expanded selector
-                    $new_set[] = new CssCrush_Selector($row . $selector->value);
+                    $new = new CssCrush_Selector($row . $selector->value);
+                    $new_set[$new->readableValue] = $new;
                 }
             }
             else {
 
-                // Nothing to expand
+                // Nothing to expand.
                 $new_set[$readableValue] = $selector;
             }
 
@@ -722,6 +722,7 @@ class CssCrush_Rule implements IteratorAggregate
         // Table lookups are faster.
         $intersect = array_flip(array_keys($intersect));
 
+        $vendor_context = $this->vendorContext;
         $new_set = array();
         $rule_updated = false;
 
@@ -736,13 +737,20 @@ class CssCrush_Rule implements IteratorAggregate
                     // Create new alias declaration if the property and value match.
                     if ($declaration->value === $value_match) {
 
-                        foreach ($replacements as $pair) {
+                        foreach ($replacements as $values) {
+
+                            // Check the vendor against context.
+                            if ($vendor_context && $vendor_context !== $values[2]) {
+                                continue;
+                            }
 
                             // If the replacement property is null use the original declaration property.
-                            $new_set[] = new CssCrush_Declaration(
-                                ! empty($pair[0]) ? $pair[0] : $declaration->property,
-                                $pair[1]
+                            $new = new CssCrush_Declaration(
+                                ! empty($values[0]) ? $values[0] : $declaration->property,
+                                $values[1]
                                 );
+                            $new->important = $declaration->important;
+                            $new_set[] = $new;
                             $rule_updated = true;
                         }
                     }

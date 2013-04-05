@@ -263,10 +263,23 @@ class CssCrush_Process
         // Substitute any tags
         if (preg_match_all('~\{\{([^}]+)\}\}~', $boilerplate, $boilerplate_matches)) {
 
+            $command = 'n/a';
+            if (isset($_SERVER['argv'])) {
+                $argv = $_SERVER['argv'];
+                array_shift($argv);
+                $command = 'csscrush ' . implode(' ', $argv);
+            }
+
             $tags = array(
                 'datetime' => @date('Y-m-d H:i:s O'),
                 'year' => @date('Y'),
                 'version' => 'v' . CssCrush::$config->version,
+
+                // Command line arguments (if any).
+                'command' => $command,
+
+                // Enabled plugins.
+                'plugins' => implode(',', array_keys($this->plugins)),
             );
 
             foreach ($boilerplate_matches[0] as $index => $tag) {
