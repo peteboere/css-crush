@@ -138,7 +138,13 @@ class CssCrush_Function
 
 function csscrush_fn__math ($input) {
 
-    // Strip blacklisted characters
+    // Swap in math constants.
+    $input = preg_replace(
+        array('~\bpi\b~i'),
+        array(M_PI),
+        $input);
+
+    // Strip blacklisted characters.
     $input = preg_replace(CssCrush_Regex::$patt->mathBlacklist, '', $input);
 
     $result = @eval("return $input;");

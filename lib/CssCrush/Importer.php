@@ -202,8 +202,12 @@ class CssCrush_Importer
         // Convert all end-of-lines to unix style.
         $str = preg_replace('~\r\n?~', "\n", $str);
 
+        // Tokenize all comments and string literals.
         $str = preg_replace_callback($regex->commentAndString,
             array('self', 'cb_extractCommentAndString'), $str);
+
+        // Normalize double-colon pseudo elements for backwards compatability.
+        $str = preg_replace('~::(after|before|first-(?:letter|line))~iS', ':$1', $str);
 
         // If @charset is set store it.
         if (preg_match($regex->charset, $str, $m)) {

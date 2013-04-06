@@ -34,7 +34,7 @@ class CssCrush_Selector
         if (! CssCrush::$process->minifyOutput) {
             $this->value = CssCrush_Selector::normalizeWhiteSpace($this->value);
         }
-        return CssCrush_Selector::compatFilter($this->value);
+        return $this->value;
     }
 
     public function appendPseudo ($pseudo)
@@ -46,16 +46,6 @@ class CssCrush_Selector
             $this->value .= $pseudo;
         }
         return $this->readableValue;
-    }
-
-    static public function compatFilter ($str)
-    {
-        // Replace double-colons for backwards compatability.
-        if (strpos($str, '::') !== false) {
-            $str = preg_replace(
-                '~::(after|before|first-(?:letter|line))~iS', ':$1', $str);
-        }
-        return $str;
     }
 
     static public function normalizeWhiteSpace ($str)

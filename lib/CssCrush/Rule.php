@@ -409,7 +409,7 @@ class CssCrush_Rule implements IteratorAggregate
                     $extend_selectors[$new_readable] = $new_selector;
                 }
             }
-            $ancestor->addExtendSelectors($extend_selectors);
+            $ancestor->extendSelectors += $extend_selectors;
         }
     }
 
@@ -507,11 +507,6 @@ class CssCrush_Rule implements IteratorAggregate
     public function addSelectors ($list, $extend_selectors = false)
     {
         $this->selectors += $list;
-    }
-
-    public function addExtendSelectors ($list)
-    {
-        $this->extendSelectors += $list;
     }
 
 
