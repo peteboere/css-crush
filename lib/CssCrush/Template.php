@@ -1,7 +1,7 @@
 <?php
 /**
  *
- *  General use CSS templating with arguments.
+ *  Generalized 'in CSS' templating.
  *
  */
 class CssCrush_Template implements Countable
@@ -17,15 +17,30 @@ class CssCrush_Template implements Countable
     // The string passed in with arg calls replaced by tokens.
     public $string;
 
-    public function __construct ($str)
+    // Whether to substitute on string tokens.
+    public $interpolate = false;
+
+    public function __construct ($str, $options = array())
     {
+        static $arg_patt;
+        if (! $arg_patt) {
+            $arg_patt = CssCrush_Regex::createFunctionPatt(
+                array('arg'), array('templating' => true));
+        }
+
+        // Interpolation.
+        if (! empty($options['interpolate'])) {
+            $this->interpolate = true;
+            $str = CssCrush::$process->restoreTokens($str, 's', true);
+        }
+
         // Parse all arg function calls in the passed string,
         // callback creates default values.
-        CssCrush_Function::executeOnString($str,
-                CssCrush_Regex::$patt->argFunction, array(
-                    'arg' => array($this, 'capture'),
-                    '#' => array($this, 'capture'),
-                ));
+        CssCrush_Function::executeOnString($str, $arg_patt, array(
+                'arg' => array($this, 'capture'),
+                '#' => array($this, 'capture'),
+            ));
+
         $this->string = $str;
     }
 
@@ -123,7 +138,15 @@ class CssCrush_Template implements Countable
             list($find, $replace) = $this->substitutions;
         }
 
-        return isset($find) ? str_replace($find, $replace, $str) : $str;
+        // Apply substitutions.
+        $str = isset($find) ? str_replace($find, $replace, $str) : $str;
+
+        // Re-tokenize string literals on returns.
+        if ($this->interpolate) {
+            CssCrush::$process->captureStrings($str);
+        }
+
+        return $str;
     }
 
     public function count ()

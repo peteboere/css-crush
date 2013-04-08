@@ -34,7 +34,7 @@ class CssCrush_Function
     {
         self::$functions = self::$builtinFunctions + self::$customFunctions;
         self::$functionPatt = CssCrush_Regex::createFunctionPatt(
-            array_keys(self::$functions), true);
+            array_keys(self::$functions), array('bare_paren' => true));
     }
 
     static public function executeOnString (&$str, $patt = null, $process_callback = null, $extra = null)

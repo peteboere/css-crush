@@ -88,7 +88,7 @@ class CssCrush_Util
             if ($trim) {
                 $str = trim($str);
             }
-            return array($str);
+            return strlen($str) ? array($str) : array();
         }
 
         if (strpos($str, '(') !== false) {

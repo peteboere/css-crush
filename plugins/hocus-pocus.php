@@ -18,11 +18,11 @@ CssCrush_Plugin::register('hocus-pocus', array(
 ));
 
 function csscrush__enable_hocus_pocus () {
-    CssCrush::$config->selectorAliases['hocus'] = ':any(:hover,:focus)';
-    CssCrush::$config->selectorAliases['pocus'] = ':any(:hover,:focus,:active)';
+    CssCrush::addSelectorAlias('hocus', ':any(:hover,:focus)');
+    CssCrush::addSelectorAlias('pocus', ':any(:hover,:focus,:active)');
 }
 
 function csscrush__disable_hocus_pocus () {
-    unset( CssCrush::$config->selectorAliases['hocus']);
-    unset( CssCrush::$config->selectorAliases['pocus']);
+    CssCrush::removeSelectorAlias('hocus');
+    CssCrush::removeSelectorAlias('pocus');
 }

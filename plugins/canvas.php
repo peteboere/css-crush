@@ -56,7 +56,7 @@ function csscrush__canvas_generator ($input, $fn_name) {
 
     $cache_key = $fn_name . $input;
     if (isset($process->misc->canvas_cache[$cache_key])) {
-    
+
         return $process->misc->canvas_cache[$cache_key];
     }
 
@@ -76,7 +76,7 @@ function csscrush__canvas_generator ($input, $fn_name) {
 
     $name = strtolower(array_shift($args));
 
-    // Bail if no SVG registered by this name.
+    // Bail if name not registered.
     $canvas_defs =& $process->misc->canvas_defs;
     if (! isset($canvas_defs[$name])) {
 
@@ -86,24 +86,27 @@ function csscrush__canvas_generator ($input, $fn_name) {
     // Apply args to template.
     $block = $canvas_defs[$name]->apply($args);
 
-    // Parse the block into a keyed assoc array.
+    // Parse the block into a keyed array.
     $raw_data = array_change_key_case(CssCrush_Util::parseBlock($block, true));
 
     // Resolve properties, set defaults if not present.
     $properties = array_intersect_key($raw_data, $custom_attrs) + array(
         'width' => 100,
         'height' => 100,
-        'fill' => '#000',
+        'fill' => 'black',
     );
 
     // Apply functions.
-    $storage = new stdClass();
-    csscrush__canvas_apply_css_funcs($properties, $storage);
+    $context = new stdClass();
+    csscrush__canvas_apply_css_funcs($properties, $context);
 
     // Extract variables.
     extract($properties);
     $width = intval($width);
     $height = intval($height);
+    if (isset($context->fill)) {
+        $fill = $context->fill;
+    }
 
     // Create image object.
     $image = imagecreatetruecolor($width, $height);
@@ -114,9 +117,50 @@ function csscrush__canvas_generator ($input, $fn_name) {
     imagesavealpha($image, true);
 
     // Gradient fill.
-    if (is_array($fill)) {
+    if (is_object($fill)) {
 
+        // Resolve drawing direction.
+        if ($fill->direction === 'horizontal') {
+            $line_numbers = imagesx($image);
+            $line_width = imagesy($image);
+        }
+        else {
+            $line_numbers = imagesy($image);
+            $line_width = imagesx($image);
+        }
+
+        list($r1, $g1, $b1, $a1) = $fill->stops[0];
+        list($r2, $g2, $b2, $a2) = $fill->stops[1];
+
+        $r = $g = $b = $a = -1;
+
+        for ($line = 0; $line < $line_numbers; $line++) {
+
+            $last = "$r,$g,$b,$a";
+
+            $r = $r2 - $r1 ? intval($r1 + ($r2 - $r1) * ($line / $line_numbers)): $r1;
+            $g = $g2 - $g1 ? intval($g1 + ($g2 - $g1) * ($line / $line_numbers)): $g1;
+            $b = $b2 - $b1 ? intval($b1 + ($b2 - $b1) * ($line / $line_numbers)): $b1;
+            $a = $a2 - $a1 ? ($a1 + ($a2 - $a1) * ($line / $line_numbers)) : $a1;
+            $a = csscrush__canvas_opacity($a);
+
+            if ($last != "$r,$g,$b,$a") {
+                $color = imagecolorallocatealpha($image, $r, $g, $b, $a);
+            }
+
+            switch($fill->direction) {
+                case 'horizontal':
+                    imagefilledrectangle($image, $line, 0, $line, $line_width, $color);
+                    break;
+                case 'vertical':
+                default:
+                    imagefilledrectangle($image, 0, $line, $line_width, $line, $color);
+                    break;
+            }
+            imagealphablending($image, true);
+        }
     }
+
     // Solid color fill.
     elseif ($solid = CssCrush_Color::parse($fill)) {
 
@@ -124,6 +168,7 @@ function csscrush__canvas_generator ($input, $fn_name) {
         $fill = imagecolorallocatealpha($image, $r, $g, $b, csscrush__canvas_opacity($a));
         imagefilledrectangle($image, 0, 0, $width, $height, $fill);
     }
+
     // Failure to parse fill.
     else {
 
@@ -161,16 +206,47 @@ function csscrush__canvas_generator ($input, $fn_name) {
     return $url->label;
 }
 
+function csscrush__canvas_fn_linear_gradient ($input, $context) {
 
+    $args = CssCrush_Function::parseArgs($input) + array(
+        'white', 'black',
+    );
 
+    $first_arg = strtolower($args[0]);
 
+    static $directions = array(
+        'to top' => array('vertical', true),
+        'to right' => array('horizontal', false),
+        'to bottom' => array('vertical', false),
+        'to left' => array('horizontal', true),
+    );
 
-function csscrush__canvas_fn_linear_gradient ($input, $extra) {
+    if (isset($directions[$first_arg])) {
+        list($direction, $flip) = $directions[$first_arg];
+        array_shift($args);
+    }
+    else {
+        list($direction, $flip) = $directions['to bottom'];
+    }
 
-    $colors = CssCrush_Function::parseArgs($input);
-    $extra->fill = array();
+    // Create fill object.
+    $fill = new stdClass();
+    $fill->stops = array();
+    $fill->direction = $direction;
 
-    return '';
+    // Start color.
+    $color = CssCrush_Color::parse($args[0]);
+    $fill->stops[] = $color ? $color : array(0,0,0,1);
+
+    // End color.
+    $color = CssCrush_Color::parse($args[1]);
+    $fill->stops[] = $color ? $color : array(255,255,255,1);
+
+    if ($flip) {
+        $fill->stops = array_reverse($fill->stops);
+    }
+
+    $context->fill = $fill;
 }
 
 function csscrush__canvas_apply_css_funcs (&$properties, $extra) {
@@ -184,7 +260,7 @@ function csscrush__canvas_apply_css_funcs (&$properties, $extra) {
         $generic_functions
             = array_diff_key(CssCrush_Function::$functions, $fill_functions);
         $generic_functions_patt
-            = CssCrush_Regex::createFunctionPatt(array_keys($generic_functions), true);
+            = CssCrush_Regex::createFunctionPatt(array_keys($generic_functions), array('bare_paren' => true));
         $fill_functions_patt
             = CssCrush_Regex::createFunctionPatt(array_keys($fill_functions));
     }
@@ -192,10 +268,10 @@ function csscrush__canvas_apply_css_funcs (&$properties, $extra) {
     foreach ($properties as $property => &$value) {
         CssCrush_Function::executeOnString($value, $generic_functions_patt);
 
-        // if ($property === 'fill') {
-        //     CssCrush_Function::executeOnString(
-        //         $value, $fill_functions_patt, $fill_functions, $extra);
-        // }
+        if ($property === 'fill') {
+            CssCrush_Function::executeOnString(
+                $value, $fill_functions_patt, $fill_functions, $extra);
+        }
     }
 }
 

@@ -61,7 +61,6 @@ class CssCrush_Regex
         $patt->variables = CssCrush_Regex::create('@(?:define|variables) *\{ *(.*?) *\};?', 'iS');
         $patt->mixin = CssCrush_Regex::create('@mixin +(<ident>) *\{ *(.*?) *\};?', 'iS');
         $patt->abstract = CssCrush_Regex::create('^@abstract +(<ident>)', 'i');
-        $patt->selectorAlias = CssCrush_Regex::create('@selector-alias +\:(<ident>) +([^;]+) *;', 'iS');
         $patt->ifDefine = CssCrush_Regex::create('@ifdefine +(not +)?(<ident>) *\{', 'iS');
         $patt->fragmentDef = CssCrush_Regex::create('@fragment +(<ident>) *\{', 'iS');
         $patt->fragmentCall = CssCrush_Regex::create('@fragment +(<ident>) *(\(|;)', 'iS');
@@ -69,9 +68,9 @@ class CssCrush_Regex
         // Functions.
         $patt->function = CssCrush_Regex::create('<LB>(<ident>)(<p-token>)', 'S');
         $patt->varFunction = CssCrush_Regex::create('\$\( *(<ident>) *\)', 'S');
-        $patt->argFunction = CssCrush_Regex::createFunctionPatt(array('arg'));
         $patt->thisFunction = CssCrush_Regex::createFunctionPatt(array('this'));
 
+        $patt->string = '~(\'|")(?:\\\\\1|[^\1])*?\1~xS';
         $patt->commentAndString = '~
             # Quoted string (to EOF if unmatched).
             (\'|")(?:\\\\\1|[^\1])*?(?:\1|$)
@@ -129,20 +128,30 @@ class CssCrush_Regex
         return $count ? $matches : array();
     }
 
-    static public function createFunctionPatt ($list, $include_math_function = false)
+    static public function createFunctionPatt ($list, $options = array())
     {
+        // Bare parens.
         $question = '';
-        if ($include_math_function) {
+        if (! empty($options['bare_paren'])) {
             $question = '?';
             // Signing on math bare parens.
             $list[] = '-';
         }
 
+        // Escape function names.
         foreach ($list as &$fn_name) {
             $fn_name = preg_quote($fn_name);
         }
 
-        return CssCrush_Regex::create('<LB>(' . implode('|', $list) . ')' . $question . '\(', 'iS');
+        // Templating func.
+        $template = '';
+        if (! empty($options['templating'])) {
+            $template = '#|';
+        }
+
+        $flat_list = implode('|', $list);
+
+        return CssCrush_Regex::create("($template<LB>(?:$flat_list)$question)\(", 'iS');
     }
 }
 

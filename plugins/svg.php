@@ -656,8 +656,10 @@ function csscrush__svg_apply_css_funcs ($element, &$raw_data) {
         );
         $generic_functions =
             array_diff_key(CssCrush_Function::$functions, $fill_functions);
-        $generic_functions_patt = CssCrush_Regex::createFunctionPatt(array_keys($generic_functions), true);
-        $fill_functions_patt = CssCrush_Regex::createFunctionPatt(array_keys($fill_functions));
+        $generic_functions_patt = CssCrush_Regex::createFunctionPatt(
+            array_keys($generic_functions), array('bare_paren' => true));
+        $fill_functions_patt = CssCrush_Regex::createFunctionPatt(
+            array_keys($fill_functions));
     }
 
     foreach ($raw_data as $property => &$value) {

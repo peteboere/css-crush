@@ -235,6 +235,19 @@ class CssCrush_Process
 
 
     #############################
+    #  Strings.
+
+    public function captureStrings (&$str)
+    {
+        static $callback;
+        if (! $callback) {
+            $callback = create_function('$m', 'return CssCrush::$process->addToken($m[0], \'s\');');
+        }
+        $str = preg_replace_callback(CssCrush_Regex::$patt->string, $callback, $str);
+    }
+
+
+    #############################
     #  Boilerplate.
 
     protected function getBoilerplate ()
@@ -307,22 +320,26 @@ class CssCrush_Process
 
     protected function resolveSelectorAliases ()
     {
-        static $callback;
-        if (! $callback) {
-            $callback = create_function('$m', 'CssCrush::$process->selectorAliases[$m[1]] = $m[2];');
+        static $alias_patt, $callback;
+        if (! $alias_patt) {
+            $alias_patt = CssCrush_Regex::create('@selector-alias +\:(<ident>) +([^;]+) *;', 'iS');
+            $callback = create_function('$m', '
+                $name = strtolower($m[1]);
+                $body = CssCrush_Util::stripCommentTokens($m[2]);
+                $template = new CssCrush_Template($body, array("interpolate" => true));
+                CssCrush::$process->selectorAliases[$name] = $template;
+            ');
         }
-        $this->stream->pregReplaceCallback(CssCrush_Regex::$patt->selectorAlias, $callback);
+        $this->stream->pregReplaceCallback($alias_patt, $callback);
 
-        // Merge in global selector aliases.
+        // Merge with global selector aliases.
         $this->selectorAliases += CssCrush::$config->selectorAliases;
 
         // Create the selector aliases pattern and store it.
         if ($this->selectorAliases) {
             $names = implode('|', array_keys($this->selectorAliases));
-            $this->selectorAliasesPatt = '~
-              \:(' . $names . ')\b(?!-)
-              (\()?
-            ~xiS';
+            $this->selectorAliasesPatt
+                = CssCrush_Regex::create('\:(' . $names . ')<RB>(\()?', 'iS');
         }
     }
 
@@ -343,52 +360,35 @@ class CssCrush_Process
         // Step through the matches from last to first.
         while ($selector_alias_call = array_pop($selector_alias_calls)) {
 
-            $selector_alias_name = $selector_alias_call[1][0];
+            $selector_alias_name = strtolower($selector_alias_call[1][0]);
 
             if (! isset($table[$selector_alias_name])) {
                 continue;
             }
 
-            $replacement = $table[$selector_alias_name];
+            $template = $table[$selector_alias_name];
             $start = $selector_alias_call[0][1];
             $length = strlen($selector_alias_call[0][0]);
+            $args = array();
 
             // It's a function alias if a start paren is matched.
             if (isset($selector_alias_call[2])) {
 
+                // Parse argument list.
                 if (! preg_match(CssCrush_Regex::$patt->balancedParens, $str,
                     $parens, PREG_OFFSET_CAPTURE, $start)) {
                     continue;
                 }
+                $args = CssCrush_Function::parseArgs($parens[1][0]);
+
+                // Amend offsets.
                 $paren_start = $parens[0][1];
                 $paren_len = strlen($parens[0][0]);
                 $length = ($paren_start + $paren_len) - $start;
-
-                // Create substitutions list and apply.
-                $args = CssCrush_Util::splitDelimList($parens[1][0]);
-                foreach ($args as $index => $arg) {
-                    $search[] = "#($index)";
-                }
-                $replacement = str_replace($search, $args, $replacement);
-
-                // Apply substitutions to copies of string tokens within the replacement.
-                preg_match_all(CssCrush_Regex::$patt->s_token, $replacement, $s_tokens);
-                foreach ($s_tokens as $m) {
-                    foreach ($m as $label) {
-                        $old_token_value = $process->fetchToken($label);
-
-                        // Create new token based on the value.
-                        $token_value = str_replace($search, $args, $old_token_value);
-                        $new_label = $process->addToken($token_value, 's');
-
-                        // Swap the old token label with new.
-                        $replacement = str_replace($label, $new_label, $replacement);
-                    }
-                }
             }
 
             // Splice in the result.
-            $str = substr_replace($str, $replacement, $start, $length);
+            $str = substr_replace($str, $template->apply($args), $start, $length);
         }
     }
 
@@ -724,7 +724,8 @@ class CssCrush_Process
                 $curly_match->replace('');
 
                 // Create the fragment and store it.
-                $fragments[$fragment_name] = new CssCrush_Template($curly_match->inside());
+                $fragments[$fragment_name] = new CssCrush_Template(
+                    $curly_match->inside(), array('interpolate' => true));
             }
         }
 

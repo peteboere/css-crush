@@ -525,6 +525,21 @@ class CssCrush
 
 
     #############################
+    #  Global selector aliases.
+
+    static public function addSelectorAlias ($name, $body)
+    {
+        CssCrush::$config->selectorAliases[$name]
+            = new CssCrush_Template($body, array("interpolate" => true));
+    }
+
+    static public function removeSelectorAlias ($name)
+    {
+        unset(CssCrush::$config->selectorAliases[$name]);
+    }
+
+
+    #############################
     #  Logging and stats.
 
     static public $logging = false;
