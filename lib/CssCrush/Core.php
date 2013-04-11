@@ -590,10 +590,14 @@ class CssCrush
         CssCrush::$log = array();
     }
 
-    static public function logError ($msg)
+    static public function logError ($errors)
     {
-        self::$process->errors[] = $msg;
-        self::log($msg);
+        $errors = (array) $errors;
+        self::$process->errors = array_merge($errors, self::$process->errors);
+
+        foreach ($errors as $error) {
+            self::log($error);
+        }
     }
 
     static public function runStat ($name)
