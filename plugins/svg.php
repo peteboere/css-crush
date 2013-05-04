@@ -2,10 +2,6 @@
 /**
  * Define and embed simple SVG elements, paths and effects inside CSS
  *
- * @svg
- * ----
- * @-rule for defining SVG shapes. Uses custom shortcut properites alongside,
- * standard SVG properties.
  *
  *
  * Element types
@@ -32,7 +28,7 @@
  *     }
  *
  *
- * Issues
+ * @issues
  * ------
  * Firefox does not allow linked images (or other svg) when SVG is in "svg as image" mode -
  * i.e. Used in an img tag or as a CSS background:
@@ -782,21 +778,14 @@ function csscrush__svg_fn_pattern ($input, $element) {
         CssCrush_Function::parseArgs($input) +
         array('', '', 0, 0, 0, 0);
 
-    $url = CssCrush::$process->popToken($url);
+    $url = CssCrush::$process->fetchToken($url);
     if (! $url) {
-
         return '';
     }
 
     // If $width or $height is not specified get image dimensions the slow way.
     if (! $width || ! $height) {
-        if (in_array($url->protocol, array('http', 'https', 'data'))) {
-            $file = $url->value;
-        }
-        elseif ($url->isRelative || $url->isRooted) {
-            $file = CssCrush::$config->docRoot .
-                ($url->isRelative ? $url->toRoot()->simplify()->value : $url->value);
-        }
+        $file = $url->getAbsolutePath();
         list($width, $height) = getimagesize($file);
     }
 

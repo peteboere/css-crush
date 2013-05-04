@@ -96,6 +96,19 @@ class CssCrush_Url
         return $this;
     }
 
+    public function getAbsolutePath ()
+    {
+        $path = false;
+        if ($this->protocol) {
+            $path = $this->value;
+        }
+        elseif ($this->isRelative || $this->isRooted) {
+            $path = CssCrush::$config->docRoot .
+                ($this->isRelative ? $this->toRoot()->simplify()->value : $this->value);
+        }
+        return $path;
+    }
+
     public function resolveRootedPath ()
     {
         $process = CssCrush::$process;

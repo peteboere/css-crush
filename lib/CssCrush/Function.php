@@ -37,7 +37,7 @@ class CssCrush_Function
             array_keys(self::$functions), array('bare_paren' => true));
     }
 
-    static public function executeOnString (&$str, $patt = null, $process_callback = null, $extra = null)
+    static public function executeOnString (&$str, $patt = null, $process_callback = null, stdClass $context = null)
     {
         // No bracketed expressions, early return.
         if (strpos($str, '(') === false) {
@@ -58,6 +58,11 @@ class CssCrush_Function
 
         // Find custom function matches.
         $matches = CssCrush_Regex::matchAll($patt, $str);
+
+        // Always pass in a context object.
+        if (! $context) {
+            $context = new stdClass();
+        }
 
         // Step through the matches from last to first.
         while ($match = array_pop($matches)) {
@@ -81,22 +86,23 @@ class CssCrush_Function
             $closing_paren = $opening_paren + strlen($parens[0][0]);
 
             // Get the function arguments.
-            $args = trim($parens[1][0]);
+            $raw_args = trim($parens[1][0]);
 
             // Workaround the signs.
             $before_operator = '-' === $raw_fn_name ? '-' : '';
 
             $func_returns = '';
+            $context->function = $fn_name;
 
             // First look for function as directly passed.
             if (isset($process_callback[$fn_name])) {
 
-                $func_returns = call_user_func($process_callback[$fn_name], $args, $extra);
+                $func_returns = call_user_func($process_callback[$fn_name], $raw_args, $context);
             }
             // Secondly look for built-in function.
             elseif (isset(self::$functions[$fn_name])) {
 
-                $func_returns = call_user_func(self::$functions[$fn_name], $args, $extra);
+                $func_returns = call_user_func(self::$functions[$fn_name], $raw_args, $context);
             }
 
             // Splice in the function result.
@@ -224,16 +230,16 @@ function csscrush_fn__a_adjust ($input) {
     return CssCrush_Color::colorAdjust($color, array(0, 0, 0, $a));
 }
 
-function csscrush_fn__this ($input, $extra) {
+function csscrush_fn__this ($input, $context) {
 
     $args = CssCrush_Function::parseArgsSimple($input);
     $property = $args[0];
 
     // Function relies on a context rule, bail if none.
-    if (! isset($extra['rule'])) {
+    if (! isset($context->rule)) {
         return '';
     }
-    $rule = $extra['rule'];
+    $rule = $context->rule;
 
     $rule->expandDataSet('selfData', $property);
 
@@ -251,16 +257,16 @@ function csscrush_fn__this ($input, $extra) {
     return '';
 }
 
-function csscrush_fn__query ($input, $extra) {
+function csscrush_fn__query ($input, $context) {
 
     $args = CssCrush_Function::parseArgs($input);
 
     // Function relies on a context property, bail if none.
-    if (count($args) < 1 || ! isset($extra['property'])) {
+    if (count($args) < 1 || ! isset($context->property)) {
         return '';
     }
 
-    $call_property = $extra['property'];
+    $call_property = $context->property;
     $references =& CssCrush::$process->references;
 
     // Resolve arguments.
