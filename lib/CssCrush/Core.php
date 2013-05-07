@@ -328,7 +328,6 @@ class CssCrush
             }
         }
 
-        // Compile.
         $stream = $process->compile();
 
         // Create file and return url. Return empty string on failure.
@@ -456,8 +455,8 @@ class CssCrush
             $process->input->importIgnore = true;
         }
 
-        // Compile and return.
-        return $process->compile();
+        // Note we're passing the alternative ioContext.
+        return $process->compile('filter');
     }
 
     /**

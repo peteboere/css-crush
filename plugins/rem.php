@@ -93,9 +93,6 @@ function csscrush__rem (CssCrush_Rule $rule) {
             ($just_font_props && ! isset($font_props[$declaration->canonicalProperty])) ||
             ! preg_match_all($length_patt, $declaration->value, $m)
         ) {
-                    // csscrush::log($font_props, $declaration->canonicalProperty);
-                    csscrush::log($m, $declaration->canonicalProperty);
-
             $new_set[] = $declaration;
             continue;
         }

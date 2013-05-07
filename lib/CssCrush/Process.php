@@ -1102,8 +1102,10 @@ class CssCrush_Process
         }
     }
 
-    public function compile ()
+    public function compile ($io_context = 'file')
     {
+        $this->ioContext = $io_context;
+
         // Always store start time.
         $this->stat['compile_start_time'] = microtime(true);
 

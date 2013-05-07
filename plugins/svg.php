@@ -22,7 +22,8 @@
  *         fill-opacity: .5;
  *     }
  *
- *     // Embed SVG with svg() function (generates a data URI).
+ *     // Embed SVG with svg() function (generates an svg file in the
+ *     // output directory).
  *     body {
  *         background: beige svg(foo);
  *     }
@@ -250,7 +251,7 @@ function csscrush__svg_generator ($input, $fn_name) {
     // echo $test;
 
     // Either write to a file.
-    if ($fn_name === 'svg') {
+    if ($fn_name === 'svg' && $process->ioContext === 'file') {
 
         $flattened_svg = implode("\n", $svg);
 

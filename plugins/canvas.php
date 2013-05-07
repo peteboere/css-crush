@@ -136,7 +136,8 @@ function csscrush__canvas_generator ($input, $context) {
 
     // Apply functions.
     csscrush__canvas_apply_css_funcs($canvas);
-csscrush::log($canvas);
+// csscrush::log($canvas);
+
     // Create fingerprint for this canvas based on canvas object.
     $fingerprint = substr(md5(serialize($canvas)), 0, 7);
     $generated_filename = "cnv-$name-$fingerprint.png";
@@ -214,7 +215,7 @@ csscrush::log($canvas);
 
 
     // Either write to a file.
-    if ($context->function === 'canvas') {
+    if ($context->function === 'canvas' && $process->ioContext === 'file') {
 
         if (! $cached_file) {
             imagepng($canvas->image, $generated_filepath);
