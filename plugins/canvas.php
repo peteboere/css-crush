@@ -136,7 +136,7 @@ function csscrush__canvas_generator ($input, $context) {
 
     // Apply functions.
     csscrush__canvas_apply_css_funcs($canvas);
-// csscrush::log($canvas);
+    // csscrush::log($canvas);
 
     // Create fingerprint for this canvas based on canvas object.
     $fingerprint = substr(md5(serialize($canvas)), 0, 7);
@@ -144,7 +144,7 @@ function csscrush__canvas_generator ($input, $context) {
     $generated_filepath = $process->output->dir . '/' . $generated_filename;
     $cached_file = file_exists($generated_filepath);
 
-    $cached_file = false;
+    // $cached_file = false;
     if (! $cached_file) {
 
         // Source arguments take priority.
@@ -177,7 +177,7 @@ function csscrush__canvas_generator ($input, $context) {
             csscrush__canvas_fill($canvas, 'background-fill');
 
             // Filters.
-            csscrush__canvas_apply_filters($canvas, $src->image);
+            csscrush__canvas_apply_filters($canvas, $src);
 
             // Place the src image on the base canvas image.
             imagecopyresized(
@@ -299,7 +299,7 @@ function csscrush__canvas_fn_filter ($input, $context) {
 }
 
 
-function csscrush__canvas_apply_filters ($canvas, $image) {
+function csscrush__canvas_apply_filters ($canvas, $src) {
 
     foreach ($canvas->filters as $filter) {
         list($name, $args) = $filter;
@@ -307,11 +307,24 @@ function csscrush__canvas_apply_filters ($canvas, $image) {
         switch ($name) {
             case 'greyscale':
             case 'grayscale':
-                imagefilter($image, IMG_FILTER_GRAYSCALE);
+                imagefilter($src->image, IMG_FILTER_GRAYSCALE);
                 break;
+
             case 'invert':
-                imagefilter($image, IMG_FILTER_NEGATE);
+                imagefilter($src->image, IMG_FILTER_NEGATE);
                 break;
+
+            case 'opacity':
+                csscrush__canvas_fade($src, floatval($args[0]));
+                break;
+
+            case 'colorize':
+                $args += array(0,0,0);
+                array_unshift($args, IMG_FILTER_COLORIZE);
+                array_unshift($args, $src->image);
+                call_user_func_array('imagefilter', $args);
+                break;
+
             case 'blur':
                 $level = 1;
                 if (isset($args[0])) {
@@ -320,21 +333,23 @@ function csscrush__canvas_apply_filters ($canvas, $image) {
                     $level = min(max(intval($args[0]), 1), 20);
                 }
                 while ($level--) {
-                    imagefilter($image, IMG_FILTER_GAUSSIAN_BLUR);
+                    imagefilter($src->image, IMG_FILTER_GAUSSIAN_BLUR);
                 }
                 break;
+
             case 'contrast':
                 if (isset($args[0])) {
                     $level = intval($args[0]);
                 }
-                imagefilter($image, IMG_FILTER_CONTRAST, $level);
+                imagefilter($src->image, IMG_FILTER_CONTRAST, $level);
                 break;
+
             case 'brightness':
                 // -255 <- 0 -> +255
                 if (isset($args[0])) {
                     $level = intval($args[0]);
                 }
-                imagefilter($image, IMG_FILTER_BRIGHTNESS, $level);
+                imagefilter($src->image, IMG_FILTER_BRIGHTNESS, $level);
                 break;
         }
     }
@@ -356,6 +371,8 @@ function csscrush__canvas_apply_css_funcs ($canvas) {
 
         $filter_functions = array(
             'contrast' => 'csscrush__canvas_fn_filter',
+            'opacity' => 'csscrush__canvas_fn_filter',
+            'colorize' => 'csscrush__canvas_fn_filter',
             'grayscale' => 'csscrush__canvas_fn_filter',
             'greyscale' => 'csscrush__canvas_fn_filter',
             'brightness' => 'csscrush__canvas_fn_filter',
@@ -551,15 +568,41 @@ function csscrush__canvas_create ($canvas) {
     $height = $canvas->height + $margin->top + $margin->bottom;
 
     // Create image object.
-    $canvas->image = imagecreatetruecolor($width, $height);
+    $canvas->image = csscrush__canvas_create_transparent($width, $height);
+}
+
+function csscrush__canvas_create_transparent ($width, $height) {
+
+    $image = imagecreatetruecolor($width, $height);
 
     // Set transparent canvas background.
-    imagealphablending($canvas->image, false);
-    $fill = imagecolorallocatealpha($canvas->image, 0, 0, 0, 127);
-    imagefill($canvas->image, 0, 0, $fill);
+    imagealphablending($image, false);
+    imagesavealpha($image, true);
+    imagefill($image, 0, 0, imagecolorallocatealpha($image, 0, 0, 0, 127));
 
-    imagesavealpha($canvas->image, true);
+    return $image;
 }
+
+function csscrush__canvas_fade ($src, $opacity) {
+
+    $width = imagesx($src->image);
+    $height = imagesy($src->image);
+    $new_image = csscrush__canvas_create_transparent($width, $height);
+    $opacity = csscrush__canvas_opacity($opacity);
+
+    // Perform pixel-based alpha map application
+    for ($x = 0; $x < $width; $x++) {
+        for ($y = 0; $y < $height; $y++) {
+            $colors = imagecolorsforindex($src->image, imagecolorat($src->image, $x, $y));
+            imagesetpixel($new_image, $x, $y, imagecolorallocatealpha(
+                $new_image, $colors['red'], $colors['green'], $colors['blue'], $opacity));
+        }
+    }
+
+    imagedestroy($src->image);
+    $src->image = $new_image;
+}
+
 
 function csscrush__canvas_fill ($canvas, $property) {
 
@@ -603,7 +646,7 @@ function csscrush__canvas_set_fill_dims ($fill, $canvas) {
     $fill->x2 = $canvas->width + $margin->right + $margin->left;
     $fill->y2 = $canvas->height + $margin->top + $margin->bottom;
 
-    if ($canvas->currentProperty === 'fill') {
+    if (isset($canvas->currentProperty) && $canvas->currentProperty === 'fill') {
         $fill->x1 = $margin->left;
         $fill->y1 = $margin->top;
         $fill->x2 = $canvas->width + $fill->x1 - 1;

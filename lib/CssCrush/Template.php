@@ -83,9 +83,11 @@ class CssCrush_Template implements Countable
         $default = isset($this->defaults[$index]) ? $this->defaults[$index] : '';
 
         // Recurse for nested arg() calls.
-        if (preg_match(CssCrush_Regex::$patt->a_token, $default, $m)) {
-
-            $default = $this->getArgValue((int) $m[1], $args);
+        while (preg_match(CssCrush_Regex::$patt->a_token, $default, $m)) {
+            $default = str_replace(
+                $m[0],
+                $this->getArgValue((int) $m[1], $args),
+                $default);
         }
 
         return $default;
