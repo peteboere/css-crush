@@ -319,10 +319,15 @@ function csscrush__canvas_apply_filters ($canvas, $src) {
                 break;
 
             case 'colorize':
-                $args += array(0,0,0);
-                array_unshift($args, IMG_FILTER_COLORIZE);
-                array_unshift($args, $src->image);
-                call_user_func_array('imagefilter', $args);
+                $rgb = $args + array('black');
+                if (count($rgb) === 1) {
+                    // If only one argument parse it as a CSS color value.
+                    $rgb = CssCrush_Color::parse($rgb[0]);
+                    if (! $rgb) {
+                        $rgb = array(0,0,0);
+                    }
+                }
+                imagefilter($src->image, IMG_FILTER_COLORIZE, $rgb[0], $rgb[1], $rgb[2]);
                 break;
 
             case 'blur':
@@ -339,14 +344,18 @@ function csscrush__canvas_apply_filters ($canvas, $src) {
 
             case 'contrast':
                 if (isset($args[0])) {
-                    $level = intval($args[0]);
+                    // By default it works like this:
+                    // (max) -100 <- 0 -> +100 (min)
+                    // But we're flipping the polarity to be more predictable:
+                    // (min) -100 <- 0 -> +100 (max)
+                    $level = intval($args[0]) * -1;
                 }
                 imagefilter($src->image, IMG_FILTER_CONTRAST, $level);
                 break;
 
             case 'brightness':
-                // -255 <- 0 -> +255
                 if (isset($args[0])) {
+                    // -255 <- 0 -> +255
                     $level = intval($args[0]);
                 }
                 imagefilter($src->image, IMG_FILTER_BRIGHTNESS, $level);
