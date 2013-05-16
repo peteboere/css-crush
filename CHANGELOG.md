@@ -1,7 +1,12 @@
-1.10 (?)
+1.10 (18th May 2013)
 ----
-* Added SVG plugin (define and embed SVG elements in CSS).
-* Added `@name` in-rule directive for more flexible and robust rule referencing.
+* Added SVG plugin for defining and generating SVG files/data URIs in CSS.
+* Added Canvas plugin for image generation and manipulation (requires GD extension).
+* Added rem and px2em plugins.
+* Added ease plugin for expanded easing keywords.
+* Command line utility now has a `--watch` option for automatic compiling when a file is updated.
+* `vendor_target` option now accepts an array of targets.
+* Added `@name` in-rule directive for more robust rule referencing.
 * Added grouping for function aliases so multiple related functions (e.g. gradients) can now be
   applied to one value.
 * Rule references previously looked for the closest previous match. This behaviour has been changed
@@ -11,6 +16,7 @@
 * Removed data-* properties.
 * Nested rules that use the parent symbol (&) can now work in conjunction with the rooting symbol (^).
 * Fixed issue with empty imported files not registering.
+* Various bug fixes.
 
 1.9.1 (31th January 2013)
 -----

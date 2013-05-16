@@ -2,13 +2,6 @@
 /**
  * Define and embed simple SVG elements, paths and effects inside CSS
  *
- *
- *
- * Element types
- * -------------
- * circle, ellipse, rect, polygon, path, line, polyline, star.
- *
- *
  * @example
  *
  *     // Define SVG.
@@ -27,11 +20,39 @@
  *     body {
  *         background: beige svg(foo);
  *     }
+ *     // As above but creates a data URI instead of an svg file.
+ *     body {
+ *         background: beige svg-data(foo);
+ *     }
  *
+ * @example
  *
- * @issues
- * ------
- * Firefox does not allow linked images (or other svg) when SVG is in "svg as image" mode -
+ *     // Skewed circle with radial gradient fill and drop shadow.
+ *     @svg circle {
+ *         type: circle;
+ *         transform: skewX(30);
+ *         diameter: 60;
+ *         margin: 20;
+ *         fill: svg-radial-gradient(at top right, gold 50%, red);
+ *         drop-shadow: 2 2 0 rgba(0,0,0,1);
+ *         }
+ *
+ * @example
+ *
+ *     // 8-sided polygon with an image fill.
+ *     // Note: images usually have to be converted to data URIs, see known issues below.
+ *     @svg pattern {
+ *         type: polygon;
+ *         sides: 8;
+ *         diameter: 180;
+ *         margin: 20;
+ *         fill: pattern(data-uri(kitten.jpg), scale(1) translate(-100 0));
+ *         fill-opacity: .8;
+ *         }
+ *
+ * @known-issues
+ *
+ * Firefox does not allow linked images (or other svg) when svg is in "svg as image" mode -
  * i.e. Used in an img tag or as a CSS background:
  * https://bugzilla.mozilla.org/show_bug.cgi?id=628747#c0
  *

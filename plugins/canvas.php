@@ -6,7 +6,7 @@
  *
  * @example
  *
- *     /* Red semi-transparent square. *\/
+ *     // Red semi-transparent square.
  *     @canvas foo {
  *         width: 50;
  *         height: 50;
@@ -36,6 +36,15 @@
  *     // Default dimensions 150x150 as data URI.
  *     .bar {
  *         background: canvas-data(foo) repeat-x;
+ *     }
+ *
+ * @example
+ *
+ *     // Google logo resized to 400px width and given a sepia effect.
+ *     @canvas foo {
+ *         src: url("https://www.google.co.uk/images/srpr/logo4w.png");
+ *         width: 400;
+ *         canvas-filter: greyscale() colorize(45, 45, 0);
  *     }
  */
 
