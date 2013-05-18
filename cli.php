@@ -398,6 +398,7 @@ function pick (array &$arr) {
 
 function colorize ($str) {
 
+    static $color_support;
     static $tags = array(
         '<b>' => "\033[0;30m",
         '<r>' => "\033[0;31m",
@@ -420,8 +421,15 @@ function colorize ($str) {
         '</>' => "\033[m",
     );
 
+    if (! isset($color_support)) {
+        $color_support = true;
+        if (DIRECTORY_SEPARATOR == '\\') {
+            $color_support = false !== getenv('ANSICON') || 'ON' === getenv('ConEmuANSI');
+        }
+    }
+
     $find = array_keys($tags);
-    $replace = array_values($tags);
+    $replace = $color_support ? array_values($tags) : '';
 
     return str_replace($find, $replace, $str);
 }
