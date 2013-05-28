@@ -108,8 +108,8 @@ class CssCrush_IO
                     }
                     else {
                         // File has been moved, remove old file and skip to compile.
-                        CssCrush::log('Import file has been moved, removing existing file.');
-                        unlink($existingfile->path);
+                        CssCrush::log('Recompiling - an import file has been moved.');
+
                         return false;
                     }
                 }
@@ -141,22 +141,16 @@ class CssCrush_IO
                 else {
 
                     if ($options_changed) {
-                        CssCrush::log('Options have been modified.');
+                        CssCrush::log('Recompiling - options have been modified.');
                     }
                     if ($files_changed) {
-                        CssCrush::log('Files have been modified.');
+                        CssCrush::log('Recompiling - files have been modified.');
                     }
-                    CssCrush::log('Removing existing file.');
-
-                    // Remove old file and continue making a new one...
-                    unlink($existingfile->path);
                 }
             }
             else if (file_exists($existingfile->path)) {
 
-                // File exists but has no config.
-                CssCrush::log('File exists but no config, removing existing file.');
-                unlink($existingfile->path);
+                CssCrush::log('Recompiling - file exists but no cache data.');
             }
 
             return false;
