@@ -16,8 +16,8 @@ class CssCrush_Regex
 
     static public function init ()
     {
-        self::$patt = $patt = new stdclass();
-        self::$classes = $classes = new stdclass();
+        self::$patt = $patt = new stdClass();
+        self::$classes = $classes = new stdClass();
 
         // CSS type classes.
         $classes->ident = '[a-zA-Z0-9_-]+';

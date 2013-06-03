@@ -40,9 +40,9 @@ class CssCrush_Process
             't' => array(), // Traces
         );
         $this->variables = array();
-        $this->misc = new stdclass();
-        $this->input = new stdclass();
-        $this->output = new stdclass();
+        $this->misc = new stdClass();
+        $this->input = new stdClass();
+        $this->output = new stdClass();
 
         // Copy config values.
         $this->plugins = $config->plugins;
