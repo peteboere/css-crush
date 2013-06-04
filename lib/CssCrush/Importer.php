@@ -14,24 +14,11 @@ class CssCrush_Importer
         $regex = CssCrush_Regex::$patt;
         $input = $process->input;
 
+        $str = '';
+
         // Keep track of all import file info for cache data.
         $mtimes = array();
         $filenames = array();
-
-        $str = '';
-        $prepend_file_contents = '';
-
-        // The prepend file.
-        if ($prepend_file = CssCrush_Util::find('Prepend-local.css', 'Prepend.css')) {
-
-            $prepend_file_contents = file_get_contents($prepend_file);
-            $process->currentFile = 'file://' . $prepend_file;
-
-            // If there's a parsing error inside the prepend file, wipe $prepend_file_contents.
-            if (! self::prepareForStream($prepend_file_contents)) {
-                $prepend_file_contents = '';
-            }
-        }
 
         // Resolve main input; a string of css or a file.
         if (isset($input->string)) {
@@ -48,9 +35,6 @@ class CssCrush_Importer
 
             return $str;
         }
-
-        // Prepend any prepend file contents here.
-        $str = $prepend_file_contents . $str;
 
         // This may be set non-zero during the script if an absolute @import URL is encountered.
         $search_offset = 0;

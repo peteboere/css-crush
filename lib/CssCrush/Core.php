@@ -235,29 +235,6 @@ class CssCrush
             trigger_error(__METHOD__ . ": Aliases file not found.\n", E_USER_NOTICE);
         }
 
-        // Find a plugins file in the root directory,
-        // a local file overrides the default
-        $plugins_file = CssCrush_Util::find('Plugins-local.ini', 'Plugins.ini');
-
-        // Load plugins
-        if ($plugins_file) {
-            $result = @parse_ini_file($plugins_file);
-            if ($result !== false) {
-                if (isset($result['plugins'])) {
-                    foreach ($result['plugins'] as $plugin_name) {
-                        // Backwards compat.
-                        $plugin_name = basename($plugin_name, '.php');
-                        if (CssCrush_Plugin::load($plugin_name)) {
-                            self::$config->plugins[$plugin_name] = true;
-                        }
-                    }
-                }
-            }
-            else {
-                trigger_error(__METHOD__ . ": Plugin file could not be parsed.\n", E_USER_NOTICE);
-            }
-        }
-
         $called = true;
     }
 

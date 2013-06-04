@@ -1,18 +1,13 @@
 /*$
 
-Prepend.css contains library variables by default, but it could also contain
-reset styles such as reset.css or normalize.css that you would want prepended
-to every output file.
+Font stacks.
+
+Sources:
+    http://cssfontstack.com
+    http://www.codestyle.org
 
 */
 @define {
-
-    /* Font stacks
-
-    Sources:
-        http://cssfontstack.com
-        http://www.codestyle.org
-    ---------------------------------------- */
 
     /* Serif */
     baskerville:    Baskerville, "Baskerville Old Face", "Hoefler Text", Garamond, "Times New Roman", serif;

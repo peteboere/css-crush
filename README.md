@@ -1,17 +1,14 @@
 CSS-Crush
-===================================
+---------
 
-CSS-Crush is an extensible PHP based CSS preprocessor that aims to alleviate many of the hacks and workarounds necessary in modern CSS development.
+**CSS without the mess** — CSS-Crush is a CSS preprocessor designed to create a modern, uncluttered and standards based CSS authoring environment.
 
-
-Overview
-===================================
-
+See the following overview for code examples and description of main features:
 http://the-echoplex.net/csscrush
 
 
 Quick start
-===================================
+-----------
 
 ```php
 <?php
@@ -26,12 +23,12 @@ $global_css = csscrush_file( '/css/global.css' );
 
 
 Submitting bugs
-===================================
+---------------
 
 If you think you've found a bug, please visit the Issue tracker — https://github.com/peteboere/css-crush/issues — and create an issue explaining the problem and expected result.
 
 
 Submitting patches
-===================================
+------------------
 
 To contribute code and bug fixes fork this project on Github, make changes to the code in your fork, and then send a "pull request" for review.
