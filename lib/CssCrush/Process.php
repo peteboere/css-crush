@@ -620,7 +620,9 @@ class CssCrush_Process
         $block = trim(CssCrush_Util::stripCommentTokens($m[1]));
 
         CssCrush::$process->variables =
-            array_merge(CssCrush::$process->variables, CssCrush_Util::parseBlock($block, true));
+            array_merge(
+                CssCrush::$process->variables,
+                CssCrush_Rule::parseBlock($block, array('keyed' => true, 'ignore_directives' => false)));
     }
 
     static protected function cb_placeVariables ($m)

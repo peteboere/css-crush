@@ -121,7 +121,7 @@ function csscrush__canvas_generator ($input, $context) {
     $block = $canvas_defs[$name]->apply($args);
 
     // Parse the block into a keyed array.
-    $raw = array_change_key_case(CssCrush_Util::parseBlock($block, true));
+    $raw = array_change_key_case(CssCrush_Rule::parseBlock($block, array('keyed' => true)));
 
     // Create canvas object.
     $canvas = new CssCrush_Canvas();

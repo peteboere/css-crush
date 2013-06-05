@@ -15,7 +15,7 @@ class CssCrush_Mixin
         $this->template = new CssCrush_Template($block);
 
         // Parse into mixin template.
-        foreach (CssCrush_Util::parseBlock($this->template->string) as $pair) {
+        foreach (CssCrush_Rule::parseBlock($this->template->string) as $pair) {
 
             list($property, $value) = $pair;
             $property = strtolower($property);

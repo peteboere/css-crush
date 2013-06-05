@@ -81,72 +81,24 @@ class CssCrush_Rule implements IteratorAggregate
             }
         }
 
-        // Parse the declarations chunk.
-        $declarations_string = trim(CssCrush_Util::stripCommentTokens($declarations_string));
-        $declarations = preg_split('~\s*;\s*~', $declarations_string, null, PREG_SPLIT_NO_EMPTY);
+        // Parse rule block.
+        $pairs = CssCrush_Rule::parseBlock($declarations_string);
 
-        // First create a simple array of all properties and value pairs in raw state
-        $pairs = array();
+        foreach ($pairs as $index => $pair) {
 
-        // Split declarations in to property/value pairs
-        foreach ($declarations as $declaration) {
+            list($prop, $value) = $pair;
 
-            // Rule directives. Accept several different syntaxes for mixin and extends.
-            if (preg_match($regex->ruleDirective, $declaration, $m)) {
-
-                if (! empty($m[1])) {
-                    $prop = 'mixin';
-                }
-                elseif (! empty($m[2])) {
-                    $prop = 'extends';
-                }
-                else {
-                    $prop = 'name';
-                }
-                $value = trim(substr($declaration, strlen($m[0])));
-            }
-            elseif (($colonPos = strpos($declaration, ':')) !== false) {
-
-                $prop = trim(substr($declaration, 0, $colonPos));
-
-                // Extract the value part of the declaration.
-                $value = trim(substr($declaration, $colonPos + 1));
-            }
-            else {
-                // Must be malformed.
-                continue;
-            }
-
-            // Reject empty values.
-            if (empty($prop) || ! strlen($value)) {
-                continue;
-            }
-
-            if ($prop === 'mixin') {
-
-                // Mixins are a special case.
-                if ($mixin_declarations = CssCrush_Mixin::parseValue($value)) {
-
-                    // Add mixin declarations to the stack.
-                    while ($mixin_declaration = array_shift($mixin_declarations)) {
-
-                        $pairs[] = array($mixin_declaration['property'], $mixin_declaration['value']);
-                    }
-                }
-            }
-            elseif ($prop === 'extends') {
+            if ($prop === 'extends') {
 
                 // Extends are also a special case.
                 $this->setExtendSelectors($value);
+                unset($pairs[$index]);
             }
             elseif ($prop === 'name') {
 
                 // Link the rule as a reference.
                 $process->references[$value] = $this;
-            }
-            else {
-
-                $pairs[] = array($prop, $value);
+                unset($pairs[$index]);
             }
         }
 
@@ -159,7 +111,7 @@ class CssCrush_Rule implements IteratorAggregate
 
                 // Only store to $this->selfData if the value does not itself make a
                 // this() call to avoid circular references.
-                if (! preg_match(CssCrush_Regex::$patt->thisFunction, $value)) {
+                if (! preg_match($regex->thisFunction, $value)) {
                     $this->selfData[strtolower($prop)] = $value;
                 }
 
@@ -835,5 +787,73 @@ class CssCrush_Rule implements IteratorAggregate
             return CssCrush::$process->tokens->r[$token];
         }
         return null;
+    }
+
+    static public function parseBlock ($str, $options = array())
+    {
+        $regex = CssCrush_Regex::$patt;
+        $str = CssCrush_Util::stripCommentTokens($str);
+
+        $lines = preg_split('~\s*;\s*~', $str, null, PREG_SPLIT_NO_EMPTY);
+        $keyed = isset($options['keyed']);
+        $directives = ! isset($options['ignore_directives']);
+        $out = array();
+
+        foreach ($lines as $line) {
+
+            if ($directives && preg_match($regex->ruleDirective, $line, $m)) {
+
+                if (! empty($m[1])) {
+                    $property = 'mixin';
+                }
+                elseif (! empty($m[2])) {
+                    $property = 'extends';
+                }
+                else {
+                    $property = 'name';
+                }
+                $value = trim(substr($line, strlen($m[0])));
+            }
+            elseif (($colon_pos = strpos($line, ':')) !== false) {
+
+                $property = trim(substr($line, 0, $colon_pos));
+
+                // Extract the value part of the declaration.
+                $value = trim(substr($line, $colon_pos + 1));
+            }
+            else {
+                continue;
+            }
+
+            // Empty strings are ignored.
+            if (! isset($property[0]) || ! isset($value[0])) {
+                continue;
+            }
+
+            // Add any mixins.
+            if ($property === 'mixin') {
+
+                if ($mixables = CssCrush_Mixin::parseValue($value)) {
+
+                    // Add mixin declarations to the stack.
+                    while ($mixable = array_shift($mixables)) {
+                        if ($keyed) {
+                            $out[$mixable['property']] = $mixable['value'];
+                        }
+                        else {
+                            $out[] = array($mixable['property'], $mixable['value']);
+                        }
+                    }
+                }
+            }
+            elseif ($keyed) {
+                $out[$property] = $value;
+            }
+            else {
+                $out[] = array($property, $value);
+            }
+        }
+
+        return $out;
     }
 }
