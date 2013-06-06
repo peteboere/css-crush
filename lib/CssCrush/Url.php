@@ -54,11 +54,6 @@ class CssCrush_Url
         return "url($quote$this->value$quote)";
     }
 
-    static public function get ($token)
-    {
-        return CssCrush::$process->tokens->u[$token];
-    }
-
     public function evaluate ()
     {
         // Protocol based url.
@@ -107,6 +102,23 @@ class CssCrush_Url
                 ($this->isRelative ? $this->toRoot()->simplify()->value : $this->value);
         }
         return $path;
+    }
+
+    public function getOriginalValue ()
+    {
+        // If a data URI we assume nothing useful can be achieved
+        // by returning the original value so we just return the token label.
+        if ($this->isData) {
+
+            return $this->label;
+        }
+
+        $function = 'url';
+        if ($this->convertToData) {
+            $function = 'data-uri';
+        }
+
+        return "$function($this->value)";
     }
 
     public function resolveRootedPath ()

@@ -24,9 +24,7 @@ class CssCrush_Selector
         CssCrush_Process::applySelectorAliases($raw_selector);
 
         // Capture top-level paren groups.
-        CssCrush::$process->captureParens($raw_selector);
-
-        $this->value = $raw_selector;
+        $this->value = CssCrush::$process->captureParens($raw_selector);
     }
 
     public function __toString ()

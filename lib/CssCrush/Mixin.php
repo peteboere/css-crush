@@ -6,59 +6,16 @@
  */
 class CssCrush_Mixin
 {
-    public $declarationsTemplate = array();
-
     public $template;
 
     public function __construct ($block)
     {
         $this->template = new CssCrush_Template($block);
-
-        // Parse into mixin template.
-        foreach (CssCrush_Rule::parseBlock($this->template->string) as $pair) {
-
-            list($property, $value) = $pair;
-            $property = strtolower($property);
-
-            if ($property === 'mixin') {
-
-                // Mixin can contain other mixins if they are available.
-                if ($mixin_declarations = CssCrush_Mixin::parseValue($value)) {
-
-                    // Add mixin result to the stack.
-                    $this->declarationsTemplate = array_merge(
-                        $this->declarationsTemplate, $mixin_declarations);
-                }
-            }
-            elseif ($value !== '') {
-
-                // Store template declarations as arrays as they are copied by
-                // value not reference.
-                $this->declarationsTemplate[] = array(
-                    'property' => $property,
-                    'value' => $value,
-                );
-            }
-        }
     }
 
     public function call ( array $args )
     {
-        // Copy the template.
-        $declarations = $this->declarationsTemplate;
-
-        if (count($this->template)) {
-
-            $this->template->prepare($args);
-
-            // Place the arguments.
-            foreach ($declarations as &$declaration) {
-                $declaration['value'] = $this->template->apply(null, $declaration['value']);
-            }
-        }
-
-        // Return mixin declarations.
-        return $declarations;
+        return CssCrush_Rule::parseBlock($this->template->apply($args));
     }
 
     static public function parseSingleValue ($message)
@@ -68,9 +25,9 @@ class CssCrush_Mixin
         $non_mixin = null;
 
         // e.g.
-        //   - mymixin( 50px, rgba(0,0,0,0), left 100% )
+        //   - named-mixin( 50px, rgba(0,0,0,0), left 100% )
         //   - abstract-rule
-        //   - #selector
+        //   - #foo
 
         // Test for leading name
         if (preg_match('~^[\w-]+~', $message, $name_match)) {
@@ -108,8 +65,8 @@ class CssCrush_Mixin
                 $result = array();
                 foreach ($non_mixin as $declaration) {
                     $result[] = array(
-                        'property' => $declaration->property,
-                        'value'    => $declaration->value,
+                        $declaration->property,
+                        $declaration->value,
                     );
                 }
 
@@ -117,10 +74,7 @@ class CssCrush_Mixin
             }
 
             // Nothing matches
-            else {
-
-                return false;
-            }
+            return false;
         }
 
         // We have a valid mixin.

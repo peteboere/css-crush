@@ -48,7 +48,7 @@ class CssCrush_Regex
         // Create standalone class patterns, add classes as class swaps.
         foreach ($classes as $name => $class) {
             self::$classSwaps['<' . str_replace('_', '-', $name) . '>'] = $class;
-            $patt->{$name} = '~' . $class . '~';
+            $patt->{$name} = '~' . $class . '~S';
         }
 
         // Rooted classes.

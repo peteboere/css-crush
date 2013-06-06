@@ -781,14 +781,6 @@ class CssCrush_Rule implements IteratorAggregate
         $this->updatePropertyIndex();
     }
 
-    static public function get ($token)
-    {
-        if (isset(CssCrush::$process->tokens->r[$token])) {
-            return CssCrush::$process->tokens->r[$token];
-        }
-        return null;
-    }
-
     static public function parseBlock ($str, $options = array())
     {
         $regex = CssCrush_Regex::$patt;
@@ -837,11 +829,12 @@ class CssCrush_Rule implements IteratorAggregate
 
                     // Add mixin declarations to the stack.
                     while ($mixable = array_shift($mixables)) {
+                        list($mix_prop, $mix_val) = $mixable;
                         if ($keyed) {
-                            $out[$mixable['property']] = $mixable['value'];
+                            $out[$mix_prop] = $mix_val;
                         }
                         else {
-                            $out[] = array($mixable['property'], $mixable['value']);
+                            $out[] = array($mix_prop, $mix_val);
                         }
                     }
                 }

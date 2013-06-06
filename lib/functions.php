@@ -59,3 +59,29 @@ function csscrush_set ($object_name, $modifier) {
         }
     }
 }
+
+/**
+ * Get default options and config settings.
+ *
+ * @param string $object_name  Name of object you want to modify: 'config' or 'options'.
+ * @param mixed $property  The property name to retrieve.
+ */
+function csscrush_get ($object_name, $property = null) {
+
+    if (in_array($object_name, array('options', 'config'))) {
+
+        $pointer = $object_name === 'options' ?
+            CssCrush::$config->options : CssCrush::$config;
+
+        if (! isset($property)) {
+
+            return $pointer;
+        }
+        else {
+
+            return isset($pointer->{$property}) ? $pointer->{$property} : null;
+        }
+    }
+
+    return null;
+}

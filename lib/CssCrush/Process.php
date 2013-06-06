@@ -166,10 +166,7 @@ class CssCrush_Process
     public function fetchToken ($token)
     {
         $path =& $this->tokens->{$token[1]};
-        if (isset($path[$token])) {
-            return $path[$token];
-        }
-        return null;
+        return isset($path[$token]) ? $path[$token] : null;
     }
 
     public function popToken ($token)
@@ -215,7 +212,7 @@ class CssCrush_Process
         if (! $callback) {
             $callback = create_function('$m', 'return CssCrush::$process->addToken($m[0], \'p\');');
         }
-        $str = preg_replace_callback(CssCrush_Regex::$patt->balancedParens, $callback, $str);
+        return preg_replace_callback(CssCrush_Regex::$patt->balancedParens, $callback, $str);
     }
 
     public function restoreParens (&$str, $release = true)
@@ -237,13 +234,55 @@ class CssCrush_Process
     #############################
     #  Strings.
 
-    public function captureStrings (&$str)
+    public function captureStrings ($str)
     {
         static $callback;
         if (! $callback) {
             $callback = create_function('$m', 'return CssCrush::$process->addToken($m[0], \'s\');');
         }
-        $str = preg_replace_callback(CssCrush_Regex::$patt->string, $callback, $str);
+        return preg_replace_callback(CssCrush_Regex::$patt->string, $callback, $str);
+    }
+
+
+    #############################
+    #  Urls.
+
+    public function captureUrls ($str)
+    {
+        static $url_patt;
+        if (! $url_patt) {
+            $url_patt = CssCrush_Regex::create('@import +(<s-token>)|<LB>(url|data-uri)\(', 'iS');
+        }
+
+        $offset = 0;
+        while (preg_match($url_patt, $str, $outer_m, PREG_OFFSET_CAPTURE, $offset)) {
+
+            $outer_offset = $outer_m[0][1];
+            $is_import_url = ! isset($outer_m[2]);
+
+            if ($is_import_url) {
+                $url = new CssCrush_Url($outer_m[1][0]);
+                $str = str_replace($outer_m[1][0], $url->label, $str);
+            }
+
+            // Match parenthesis if not a string token.
+            elseif (
+                preg_match(CssCrush_Regex::$patt->balancedParens, $str, $inner_m, PREG_OFFSET_CAPTURE, $outer_offset)
+            ) {
+                $url = new CssCrush_Url($inner_m[1][0]);
+                $func_name = strtolower($outer_m[2][0]);
+                $url->convertToData = 'data-uri' === $func_name;
+                $str = substr_replace($str, $url->label, $outer_offset,
+                    strlen($func_name) + strlen($inner_m[0][0]));
+            }
+
+            // If brackets cannot be matched, skip over the original match.
+            else {
+                $offset += strlen($outer_m[0][0]);
+            }
+        }
+
+        return $str;
     }
 
 
@@ -311,6 +350,7 @@ class CssCrush_Process
         $boilerplate = preg_split('~[\t]*(\r\n?|\n)[\t]*~', $boilerplate);
         $boilerplate = array_map('trim', $boilerplate);
         $boilerplate = "$EOL * " . implode("$EOL * ", $boilerplate);
+
         return "/*{$boilerplate}$EOL */$EOL";
     }
 
@@ -326,7 +366,7 @@ class CssCrush_Process
             $callback = create_function('$m', '
                 $name = strtolower($m[1]);
                 $body = CssCrush_Util::stripCommentTokens($m[2]);
-                $template = new CssCrush_Template($body, array("interpolate" => true));
+                $template = new CssCrush_Template($body);
                 CssCrush::$process->selectorAliases[$name] = $template;
             ');
         }
@@ -726,8 +766,7 @@ class CssCrush_Process
                 $curly_match->replace('');
 
                 // Create the fragment and store it.
-                $fragments[$fragment_name] = new CssCrush_Template(
-                    $curly_match->inside(), array('interpolate' => true));
+                $fragments[$fragment_name] = new CssCrush_Template($curly_match->inside());
             }
         }
 
@@ -862,7 +901,7 @@ class CssCrush_Process
 
             CssCrush_Process::applySelectorAliases($raw_argument);
 
-            $this->captureParens($raw_argument);
+            $raw_argument = $this->captureParens($raw_argument);
             $arguments = CssCrush_Util::splitDelimList($raw_argument);
 
             $curly_match = new CssCrush_BalancedMatch($this->stream, $match_start_pos);
@@ -879,7 +918,7 @@ class CssCrush_Process
             foreach ($rule_matches as $rule_match) {
 
                 // Get the rule instance.
-                $rule = CssCrush_Rule::get($rule_match[0][0]);
+                $rule = CssCrush::$process->fetchToken($rule_match[0][0]);
 
                 // Using arguments create new selector list for the rule.
                 $new_selector_list = array();

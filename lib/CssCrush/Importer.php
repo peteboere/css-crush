@@ -53,7 +53,7 @@ class CssCrush_Importer
             }
 
             // Fetch the URL object.
-            $url = CssCrush_Url::get($match[1][0]);
+            $url = $process->fetchToken($match[1][0]);
 
             // Pass over protocoled import urls.
             if ($url->protocol) {
@@ -108,7 +108,7 @@ class CssCrush_Importer
             foreach (CssCrush_Regex::matchAll($regex->import, $import->content) as $m) {
 
                 // Fetch the matched URL.
-                $url2 = CssCrush_Url::get($m[1][0]);
+                $url2 = $process->fetchToken($m[1][0]);
 
                 // Try to resolve absolute paths.
                 // On failure strip the @import statement.
@@ -169,7 +169,7 @@ class CssCrush_Importer
         foreach ($matches[0] as $token) {
 
             // Fetch the matched URL.
-            $url = CssCrush_Url::get($token);
+            $url = CssCrush::$process->fetchToken($token);
 
             if ($url->isRelative) {
                 // Prepend the relative url prefix.
@@ -233,45 +233,9 @@ class CssCrush_Importer
         // Strip unneeded whitespace.
         $str = CssCrush_Util::normalizeWhiteSpace($str);
 
-        self::captureUrls($str);
+        $str = $process->captureUrls($str);
 
         return true;
-    }
-
-    static protected function captureUrls (&$str)
-    {
-        static $url_patt;
-        if (! $url_patt) {
-            $url_patt = CssCrush_Regex::create('@import +(<s-token>)|<LB>(url|data-uri)\(', 'iS');
-        }
-
-        $offset = 0;
-        while (preg_match($url_patt, $str, $outer_m, PREG_OFFSET_CAPTURE, $offset)) {
-
-            $outer_offset = $outer_m[0][1];
-            $is_import_url = ! isset($outer_m[2]);
-
-            if ($is_import_url) {
-                $url = new CssCrush_Url($outer_m[1][0]);
-                $str = str_replace($outer_m[1][0], $url->label, $str);
-            }
-
-            // Match parenthesis if not a string token.
-            elseif (
-                preg_match(CssCrush_Regex::$patt->balancedParens, $str, $inner_m, PREG_OFFSET_CAPTURE, $outer_offset)
-            ) {
-                $url = new CssCrush_Url($inner_m[1][0]);
-                $func_name = strtolower($outer_m[2][0]);
-                $url->convertToData = 'data-uri' === $func_name;
-                $str = substr_replace($str, $url->label, $outer_offset,
-                    strlen($func_name) + strlen($inner_m[0][0]));
-            }
-
-            // If brackets cannot be matched, skip over the original match.
-            else {
-                $offset += strlen($outer_m[0][0]);
-            }
-        }
     }
 
     static protected function cb_extractCommentAndString ($match)

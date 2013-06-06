@@ -505,8 +505,7 @@ class CssCrush
 
     static public function addSelectorAlias ($name, $body)
     {
-        CssCrush::$config->selectorAliases[$name]
-            = new CssCrush_Template($body, array("interpolate" => true));
+        CssCrush::$config->selectorAliases[$name] = new CssCrush_Template($body);
     }
 
     static public function removeSelectorAlias ($name)

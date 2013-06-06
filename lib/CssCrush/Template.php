@@ -17,9 +17,6 @@ class CssCrush_Template implements Countable
     // The string passed in with arg calls replaced by tokens.
     public $string;
 
-    // Whether to substitute on string tokens.
-    public $interpolate = false;
-
     public function __construct ($str, $options = array())
     {
         static $arg_patt;
@@ -28,11 +25,7 @@ class CssCrush_Template implements Countable
                 array('arg'), array('templating' => true));
         }
 
-        // Interpolation.
-        if (! empty($options['interpolate'])) {
-            $this->interpolate = true;
-            $str = CssCrush::$process->restoreTokens($str, 's', true);
-        }
+        $str = CssCrush_Template::unTokenize($str);
 
         // Parse all arg function calls in the passed string,
         // callback creates default values.
@@ -143,16 +136,32 @@ class CssCrush_Template implements Countable
         // Apply substitutions.
         $str = isset($find) ? str_replace($find, $replace, $str) : $str;
 
-        // Re-tokenize string literals on returns.
-        if ($this->interpolate) {
-            CssCrush::$process->captureStrings($str);
-        }
-
-        return $str;
+        // Re-tokenize string on return.
+        return CssCrush_Template::tokenize($str);
     }
 
     public function count ()
     {
         return $this->argCount;
+    }
+
+    static public function tokenize ($str)
+    {
+        $str = CssCrush::$process->captureStrings($str);
+        $str = CssCrush::$process->captureUrls($str);
+
+        return $str;
+    }
+
+    static public function unTokenize ($str)
+    {
+        $str = preg_replace_callback(CssCrush_Regex::$patt->u_token, function ($m) {
+            $url = CssCrush::$process->popToken($m[0]);
+            return $url ? $url->getOriginalValue() : '';
+        }, $str);
+
+        $str = CssCrush::$process->restoreTokens($str, 's', true);
+
+        return $str;
     }
 }

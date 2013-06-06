@@ -128,14 +128,6 @@ class CssCrush_Util
         return $list;
     }
 
-    static public function unTokenize ($str)
-    {
-    }
-
-    static public function tokenize ($str)
-    {
-    }
-
     static public function getLinkBetweenDirs ($dir1, $dir2)
     {
         // Normalise the paths.
