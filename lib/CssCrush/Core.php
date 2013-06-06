@@ -584,17 +584,19 @@ class CssCrush
             return;
         }
 
+        $all_rules =& $process->tokens->store->r;
+
         switch ($name) {
 
             case 'selector_count':
                 $process->stat['selector_count'] = 0;
-                foreach ($process->tokens->r as $rule) {
+                foreach ($all_rules as $rule) {
                     $process->stat['selector_count'] += count($rule->selectors);
                 }
                 break;
 
             case 'rule_count':
-                $process->stat['rule_count'] = count($process->tokens->r);
+                $process->stat['rule_count'] = count($all_rules);
                 break;
 
             case 'compile_time':

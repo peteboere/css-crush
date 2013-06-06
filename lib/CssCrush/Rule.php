@@ -34,7 +34,7 @@ class CssCrush_Rule implements IteratorAggregate
     {
         $regex = CssCrush_Regex::$patt;
         $process = CssCrush::$process;
-        $this->label = $process->createTokenLabel('r');
+        $this->label = $process->tokens->createLabel('r');
 
         // If tracing store the last tracing stub, then strip all.
         if (
@@ -42,9 +42,9 @@ class CssCrush_Rule implements IteratorAggregate
             preg_match_all($regex->t_token, $selector_string, $trace_tokens)
         ) {
             $trace_token = array_pop($trace_tokens);
-            $this->tracingStub = $process->fetchToken($trace_token[0]);
+            $this->tracingStub = $process->tokens->get($trace_token[0]);
             foreach ($trace_tokens as $trace_token) {
-                $process->releaseToken($trace_token[0]);
+                $process->tokens->release($trace_token[0]);
             }
 
             $selector_string = preg_replace($regex->t_token, '', $selector_string);
@@ -133,7 +133,7 @@ class CssCrush_Rule implements IteratorAggregate
         if (empty($this->selectors) || empty($this->declarations)) {
 
             // De-reference this instance.
-            unset($process->tokens->r[$this->label]);
+            $process->tokens->release($this->label);
             return '';
         }
 
@@ -392,7 +392,7 @@ class CssCrush_Rule implements IteratorAggregate
                         preg_match($any_patt, $selector->value, $m);
 
                         // Parse the arguments
-                        $expression = CssCrush::$process->tokens->p[$m[1]];
+                        $expression = CssCrush::$process->tokens->get($m[1]);
 
                         // Remove outer parens.
                         $expression = substr($expression, 1, strlen($expression) - 2);

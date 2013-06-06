@@ -34,8 +34,8 @@ function csscrush__hsl_to_hex (CssCrush_Rule $rule) {
         if (! $declaration->skip && isset($declaration->functions['hsl'])) {
             while (preg_match($hsl_patt, $declaration->value, $m)) {
                 $token = $m[1];
-                $color = new CssCrush_Color('hsl' . CssCrush::$process->fetchToken($token));
-                CssCrush::$process->releaseToken($token);
+                $color = new CssCrush_Color('hsl' . CssCrush::$process->tokens->get($token));
+                CssCrush::$process->tokens->release($token);
                 $declaration->value = str_replace($m[0], $color->getHex(), $declaration->value);
             }
         }

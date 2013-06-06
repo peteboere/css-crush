@@ -504,7 +504,7 @@ function csscrush__svg_text ($element) {
         'text' => '',
     );
 
-    $text = CssCrush::$process->restoreTokens($element->data['text'], 's');
+    $text = CssCrush::$process->tokens->restore($element->data['text'], 's');
 
     // Remove open and close quotes.
     $text = substr($text, 1, strlen($text) - 2);
@@ -646,9 +646,9 @@ function csscrush__svg_preprocess ($element) {
 
             $value = $element->attrs[$point_data_attr];
 
-            if (CssCrush::$process->isToken($value, 's')) {
+            if (CssCrush_Tokens::is($value, 's')) {
                 $element->attrs[$point_data_attr] =
-                    trim(CssCrush::$process->fetchToken($value), '"\'');;
+                    trim(CssCrush::$process->tokens->get($value), '"\'');;
             }
         }
     }
@@ -732,8 +732,8 @@ function csscrush__svg_render ($element) {
             $styles .= $selector . '{' . implode(';', $out) . '}';
         }
     }
-    $styles = CssCrush::$process->restoreTokens($styles, 'u', true);
-    $styles = CssCrush::$process->restoreTokens($styles, 's');
+    $styles = CssCrush::$process->tokens->restore($styles, 'u', true);
+    $styles = CssCrush::$process->tokens->restore($styles, 's');
 
     $attrs = CssCrush_Util::htmlAttributes($element->attrs);
     $svg_attrs = CssCrush_Util::htmlAttributes($element->svg_attrs);
@@ -800,7 +800,7 @@ function csscrush__svg_fn_pattern ($input, $element) {
         CssCrush_Function::parseArgs($input) +
         array('', '', 0, 0, 0, 0);
 
-    $url = CssCrush::$process->fetchToken($url);
+    $url = CssCrush::$process->tokens->get($url);
     if (! $url) {
         return '';
     }

@@ -147,20 +147,16 @@ class CssCrush_Template implements Countable
 
     static public function tokenize ($str)
     {
-        $str = CssCrush::$process->captureStrings($str);
-        $str = CssCrush::$process->captureUrls($str);
+        $str = CssCrush::$process->tokens->capture($str, 's');
+        $str = CssCrush::$process->tokens->capture($str, 'u');
 
         return $str;
     }
 
     static public function unTokenize ($str)
     {
-        $str = preg_replace_callback(CssCrush_Regex::$patt->u_token, function ($m) {
-            $url = CssCrush::$process->popToken($m[0]);
-            return $url ? $url->getOriginalValue() : '';
-        }, $str);
-
-        $str = CssCrush::$process->restoreTokens($str, 's', true);
+        $str = CssCrush::$process->tokens->restore($str, 'u', true);
+        $str = CssCrush::$process->tokens->restore($str, 's', true);
 
         return $str;
     }

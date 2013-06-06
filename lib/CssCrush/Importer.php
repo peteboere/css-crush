@@ -53,7 +53,7 @@ class CssCrush_Importer
             }
 
             // Fetch the URL object.
-            $url = $process->fetchToken($match[1][0]);
+            $url = $process->tokens->get($match[1][0]);
 
             // Pass over protocoled import urls.
             if ($url->protocol) {
@@ -108,7 +108,7 @@ class CssCrush_Importer
             foreach (CssCrush_Regex::matchAll($regex->import, $import->content) as $m) {
 
                 // Fetch the matched URL.
-                $url2 = $process->fetchToken($m[1][0]);
+                $url2 = $process->tokens->get($m[1][0]);
 
                 // Try to resolve absolute paths.
                 // On failure strip the @import statement.
@@ -169,7 +169,7 @@ class CssCrush_Importer
         foreach ($matches[0] as $token) {
 
             // Fetch the matched URL.
-            $url = CssCrush::$process->fetchToken($token);
+            $url = CssCrush::$process->tokens->get($token);
 
             if ($url->isRelative) {
                 // Prepend the relative url prefix.
@@ -199,7 +199,7 @@ class CssCrush_Importer
             if (! $process->charset) {
                 // Keep track of newlines for line tracing.
                 $replace = str_repeat("\n", substr_count($m[0], "\n"));
-                $process->charset = trim($process->fetchToken($m[1]), '"\'');
+                $process->charset = trim($process->tokens->get($m[1]), '"\'');
             }
             $str = preg_replace($regex->charset, $replace, $str);
         }
@@ -233,7 +233,7 @@ class CssCrush_Importer
         // Strip unneeded whitespace.
         $str = CssCrush_Util::normalizeWhiteSpace($str);
 
-        $str = $process->captureUrls($str);
+        $str = $process->tokens->captureUrls($str);
 
         return true;
     }
@@ -261,7 +261,7 @@ class CssCrush_Importer
             if (! preg_match('~\*/$~', $full_match)) {
                 $full_match .= '*/';
             }
-            $label = $process->addToken($full_match, 'c');
+            $label = $process->tokens->add($full_match, 'c');
         }
         else {
 
@@ -270,7 +270,7 @@ class CssCrush_Importer
             if ($full_match[0] !== $full_match[strlen($full_match)-1]) {
                 $full_match .= $full_match[0];
             }
-            $label = $process->addToken($full_match, 's');
+            $label = $process->tokens->add($full_match, 's');
         }
 
         return $newlines . $label;
@@ -320,7 +320,7 @@ class CssCrush_Importer
                         $current_file = preg_replace('~[^\w-]~', '\\\\$0', $current_file);
 
                         // Splice in tracing stub.
-                        $label = CssCrush::$process->addToken("@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line_num}}", 't');
+                        $label = CssCrush::$process->tokens->add("@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line_num}}", 't');
 
                         $str = $str_before . $label . substr($str, $selector_index);
                     }

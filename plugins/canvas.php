@@ -480,7 +480,7 @@ function csscrush__canvas_preprocess ($canvas) {
 
 function csscrush__canvas_fetch_src ($url_token) {
 
-    if ($url_token && $url = CssCrush::$process->fetchToken($url_token)) {
+    if ($url_token && $url = CssCrush::$process->tokens->get($url_token)) {
 
         $file = $url->getAbsolutePath();
 

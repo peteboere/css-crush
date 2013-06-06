@@ -23,7 +23,6 @@ class CssCrush_Process
         $this->options->global_vars = $config->vars;
 
         // Initialize properties.
-        $this->uid = 0;
         $this->cacheData = array();
         $this->mixins = array();
         $this->references = array();
@@ -31,18 +30,11 @@ class CssCrush_Process
         $this->stat = array();
         $this->charset = null;
         $this->currentFile = null;
-        $this->tokens = (object) array(
-            's' => array(), // Strings
-            'c' => array(), // Comments
-            'r' => array(), // Rules
-            'p' => array(), // Parens
-            'u' => array(), // URLs
-            't' => array(), // Traces
-        );
         $this->variables = array();
         $this->misc = new stdClass();
         $this->input = new stdClass();
         $this->output = new stdClass();
+        $this->tokens = new CssCrush_Tokens();
 
         // Copy config values.
         $this->plugins = $config->plugins;
@@ -136,153 +128,6 @@ class CssCrush_Process
 
         // Return the call result
         return call_user_func_array($the_method, $args);
-    }
-
-
-    #############################
-    #  Tokens.
-
-    public function createTokenLabel ($type)
-    {
-        $counter = ++$this->uid;
-        return "?$type$counter?";
-    }
-
-    public function addToken ($value, $type)
-    {
-        $label = $this->createTokenLabel($type);
-        $this->tokens->{$type}[$label] = $value;
-        return $label;
-    }
-
-    public function isToken ($str, $of_type = null)
-    {
-        if (preg_match('~^\?([a-z])\d+\?$~S', $str, $m)) {
-            return $of_type ? ($of_type === $m[1]) : true;
-        }
-        return false;
-    }
-
-    public function fetchToken ($token)
-    {
-        $path =& $this->tokens->{$token[1]};
-        return isset($path[$token]) ? $path[$token] : null;
-    }
-
-    public function popToken ($token)
-    {
-        $val = $this->fetchToken($token);
-        $this->releaseToken($token);
-        return $val;
-    }
-
-    public function releaseToken ($token)
-    {
-        unset($this->tokens->{ $token[1] }[$token]);
-    }
-
-    public function restoreTokens ($str, $type = 'p', $release = false)
-    {
-        // Reference the token table.
-        $token_table =& $this->tokens->{$type};
-
-        // Find matching tokens.
-        $matches = CssCrush_Regex::matchAll(CssCrush_Regex::$patt->{"{$type}_token"}, $str);
-
-        foreach ($matches as $m) {
-            $token = $m[0][0];
-            if (isset($token_table[$token])) {
-                $str = str_replace($token, $token_table[$token], $str);
-                if ($release) {
-                    unset($token_table[$token]);
-                }
-            }
-        }
-
-        return $str;
-    }
-
-
-    #############################
-    #  Parens.
-
-    public function captureParens (&$str)
-    {
-        static $callback;
-        if (! $callback) {
-            $callback = create_function('$m', 'return CssCrush::$process->addToken($m[0], \'p\');');
-        }
-        return preg_replace_callback(CssCrush_Regex::$patt->balancedParens, $callback, $str);
-    }
-
-    public function restoreParens (&$str, $release = true)
-    {
-        $token_table =& $this->tokens->p;
-
-        foreach (CssCrush_Regex::matchAll(CssCrush_Regex::$patt->p_token, $str) as $m) {
-            $token = $m[0][0];
-            if (isset($token_table[$token])) {
-                $str = str_replace($token, $token_table[$token], $str);
-                if ($release) {
-                    unset($token_table[$token]);
-                }
-            }
-        }
-    }
-
-
-    #############################
-    #  Strings.
-
-    public function captureStrings ($str)
-    {
-        static $callback;
-        if (! $callback) {
-            $callback = create_function('$m', 'return CssCrush::$process->addToken($m[0], \'s\');');
-        }
-        return preg_replace_callback(CssCrush_Regex::$patt->string, $callback, $str);
-    }
-
-
-    #############################
-    #  Urls.
-
-    public function captureUrls ($str)
-    {
-        static $url_patt;
-        if (! $url_patt) {
-            $url_patt = CssCrush_Regex::create('@import +(<s-token>)|<LB>(url|data-uri)\(', 'iS');
-        }
-
-        $offset = 0;
-        while (preg_match($url_patt, $str, $outer_m, PREG_OFFSET_CAPTURE, $offset)) {
-
-            $outer_offset = $outer_m[0][1];
-            $is_import_url = ! isset($outer_m[2]);
-
-            if ($is_import_url) {
-                $url = new CssCrush_Url($outer_m[1][0]);
-                $str = str_replace($outer_m[1][0], $url->label, $str);
-            }
-
-            // Match parenthesis if not a string token.
-            elseif (
-                preg_match(CssCrush_Regex::$patt->balancedParens, $str, $inner_m, PREG_OFFSET_CAPTURE, $outer_offset)
-            ) {
-                $url = new CssCrush_Url($inner_m[1][0]);
-                $func_name = strtolower($outer_m[2][0]);
-                $url->convertToData = 'data-uri' === $func_name;
-                $str = substr_replace($str, $url->label, $outer_offset,
-                    strlen($func_name) + strlen($inner_m[0][0]));
-            }
-
-            // If brackets cannot be matched, skip over the original match.
-            else {
-                $offset += strlen($outer_m[0][0]);
-            }
-        }
-
-        return $str;
     }
 
 
@@ -616,13 +461,15 @@ class CssCrush_Process
         // Place variables in main stream.
         self::placeVariables($this->stream->raw);
 
+        $raw_tokens =& $this->tokens->store;
+
         // Repeat above steps for variables embedded in string tokens.
-        foreach ($this->tokens->s as $label => &$value) {
+        foreach ($raw_tokens->s as $label => &$value) {
             self::placeVariables($value);
         }
 
         // Repeat above steps for variables embedded in URL tokens.
-        foreach ($this->tokens->u as $label => $url) {
+        foreach ($raw_tokens->u as $label => $url) {
             if (! $url->isData && self::placeVariables($url->value)) {
                 // Re-evaluate $url->value if anything has been interpolated.
                 $url->evaluate();
@@ -837,7 +684,7 @@ class CssCrush_Process
     {
         $aliases =& $this->aliases;
 
-        foreach ($this->tokens->r as $rule) {
+        foreach ($this->tokens->getOfType('r') as $rule) {
 
             $rule->processDeclarations();
 
@@ -878,7 +725,7 @@ class CssCrush_Process
         // Store rules if they have declarations or extend arguments.
         if (! empty($rule->declarations) || $rule->extendArgs) {
 
-            CssCrush::$process->tokens->r[$rule->label] = $rule;
+            CssCrush::$process->tokens->add($rule, 'r', $rule->label);
 
             // If only using extend still return a label.
             return $rule->label;
@@ -892,6 +739,7 @@ class CssCrush_Process
     protected function prefixSelectors ()
     {
         $matches = $this->stream->matchAll('~@in\s+([^{]+)\{~iS');
+        $tokens = CssCrush::$process->tokens;
 
         // Move through the matches in reverse order.
         while ($match = array_pop($matches)) {
@@ -901,7 +749,7 @@ class CssCrush_Process
 
             CssCrush_Process::applySelectorAliases($raw_argument);
 
-            $raw_argument = $this->captureParens($raw_argument);
+            $raw_argument = $tokens->captureParens($raw_argument);
             $arguments = CssCrush_Util::splitDelimList($raw_argument);
 
             $curly_match = new CssCrush_BalancedMatch($this->stream, $match_start_pos);
@@ -918,7 +766,7 @@ class CssCrush_Process
             foreach ($rule_matches as $rule_match) {
 
                 // Get the rule instance.
-                $rule = CssCrush::$process->fetchToken($rule_match[0][0]);
+                $rule = $tokens->get($rule_match[0][0]);
 
                 // Using arguments create new selector list for the rule.
                 $new_selector_list = array();
@@ -1012,17 +860,17 @@ class CssCrush_Process
                         $originals = array();
                         $replacements = array();
 
-                        foreach ($copy_matches[0] as $copy_match) {
+                        foreach ($copy_matches[0] as $rule_label) {
 
                             // Clone the matched rule.
-                            $originals[] = $rule_label = $copy_match;
-                            $cloneRule = clone $this->tokens->r[$rule_label];
+                            $originals[] = $rule_label;
+                            $clone_rule = clone $this->tokens->get($rule_label);
 
                             // Set the vendor context.
-                            $cloneRule->vendorContext = $vendor;
+                            $clone_rule->vendorContext = $vendor;
 
                             // Store the clone.
-                            $replacements[] = $this->addToken($cloneRule, 'r');
+                            $replacements[] = $this->tokens->add($clone_rule, 'r');
                         }
 
                         // Finally replace the original labels with the cloned rule labels.
@@ -1073,12 +921,14 @@ class CssCrush_Process
         $this->stream->pregReplaceHash($regex_replacements)->lTrim();
 
         // Print out rules.
-        $this->stream->replaceHash($this->tokens->r);
+        $this->stream->replaceHash($this->tokens->getOfType('r'));
         CssCrush::runStat('selector_count');
         CssCrush::runStat('rule_count');
+        $this->tokens->releaseOfType('r');
 
         // Insert parens.
-        $this->stream->replaceHash($this->tokens->p);
+        $this->stream->replaceHash($this->tokens->getOfType('p'));
+        $this->tokens->releaseOfType('p');
 
         // Advanced minification parameters.
         if (is_array($minify)) {
@@ -1096,25 +946,29 @@ class CssCrush_Process
         }
         else {
 
+            $comments = $this->tokens->getOfType('c');
+            $this->tokens->releaseOfType('c');
+
             // Add newlines after comments.
-            foreach ($this->tokens->c as $token => &$comment) {
+            foreach ($comments as $token => &$comment) {
                 $comment .= "$EOL$EOL";
             }
 
             // Insert comments and do final whitespace cleanup.
             $this->stream
-                ->replaceHash($this->tokens->c)
+                ->replaceHash($comments)
                 ->trim()
                 ->append($EOL);
         }
 
         // Insert URLs.
-        if ($this->tokens->u) {
+        $urls = $this->tokens->getOfType('u');
+        if ($urls) {
 
             $link = CssCrush_Util::getLinkBetweenDirs($this->output->dir, $this->input->dir);
             $make_urls_absolute = $options->rewrite_import_urls === 'absolute';
 
-            foreach ($this->tokens->u as $token => $url) {
+            foreach ($urls as $token => $url) {
 
                 if ($url->isRelative && ! $url->noRewrite) {
                     if ($make_urls_absolute) {
@@ -1126,11 +980,14 @@ class CssCrush_Process
                     }
                 }
             }
-            $this->stream->replaceHash($this->tokens->u);
+            $this->stream->replaceHash($urls);
+            unset($urls);
+            $this->tokens->releaseOfType('u');
         }
 
         // Insert string literals.
-        $this->stream->replaceHash($this->tokens->s);
+        $this->stream->replaceHash($this->tokens->getOfType('s'));
+        $this->tokens->releaseOfType('s');
 
         // Add in boilerplate.
         if ($options->boilerplate) {

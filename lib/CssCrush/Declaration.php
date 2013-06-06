@@ -132,7 +132,7 @@ class CssCrush_Declaration
         $parent_rule->queryData[$this->property] = $this->value;
 
         // Capture top-level paren pairs.
-        $this->value = CssCrush::$process->captureParens($this->value);
+        $this->value = CssCrush::$process->tokens->captureParens($this->value);
 
         $this->indexFunctions();
     }
@@ -151,6 +151,6 @@ class CssCrush_Declaration
 
     public function getFullValue ()
     {
-        return CssCrush::$process->restoreTokens($this->value, 'p');
+        return CssCrush::$process->tokens->restore($this->value, 'p');
     }
 }

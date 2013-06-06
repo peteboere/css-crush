@@ -83,7 +83,7 @@ function csscrush__post_alias_fix_lineargradients ($declaration_copies) {
     foreach (CssCrush_Regex::matchAll($fn_patt, $declaration_copies[0]->value) as $m) {
 
         $original_parens[] = $m[1][0];
-        $original_paren_value = CssCrush::$process->fetchToken($m[1][0]);
+        $original_paren_value = CssCrush::$process->tokens->get($m[1][0]);
 
         // Convert keyword angle values.
         $updated_paren_value = str_ireplace(
@@ -99,7 +99,7 @@ function csscrush__post_alias_fix_lineargradients ($declaration_copies) {
             $updated_paren_value
         );
 
-        $replacement_parens[] = CssCrush::$process->addToken($updated_paren_value, 'p');
+        $replacement_parens[] = CssCrush::$process->tokens->add($updated_paren_value, 'p');
     }
 
     // Swap in the new tokens on all the prefixed declarations.
@@ -128,11 +128,11 @@ function csscrush__post_alias_fix_radialgradients ($declaration_copies) {
     foreach (CssCrush_Regex::matchAll($fn_patt, $declaration_copies[0]->value) as $m) {
 
         $original_parens[] = $m[1][0];
-        $replacement_parens[] = CssCrush::$process->addToken(
+        $replacement_parens[] = CssCrush::$process->tokens->add(
             preg_replace(
                 '~\bat +(top|left|bottom|right|center)\b~i',
                 '$1',
-                CssCrush::$process->fetchToken($m[1][0])
+                CssCrush::$process->tokens->get($m[1][0])
             ), 'p');
     }
 

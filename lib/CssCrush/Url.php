@@ -21,18 +21,18 @@ class CssCrush_Url
     public function __construct ($raw_value, $convert_to_data = false)
     {
         $regex = CssCrush_Regex::$patt;
-        $process = CssCrush::$process;
+        $tokens = CssCrush::$process->tokens;
 
         if (preg_match($regex->s_token, $raw_value)) {
-            $this->value = trim($process->fetchToken($raw_value), '\'"');
-            $process->releaseToken($raw_value);
+            $this->value = trim($tokens->get($raw_value), '\'"');
+            $tokens->release($raw_value);
         }
         else {
             $this->value = $raw_value;
         }
 
         $this->evaluate();
-        $this->label = $process->addToken($this, 'u');
+        $this->label = $tokens->add($this, 'u');
     }
 
     public function __toString ()

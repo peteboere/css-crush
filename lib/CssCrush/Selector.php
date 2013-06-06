@@ -24,7 +24,7 @@ class CssCrush_Selector
         CssCrush_Process::applySelectorAliases($raw_selector);
 
         // Capture top-level paren groups.
-        $this->value = CssCrush::$process->captureParens($raw_selector);
+        $this->value = CssCrush::$process->tokens->captureParens($raw_selector);
     }
 
     public function __toString ()
@@ -57,14 +57,14 @@ class CssCrush_Selector
     {
         // Quick test for paren tokens.
         if (strpos($str, '?p') !== false) {
-            $str = CssCrush::$process->restoreTokens($str, 'p');
+            $str = CssCrush::$process->tokens->restore($str, 'p');
         }
 
         $str = CssCrush_Selector::normalizeWhiteSpace($str);
 
         // Quick test for string tokens.
         if (strpos($str, '?s') !== false) {
-            $str = CssCrush::$process->restoreTokens($str, 's');
+            $str = CssCrush::$process->tokens->restore($str, 's');
         }
 
         return $str;
