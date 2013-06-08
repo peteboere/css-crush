@@ -168,6 +168,50 @@ class CssCrush_Tokens
         return $str;
     }
 
+    public function captureCommentAndString ($str)
+    {
+        return preg_replace_callback(CssCrush_Regex::$patt->commentAndString,
+            array('self', 'cb_captureCommentAndString'), $str);
+    }
+
+    protected function cb_captureCommentAndString ($match)
+    {
+        $full_match = $match[0];
+        $process = CssCrush::$process;
+
+        // We return the newlines to maintain line numbering when tracing.
+        $newlines = str_repeat("\n", substr_count($full_match, "\n"));
+
+        if (strpos($full_match, '/*') === 0) {
+
+            // Bail without storing comment if output is minified or a private comment.
+            if (
+                $process->minifyOutput ||
+                strpos($full_match, '/*$') === 0
+            ) {
+                return $newlines;
+            }
+
+            // Fix broken comments as they will break any subsquent
+            // imported files that are inlined.
+            if (! preg_match('~\*/$~', $full_match)) {
+                $full_match .= '*/';
+            }
+            $label = $process->tokens->add($full_match, 'c');
+        }
+        else {
+
+            // Fix broken strings as they will break any subsquent
+            // imported files that are inlined.
+            if ($full_match[0] !== $full_match[strlen($full_match)-1]) {
+                $full_match .= $full_match[0];
+            }
+            $label = $process->tokens->add($full_match, 's');
+        }
+
+        return $newlines . $label;
+    }
+
     static public function is ($label, $of_type)
     {
         if (preg_match('~^\?([a-z])\d+\?$~S', $label, $m)) {

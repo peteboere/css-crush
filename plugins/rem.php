@@ -61,7 +61,7 @@ function csscrush__rem (CssCrush_Rule $rule) {
         $modes = array('rem-fallback', 'px-fallback', 'convert');
     }
 
-    $vars =& CssCrush::$process->variables;
+    $vars =& CssCrush::$process->vars;
 
     // Determine which properties are touched; all, or just font related.
     $just_font_props = ! isset($vars['rem__all']);

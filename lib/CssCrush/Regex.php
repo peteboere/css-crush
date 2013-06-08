@@ -58,7 +58,7 @@ class CssCrush_Regex
         // @-rules.
         $patt->import = CssCrush_Regex::create('@import\s+(<u-token>)\s?([^;]*);', 'iS');
         $patt->charset = CssCrush_Regex::create('@charset\s+(<s-token>)\s*;', 'iS');
-        $patt->variables = CssCrush_Regex::create('@(?:define|variables) *\{ *(.*?) *\};?', 'iS');
+        $patt->vars = CssCrush_Regex::create('@define *\{ *(.*?) *\};?', 'iS');
         $patt->mixin = CssCrush_Regex::create('@mixin +(<ident>) *\{ *(.*?) *\};?', 'iS');
         $patt->abstract = CssCrush_Regex::create('^@abstract +(<ident>)', 'i');
         $patt->ifDefine = CssCrush_Regex::create('@ifdefine +(not +)?(<ident>) *\{', 'iS');

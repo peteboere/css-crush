@@ -54,18 +54,18 @@ CssCrush_Plugin::register('canvas', array(
 ));
 
 function csscrush__enable_canvas () {
-    CssCrush_Hook::add('process_extract', 'csscrush__canvas_extract');
+    CssCrush_Hook::add('capture_phase2', 'csscrush__canvas_capture');
     CssCrush_Function::register('canvas', 'csscrush__canvas_generator');
     CssCrush_Function::register('canvas-data', 'csscrush__canvas_generator');
 }
 
 function csscrush__disable_canvas () {
-    CssCrush_Hook::remove('process_extract', 'csscrush__canvas_extract');
+    CssCrush_Hook::remove('capture_phase2', 'csscrush__canvas_capture');
     CssCrush_Function::deRegister('canvas');
     CssCrush_Function::deRegister('canvas-data');
 }
 
-function csscrush__canvas_extract ($process) {
+function csscrush__canvas_capture ($process) {
 
     static $callback, $patt;
     if (! $callback) {

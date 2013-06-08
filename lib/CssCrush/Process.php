@@ -30,7 +30,7 @@ class CssCrush_Process
         $this->stat = array();
         $this->charset = null;
         $this->currentFile = null;
-        $this->variables = array();
+        $this->vars = array();
         $this->misc = new stdClass();
         $this->input = new stdClass();
         $this->output = new stdClass();
@@ -75,7 +75,7 @@ class CssCrush_Process
     {
         unset(
             $this->tokens,
-            $this->variables,
+            $this->vars,
             $this->mixins,
             $this->references,
             $this->misc,
@@ -420,34 +420,34 @@ class CssCrush_Process
     #############################
     #  Variables.
 
-    protected function calculateVariables ()
+    protected function calculateVars ()
     {
         $config = CssCrush::$config;
         $regex = CssCrush_Regex::$patt;
         $option_vars = $this->options->vars;
 
-        $this->stream->pregReplaceCallback($regex->variables,
-            array('CssCrush_Process', 'cb_extractVariables'));
+        $this->stream->pregReplaceCallback($regex->vars,
+            array('CssCrush_Process', 'cb_captureVars'));
 
         // In-file variables override global variables.
-        $this->variables = array_merge($config->vars, $this->variables);
+        $this->vars = array_merge($config->vars, $this->vars);
 
         // Runtime variables override in-file variables.
         if (! empty($option_vars)) {
-            $this->variables = array_merge($this->variables, $option_vars);
+            $this->vars = array_merge($this->vars, $option_vars);
         }
 
         // Add state variables.
-        // $this->variables = array(
+        // $this->vars = array(
         //     'input-path' => $this->input->dirUrl,
         //     'output-path' => $this->output->dirUrl,
-        //) + $this->variables;
+        //) + $this->vars;
 
         // Place variables referenced inside variables. Excecute custom functions.
-        foreach ($this->variables as $name => &$value) {
+        foreach ($this->vars as $name => &$value) {
 
             // Referenced variables.
-            $value = preg_replace_callback($regex->varFunction, array('self', 'cb_placeVariables'), $value);
+            $value = preg_replace_callback($regex->varFunction, array('self', 'cb_placeVars'), $value);
 
             // Variable values can be escaped from function parsing with a tilde prefix.
             if (strpos($value, '~') !== 0) {
@@ -456,40 +456,40 @@ class CssCrush_Process
         }
     }
 
-    protected function placeAllVariables ()
+    protected function placeAllVars ()
     {
         // Place variables in main stream.
-        self::placeVariables($this->stream->raw);
+        self::placeVars($this->stream->raw);
 
         $raw_tokens =& $this->tokens->store;
 
         // Repeat above steps for variables embedded in string tokens.
         foreach ($raw_tokens->s as $label => &$value) {
-            self::placeVariables($value);
+            self::placeVars($value);
         }
 
         // Repeat above steps for variables embedded in URL tokens.
         foreach ($raw_tokens->u as $label => $url) {
-            if (! $url->isData && self::placeVariables($url->value)) {
+            if (! $url->isData && self::placeVars($url->value)) {
                 // Re-evaluate $url->value if anything has been interpolated.
                 $url->evaluate();
             }
         }
     }
 
-    static protected function placeVariables (&$value)
+    static protected function placeVars (&$value)
     {
         $regex = CssCrush_Regex::$patt;
 
         // Variables with no default value.
         $value = preg_replace_callback($regex->varFunction,
-            array('CssCrush_Process', 'cb_placeVariables'), $value, -1, $count);
+            array('CssCrush_Process', 'cb_placeVars'), $value, -1, $count);
 
         if (strpos($value, '$(') !== false) {
 
             // Variables with default value.
             CssCrush_Function::executeOnString($value, '~(\$)\(~',
-                array('$' => array('CssCrush_Process', 'cb_placeVariablesWithDefault')));
+                array('$' => array('CssCrush_Process', 'cb_placeVarsWithDefault')));
 
             // Assume at least 1 replace.
             $count = 1;
@@ -499,33 +499,28 @@ class CssCrush_Process
         return $count;
     }
 
-    static public function cb_extractVariables ($m)
+    static public function cb_captureVars ($m)
     {
-        $regex = CssCrush_Regex::$patt;
-
-        // Strip comment markers.
-        $block = trim(CssCrush_Util::stripCommentTokens($m[1]));
-
-        CssCrush::$process->variables =
+        CssCrush::$process->vars =
             array_merge(
-                CssCrush::$process->variables,
-                CssCrush_Rule::parseBlock($block, array('keyed' => true, 'ignore_directives' => false)));
+                CssCrush::$process->vars,
+                CssCrush_Rule::parseBlock($m[1], array('keyed' => true, 'ignore_directives' => true)));
     }
 
-    static protected function cb_placeVariables ($m)
+    static protected function cb_placeVars ($m)
     {
-        $variable_name = $m[1];
-        if (isset(CssCrush::$process->variables[$variable_name])) {
-            return CssCrush::$process->variables[$variable_name];
+        $var_name = $m[1];
+        if (isset(CssCrush::$process->vars[$var_name])) {
+            return CssCrush::$process->vars[$var_name];
         }
     }
 
-    static public function cb_placeVariablesWithDefault ($raw_arg)
+    static public function cb_placeVarsWithDefault ($raw_arg)
     {
         list($name, $default_value) = CssCrush_Function::parseArgsSimple($raw_arg);
 
-        if (isset(CssCrush::$process->variables[$name])) {
-            return CssCrush::$process->variables[$name];
+        if (isset(CssCrush::$process->vars[$name])) {
+            return CssCrush::$process->vars[$name];
         }
         else {
             return $default_value;
@@ -552,7 +547,7 @@ class CssCrush_Process
 
             $negate = $match[1][1] != -1;
             $name = $match[2][0];
-            $name_defined = isset($this->variables[$name]);
+            $name_defined = isset($this->vars[$name]);
 
             if (! $negate && $name_defined || $negate && ! $name_defined) {
                 // Test resolved true so include the innards.
@@ -569,7 +564,7 @@ class CssCrush_Process
     #############################
     #  Mixins.
 
-    protected function extractMixins ()
+    protected function captureMixins ()
     {
         static $callback;
         if (! $callback) {
@@ -675,9 +670,9 @@ class CssCrush_Process
     #############################
     #  Rules.
 
-    public function extractRules ()
+    public function captureRules ()
     {
-        $this->stream->pregReplaceCallback(CssCrush_Regex::$patt->rule, array('CssCrush_Process', 'cb_extractRules'));
+        $this->stream->pregReplaceCallback(CssCrush_Regex::$patt->rule, array('CssCrush_Process', 'cb_captureRules'));
     }
 
     protected function processRules ()
@@ -711,7 +706,7 @@ class CssCrush_Process
         }
     }
 
-    static public function cb_extractRules ($m)
+    static public function cb_captureRules ($m)
     {
         $rule = (object) array();
         $rule->selector_raw = trim($m[1]);
@@ -1018,27 +1013,30 @@ class CssCrush_Process
         $this->stream = new CssCrush_Stream(CssCrush_Importer::hostfile($this->input));
 
         // Extract and calculate variables.
-        $this->calculateVariables();
+        $this->calculateVars();
 
         // Place variables.
-        $this->placeAllVariables();
+        $this->placeAllVars();
 
         // Resolve @ifdefine blocks.
         $this->resolveIfDefines();
+
+        // Capture phase 1 hook: After all vars have resolved.
+        CssCrush_Hook::run('capture_phase1', $this);
 
         // Get selector aliases.
         $this->resolveSelectorAliases();
 
         // Pull out @mixin definitions.
-        $this->extractMixins();
+        $this->captureMixins();
 
         // Pull out @fragment blocks, and invoke.
         $this->resolveFragments();
 
-        // Run extract phase hooks.
-        CssCrush_Hook::run('process_extract', $this);
+        // Capture phase 2 hook: After most built-in directives have resolved.
+        CssCrush_Hook::run('capture_phase2', $this);
 
-        // Adjust meta characters so we can extract the rules cleanly.
+        // Adjust meta characters so we can capture the rules cleanly.
         $this->stream->replaceHash(array(
             '@' => "\n@",
             '}' => "}\n",
@@ -1047,7 +1045,7 @@ class CssCrush_Process
         ))->prepend("\n");
 
         // Parse rules.
-        $this->extractRules();
+        $this->captureRules();
         // csscrush::log(array_keys($this->references));
 
         // Process @in blocks.

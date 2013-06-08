@@ -64,13 +64,13 @@ CssCrush_Plugin::register('svg', array(
 ));
 
 function csscrush__enable_svg () {
-    CssCrush_Hook::add('process_extract', 'csscrush__svg_extract');
+    CssCrush_Hook::add('capture_phase2', 'csscrush__svg_capture');
     CssCrush_Function::register('svg', 'csscrush_fn__svg');
     CssCrush_Function::register('svg-data', 'csscrush_fn__svg_data');
 }
 
 function csscrush__disable_svg () {
-    CssCrush_Hook::remove('process_extract', 'csscrush__svg_extract');
+    CssCrush_Hook::remove('capture_phase2', 'csscrush__svg_capture');
     CssCrush_Function::deRegister('svg');
     CssCrush_Function::deRegister('svg-data');
 }
@@ -85,7 +85,7 @@ function csscrush_fn__svg_data ($input) {
     return csscrush__svg_generator($input, 'svg-data');
 }
 
-function csscrush__svg_extract ($process) {
+function csscrush__svg_capture ($process) {
 
     static $callback, $patt;
     if (! $callback) {

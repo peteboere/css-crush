@@ -182,13 +182,11 @@ class CssCrush_Importer
     {
         $regex = CssCrush_Regex::$patt;
         $process = CssCrush::$process;
+        $tokens = $process->tokens;
 
         // Convert all end-of-lines to unix style.
-        $str = preg_replace('~\r\n?~', "\n", $str);
-
         // Tokenize all comments and string literals.
-        $str = preg_replace_callback($regex->commentAndString,
-            array('self', 'cb_extractCommentAndString'), $str);
+        $str = $tokens->captureCommentAndString(preg_replace('~\r\n?~', "\n", $str));
 
         // Normalize double-colon pseudo elements for backwards compatability.
         $str = preg_replace('~::(after|before|first-(?:letter|line))~iS', ':$1', $str);
@@ -199,7 +197,7 @@ class CssCrush_Importer
             if (! $process->charset) {
                 // Keep track of newlines for line tracing.
                 $replace = str_repeat("\n", substr_count($m[0], "\n"));
-                $process->charset = trim($process->tokens->get($m[1]), '"\'');
+                $process->charset = trim($tokens->get($m[1]), '"\'');
             }
             $str = preg_replace($regex->charset, $replace, $str);
         }
@@ -233,47 +231,9 @@ class CssCrush_Importer
         // Strip unneeded whitespace.
         $str = CssCrush_Util::normalizeWhiteSpace($str);
 
-        $str = $process->tokens->captureUrls($str);
+        $str = $tokens->captureUrls($str);
 
         return true;
-    }
-
-    static protected function cb_extractCommentAndString ($match)
-    {
-        $full_match = $match[0];
-        $process = CssCrush::$process;
-
-        // We return the newlines to maintain line numbering when tracing.
-        $newlines = str_repeat("\n", substr_count($full_match, "\n"));
-
-        if (strpos($full_match, '/*') === 0) {
-
-            // Bail without storing comment if output is minified or a private comment.
-            if (
-                $process->minifyOutput ||
-                strpos($full_match, '/*$') === 0
-            ) {
-                return $newlines;
-            }
-
-            // Fix broken comments as they will break any subsquent
-            // imported files that are inlined.
-            if (! preg_match('~\*/$~', $full_match)) {
-                $full_match .= '*/';
-            }
-            $label = $process->tokens->add($full_match, 'c');
-        }
-        else {
-
-            // Fix broken strings as they will break any subsquent
-            // imported files that are inlined.
-            if ($full_match[0] !== $full_match[strlen($full_match)-1]) {
-                $full_match .= $full_match[0];
-            }
-            $label = $process->tokens->add($full_match, 's');
-        }
-
-        return $newlines . $label;
     }
 
     static protected function addTracingStubs (&$str)
