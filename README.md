@@ -1,7 +1,8 @@
 CSS-Crush
 ---------
+<img src="http://the-echoplex.net/csscrush/images/css-crush-external.svg" alt="Logo"/>
 
-**CSS without the mess** — CSS-Crush is a CSS preprocessor designed to create a modern, uncluttered and standards based CSS authoring environment.
+CSS without the mess — CSS-Crush is a CSS preprocessor designed to create a modern, uncluttered and standards based CSS authoring environment.
 
 See the following overview for code examples and description of main features:
 http://the-echoplex.net/csscrush

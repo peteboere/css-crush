@@ -35,7 +35,7 @@
  *         margin: 20;
  *         fill: svg-radial-gradient(at top right, gold 50%, red);
  *         drop-shadow: 2 2 0 rgba(0,0,0,1);
- *         }
+ *     }
  *
  * @example
  *
@@ -48,7 +48,7 @@
  *         margin: 20;
  *         fill: pattern(data-uri(kitten.jpg), scale(1) translate(-100 0));
  *         fill-opacity: .8;
- *         }
+ *     }
  *
  * @known-issues
  *
