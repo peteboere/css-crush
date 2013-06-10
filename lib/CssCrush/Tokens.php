@@ -68,9 +68,9 @@ class CssCrush_Tokens
             case 'u':
                 // Currently this always releases URLs
                 // may need to refactor later.
-                static $url_restore_callback;
-                if (! $url_restore_callback) {
-                    $url_restore_callback = create_function('$m', '
+                static $url_revert_callback;
+                if (! $url_revert_callback) {
+                    $url_revert_callback = create_function('$m', '
                         $url = CssCrush::$process->tokens->pop($m[0]);
                         return $url ? $url->getOriginalValue() : \'\';
                     ');

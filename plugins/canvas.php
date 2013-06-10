@@ -231,7 +231,7 @@ function csscrush__canvas_generator ($input, $context) {
         }
 
         // Write to the same directory as the output css.
-        $url = new CssCrush_Url("$generated_filename?" . time());
+        $url = new CssCrush_Url($generated_filename);
         $url->noRewrite = true;
     }
     // Or create data uri.
