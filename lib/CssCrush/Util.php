@@ -80,26 +80,16 @@ class CssCrush_Util
         return preg_replace($find, $replace, $str);
     }
 
-    static public function splitDelimList ($str, $delim = ',', $trim = true)
+    static public function splitDelimList ($str, $delim = ',')
     {
-        $do_preg_split = strlen($delim) > 1 ? true : false;
+        $do_preg_split = strlen($delim) > 1;
+        $str = trim($str);
 
         if (! $do_preg_split && strpos($str, $delim) === false) {
-            if ($trim) {
-                $str = trim($str);
-            }
             return strlen($str) ? array($str) : array();
         }
 
-        if (strpos($str, '(') !== false) {
-            $match_count
-                = preg_match_all(CssCrush_Regex::$patt->balancedParens, $str, $matches);
-        }
-        else {
-            $match_count = 0;
-        }
-
-        if ($match_count) {
+        if ($match_count = preg_match_all(CssCrush_Regex::$patt->balancedParens, $str, $matches)) {
             $keys = array();
             foreach ($matches[0] as $index => &$value) {
                 $keys[] = "?$index?";
@@ -107,12 +97,7 @@ class CssCrush_Util
             $str = str_replace($matches[0], $keys, $str);
         }
 
-        if ($do_preg_split) {
-            $list = preg_split('~' . $delim . '~', $str);
-        }
-        else {
-            $list = explode($delim, $str);
-        }
+        $list = $do_preg_split ? preg_split('~' . $delim . '~', $str) : explode($delim, $str);
 
         if ($match_count) {
             foreach ($list as &$value) {
@@ -120,12 +105,8 @@ class CssCrush_Util
             }
         }
 
-        if ($trim) {
-            // Trim items and remove empty strings.
-            $list = array_filter(array_map('trim', $list), 'strlen');
-        }
-
-        return $list;
+        // Trim items and remove empty strings before returning.
+        return array_filter(array_map('trim', $list), 'strlen');
     }
 
     static public function getLinkBetweenDirs ($dir1, $dir2)

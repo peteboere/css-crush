@@ -476,27 +476,22 @@ class CssCrush
     /**
      * Get debug info.
      * Depends on arguments passed to the trace option.
-     *
-     * @param string $name  Name of stat to retrieve. Leave blank to retrieve all.
      */
-    static public function stat ($name = null)
+    static public function stat ()
     {
         $process = CssCrush::$process;
-        $stat = $process->stat;
+        $stats = $process->stat;
 
         // Get logged errors as late as possible.
-        if (in_array('errors', $process->options->trace) && (! $name || 'errors' === $name)) {
-            $stat['errors'] = $process->errors;
-        }
-
-        if ($name && array_key_exists($name, $stat)) {
-            return array($name => $stat[$name]);
-        }
+        $stats['errors'] = $process->errors;
+        $stats += array(
+            'compile_time' => 0
+        );
 
         // Lose stats that are only useful internally.
-        unset($stat['compile_start_time']);
+        unset($stats['compile_start_time']);
 
-        return $stat;
+        return $stats;
     }
 
 
@@ -580,6 +575,12 @@ class CssCrush
         $process = CssCrush::$process;
         $trace = $process->options->trace;
 
+        if ($name == 'compile_time') {
+            $time = microtime(true);
+            $process->stat['compile_time'] = $time - $process->stat['compile_start_time'];
+            return;
+        }
+
         if (! $trace || ! in_array($name, $trace)) {
             return;
         }
@@ -597,11 +598,6 @@ class CssCrush
 
             case 'rule_count':
                 $process->stat['rule_count'] = count($all_rules);
-                break;
-
-            case 'compile_time':
-                $time = microtime(true);
-                $process->stat['compile_time'] = $time - $process->stat['compile_start_time'];
                 break;
         }
     }

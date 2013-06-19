@@ -48,6 +48,7 @@ $required_value_opts = array(
 
 $optional_value_opts = array(
     'b|boilerplate', // Boilerplate.
+    'trace',         // Debug info.
 );
 
 $flag_opts = array(
@@ -56,7 +57,6 @@ $flag_opts = array(
     'list',     // List plugins.
     'help',     // Display help.
     'version',  // Display version.
-    'trace',    // Output sass tracing stubs.
 );
 
 // Create option strings for getopt().
@@ -95,10 +95,10 @@ $args->watch = isset($opts['w']) ?: isset($opts['watch']);
 $args->list = isset($opts['l']) ?: isset($opts['list']);
 $args->help = isset($opts['h']) ?: isset($opts['help']);
 $args->version = isset($opts['version']);
-$args->trace = isset($opts['trace']);
 
 // Arguments that optionally accept a single value.
 $args->boilerplate = pick($opts, 'b', 'boilerplate');
+$args->trace = pick($opts, 'trace');
 
 // Arguments that require a single value.
 $args->formatter = pick($opts, 'formatter');
@@ -127,7 +127,7 @@ if (! $args->output_file && $trailing_output_file) {
 
 if ($args->version) {
 
-    stdout('CSS-Crush ' . CssCrush::$config->version);
+    stdout('CSS-Crush ' . csscrush_version());
 
     exit(STATUS_OK);
 }
@@ -235,7 +235,6 @@ if ($args->watch && ! $args->input_file) {
     exit(STATUS_ERROR);
 }
 
-
 ##################################################################
 ##  Set process options.
 
@@ -247,36 +246,29 @@ if ($args->formatter) {
     $process_opts['formatter'] = $args->formatter;
 }
 
-if ($args->formatter) {
-    $process_opts['formatter'] = $args->formatter;
-}
-
-// Newlines arg.
 if ($args->newlines) {
     $process_opts['newlines'] = $args->newlines;
 }
 
-// Enable plugin args.
 if ($args->enable_plugins) {
     $process_opts['enable'] = parse_list($args->enable_plugins);
 }
 
-// Disable plugin args.
 if ($args->disable_plugins) {
     $process_opts['disable'] = parse_list($args->disable_plugins);
 }
 
-// Tracing arg.
 if ($args->trace) {
-    $process_opts['trace'] = true;
+    if (is_string($args->trace)) {
+        $args->trace = (array) $args->trace;
+    }
+    $process_opts['trace'] = is_array($args->trace) ? parse_list($args->trace) : true;
 }
 
-// Vendor target arg.
 if ($args->vendor_target) {
     $process_opts['vendor_target'] = parse_list($args->vendor_target);
 }
 
-// Variables args.
 if ($args->vars) {
     parse_str($args->vars, $in_vars);
     $process_opts['vars'] = $in_vars;
@@ -309,12 +301,17 @@ if ($args->watch) {
 
     while (true) {
 
-        $created_file = CssCrush::file($args->input_file, $process_opts);
+        $created_file = csscrush_file($args->input_file, $process_opts);
+        $stats = csscrush_stat();
 
-        if (CssCrush::$process->errors) {
-            stderr(CssCrush::$process->errors);
+        if ($stats['errors']) {
+            stderr($stats['errors']);
 
             exit(STATUS_ERROR);
+        }
+
+        if (is_array($args->trace) && $stats['compile_time'] > 0) {
+            stdout(format_stats($stats));
         }
 
         sleep(1);
@@ -322,7 +319,12 @@ if ($args->watch) {
 }
 else {
 
-    $output = CssCrush::string($input, $process_opts);
+    $output = csscrush_string($input, $process_opts);
+    $stats = csscrush_stat();
+
+    if ($stats['errors']) {
+        stderr($stats['errors']);
+    }
 
     if ($args->output_file) {
 
@@ -334,15 +336,15 @@ else {
             exit(STATUS_ERROR);
         }
     }
-    else {
 
-        if (CssCrush::$process->errors) {
-            stderr(CssCrush::$process->errors);
-        }
-        stdout($output);
-
-        exit(STATUS_OK);
+    if (is_array($args->trace)) {
+        // Use stderror for stats to preserve stdout.
+        stderr(format_stats($stats) . PHP_EOL);
     }
+
+    stdout($output);
+
+    exit(STATUS_OK);
 }
 
 
@@ -372,14 +374,29 @@ function get_stdin_contents () {
 }
 
 function parse_list (array $option) {
+
     $out = array();
     foreach ($option as $arg) {
-        foreach (preg_split('~\s*,\s*~', $arg) as $item) {
-            $out[] = $item;
+        if (is_string($arg)) {
+            foreach (preg_split('~\s*,\s*~', $arg) as $item) {
+                $out[] = $item;
+            }
+        }
+        else {
+            $out[] = $arg;
         }
     }
-
     return $out;
+}
+
+function format_stats ($stats) {
+    $out = array();
+    foreach ($stats as $name => $value) {
+        if (is_scalar($value)) {
+            $out[] = "$name: $value";
+        }
+    }
+    return implode(PHP_EOL, $out);
 }
 
 function pick (array &$arr) {
