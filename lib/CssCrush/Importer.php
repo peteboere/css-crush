@@ -185,8 +185,10 @@ class CssCrush_Importer
         $tokens = $process->tokens;
 
         // Convert all end-of-lines to unix style.
-        // Tokenize all comments and string literals.
-        $str = $tokens->captureCommentAndString(preg_replace('~\r\n?~', "\n", $str));
+        $str = preg_replace('~\r\n?~', "\n", $str);
+
+        // Capture all comments and string literals.
+        $str = $tokens->captureCommentAndString($str);
 
         // Normalize double-colon pseudo elements for backwards compatability.
         $str = preg_replace('~::(after|before|first-(?:letter|line))~iS', ':$1', $str);
@@ -195,7 +197,7 @@ class CssCrush_Importer
         if (preg_match($regex->charset, $str, $m)) {
             $replace = '';
             if (! $process->charset) {
-                // Keep track of newlines for line tracing.
+                // Keep track of newlines for line numbering.
                 $replace = str_repeat("\n", substr_count($m[0], "\n"));
                 $process->charset = trim($tokens->get($m[1]), '"\'');
             }
@@ -223,6 +225,8 @@ class CssCrush_Importer
             return false;
         }
 
+        $str = $tokens->captureUrls($str);
+
         // Optionally add tracing stubs.
         if ($process->addTracingStubs) {
             self::addTracingStubs($str);
@@ -231,15 +235,17 @@ class CssCrush_Importer
         // Strip unneeded whitespace.
         $str = CssCrush_Util::normalizeWhiteSpace($str);
 
-        $str = $tokens->captureUrls($str);
-
         return true;
     }
 
     static protected function addTracingStubs (&$str)
     {
+        static $token_or_whitespace;
+        if (! $token_or_whitespace) {
+            $token_or_whitespace = CssCrush_Regex::create('(\s*<c-token>\s*|\s+)', 'S');
+        }
+
         $selector_patt = '~ (^|;|\})+ ([^;{}]+) (\{) ~xmS';
-        $token_or_whitespace = '~(\s*\?c\d+\?\s*|\s+)~S';
 
         $matches = CssCrush_Regex::matchAll($selector_patt, $str);
 
@@ -267,9 +273,9 @@ class CssCrush_Importer
 
                         // Count line breaks between the start of stream and
                         // the matched selector to get the line number.
-                        $selector_index = $full_match_start + strlen($before);
                         $line_num = 1;
                         $str_before = "";
+                        $selector_index = $full_match_start + strlen($before);
                         if ($selector_index) {
                             $str_before = substr($str, 0, $selector_index);
                             $line_num = substr_count($str_before, "\n") + 1;
