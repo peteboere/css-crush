@@ -58,7 +58,7 @@ class CssCrush_Tokens
 
     public function createLabel ($type)
     {
-        $counter = ++$this->uid;
+        $counter = base_convert(++$this->uid, 10, 36);
         return "?$type$counter?";
     }
 
@@ -227,7 +227,7 @@ class CssCrush_Tokens
 
     static public function is ($label, $of_type)
     {
-        if (preg_match('~^\?([a-z])\d+\?$~S', $label, $m)) {
+        if (preg_match('~^\?([a-z])[0-9a-z]+\?$~S', $label, $m)) {
             return $of_type ? ($of_type === $m[1]) : true;
         }
         return false;

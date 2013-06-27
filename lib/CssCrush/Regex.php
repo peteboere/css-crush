@@ -28,13 +28,13 @@ class CssCrush_Regex
         $classes->color_hex = '#[[:xdigit:]]{3}(?:[[:xdigit:]]{3})?';
 
         // Tokens.
-        $classes->c_token = '\?c\d+\?'; // Comments.
-        $classes->s_token = '\?s\d+\?'; // Strings.
-        $classes->r_token = '\?r\d+\?'; // Rules.
-        $classes->p_token = '\?p\d+\?'; // Parens.
-        $classes->u_token = '\?u\d+\?'; // URLs.
-        $classes->t_token = '\?t\d+\?'; // Traces.
-        $classes->a_token = '\?a(\d+)\?'; // Args.
+        $classes->c_token = '\?c[0-9a-z]+\?'; // Comments.
+        $classes->s_token = '\?s[0-9a-z]+\?'; // Strings.
+        $classes->r_token = '\?r[0-9a-z]+\?'; // Rules.
+        $classes->p_token = '\?p[0-9a-z]+\?'; // Parens.
+        $classes->u_token = '\?u[0-9a-z]+\?'; // URLs.
+        $classes->t_token = '\?t[0-9a-z]+\?'; // Traces.
+        $classes->a_token = '\?a([0-9a-z]+)\?'; // Args.
 
         // Boundries.
         $classes->LB = '(?<![\w-])'; // Left ident boundry.
