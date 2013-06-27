@@ -145,12 +145,19 @@ class CssCrush_Rule implements IteratorAggregate
         }
         else {
 
-            if ($formatter = $process->ruleFormatter) {
-                return $formatter($this);
+            $EOL = CssCrush::$process->newline;
+            $formatter = $process->ruleFormatter ?
+                $process->ruleFormatter : 'csscrush__fmtr_block';
+
+            if ($comments = implode('', $this->comments)) {
+                $comments = "$EOL$comments";
             }
 
-            // Default block formatter.
-            return csscrush__fmtr_block($this);
+            if ($stub = $this->tracingStub) {
+                $stub .= $EOL;
+            }
+
+            return "$comments$stub{$formatter($this)}";
         }
     }
 
