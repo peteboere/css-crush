@@ -240,66 +240,28 @@ class CssCrush_Importer
 
     static protected function addTracingStubs (&$str)
     {
-        static $token_or_whitespace;
-        if (! $token_or_whitespace) {
-            $token_or_whitespace = CssCrush_Regex::create('(\s*<c-token>\s*|\s+)', 'S');
-        }
+        $count = preg_match_all(CssCrush_Regex::$patt->rule2, $str, $matches, PREG_OFFSET_CAPTURE);
 
-        $selector_patt = '~ (^|;|\})+ ([^;{}]+) (\{) ~xmS';
+        // Get the currently processed file path, and escape it.
+        $current_file = str_replace(' ', '%20', CssCrush::$process->currentFile);
+        $current_file = preg_replace('~[^\w-]~', '\\\\$0', $current_file);
+        $debug_info = '@media -sass-debug-info{filename{font-family:%s}line{font-family:\\00003%d}}';
 
-        $matches = CssCrush_Regex::matchAll($selector_patt, $str);
+        while ($count--) {
 
-        // Start from last match and move backwards.
-        while ($m = array_pop($matches)) {
+            $selector_offset = $matches['selector'][$count][1];
 
-            // Shortcuts for readability.
-            list($full_match, $before, $content, $after) = $m;
-            $full_match_text  = $full_match[0];
-            $full_match_start = $full_match[1];
-
-            // The correct before string.
-            $before = substr($full_match_text, 0, $content[1] - $full_match_start);
-
-            // Split the matched selector part.
-            $content_parts = preg_split($token_or_whitespace, $content[0], null,
-                PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
-
-            foreach ($content_parts as $part) {
-
-                if (! preg_match($token_or_whitespace, $part)) {
-
-                    // Match to a valid selector.
-                    if (preg_match('~^([^@]|@(?:abstract|page))~iS', $part)) {
-
-                        // Count line breaks between the start of stream and
-                        // the matched selector to get the line number.
-                        $line_num = 1;
-                        $str_before = "";
-                        $selector_index = $full_match_start + strlen($before);
-                        if ($selector_index) {
-                            $str_before = substr($str, 0, $selector_index);
-                            $line_num = substr_count($str_before, "\n") + 1;
-                        }
-
-                        // Get the currently processed file path, and escape it.
-                        $current_file = str_replace(' ', '%20', CssCrush::$process->currentFile);
-                        $current_file = preg_replace('~[^\w-]~', '\\\\$0', $current_file);
-
-                        // Splice in tracing stub.
-                        $label = CssCrush::$process->tokens->add("@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line_num}}", 't');
-
-                        $str = $str_before . $label . substr($str, $selector_index);
-                    }
-                    else {
-                        // Not matched as a valid selector, move on.
-                        continue 2;
-                    }
-                    break;
-                }
-
-                // Append split segment to $before.
-                $before .= $part;
+            $line = 1;
+            if ($selector_offset) {
+                $line = substr_count(substr($str, 0, $selector_offset), "\n") + 1;
             }
+
+            // Splice in tracing stub.
+            $str = substr_replace(
+                $str,
+                CssCrush::$process->tokens->add(sprintf($debug_info, $current_file, $line), 't'),
+                $selector_offset,
+                0);
         }
     }
 }

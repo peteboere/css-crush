@@ -728,6 +728,7 @@ class CssCrush_Process
     }
 
 
+
     #############################
     #  @in blocks.
 
@@ -894,10 +895,11 @@ class CssCrush_Process
         $options = $this->options;
         $minify = $options->minify;
         $regex = CssCrush_Regex::$patt;
-        $regex_replacements = array();
         $EOL = $this->newline;
 
+        // Formatting replacements.
         // Strip newlines added during processing.
+        $regex_replacements = array();
         $regex_replacements['~\n+~'] = '';
 
         if ($minify) {
@@ -912,20 +914,19 @@ class CssCrush_Process
             $regex_replacements['~ ?(@[^;]+\;)~'] = "$1$EOL";
         }
 
-        // Apply all replacements.
+        // Apply all formatting replacements.
         $this->stream->pregReplaceHash($regex_replacements)->lTrim();
 
         // Print out rules.
-        $this->stream->replaceHash($this->tokens->getOfType('r'));
+        $this->stream->replaceTokens('r');
         CssCrush::runStat('selector_count');
         CssCrush::runStat('rule_count');
         $this->tokens->releaseOfType('r');
 
-        // Insert parens.
-        $this->stream->replaceHash($this->tokens->getOfType('p'));
-        $this->tokens->releaseOfType('p');
+        // Restore parens.
+        $this->stream->replaceTokens('p');
 
-        // Advanced minification parameters.
+        // If specified, apply advanced minification.
         if (is_array($minify)) {
             if (in_array('colors', $minify)) {
                 $this->minifyColors();
@@ -936,28 +937,26 @@ class CssCrush_Process
         $this->decruft();
 
         if ($minify) {
+
             // Trim whitespace around selector combinators.
             $this->stream->pregReplace('~ ?([>\~+]) ?~S', '$1');
         }
         else {
 
-            $comments = $this->tokens->getOfType('c');
-            $this->tokens->releaseOfType('c');
-
             // Add newlines after comments.
-            foreach ($comments as $token => &$comment) {
+            foreach ($this->tokens->store->c as $token => &$comment) {
                 $comment .= "$EOL$EOL";
             }
 
             // Insert comments and do final whitespace cleanup.
             $this->stream
-                ->replaceHash($comments)
+                ->replaceTokens('c')
                 ->trim()
                 ->append($EOL);
         }
 
         // Insert URLs.
-        $urls = $this->tokens->getOfType('u');
+        $urls = $this->tokens->store->u;
         if ($urls) {
 
             $link = CssCrush_Util::getLinkBetweenDirs($this->output->dir, $this->input->dir);
@@ -975,24 +974,20 @@ class CssCrush_Process
                     }
                 }
             }
-            $this->stream->replaceHash($urls);
-            unset($urls);
-            $this->tokens->releaseOfType('u');
         }
 
-        // Insert string literals.
-        $this->stream->replaceHash($this->tokens->getOfType('s'));
-        $this->tokens->releaseOfType('s');
-
-        // Add in boilerplate.
         if ($options->boilerplate) {
             $this->stream->prepend($this->getBoilerplate());
         }
 
-        // Add @charset at top if set.
         if ($this->charset) {
             $this->stream->prepend("@charset \"$this->charset\";$EOL");
         }
+
+        // Restore remaining tokens.
+        $this->stream->replaceTokens('u');
+        $this->stream->replaceTokens('s');
+        $this->stream->replaceTokens('t');
     }
 
     public function compile ($io_context = 'file')

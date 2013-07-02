@@ -79,6 +79,25 @@ class CssCrush_Regex
             /\*(?:.*?)(?:\*/|$)
         ~xsS';
 
+        $patt->rule2 = CssCrush_Regex::create('
+            (?:^|(?<=[;{}]))
+            (?P<before>
+                (?:\s|<c-token>)*
+            )
+            (?P<selector>
+                (?:
+                    @(?: (?i)page|abstract|font-face(?-i) ) <RB> [^{]*
+                    |
+                    [^@;{}]+
+                )
+            )
+            (?P<block>
+                \{\s*
+                    ( (?: (?>[^{}]+) | (?P>block) )* )
+                \s*\}
+            )
+        ', 'xS');
+
         // As an exception we treat some @-rules like standard rule blocks.
         $patt->rule = '~
             # The selector.

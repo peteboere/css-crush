@@ -63,6 +63,21 @@ class CssCrush_Stream
         return $this;
     }
 
+    public function replaceTokens ($type)
+    {
+        static $types = array();
+        if (! isset($types[$type])) {
+            $types[$type]['callback'] = create_function('$m', '
+                $tokens =& CssCrush::$process->tokens->store->' . $type . ';
+                return isset($tokens[$m[0]]) ? $tokens[$m[0]] : \'\';
+            ');
+            $types[$type]['patt'] = '~\?' . $type . '[a-zA-Z0-9]+\?~S';
+        }
+
+        $this->raw = preg_replace_callback($types[$type]['patt'], $types[$type]['callback'], $this->raw);
+        return $this;
+    }
+
     public function pregReplace ($patt, $replacement)
     {
         $this->raw = preg_replace($patt, $replacement, $this->raw);

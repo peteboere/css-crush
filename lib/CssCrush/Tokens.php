@@ -7,18 +7,26 @@
 class CssCrush_Tokens
 {
     public $store;
-    protected $uid = 0;
+    protected $ids;
 
     public function __construct ()
     {
-        $this->store = (object) array(
-            's' => array(), // Strings
-            'c' => array(), // Comments
-            'r' => array(), // Rules
-            'p' => array(), // Parens
-            'u' => array(), // URLs
-            't' => array(), // Traces
+        $types = array(
+            's', // Strings
+            'c', // Comments
+            'r', // Rules
+            'p', // Parens
+            'u', // URLs
+            't', // Traces
         );
+
+        $this->store = new stdClass;
+        $this->ids = new stdClass;
+
+        foreach ($types as $type) {
+            $this->store->{$type} = array();
+            $this->ids->{$type} = 0;
+        }
     }
 
     public function get ($label)
@@ -58,7 +66,7 @@ class CssCrush_Tokens
 
     public function createLabel ($type)
     {
-        $counter = base_convert(++$this->uid, 10, 36);
+        $counter = base_convert(++$this->ids->{$type}, 10, 36);
         return "?$type$counter?";
     }
 

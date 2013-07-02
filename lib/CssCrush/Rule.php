@@ -42,7 +42,7 @@ class CssCrush_Rule implements IteratorAggregate
             preg_match_all($regex->t_token, $selector_string, $trace_tokens)
         ) {
             $trace_token = array_pop($trace_tokens);
-            $this->tracingStub = $process->tokens->get($trace_token[0]);
+            $this->tracingStub = $trace_token[0];
             foreach ($trace_tokens as $trace_token) {
                 $process->tokens->release($trace_token[0]);
             }
@@ -152,7 +152,6 @@ class CssCrush_Rule implements IteratorAggregate
             if ($comments = implode('', $this->comments)) {
                 $comments = "$EOL$comments";
             }
-
             if ($stub = $this->tracingStub) {
                 $stub .= $EOL;
             }
