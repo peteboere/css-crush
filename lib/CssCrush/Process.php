@@ -679,7 +679,7 @@ class CssCrush_Process
     {
         $aliases =& $this->aliases;
 
-        foreach ($this->tokens->getOfType('r') as $rule) {
+        foreach ($this->tokens->store->r as $rule) {
 
             $rule->processDeclarations();
 
@@ -919,9 +919,11 @@ class CssCrush_Process
 
         // Print out rules.
         $this->stream->replaceTokens('r');
+
+        // Run rule related stats then reclaim memory.
         CssCrush::runStat('selector_count');
         CssCrush::runStat('rule_count');
-        $this->tokens->releaseOfType('r');
+        $this->tokens->store->r = array();
 
         // Restore parens.
         $this->stream->replaceTokens('p');

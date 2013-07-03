@@ -35,16 +35,6 @@ class CssCrush_Tokens
         return isset($path[$label]) ? $path[$label] : null;
     }
 
-    public function getOfType ($type)
-    {
-        return $this->store->{$type};
-    }
-
-    public function releaseOfType ($type)
-    {
-        $this->store->{$type} = array();
-    }
-
     public function pop ($label)
     {
         $value = $this->get($label);

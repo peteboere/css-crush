@@ -42,6 +42,7 @@ class CssCrush_Regex
         $classes->RTB = '(?=\?[a-z])'; // Right token boundry.
 
         // Misc.
+        $classes->curly_block = '(?P<block>\{\s*(?P<block_content>(?:(?>[^{}]+)|(?P>block))*)\s*\})';
         $classes->vendor = '-[a-zA-Z]+-';
         $classes->newline = '(?:\r\n?|\n)';
 
@@ -97,6 +98,7 @@ class CssCrush_Regex
                 \s*\}
             )
         ', 'xS');
+
 
         // As an exception we treat some @-rules like standard rule blocks.
         $patt->rule = '~
