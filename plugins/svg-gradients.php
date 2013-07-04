@@ -117,7 +117,7 @@ function csscrush__create_svg_linear_gradient ($input) {
         $angle_keywords['to right bottom'] = $angle_keywords['to bottom right'];
         $angle_keywords['to left bottom'] = $angle_keywords['to bottom left'];
 
-        $deg_patt = CssCrush_Regex::create('^<number>deg$', 'i');
+        $deg_patt = CssCrush_Regex::create('^{{number}}deg$', 'i');
     }
 
     $args = CssCrush_Function::parseArgs($input);
@@ -248,7 +248,7 @@ function csscrush__create_svg_radial_gradient ($input) {
         $position_keywords['at right bottom'] = $position_keywords['at bottom right'];
         $position_keywords['at left bottom'] = $position_keywords['at bottom left'];
 
-        $origin_patt = CssCrush_Regex::create('^(<number>%?) +(<number>%?)$');
+        $origin_patt = CssCrush_Regex::create('^({{number}}%?) +({{number}}%?)$');
     }
 
     $args = CssCrush_Function::parseArgs($input);

@@ -62,7 +62,7 @@ function csscrush__ease (CssCrush_Rule $rule) {
         );
 
         foreach ($easings as $property => $value) {
-            $patt = CssCrush_Regex::create('<LB>' . $property . '<RB>', 'i');
+            $patt = CssCrush_Regex::create('{{LB}}' . $property . '{{RB}}', 'i');
             $find[] = $patt;
             $replace[] = $value;
         }

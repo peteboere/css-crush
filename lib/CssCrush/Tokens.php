@@ -132,7 +132,7 @@ class CssCrush_Tokens
     {
         static $url_patt;
         if (! $url_patt) {
-            $url_patt = CssCrush_Regex::create('@import\s+(<s-token>)|<LB>(url|data-uri)\(', 'iS');
+            $url_patt = CssCrush_Regex::create('@import\s+({{s-token}})|{{LB}}(url|data-uri)\(', 'iS');
         }
 
         $count = preg_match_all($url_patt, $str, $m, PREG_OFFSET_CAPTURE);

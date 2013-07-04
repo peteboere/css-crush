@@ -26,7 +26,7 @@ function csscrush__hsl_to_hex (CssCrush_Rule $rule) {
 
     static $hsl_patt;
     if (! $hsl_patt) {
-        $hsl_patt = CssCrush_Regex::create('<LB>hsl(<p-token>)', 'i');
+        $hsl_patt = CssCrush_Regex::create('{{LB}}hsl({{p-token}})', 'i');
     }
 
     foreach ($rule as &$declaration) {

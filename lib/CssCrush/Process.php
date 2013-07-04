@@ -207,7 +207,7 @@ class CssCrush_Process
     {
         static $alias_patt, $callback;
         if (! $alias_patt) {
-            $alias_patt = CssCrush_Regex::create('@selector-alias +\:(<ident>) +([^;]+) *;', 'iS');
+            $alias_patt = CssCrush_Regex::create('@selector-alias +\:({{ident}}) +([^;]+) *;', 'iS');
             $callback = create_function('$m', '
                 $name = strtolower($m[1]);
                 $body = CssCrush_Util::stripCommentTokens($m[2]);
@@ -224,7 +224,7 @@ class CssCrush_Process
         if ($this->selectorAliases) {
             $names = implode('|', array_keys($this->selectorAliases));
             $this->selectorAliasesPatt
-                = CssCrush_Regex::create('\:(' . $names . ')<RB>(\()?', 'iS');
+                = CssCrush_Regex::create('\:(' . $names . '){{RB}}(\()?', 'iS');
         }
     }
 
@@ -504,7 +504,7 @@ class CssCrush_Process
         CssCrush::$process->vars =
             array_merge(
                 CssCrush::$process->vars,
-                CssCrush_Rule::parseBlock($m[1], array('keyed' => true, 'ignore_directives' => true)));
+                CssCrush_Rule::parseBlock($m['block_content'], array('keyed' => true, 'ignore_directives' => true)));
     }
 
     static protected function cb_placeVars ($m)
@@ -569,11 +569,7 @@ class CssCrush_Process
         static $callback;
         if (! $callback) {
             $callback = create_function('$m', '
-                $name = trim($m[1]);
-                $block = trim($m[2]);
-                if (! empty($name) && ! empty($block)) {
-                    CssCrush::$process->mixins[$name] = new CssCrush_Mixin($block);
-                }
+                CssCrush::$process->mixins[$m[\'name\']] = new CssCrush_Mixin($m[\'block_content\']);
             ');
         }
 
@@ -1113,7 +1109,7 @@ class CssCrush_Process
             $keywords_callback = create_function('$m',
                 'return CssCrush_Color::$minifyableKeywords[strtolower($m[0])];');
 
-            $functions_patt = CssCrush_Regex::create('<LB>(rgb|hsl)\(([^\)]{5,})\)', 'iS');
+            $functions_patt = CssCrush_Regex::create('{{LB}}(rgb|hsl)\(([^\)]{5,})\)', 'iS');
             $functions_callback = create_function('$m', '
                 $args = CssCrush_Function::parseArgs(trim($m[2]));
                 if (stripos($m[1], \'hsl\') === 0) {

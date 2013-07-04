@@ -51,8 +51,8 @@ function csscrush__rem (CssCrush_Rule $rule) {
 
     static $rem_patt, $px_patt, $font_props, $modes;
     if (! $modes) {
-        $rem_patt = CssCrush_Regex::create('<LB>(<number>)rem<RB>', 'iS');
-        $px_patt = CssCrush_Regex::create('<LB>(<number>)px<RB>', 'iS');
+        $rem_patt = CssCrush_Regex::create('{{LB}}({{number}})rem{{RB}}', 'iS');
+        $px_patt = CssCrush_Regex::create('{{LB}}({{number}})px{{RB}}', 'iS');
         $font_props = array(
             'font' => true,
             'font-size' => true,

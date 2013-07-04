@@ -42,13 +42,14 @@ class CssCrush_Regex
         $classes->RTB = '(?=\?[a-z])'; // Right token boundry.
 
         // Misc.
-        $classes->curly_block = '(?P<block>\{\s*(?P<block_content>(?:(?>[^{}]+)|(?P>block))*)\s*\})';
+        $classes->block = '(?P<block>\{\s*(?P<block_content>(?:(?>[^{}]+)|(?P>block))*)\s*\})';
         $classes->vendor = '-[a-zA-Z]+-';
         $classes->newline = '(?:\r\n?|\n)';
+        $classes->hex = '[[:xdigit:]]';
 
         // Create standalone class patterns, add classes as class swaps.
         foreach ($classes as $name => $class) {
-            self::$classSwaps['<' . str_replace('_', '-', $name) . '>'] = $class;
+            self::$classSwaps['{{' . str_replace('_', '-', $name) . '}}'] = $class;
             $patt->{$name} = '~' . $class . '~S';
         }
 
@@ -57,18 +58,18 @@ class CssCrush_Regex
         $patt->rooted_number = '~^' . $classes->number . '$~';
 
         // @-rules.
-        $patt->import = CssCrush_Regex::create('@import\s+(<u-token>)\s?([^;]*);', 'iS');
-        $patt->charset = CssCrush_Regex::create('@charset\s+(<s-token>)\s*;', 'iS');
-        $patt->vars = CssCrush_Regex::create('@define *\{ *(.*?) *\};?', 'iS');
-        $patt->mixin = CssCrush_Regex::create('@mixin +(<ident>) *\{ *(.*?) *\};?', 'iS');
-        $patt->abstract = CssCrush_Regex::create('^@abstract +(<ident>)', 'i');
-        $patt->ifDefine = CssCrush_Regex::create('@ifdefine +(not +)?(<ident>) *\{', 'iS');
-        $patt->fragmentDef = CssCrush_Regex::create('@fragment +(<ident>) *\{', 'iS');
-        $patt->fragmentCall = CssCrush_Regex::create('@fragment +(<ident>) *(\(|;)', 'iS');
+        $patt->import = CssCrush_Regex::create('@import\s+({{u-token}})\s?([^;]*);', 'iS');
+        $patt->charset = CssCrush_Regex::create('@charset\s+({{s-token}})\s*;', 'iS');
+        $patt->vars = CssCrush_Regex::create('@define *{{block}}', 'iS');
+        $patt->mixin = CssCrush_Regex::create('@mixin +(?P<name>{{ident}}) *{{block}}', 'iS');
+        $patt->abstract = CssCrush_Regex::create('^@abstract +({{ident}})', 'i');
+        $patt->ifDefine = CssCrush_Regex::create('@ifdefine +(not +)?({{ident}}) *\{', 'iS');
+        $patt->fragmentDef = CssCrush_Regex::create('@fragment +({{ident}}) *\{', 'iS');
+        $patt->fragmentCall = CssCrush_Regex::create('@fragment +({{ident}}) *(\(|;)', 'iS');
 
         // Functions.
-        $patt->function = CssCrush_Regex::create('<LB>(<ident>)(<p-token>)', 'S');
-        $patt->varFunction = CssCrush_Regex::create('\$\( *(<ident>) *\)', 'S');
+        $patt->function = CssCrush_Regex::create('{{LB}}({{ident}})({{p-token}})', 'S');
+        $patt->varFunction = CssCrush_Regex::create('\$\( *({{ident}}) *\)', 'S');
         $patt->thisFunction = CssCrush_Regex::createFunctionPatt(array('this'));
 
         $patt->string = '~(\'|")(?:\\\\\1|[^\1])*?\1~xS';
@@ -83,21 +84,16 @@ class CssCrush_Regex
         $patt->rule2 = CssCrush_Regex::create('
             (?:^|(?<=[;{}]))
             (?P<before>
-                (?:\s|<c-token>)*
+                (?: \s | {{c-token}} )*
             )
             (?P<selector>
                 (?:
-                    @(?: (?i)page|abstract|font-face(?-i) ) <RB> [^{]*
+                    @(?: (?i)page|abstract|font-face(?-i) ) {{RB}} [^{]*
                     |
                     [^@;{}]+
                 )
             )
-            (?P<block>
-                \{\s*
-                    ( (?: (?>[^{}]+) | (?P>block) )* )
-                \s*\}
-            )
-        ', 'xS');
+            {{block}}', 'xS');
 
 
         // As an exception we treat some @-rules like standard rule blocks.
@@ -121,7 +117,7 @@ class CssCrush_Regex
         $patt->ruleDirective = '~^(?:(@include)|(@extends?)|(@name))[\s]+~iS';
         $patt->argListSplit = '~\s*[,\s]\s*~S';
         $patt->mathBlacklist = '~[^\.0-9\*\/\+\-\(\)]~S';
-        $patt->cruftyHex = '~\#([[:xdigit:]])\1([[:xdigit:]])\2([[:xdigit:]])\3~S';
+        $patt->cruftyHex = CssCrush_Regex::create('\#({{hex}})\1({{hex}})\2({{hex}})\3', 'S');
     }
 
     static public function create ($pattern_template, $flags = '', $delim = '~')
@@ -172,7 +168,7 @@ class CssCrush_Regex
 
         $flat_list = implode('|', $list);
 
-        return CssCrush_Regex::create("($template<LB>(?:$flat_list)$question)\(", 'iS');
+        return CssCrush_Regex::create("($template{{LB}}(?:$flat_list)$question)\(", 'iS');
     }
 }
 

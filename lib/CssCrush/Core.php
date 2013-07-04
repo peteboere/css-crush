@@ -206,7 +206,7 @@ class CssCrush
 
                                     // We'll cache the function matching regex here.
                                     $vendor_grouped_aliases[$m[1]]['find'][] =
-                                        CssCrush_Regex::create('<LB>' . $func_name . '<RTB>', 'i');
+                                        CssCrush_Regex::create('{{LB}}' . $func_name . '{{RTB}}', 'i');
                                     $vendor_grouped_aliases[$m[1]]['replace'][] = $alias_func;
                                 }
                             }

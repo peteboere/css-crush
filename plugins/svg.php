@@ -89,7 +89,7 @@ function csscrush__svg_capture ($process) {
 
     static $callback, $patt;
     if (! $callback) {
-        $patt = CssCrush_Regex::create('@svg +(<ident>) *\{ *(.*?) *\};?', 'iS');
+        $patt = CssCrush_Regex::create('@svg +({{ident}}) *\{ *(.*?) *\};?', 'iS');
         $callback = create_function('$m', '
             $name = strtolower($m[1]);
             $block = $m[2];

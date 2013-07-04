@@ -43,7 +43,7 @@ function csscrush__rgba_fallback (CssCrush_Rule $rule) {
 
     static $rgb_patt;
     if (! $rgb_patt) {
-        $rgb_patt = CssCrush_Regex::create('^rgba<p-token>$', 'i');
+        $rgb_patt = CssCrush_Regex::create('^rgba{{p-token}}$', 'i');
     }
 
     $new_set = array();

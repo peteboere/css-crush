@@ -69,7 +69,7 @@ function csscrush__canvas_capture ($process) {
 
     static $callback, $patt;
     if (! $callback) {
-        $patt = CssCrush_Regex::create('@canvas +(<ident>) *\{ *(.*?) *\};?', 'iS');
+        $patt = CssCrush_Regex::create('@canvas +({{ident}}) *\{ *(.*?) *\};?', 'iS');
         $callback = create_function('$m', '
             $name = strtolower($m[1]);
             $block = $m[2];

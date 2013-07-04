@@ -153,7 +153,7 @@ class CssCrush_Importer
     {
         static $non_import_urls_patt;
         if (! $non_import_urls_patt) {
-            $non_import_urls_patt = CssCrush_Regex::create('(?<!@import )<u-token>', 'iS');
+            $non_import_urls_patt = CssCrush_Regex::create('(?<!@import ){{u-token}}', 'iS');
         }
 
         $link = CssCrush_Util::getLinkBetweenDirs(

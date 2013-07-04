@@ -381,7 +381,7 @@ class CssCrush_Rule implements IteratorAggregate
 
         static $any_patt, $reg_comma;
         if (! $any_patt) {
-            $any_patt = CssCrush_Regex::create(':any(<p-token>)', 'i');
+            $any_patt = CssCrush_Regex::create(':any({{p-token}})', 'i');
             $reg_comma = '~\s*,\s*~';
         }
 

@@ -111,16 +111,21 @@ class CssCrush_Color
 
     static public function test ($str)
     {
+        static $color_patt;
+        if (! $color_patt) {
+            $color_patt = CssCrush_Regex::create('^(
+                \#(?={{hex}}{3}) |
+                \#(?={{hex}}{6}) |
+                rgba?(?=[?(]) |
+                hsla?(?=[?(])
+            )', 'ixS');
+        }
+
         $color_test = array();
         $str = strtolower(trim($str));
 
         // First match a hex value or the start of a function.
-        if (preg_match('~^(
-                \#(?=[[:xdigit:]]{3}) |
-                \#(?=[[:xdigit:]]{6}) |
-                rgba?(?=[?(]) |
-                hsla?(?=[?(])
-            )~xS', $str, $m)) {
+        if (preg_match($color_patt, $str, $m)) {
 
             $type_match = $m[1];
 
@@ -347,7 +352,7 @@ class CssCrush_Color
         static $alpha_color_patt;
         if (! $alpha_color_patt) {
             $alpha_color_patt = CssCrush_Regex::create(
-                '^(rgb|hsl)a\((<number>%?,<number>%?,<number>%?),(<number>)\)$');
+                '^(rgb|hsl)a\(({{number}}%?,{{number}}%?,{{number}}%?),({{number}})\)$');
         }
 
         // Strip all whitespace.

@@ -66,14 +66,14 @@ function csscrush__post_alias_fix_lineargradients ($declaration_copies) {
 
     static $deg_patt, $deg_convert_callback, $fn_patt;
     if (! $deg_patt) {
-        $deg_patt = CssCrush_Regex::create('(?<=[\( ])(<number>)deg', 'i');
+        $deg_patt = CssCrush_Regex::create('(?<=[\( ])({{number}})deg', 'i');
         // Legacy angles move anti-clockwise and start from East, not North.
         $deg_convert_callback = create_function('$m', '
             $angle = floatval($m[1]);
             $angle = ($angle + 90) - ($angle * 2);
             return ($angle < 0 ? $angle + 360 : $angle) . \'deg\';
         ');
-        $fn_patt = CssCrush_Regex::create('<LB><vendor>(?:(?:repeating-)?linear-gradient)(<p-token>)', 'iS');
+        $fn_patt = CssCrush_Regex::create('{{LB}}{{vendor}}(?:(?:repeating-)?linear-gradient)({{p-token}})', 'iS');
     }
 
     // Create new paren tokens based on the first prefixed declaration.
@@ -121,7 +121,7 @@ function csscrush__post_alias_fix_radialgradients ($declaration_copies) {
     // Replace the new syntax with the legacy syntax.
     static $fn_patt;
     if (! $fn_patt) {
-        $fn_patt = CssCrush_Regex::create('<LB><vendor>(?:(?:repeating-)?radial-gradient)(<p-token>)', 'iS');
+        $fn_patt = CssCrush_Regex::create('{{LB}}{{vendor}}(?:(?:repeating-)?radial-gradient)({{p-token}})', 'iS');
     }
     $original_parens = array();
     $replacement_parens = array();
