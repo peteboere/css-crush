@@ -1,0 +1,8 @@
+#!/usr/bin/env php
+<?php
+/**
+ *
+ * Alias for composer's vendor/bin directory.
+ *
+ */
+require __DIR__ . '/../cli.php';

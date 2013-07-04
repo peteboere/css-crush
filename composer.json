@@ -18,6 +18,9 @@
     "require": {
         "php": ">=5.2.4"
     },
+    "bin": [
+        "misc/csscrush"
+    ],
     "autoload": {
         "files": ["CssCrush.php"]
     }
