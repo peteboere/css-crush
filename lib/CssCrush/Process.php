@@ -582,9 +582,14 @@ class CssCrush_Process
 
     protected function resolveFragments ()
     {
-        $regex = CssCrush_Regex::$patt;
-        $matches = $this->stream->matchAll($regex->fragmentDef);
+        static $define_patt, $call_patt;
+        if (! $define_patt) {
+            $define_patt = CssCrush_Regex::create('@fragment +({{ident}}) *\{', 'iS');
+            $call_patt = CssCrush_Regex::create('@fragment +({{ident}}) *(\(|;)', 'iS');
+        }
+
         $fragments = array();
+        $matches = $this->stream->matchAll($define_patt);
 
         // Move through the matches last to first.
         while ($match = array_pop($matches)) {
@@ -609,7 +614,7 @@ class CssCrush_Process
         }
 
         // Now find all the fragment calls.
-        $matches = $this->stream->matchAll($regex->fragmentCall);
+        $matches = $this->stream->matchAll($call_patt);
 
         // Move through the matches last to first.
         while ($match = array_pop($matches)) {

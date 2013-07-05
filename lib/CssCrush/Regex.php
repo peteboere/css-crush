@@ -42,9 +42,8 @@ class CssCrush_Regex
         $classes->RTB = '(?=\?[a-z])'; // Right token boundry.
 
         // Misc.
-        $classes->block = '(?P<block>\{\s*(?P<block_content>(?:(?>[^{}]+)|(?P>block))*)\s*\})';
+        $classes->block = '(?<block>\{\s*(?<block_content>(?:(?>[^{}]+)|(?>block))*)\s*\})';
         $classes->vendor = '-[a-zA-Z]+-';
-        $classes->newline = '(?:\r\n?|\n)';
         $classes->hex = '[[:xdigit:]]';
 
         // Create standalone class patterns, add classes as class swaps.
@@ -61,11 +60,9 @@ class CssCrush_Regex
         $patt->import = CssCrush_Regex::create('@import\s+({{u-token}})\s?([^;]*);', 'iS');
         $patt->charset = CssCrush_Regex::create('@charset\s+({{s-token}})\s*;', 'iS');
         $patt->vars = CssCrush_Regex::create('@define *{{block}}', 'iS');
-        $patt->mixin = CssCrush_Regex::create('@mixin +(?P<name>{{ident}}) *{{block}}', 'iS');
+        $patt->mixin = CssCrush_Regex::create('@mixin +(?<name>{{ident}}) *{{block}}', 'iS');
         $patt->abstract = CssCrush_Regex::create('^@abstract +({{ident}})', 'i');
         $patt->ifDefine = CssCrush_Regex::create('@ifdefine +(not +)?({{ident}}) *\{', 'iS');
-        $patt->fragmentDef = CssCrush_Regex::create('@fragment +({{ident}}) *\{', 'iS');
-        $patt->fragmentCall = CssCrush_Regex::create('@fragment +({{ident}}) *(\(|;)', 'iS');
 
         // Functions.
         $patt->function = CssCrush_Regex::create('{{LB}}({{ident}})({{p-token}})', 'S');
@@ -83,10 +80,10 @@ class CssCrush_Regex
 
         $patt->rule2 = CssCrush_Regex::create('
             (?:^|(?<=[;{}]))
-            (?P<before>
+            (?<before>
                 (?: \s | {{c-token}} )*
             )
-            (?P<selector>
+            (?<selector>
                 (?:
                     @(?: (?i)page|abstract|font-face(?-i) ) {{RB}} [^{]*
                     |
