@@ -25,6 +25,7 @@ class CssCrush_Process
         // Initialize properties.
         $this->cacheData = array();
         $this->mixins = array();
+        $this->fragments = array();
         $this->references = array();
         $this->errors = array();
         $this->stat = array();
@@ -582,89 +583,29 @@ class CssCrush_Process
 
     protected function resolveFragments ()
     {
-        static $define_patt, $call_patt;
-        if (! $define_patt) {
-            $define_patt = CssCrush_Regex::create('@fragment +({{ident}}) *\{', 'iS');
-            $call_patt = CssCrush_Regex::create('@fragment +({{ident}}) *(\(|;)', 'iS');
-        }
+        static $capture_callback, $invoke_callback;
+        if (! $capture_callback) {
 
-        $fragments = array();
-        $matches = $this->stream->matchAll($define_patt);
+            $capture_callback = create_function('$m', '
+                CssCrush::$process->fragments[$m[\'name\']] = new CssCrush_Fragment(
+                    $m[\'block_content\'],
+                    array(\'name\' => strtolower($m[\'name\'])));
+                return \'\';');
 
-        // Move through the matches last to first.
-        while ($match = array_pop($matches)) {
-
-            $match_start_pos = $match[0][1];
-            $fragment_name = $match[1][0];
-
-            $curly_match = new CssCrush_BalancedMatch($this->stream, $match_start_pos);
-
-            if (! $curly_match->match) {
-
-                // Couldn't match the block.
-                continue;
-            }
-            else {
-                // Reconstruct the stream without the fragment.
-                $curly_match->replace('');
-
-                // Create the fragment and store it.
-                $fragments[$fragment_name] = new CssCrush_Template($curly_match->inside());
-            }
-        }
-
-        // Now find all the fragment calls.
-        $matches = $this->stream->matchAll($call_patt);
-
-        // Move through the matches last to first.
-        while ($match = array_pop($matches)) {
-
-            list($match_string, $match_start_pos) = $match[0];
-
-            // The matched fragment name.
-            $fragment_name = $match[1][0];
-
-            // The fragment object, or null if name not present.
-            $fragment = isset($fragments[$fragment_name]) ? $fragments[$fragment_name] : null;
-
-            // Fragment may be called without any argument list.
-            $with_arguments = $match[2][0] === '(';
-
-            // Resolve end of the match.
-            if ($with_arguments) {
-                $paren_match = new CssCrush_BalancedMatch($this->stream, $match_start_pos, '()');
-                // Get offset of statement terminating semi-colon.
-                $match_end = $paren_match->nextIndexOf(';') + 1;
-                $match_length = $match_end - $match_start_pos;
-            }
-            else {
-                $match_length = strlen($match_string);
-            }
-
-            // If invalid fragment or malformed argument list.
-            if (! $fragment || ($with_arguments && ! $paren_match->match)) {
-
-                $this->stream->splice('', $match_start_pos, $match_length);
-
-                continue;
-            }
-
-            // Ok.
-            else {
-
-                $args = array();
-                if ($with_arguments) {
-                    // Get the argument array to pass to the fragment.
-                    $args = CssCrush_Function::parseArgs($paren_match->inside());
+            $invoke_callback = create_function('$m', '
+                $fragment = isset(CssCrush::$process->fragments[$m[\'name\']]) ? CssCrush::$process->fragments[$m[\'name\']] : null;
+                if ($fragment) {
+                    $args = array();
+                    if (isset($m[\'parens_content\'])) {
+                        $args = CssCrush_Function::parseArgs($m[\'parens_content\']);
+                    }
+                    return $fragment->apply($args);
                 }
-
-                // Execute the fragment and get the return value.
-                $fragment_return = $fragment->apply($args);
-
-                // Recontruct the stream with the fragment return value.
-                $this->stream->splice($fragment_return, $match_start_pos, $match_length);
-            }
+                return \'\';');
         }
+
+        $this->stream->pregReplaceCallback(CssCrush_Regex::$patt->fragmentCapture, $capture_callback);
+        $this->stream->pregReplaceCallback(CssCrush_Regex::$patt->fragmentInvoke, $invoke_callback);
     }
 
 

@@ -41,8 +41,11 @@ class CssCrush_Regex
         $classes->RB = '(?![\w-])'; // Right ident boundry.
         $classes->RTB = '(?=\?[a-z])'; // Right token boundry.
 
+        // Recursive block matching.
+        $classes->block = '(?<block>\{\s*(?<block_content>(?:(?>[^{}]+)|(?&block))*)\s*\})';
+        $classes->parens = '(?<parens>\(\s*(?<parens_content>(?:(?>[^)(]+)|(?&parens))*)\s*\))';
+
         // Misc.
-        $classes->block = '(?<block>\{\s*(?<block_content>(?:(?>[^{}]+)|(?>block))*)\s*\})';
         $classes->vendor = '-[a-zA-Z]+-';
         $classes->hex = '[[:xdigit:]]';
 
@@ -63,6 +66,8 @@ class CssCrush_Regex
         $patt->mixin = CssCrush_Regex::create('@mixin +(?<name>{{ident}}) *{{block}}', 'iS');
         $patt->abstract = CssCrush_Regex::create('^@abstract +({{ident}})', 'i');
         $patt->ifDefine = CssCrush_Regex::create('@ifdefine +(not +)?({{ident}}) *\{', 'iS');
+        $patt->fragmentCapture = CssCrush_Regex::create('@fragment \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
+        $patt->fragmentInvoke = CssCrush_Regex::create('@fragment \s+ (?<name>{{ident}}) {{parens}}? \s* ;', 'ixS');
 
         // Functions.
         $patt->function = CssCrush_Regex::create('{{LB}}({{ident}})({{p-token}})', 'S');
