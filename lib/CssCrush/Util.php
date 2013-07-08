@@ -136,4 +136,38 @@ class CssCrush_Util
         // Add closing slash.
         return $link !== '' ? rtrim($link, '/') . '/' : '';
     }
+
+    /*
+     * Encode integer to Base64 VLQ.
+     */
+    static public function vlqEncode ($value)
+    {
+        static $SHIFT, $MASK, $CONTINUATION_BIT, $BASE64_MAP;
+        if (! $SHIFT) {
+            $SHIFT = 5;
+            $MASK = 0x1F;
+            $CONTINUATION_BIT = 0x20;
+            $BASE64_MAP = array_merge(range('A', 'Z'), range('a', 'z'), array('+', '/'));
+        }
+
+        if ($value < 0) {
+            $value = ((-$value) << 1) | 1;
+        }
+        else {
+            $value <<= 1;
+        }
+
+        $encoded = "";
+        do {
+            $digit = $value & $MASK;
+            $value >>= $SHIFT;
+            if ($value > 0) {
+                $digit |= $CONTINUATION_BIT;
+            }
+            $encoded .= $BASE64_MAP[$digit];
+        }
+        while ($value > 0);
+
+        return $encoded;
+    }
 }
