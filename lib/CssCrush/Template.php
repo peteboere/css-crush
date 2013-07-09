@@ -4,7 +4,7 @@
  *  Generalized 'in CSS' templating.
  *
  */
-class CssCrush_Template implements Countable
+class CssCrush_Template
 {
     // Positional argument default values.
     public $defaults = array();
@@ -138,11 +138,6 @@ class CssCrush_Template implements Countable
 
         // Re-tokenize string on return.
         return CssCrush_Template::tokenize($str);
-    }
-
-    public function count ()
-    {
-        return $this->argCount;
     }
 
     static public function tokenize ($str)

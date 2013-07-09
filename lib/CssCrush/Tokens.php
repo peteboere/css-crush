@@ -132,47 +132,37 @@ class CssCrush_Tokens
     {
         static $url_patt;
         if (! $url_patt) {
-            $url_patt = CssCrush_Regex::create('@import\s+({{s-token}})|{{LB}}(url|data-uri)\(', 'iS');
+            $url_patt = CssCrush_Regex::create(
+                '@import \s+ (?<import>{{s-token}}) | {{LB}} (?<func>url|data-uri) {{parens}}', 'ixS');
         }
 
         $count = preg_match_all($url_patt, $str, $m, PREG_OFFSET_CAPTURE);
+
         while ($count--) {
 
-            // Full match.
-            $outer0 = $m[0][$count];
+            list($full_text, $full_offset) = $m[0][$count];
+            list($import_text, $import_offset) = $m['import'][$count];
 
-            // @import directive position.
-            $outer1 = $m[1][$count];
+            // @import directive.
+            if ($import_offset !== -1) {
 
-            // URL function position.
-            $outer2 = is_array($m[2][$count]) ? $m[2][$count] : null;
-
-            list($outer_text, $outer_offset) = $outer0;
-            $newlines = '';
-
-            // An @import directive.
-            if (! $outer2) {
-
-                if (strpos($outer_text, "\n") !== false) {
-                    $newlines = str_repeat("\n", substr_count($outer_text, "\n"));
-                }
-                $url = new CssCrush_Url(trim($outer1[0]));
-                $str = str_replace($outer1[0], $url->label . $newlines, $str);
+                $url = new CssCrush_Url($import_text);
+                $str = str_replace($import_text, $url->label, $str);
             }
 
-            // A URL function - match closing parens.
-            elseif (
-                preg_match(CssCrush_Regex::$patt->balancedParens, $str, $inner_m, PREG_OFFSET_CAPTURE, $outer_offset)
-            ) {
+            // A URL function.
+            else {
 
-                $inner_text = $inner_m[0][0];
-                if (strpos($inner_text, "\n") !== false) {
-                    $newlines = str_repeat("\n", substr_count($inner_text, "\n"));
+                $newlines = '';
+                if (strpos($full_text, "\n") !== false) {
+                    $newlines = str_repeat("\n", substr_count($full_text, "\n"));
                 }
-                $url = new CssCrush_Url(trim($inner_m[1][0]));
-                $func_name = strtolower($outer2[0]);
+
+                $func_name = strtolower($m['func'][$count][0]);
+
+                $url = new CssCrush_Url(trim($m['parens_content'][$count][0]));
                 $url->convertToData = 'data-uri' === $func_name;
-                $str = substr_replace($str, $url->label . $newlines, $outer0[1], strlen($func_name) + strlen($inner_text));
+                $str = substr_replace($str, $url->label . $newlines, $full_offset, strlen($full_text));
             }
         }
 

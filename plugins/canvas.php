@@ -69,14 +69,14 @@ function csscrush__canvas_capture ($process) {
 
     static $callback, $patt;
     if (! $callback) {
-        $patt = CssCrush_Regex::create('@canvas +({{ident}}) *\{ *(.*?) *\};?', 'iS');
+        $patt = CssCrush_Regex::create('@canvas \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
         $callback = create_function('$m', '
-            $name = strtolower($m[1]);
-            $block = $m[2];
-            if (! empty($name) && ! empty($block)) {
-                CssCrush::$process->misc->canvas_defs[$name] =
-                    new CssCrush_Template($block);
+            $name = strtolower($m[\'name\']);
+            $block = $m[\'block_content\'];
+            if (! empty($block)) {
+                CssCrush::$process->misc->canvas_defs[$name] = new CssCrush_Template($block);
             }
+            return \'\';
         ');
     }
 

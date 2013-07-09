@@ -42,8 +42,8 @@ class CssCrush_Regex
         $classes->RTB = '(?=\?[a-z])'; // Right token boundry.
 
         // Recursive block matching.
-        $classes->block = '(?<block>\{\s*(?<block_content>(?:(?>[^{}]+)|(?&block))*)\s*\})';
-        $classes->parens = '(?<parens>\(\s*(?<parens_content>(?:(?>[^)(]+)|(?&parens))*)\s*\))';
+        $classes->block = '(?<block>\{\s*(?<block_content>(?:(?>[^{}]+)|(?&block))*)\})';
+        $classes->parens = '(?<parens>\(\s*(?<parens_content>(?:(?>[^()]+)|(?&parens))*)\))';
 
         // Misc.
         $classes->vendor = '-[a-zA-Z]+-';
@@ -60,18 +60,18 @@ class CssCrush_Regex
         $patt->rooted_number = '~^' . $classes->number . '$~';
 
         // @-rules.
-        $patt->import = CssCrush_Regex::create('@import\s+({{u-token}})\s?([^;]*);', 'iS');
-        $patt->charset = CssCrush_Regex::create('@charset\s+({{s-token}})\s*;', 'iS');
-        $patt->vars = CssCrush_Regex::create('@define *{{block}}', 'iS');
-        $patt->mixin = CssCrush_Regex::create('@mixin +(?<name>{{ident}}) *{{block}}', 'iS');
-        $patt->abstract = CssCrush_Regex::create('^@abstract +({{ident}})', 'i');
-        $patt->ifDefine = CssCrush_Regex::create('@ifdefine +(not +)?({{ident}}) *\{', 'iS');
+        $patt->import = CssCrush_Regex::create('@import \s+ ({{u-token}}) \s? ([^;]*);', 'ixS');
+        $patt->charset = CssCrush_Regex::create('@charset \s+ ({{s-token}}) \s*;', 'ixS');
+        $patt->vars = CssCrush_Regex::create('@define \s* {{block}}', 'ixS');
+        $patt->mixin = CssCrush_Regex::create('@mixin \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
+        $patt->ifDefine = CssCrush_Regex::create('@ifdefine \s+ (not \s+)? ({{ident}}) \s* \{', 'ixS');
         $patt->fragmentCapture = CssCrush_Regex::create('@fragment \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
         $patt->fragmentInvoke = CssCrush_Regex::create('@fragment \s+ (?<name>{{ident}}) {{parens}}? \s* ;', 'ixS');
+        $patt->abstract = CssCrush_Regex::create('^@abstract \s+ (?<name>{{ident}})', 'ixS');
 
         // Functions.
-        $patt->function = CssCrush_Regex::create('{{LB}}({{ident}})({{p-token}})', 'S');
-        $patt->varFunction = CssCrush_Regex::create('\$\( *({{ident}}) *\)', 'S');
+        $patt->function = CssCrush_Regex::create('{{LB}} ({{ident}}) ({{p-token}})', 'xS');
+        $patt->varFunction = CssCrush_Regex::create('\$\( \s* ({{ident}}) \s* \)', 'xS');
         $patt->thisFunction = CssCrush_Regex::createFunctionPatt(array('this'));
 
         $patt->string = '~(\'|")(?:\\\\\1|[^\1])*?\1~xS';

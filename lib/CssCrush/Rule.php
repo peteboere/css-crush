@@ -70,10 +70,8 @@ class CssCrush_Rule implements IteratorAggregate
                 // If the selector matches an absract directive
                 if (preg_match($regex->abstract, $selector, $m)) {
 
-                    $abstract_name = $m[1];
-
                     // Link the rule to the abstract name and skip forward to declaration parsing.
-                    $process->references[$abstract_name] = $this;
+                    $process->references[strtolower($m['name'])] = $this;
                 }
                 else {
                     $this->addSelector(new CssCrush_Selector($selector));

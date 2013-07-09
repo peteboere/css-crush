@@ -596,7 +596,7 @@ class CssCrush_Process
                 $fragment = isset(CssCrush::$process->fragments[$m[\'name\']]) ? CssCrush::$process->fragments[$m[\'name\']] : null;
                 if ($fragment) {
                     $args = array();
-                    if (isset($m[\'parens_content\'])) {
+                    if (isset($m[\'parens\'])) {
                         $args = CssCrush_Function::parseArgs($m[\'parens_content\']);
                     }
                     return $fragment->apply($args);
