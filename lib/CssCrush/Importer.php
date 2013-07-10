@@ -187,8 +187,13 @@ class CssCrush_Importer
         // Convert all end-of-lines to unix style.
         $str = preg_replace('~\r\n?~', "\n", $str);
 
-        // Capture all comments and string literals.
         $str = $tokens->captureCommentAndString($str);
+
+        // Validate syntax as early as possible.
+        if (! self::checkSyntax($str)) {
+
+            return false;
+        }
 
         // Normalize double-colon pseudo elements for backwards compatability.
         $str = preg_replace('~::(after|before|first-(?:letter|line))~iS', ':$1', $str);
@@ -204,9 +209,24 @@ class CssCrush_Importer
             $str = preg_replace($regex->charset, $replace, $str);
         }
 
+        $str = $tokens->captureUrls($str);
+
+        if ($process->addTracingStubs) {
+            self::addTracingStubs($str);
+        }
+
+        $str = CssCrush_Util::normalizeWhiteSpace($str);
+
+        return true;
+    }
+
+    static protected function checkSyntax (&$str)
+    {
+        // TODO: add more sophisticated error detection such as line/column of unmatched bracket.
+
         // Catch obvious typing errors.
         $parse_errors = array();
-        $current_file = $process->currentFile;
+        $current_file = CssCrush::$process->currentFile;
         $balanced_parens = substr_count($str, "(") === substr_count($str, ")");
         $balanced_curlies = substr_count($str, "{") === substr_count($str, "}");
 
@@ -222,20 +242,9 @@ class CssCrush_Importer
                 CssCrush::logError($error_msg);
                 trigger_error("$error_msg\n", E_USER_WARNING);
             }
-            return false;
         }
 
-        $str = $tokens->captureUrls($str);
-
-        // Optionally add tracing stubs.
-        if ($process->addTracingStubs) {
-            self::addTracingStubs($str);
-        }
-
-        // Strip unneeded whitespace.
-        $str = CssCrush_Util::normalizeWhiteSpace($str);
-
-        return true;
+        return empty($parse_errors) ? true : false;
     }
 
     static protected function addTracingStubs (&$str)
