@@ -650,14 +650,22 @@ class CssCrush_Process
 
     static public function cb_captureRules ($m)
     {
-        $rule = (object) array();
-        $rule->selector_raw = trim($m[1]);
-        $rule->declaration_raw = trim($m[2]);
+        // $rule = (object) array();
+        // $rule->selector_raw = trim($m[1]);
+        // $rule->declaration_raw = trim($m[2]);
 
         // Run rule_preprocess hook.
-        CssCrush_Hook::run('rule_preprocess', $rule);
+        // CssCrush_Hook::run('rule_preprocess', $rule);
 
-        $rule = new CssCrush_Rule($rule->selector_raw, $rule->declaration_raw);
+        $selector = trim($m['selector']);
+        $block = trim($m['block_content']);
+
+        // Ignore and remove empty rules.
+        if (empty($block) || empty($selector)) {
+            return '';
+        }
+
+        $rule = new CssCrush_Rule($selector, $block, $m['trace_token']);
 
         // Store rules if they have declarations or extend arguments.
         if (! empty($rule->declarations) || $rule->extendArgs) {
@@ -854,6 +862,9 @@ class CssCrush_Process
             $regex_replacements['~([^\s])\{~'] = "$1 {";
             $regex_replacements['~ ?(@[^{]+\{)~'] = "$1$EOL";
             $regex_replacements['~ ?(@[^;]+\;)~'] = "$1$EOL";
+
+            // Trim leading spaces on rule and comment tokens
+            $regex_replacements[CssCrush_Regex::create(' +({{r-token}}|{{c-token}})', 'S')] = "$1";
         }
 
         // Apply all formatting replacements.
@@ -974,14 +985,6 @@ class CssCrush_Process
 
         // Capture phase 2 hook: After most built-in directives have resolved.
         CssCrush_Hook::run('capture_phase2', $this);
-
-        // Adjust meta characters so we can capture the rules cleanly.
-        $this->stream->replaceHash(array(
-            '@' => "\n@",
-            '}' => "}\n",
-            '{' => "{\n",
-            ';' => ";\n",
-        ))->prepend("\n");
 
         // Parse rules.
         $this->captureRules();

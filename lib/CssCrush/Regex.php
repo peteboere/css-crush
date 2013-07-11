@@ -97,18 +97,26 @@ class CssCrush_Regex
             )
             {{block}}', 'xS');
 
+        $patt->rule = CssCrush_Regex::create('
+            (?<trace_token> {{t-token}} )
+            \s*
+            (?<selector> [^{]+ )
+            \s*
+            {{block}}', 'xiS');
 
         // As an exception we treat some @-rules like standard rule blocks.
-        $patt->rule = '~
-            # The selector.
-            \n(
-                [^@{}]+
-                |
-                (?: [^@{}]+ )? @(?: font-face|abstract|page ) (?!-)\b [^{]*
-            )
-            # The declaration block.
-            \{ ([^{}]*) \}
-        ~xiS';
+        // $patt->rule = '~
+        //     # The selector.
+        //     \n(
+        //         [^@{}]+
+        //         |
+        //         (?: [^@{}]+ )? @(?: font-face|abstract|page ) (?!-)\b [^{]*
+        //     )
+        //     # The declaration block.
+        //     \{ ([^{}]*) \}
+        // ~xiS';
+
+
 
         // Balanced bracket matching.
         $patt->balancedParens  = '~\(\s* ( (?: (?>[^()]+) | (?R) )* ) \s*\)~xS';

@@ -14,9 +14,6 @@ class CssCrush_Rule implements IteratorAggregate
     public $extendSelectors = array();
     public $declarations = array();
 
-    // The comments associated with the rule.
-    public $comments = array();
-
     // Index of properties used in the rule for fast lookup.
     public $properties = array();
     public $canonicalProperties = array();
@@ -30,52 +27,27 @@ class CssCrush_Rule implements IteratorAggregate
     // Declarations hash table for external query() referencing.
     public $queryData = array();
 
-    public function __construct ($selector_string = null, $declarations_string)
+    public function __construct ($selector_string, $declarations_string, $trace_token = null)
     {
         $regex = CssCrush_Regex::$patt;
         $process = CssCrush::$process;
         $this->label = $process->tokens->createLabel('r');
+        $this->tracingStub = $process->addTracingStubs ? $trace_token : null;
 
-        // If tracing store the last tracing stub, then strip all.
-        if (
-            $process->addTracingStubs &&
-            preg_match_all($regex->t_token, $selector_string, $trace_tokens)
-        ) {
-            $trace_token = array_pop($trace_tokens);
-            $this->tracingStub = $trace_token[0];
-            foreach ($trace_tokens as $trace_token) {
-                $process->tokens->release($trace_token[0]);
+        // Parse selectors.
+        // Strip any other comments then create selector instances.
+        $selector_string = trim(CssCrush_Util::stripCommentTokens($selector_string));
+
+        foreach (CssCrush_Util::splitDelimList($selector_string) as $selector) {
+
+            // If the selector matches an absract directive
+            if (preg_match($regex->abstract, $selector, $m)) {
+
+                // Link the rule to the abstract name and skip forward to declaration parsing.
+                $process->references[strtolower($m['name'])] = $this;
             }
-
-            $selector_string = preg_replace($regex->t_token, '', $selector_string);
-        }
-
-        // Parse the selectors chunk
-        if (! empty($selector_string)) {
-
-            $selectors = CssCrush_Util::splitDelimList($selector_string);
-
-            // Remove and store comments that sit above the first selector
-            // remove all comments between the other selectors
-            if (strpos($selectors[0], '?c') !== false) {
-                preg_match_all($regex->c_token, $selectors[0], $m);
-                $this->comments = $m[0];
-            }
-
-            // Strip any other comments then create selector instances
-            foreach ($selectors as $selector) {
-
-                $selector = trim(CssCrush_Util::stripCommentTokens($selector));
-
-                // If the selector matches an absract directive
-                if (preg_match($regex->abstract, $selector, $m)) {
-
-                    // Link the rule to the abstract name and skip forward to declaration parsing.
-                    $process->references[strtolower($m['name'])] = $this;
-                }
-                else {
-                    $this->addSelector(new CssCrush_Selector($selector));
-                }
+            else {
+                $this->addSelector(new CssCrush_Selector($selector));
             }
         }
 
@@ -99,6 +71,7 @@ class CssCrush_Rule implements IteratorAggregate
                 unset($pairs[$index]);
             }
         }
+
 
         // Bind declaration objects on the rule.
         foreach ($pairs as $index => &$pair) {
@@ -147,14 +120,11 @@ class CssCrush_Rule implements IteratorAggregate
             $formatter = $process->ruleFormatter ?
                 $process->ruleFormatter : 'csscrush__fmtr_block';
 
-            if ($comments = implode('', $this->comments)) {
-                $comments = "$EOL$comments";
-            }
             if ($stub = $this->tracingStub) {
                 $stub .= $EOL;
             }
 
-            return "$comments$stub{$formatter($this)}";
+            return "$stub{$formatter($this)}";
         }
     }
 

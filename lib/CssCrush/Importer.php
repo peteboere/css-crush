@@ -211,9 +211,9 @@ class CssCrush_Importer
 
         $str = $tokens->captureUrls($str);
 
-        if ($process->addTracingStubs) {
+        // if ($process->addTracingStubs) {
             self::addTracingStubs($str);
-        }
+        // }
 
         $str = CssCrush_Util::normalizeWhiteSpace($str);
 
