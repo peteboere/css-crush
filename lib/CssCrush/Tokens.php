@@ -215,8 +215,12 @@ class CssCrush_Tokens
 
     static public function is ($label, $of_type)
     {
-        if (preg_match('~^\?([a-z])[0-9a-z]+\?$~S', $label, $m)) {
-            return $of_type ? ($of_type === $m[1]) : true;
+        static $type_patt;
+        if (! $type_patt) {
+            $type_patt = CssCrush_Regex::create('^ \? (?<type>[a-z]) {{token-id}} \? $', 'xS');
+        }
+        if (preg_match($type_patt, $label, $m)) {
+            return $of_type ? ($of_type === $m['type']) : true;
         }
         return false;
     }

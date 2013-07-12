@@ -23,11 +23,11 @@ class CssCrush_Importer
         // Resolve main input; a string of css or a file.
         if (isset($input->string)) {
             $str .= $input->string;
-            $process->currentFile = 'inline css';
+            $process->sources[] = 'Inline CSS';
         }
         else {
             $str .= file_get_contents($input->path);
-            $process->currentFile = 'file://' . $input->path;
+            $process->sources[] = $input->path;
         }
 
         // If there's a parsing error go no further.
@@ -89,7 +89,7 @@ class CssCrush_Importer
             // Import file opened successfully so we process it:
             //   - We need to resolve import statement urls in all imported files since
             //     they will be brought inline with the hostfile
-            $process->currentFile = 'file://' . $import->path;
+            $process->sources[] = $import->path;
 
             // If there are unmatched brackets inside the import, strip it.
             if (! self::prepareForStream($import->content)) {
@@ -211,9 +211,7 @@ class CssCrush_Importer
 
         $str = $tokens->captureUrls($str);
 
-        // if ($process->addTracingStubs) {
-            self::addTracingStubs($str);
-        // }
+        self::addTracingStubs($str);
 
         $str = CssCrush_Util::normalizeWhiteSpace($str);
 
@@ -222,11 +220,11 @@ class CssCrush_Importer
 
     static protected function checkSyntax (&$str)
     {
-        // TODO: add more sophisticated error detection such as line/column of unmatched bracket.
+        // TODO: add more sophisticated error detection such as line/column of an unmatched bracket.
 
         // Catch obvious typing errors.
         $parse_errors = array();
-        $current_file = CssCrush::$process->currentFile;
+        $current_file = 'file://' . end(CssCrush::$process->sources);
         $balanced_parens = substr_count($str, "(") === substr_count($str, ")");
         $balanced_curlies = substr_count($str, "{") === substr_count($str, "}");
 
@@ -249,13 +247,9 @@ class CssCrush_Importer
 
     static protected function addTracingStubs (&$str)
     {
-        $count = preg_match_all(CssCrush_Regex::$patt->rule2, $str, $matches, PREG_OFFSET_CAPTURE);
+        $current_file_index = count(CssCrush::$process->sources) -1;
 
-        // Get the currently processed file path, and escape it.
-        $current_file = str_replace(' ', '%20', CssCrush::$process->currentFile);
-        $current_file = preg_replace('~[^\w-]~', '\\\\$0', $current_file);
-        $debug_info = '@media -sass-debug-info{filename{font-family:%s}line{font-family:\\00003%d}}';
-
+        $count = preg_match_all(CssCrush_Regex::$patt->ruleFirstPass, $str, $matches, PREG_OFFSET_CAPTURE);
         while ($count--) {
 
             $selector_offset = $matches['selector'][$count][1];
@@ -268,7 +262,7 @@ class CssCrush_Importer
             // Splice in tracing stub.
             $str = substr_replace(
                 $str,
-                CssCrush::$process->tokens->add(sprintf($debug_info, $current_file, $line), 't'),
+                CssCrush::$process->tokens->add(array($current_file_index, $line), 't'),
                 $selector_offset,
                 0);
         }

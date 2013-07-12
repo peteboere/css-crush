@@ -28,13 +28,14 @@ class CssCrush_Regex
         $classes->color_hex = '#[[:xdigit:]]{3}(?:[[:xdigit:]]{3})?';
 
         // Tokens.
-        $classes->c_token = '\?c[0-9a-z]+\?'; // Comments.
-        $classes->s_token = '\?s[0-9a-z]+\?'; // Strings.
-        $classes->r_token = '\?r[0-9a-z]+\?'; // Rules.
-        $classes->p_token = '\?p[0-9a-z]+\?'; // Parens.
-        $classes->u_token = '\?u[0-9a-z]+\?'; // URLs.
-        $classes->t_token = '\?t[0-9a-z]+\?'; // Traces.
-        $classes->a_token = '\?a([0-9a-z]+)\?'; // Args.
+        $classes->token_id = '[0-9a-z]+';
+        $classes->c_token = '\?c' . $classes->token_id . '\?'; // Comments.
+        $classes->s_token = '\?s' . $classes->token_id . '\?'; // Strings.
+        $classes->r_token = '\?r' . $classes->token_id . '\?'; // Rules.
+        $classes->p_token = '\?p' . $classes->token_id . '\?'; // Parens.
+        $classes->u_token = '\?u' . $classes->token_id . '\?'; // URLs.
+        $classes->t_token = '\?t' . $classes->token_id . '\?'; // Traces.
+        $classes->a_token = '\?a(' . $classes->token_id . ')\?'; // Args.
 
         // Boundries.
         $classes->LB = '(?<![\w-])'; // Left ident boundry.
@@ -74,6 +75,7 @@ class CssCrush_Regex
         $patt->varFunction = CssCrush_Regex::create('\$\( \s* ({{ident}}) \s* \)', 'xS');
         $patt->thisFunction = CssCrush_Regex::createFunctionPatt(array('this'));
 
+        // Strings and comments.
         $patt->string = '~(\'|")(?:\\\\\1|[^\1])*?\1~xS';
         $patt->commentAndString = '~
             # Quoted string (to EOF if unmatched).
@@ -83,13 +85,15 @@ class CssCrush_Regex
             /\*(?:.*?)(?:\*/|$)
         ~xsS';
 
-        $patt->rule2 = CssCrush_Regex::create('
+        // Rules.
+        $patt->ruleFirstPass = CssCrush_Regex::create('
             (?:^|(?<=[;{}]))
             (?<before>
                 (?: \s | {{c-token}} )*
             )
             (?<selector>
                 (?:
+                    # Some @-rules are treated like standard rule blocks.
                     @(?: (?i)page|abstract|font-face(?-i) ) {{RB}} [^{]*
                     |
                     [^@;{}]+
@@ -103,20 +107,6 @@ class CssCrush_Regex
             (?<selector> [^{]+ )
             \s*
             {{block}}', 'xiS');
-
-        // As an exception we treat some @-rules like standard rule blocks.
-        // $patt->rule = '~
-        //     # The selector.
-        //     \n(
-        //         [^@{}]+
-        //         |
-        //         (?: [^@{}]+ )? @(?: font-face|abstract|page ) (?!-)\b [^{]*
-        //     )
-        //     # The declaration block.
-        //     \{ ([^{}]*) \}
-        // ~xiS';
-
-
 
         // Balanced bracket matching.
         $patt->balancedParens  = '~\(\s* ( (?: (?>[^()]+) | (?R) )* ) \s*\)~xS';

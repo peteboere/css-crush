@@ -30,7 +30,7 @@ class CssCrush_Process
         $this->errors = array();
         $this->stat = array();
         $this->charset = null;
-        $this->currentFile = null;
+        $this->sources = array();
         $this->vars = array();
         $this->misc = new stdClass();
         $this->input = new stdClass();
@@ -942,7 +942,29 @@ class CssCrush_Process
         // Restore remaining tokens.
         $this->stream->replaceTokens('u');
         $this->stream->replaceTokens('s');
-        $this->stream->replaceTokens('t');
+
+
+        static $tracing_callback;
+        if ($this->addTracingStubs) {
+
+            if (! $tracing_callback) {
+                $tracing_callback = function ($m) {
+                    $process = CssCrush::$process;
+                    $tokens =& $process->tokens->store->t;
+                    if (! isset($tokens[$m[0]])) {
+                        return '';
+                    }
+                    list($source_index, $line) = $tokens[$m[0]];
+                    // Get the currently processed file path, and escape it.
+                    $current_file = 'file://' . str_replace(' ', '%20', $process->sources[$source_index]);
+                    $current_file = preg_replace('~[^\w-]~', '\\\\$0', $current_file);
+
+                    return "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line}}";
+                };
+            }
+
+            $this->stream->replaceTokens('t', $tracing_callback);
+        }
     }
 
     public function compile ($io_context = 'file')

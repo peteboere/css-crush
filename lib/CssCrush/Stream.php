@@ -63,7 +63,7 @@ class CssCrush_Stream
         return $this;
     }
 
-    public function replaceTokens ($type)
+    public function replaceTokens ($type, $callback = null)
     {
         static $types = array();
         if (! isset($types[$type])) {
@@ -71,10 +71,10 @@ class CssCrush_Stream
                 $tokens =& CssCrush::$process->tokens->store->' . $type . ';
                 return isset($tokens[$m[0]]) ? $tokens[$m[0]] : \'\';
             ');
-            $types[$type]['patt'] = '~\?' . $type . '[a-zA-Z0-9]+\?~S';
+            $types[$type]['patt'] = CssCrush_Regex::create("\? $type {{token-id}} \?", 'xS');
         }
 
-        $this->raw = preg_replace_callback($types[$type]['patt'], $types[$type]['callback'], $this->raw);
+        $this->raw = preg_replace_callback($types[$type]['patt'], $callback ? $callback : $types[$type]['callback'], $this->raw);
         return $this;
     }
 
