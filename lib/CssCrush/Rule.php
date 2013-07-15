@@ -34,6 +34,17 @@ class CssCrush_Rule implements IteratorAggregate
         $this->label = $process->tokens->createLabel('r');
         $this->tracingStub = $process->addTracingStubs ? $trace_token : null;
 
+        if (! empty(CssCrush_Hook::$register['rule_preprocess'])) {
+            // Juggling to maintain the old API.
+            // TODO: rework this for 2.x?
+            $rule = new stdClass();
+            $rule->selector_raw = $selector_string;
+            $rule->declaration_raw = $declarations_string;
+            CssCrush_Hook::run('rule_preprocess', $rule);
+            $selector_string = $rule->selector_raw;
+            $declarations_string = $rule->declaration_raw;
+        }
+
         // Parse selectors.
         // Strip any other comments then create selector instances.
         $selector_string = trim(CssCrush_Util::stripCommentTokens($selector_string));
@@ -71,7 +82,6 @@ class CssCrush_Rule implements IteratorAggregate
                 unset($pairs[$index]);
             }
         }
-
 
         // Bind declaration objects on the rule.
         foreach ($pairs as $index => &$pair) {

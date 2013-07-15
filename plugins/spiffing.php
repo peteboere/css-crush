@@ -24,7 +24,7 @@ function csscrush__enable_spiffing () {
 }
 
 function csscrush__disable_spiffing () {
-    CssCrush_Hook::add('rule_preprocess', 'csscrush__spiffing');
+    CssCrush_Hook::remove('rule_preprocess');
 }
 
 function csscrush__spiffing ($rule) {

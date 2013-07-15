@@ -647,13 +647,6 @@ class CssCrush_Process
 
     static public function cb_captureRules ($m)
     {
-        // $rule = (object) array();
-        // $rule->selector_raw = trim($m[1]);
-        // $rule->declaration_raw = trim($m[2]);
-
-        // Run rule_preprocess hook.
-        // CssCrush_Hook::run('rule_preprocess', $rule);
-
         $selector = trim($m['selector']);
         $block = trim($m['block_content']);
 
