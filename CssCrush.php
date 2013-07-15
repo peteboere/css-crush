@@ -6,7 +6,7 @@
   */
 function csscrush_autoload ($class) {
 
-    // Only autoload classes with the library prefix.
+    // We're only autoloading this library.
     if (stripos($class, 'csscrush') !== 0) {
         return;
     }
@@ -23,4 +23,5 @@ spl_autoload_register('csscrush_autoload');
 
 // Core.php will also be autoloaded with API changes in v2.x.
 require_once 'lib/CssCrush/Core.php';
+
 require_once 'lib/functions.php';

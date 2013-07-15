@@ -168,7 +168,6 @@ class CssCrush_Importer
 
         foreach ($matches[0] as $token) {
 
-            // Fetch the matched URL.
             $url = CssCrush::$process->tokens->get($token);
 
             if ($url->isRelative) {
@@ -198,7 +197,7 @@ class CssCrush_Importer
         // Normalize double-colon pseudo elements for backwards compatability.
         $str = preg_replace('~::(after|before|first-(?:letter|line))~iS', ':$1', $str);
 
-        // If @charset is set store it.
+        // Store @charset if set.
         if (preg_match($regex->charset, $str, $m)) {
             $replace = '';
             if (! $process->charset) {

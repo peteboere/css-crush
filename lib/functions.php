@@ -1,7 +1,7 @@
 <?php
 /**
   *
-  * Functions for procedural style API.
+  * High level API.
   *
   */
 function csscrush_file ($file, $options = null) {

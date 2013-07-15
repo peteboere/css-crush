@@ -68,7 +68,6 @@ class CssCrush_Process
                 break;
         }
 
-        // Run process_init hook.
         CssCrush_Hook::run('process_init');
     }
 
@@ -127,7 +126,6 @@ class CssCrush_Process
         // The method address
         $the_method = array(CssCrush::$config->io, $method);
 
-        // Return the call result
         return call_user_func_array($the_method, $args);
     }
 
@@ -155,7 +153,6 @@ class CssCrush_Process
             return '';
         }
 
-        // Load the file
         $boilerplate = file_get_contents($file);
 
         // Substitute any tags
@@ -812,7 +809,6 @@ class CssCrush_Process
                             $originals[] = $rule_label;
                             $clone_rule = clone $this->tokens->get($rule_label);
 
-                            // Set the vendor context.
                             $clone_rule->vendorContext = $vendor;
 
                             // Store the clone.
@@ -870,7 +866,6 @@ class CssCrush_Process
         // Apply all formatting replacements.
         $this->stream->pregReplaceHash($regex_replacements)->lTrim();
 
-        // Print out rules.
         $this->stream->replaceTokens('r');
 
         // Run rule related stats then reclaim memory.
@@ -878,7 +873,6 @@ class CssCrush_Process
         CssCrush::runStat('rule_count');
         $this->tokens->store->r = array();
 
-        // Restore parens.
         $this->stream->replaceTokens('p');
 
         // If specified, apply advanced minification.
@@ -888,7 +882,6 @@ class CssCrush_Process
             }
         }
 
-        // Compress hex-codes, collapse TRBL lists etc.
         $this->decruft();
 
         if ($minify) {
@@ -978,7 +971,7 @@ class CssCrush_Process
         $this->filterPlugins();
         $this->filterAliases();
 
-        // Create function matching regex.
+        // Function matching regex.
         CssCrush_Function::setMatchPatt();
 
         // Collate hostfile and imports.
@@ -987,41 +980,33 @@ class CssCrush_Process
         // Extract and calculate variables.
         $this->calculateVars();
 
-        // Place variables.
         $this->placeAllVars();
 
-        // Resolve @ifdefine blocks.
         $this->resolveIfDefines();
 
         // Capture phase 1 hook: After all vars have resolved.
         CssCrush_Hook::run('capture_phase1', $this);
 
-        // Get selector aliases.
+        // Selector aliases.
         $this->resolveSelectorAliases();
 
-        // Pull out @mixin definitions.
         $this->captureMixins();
 
-        // Pull out @fragment blocks, and invoke.
         $this->resolveFragments();
 
         // Capture phase 2 hook: After most built-in directives have resolved.
         CssCrush_Hook::run('capture_phase2', $this);
 
-        // Parse rules.
         $this->captureRules();
         // csscrush::log(array_keys($this->references));
 
-        // Process @in blocks.
         $this->prefixSelectors();
 
-        // Alias any @-rules.
         $this->aliasAtRules();
 
         // Main processing on the rule objects.
         $this->processRules();
 
-        // Print rules, optionally minify.
         $this->collate();
 
         // Release memory.
