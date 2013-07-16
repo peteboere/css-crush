@@ -6,7 +6,9 @@
  */
 class CssCrush_Util
 {
-    // Create html attribute string from array.
+    /*
+     * Create html attribute string from array.
+     */
     static public function htmlAttributes (array $attributes)
     {
         $attr_string = '';
@@ -142,31 +144,27 @@ class CssCrush_Util
      */
     static public function vlqEncode ($value)
     {
-        static $SHIFT, $MASK, $CONTINUATION_BIT, $BASE64_MAP;
-        if (! $SHIFT) {
-            $SHIFT = 5;
-            $MASK = 0x1F;
-            $CONTINUATION_BIT = 0x20;
-            $BASE64_MAP = array_merge(range('A', 'Z'), range('a', 'z'), array('+', '/'));
+        static $VLQ_BASE_SHIFT, $VLQ_BASE, $VLQ_BASE_MASK, $VLQ_CONTINUATION_BIT, $BASE64_MAP;
+        if (! $VLQ_BASE_SHIFT) {
+            $VLQ_BASE_SHIFT = 5;
+            $VLQ_BASE = 1 << $VLQ_BASE_SHIFT;
+            $VLQ_BASE_MASK = $VLQ_BASE - 1;
+            $VLQ_CONTINUATION_BIT = $VLQ_BASE;
+            $BASE64_MAP = str_split('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/');
         }
 
-        if ($value < 0) {
-            $value = ((-$value) << 1) | 1;
-        }
-        else {
-            $value <<= 1;
-        }
+        $vlq = $value < 0 ? ((-$value) << 1) + 1 : ($value << 1) + 0;
 
         $encoded = "";
         do {
-            $digit = $value & $MASK;
-            $value >>= $SHIFT;
-            if ($value > 0) {
-                $digit |= $CONTINUATION_BIT;
-            }
-            $encoded .= $BASE64_MAP[$digit];
-        }
-        while ($value > 0);
+          $digit = $vlq & $VLQ_BASE_MASK;
+          $vlq >>= $VLQ_BASE_SHIFT;
+          if ($vlq > 0) {
+            $digit |= $VLQ_CONTINUATION_BIT;
+          }
+          $encoded .= $BASE64_MAP[$digit];
+
+        } while ($vlq > 0);
 
         return $encoded;
     }
