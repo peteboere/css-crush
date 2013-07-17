@@ -188,7 +188,13 @@ class CssCrush_Importer
 
         $str = $tokens->captureCommentAndString($str);
 
-        // Validate syntax as early as possible.
+        // Avoid backtracking limit by trimming trailing WS and comments.
+        static $trailing_ws_and_comments;
+        if (! $trailing_ws_and_comments) {
+            $trailing_ws_and_comments = CssCrush_Regex::create('(?: \s | {{c-token}} )*$', 'xS');
+        }
+        $str = preg_replace($trailing_ws_and_comments, '', $str);
+
         if (! self::checkSyntax($str)) {
 
             return false;
