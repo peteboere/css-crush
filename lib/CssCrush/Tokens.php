@@ -119,7 +119,7 @@ class CssCrush_Tokens
         return preg_replace_callback(CssCrush_Regex::$patt->balancedParens, $callback, $str);
     }
 
-    public function captureStrings ($str)
+    public function captureStrings ($str, $add_padding = false)
     {
         static $callback;
         if (! $callback) {
@@ -128,7 +128,7 @@ class CssCrush_Tokens
         return preg_replace_callback(CssCrush_Regex::$patt->string, $callback, $str);
     }
 
-    public function captureUrls ($str)
+    public function captureUrls ($str, $add_padding = false)
     {
         static $url_patt;
         if (! $url_patt) {
@@ -146,23 +146,18 @@ class CssCrush_Tokens
             // @import directive.
             if ($import_offset !== -1) {
 
-                $url = new CssCrush_Url($import_text);
-                $str = str_replace($import_text, $url->label, $str);
+                $url = new CssCrush_Url(trim($import_text));
+                $str = str_replace($import_text, $add_padding ? str_pad($url->label, strlen($import_text)) : $url->label, $str);
             }
 
             // A URL function.
             else {
 
-                $newlines = '';
-                if (strpos($full_text, "\n") !== false) {
-                    $newlines = str_repeat("\n", substr_count($full_text, "\n"));
-                }
-
                 $func_name = strtolower($m['func'][$count][0]);
 
                 $url = new CssCrush_Url(trim($m['parens_content'][$count][0]));
                 $url->convertToData = 'data-uri' === $func_name;
-                $str = substr_replace($str, $url->label . $newlines, $full_offset, strlen($full_text));
+                $str = substr_replace($str, $add_padding ? CssCrush_Tokens::pad($url->label, $full_text) : $url->label, $full_offset, strlen($full_text));
             }
         }
 
@@ -180,9 +175,6 @@ class CssCrush_Tokens
         $full_match = $match[0];
         $process = CssCrush::$process;
 
-        // We return the newline count to keep track of line numbering.
-        $newlines = str_repeat("\n", substr_count($full_match, "\n"));
-
         if (strpos($full_match, '/*') === 0) {
 
             // Bail without storing comment if output is minified or a private comment.
@@ -190,7 +182,7 @@ class CssCrush_Tokens
                 $process->minifyOutput ||
                 strpos($full_match, '/*$') === 0
             ) {
-                return $newlines;
+                return CssCrush_Tokens::pad('', $full_match);
             }
 
             // Fix broken comments as they will break any subsquent
@@ -210,7 +202,23 @@ class CssCrush_Tokens
             $label = $process->tokens->add($full_match, 's');
         }
 
-        return $newlines . $label;
+        return CssCrush_Tokens::pad($label, $full_match);
+    }
+
+    static public function pad ($label, $replaced_text)
+    {
+        // Padding token labels to maintain whitespace and newlines.
+
+        // Match contains newlines.
+        if (($last_newline_pos = strrpos($replaced_text, "\n")) !== false) {
+            $label .= str_repeat("\n", substr_count($replaced_text, "\n")) . str_repeat(' ', strlen(substr($replaced_text, $last_newline_pos))-1);
+        }
+        // Match contains no newlines.
+        else {
+            $label = str_pad($label, strlen($replaced_text));
+        }
+
+        return $label;
     }
 
     static public function is ($label, $of_type)

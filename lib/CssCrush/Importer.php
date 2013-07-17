@@ -208,7 +208,7 @@ class CssCrush_Importer
             $str = preg_replace($regex->charset, $replace, $str);
         }
 
-        $str = $tokens->captureUrls($str);
+        $str = $tokens->captureUrls($str, true);
 
         self::addTracingStubs($str);
 

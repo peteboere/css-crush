@@ -852,8 +852,8 @@ class CssCrush_Process
             $regex_replacements['~ ?(@[^{]+\{)~'] = "$1$EOL";
             $regex_replacements['~ ?(@[^;]+\;)~'] = "$1$EOL";
 
-            // Trim leading spaces on rule and comment tokens
-            $regex_replacements[CssCrush_Regex::create(' +({{r-token}}|{{c-token}})', 'S')] = "$1";
+            // Trim leading spaces on @-rules and some tokens.
+            $regex_replacements[CssCrush_Regex::create(' +([@}]|\?[rc]{{token-id}}\?)', 'S')] = "$1";
         }
 
         // Apply all formatting replacements.
