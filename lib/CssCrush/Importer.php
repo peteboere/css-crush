@@ -186,7 +186,7 @@ class CssCrush_Importer
         // Convert all end-of-lines to unix style.
         $str = preg_replace('~\r\n?~', "\n", $str);
 
-        $str = $tokens->captureCommentAndString($str);
+        $str = self::captureCommentAndString($str);
 
         // Avoid backtracking limit by trimming trailing WS and comments.
         static $trailing_ws_and_comments;
@@ -271,5 +271,46 @@ class CssCrush_Importer
                 $selector_offset,
                 0);
         }
+    }
+
+    static protected function captureCommentAndString ($str)
+    {
+        return preg_replace_callback(CssCrush_Regex::$patt->commentAndString,
+            array('self', 'cb_captureCommentAndString'), $str);
+    }
+
+    static protected function cb_captureCommentAndString ($match)
+    {
+        $full_match = $match[0];
+        $process = CssCrush::$process;
+
+        if (strpos($full_match, '/*') === 0) {
+
+            // Bail without storing comment if output is minified or a private comment.
+            if (
+                $process->minifyOutput ||
+                strpos($full_match, '/*$') === 0
+            ) {
+                return CssCrush_Tokens::pad('', $full_match);
+            }
+
+            // Fix broken comments as they will break any subsquent
+            // imported files that are inlined.
+            if (! preg_match('~\*/$~', $full_match)) {
+                $full_match .= '*/';
+            }
+            $label = $process->tokens->add($full_match, 'c');
+        }
+        else {
+
+            // Fix broken strings as they will break any subsquent
+            // imported files that are inlined.
+            if ($full_match[0] !== $full_match[strlen($full_match)-1]) {
+                $full_match .= $full_match[0];
+            }
+            $label = $process->tokens->add($full_match, 's');
+        }
+
+        return CssCrush_Tokens::pad($label, $full_match);
     }
 }
