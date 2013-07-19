@@ -933,6 +933,14 @@ class CssCrush_Process
 
     public function compile ($io_context = 'file')
     {
+        // Ensure relevant ini settings aren't too conservative.
+        if (ini_get('pcre.backtrack_limit') < 1000000) {
+            ini_set('pcre.backtrack_limit', 1000000);
+        }
+        if (preg_match('~^(\d+)M$~', ini_get('memory_limit'), $m) && $m[1] < 128) {
+            ini_set('memory_limit', '128M');
+        }
+
         $this->ioContext = $io_context;
 
         // Always store start time.
@@ -977,7 +985,6 @@ class CssCrush_Process
 
         $this->collate();
 
-        // Release memory.
         $this->release();
 
         CssCrush::runStat('compile_time');
