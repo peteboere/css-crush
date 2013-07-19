@@ -722,12 +722,10 @@ class CssCrush_Process
                         // Positioning the prefix with parent symbol "&".
                         elseif ($use_parent_symbol) {
 
-                            // Find and replace the ampersand (only once).
-                            $new_value = preg_replace(
-                                    '~&~',
+                            $new_value = str_replace(
+                                    '&',
                                     $arg_selector,
-                                    $rule_selector->value,
-                                    1);
+                                    $rule_selector->value);
 
                             $new = new CssCrush_Selector($new_value);
                             $new_selector_list[$new->readableValue] = $new;
@@ -925,31 +923,11 @@ class CssCrush_Process
             $this->stream->prepend("@charset \"$this->charset\";$EOL");
         }
 
-        // Restore remaining tokens.
         $this->stream->replaceTokens('u');
         $this->stream->replaceTokens('s');
 
-
-        static $tracing_callback;
         if ($this->addTracingStubs) {
-
-            if (! $tracing_callback) {
-                $tracing_callback = function ($m) {
-                    $process = CssCrush::$process;
-                    $tokens =& $process->tokens->store->t;
-                    if (! isset($tokens[$m[0]])) {
-                        return '';
-                    }
-                    list($source_index, $line) = $tokens[$m[0]];
-                    // Get the currently processed file path, and escape it.
-                    $current_file = 'file://' . str_replace(' ', '%20', $process->sources[$source_index]);
-                    $current_file = preg_replace('~[^\w-]~', '\\\\$0', $current_file);
-
-                    return "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line}}";
-                };
-            }
-
-            $this->stream->replaceTokens('t', $tracing_callback);
+            $this->captureMappings();
         }
     }
 
@@ -960,11 +938,9 @@ class CssCrush_Process
         // Always store start time.
         $this->stat['compile_start_time'] = microtime(true);
 
-        // Resolve active aliases and plugins.
         $this->filterPlugins();
         $this->filterAliases();
 
-        // Function matching regex.
         CssCrush_Function::setMatchPatt();
 
         // Collate hostfile and imports.
@@ -980,7 +956,6 @@ class CssCrush_Process
         // Capture phase 1 hook: After all vars have resolved.
         CssCrush_Hook::run('capture_phase1', $this);
 
-        // Selector aliases.
         $this->resolveSelectorAliases();
 
         $this->captureMixins();
@@ -1008,6 +983,29 @@ class CssCrush_Process
         CssCrush::runStat('compile_time');
 
         return $this->stream;
+    }
+
+
+    #############################
+    #  Source maps.
+
+    public function captureMappings ()
+    {
+        $this->stream->replaceTokens('t', array($this, 'captureMappings_cb'));
+    }
+
+    public function captureMappings_cb ($m)
+    {
+        $tokens =& $this->tokens->store->t;
+        if (! isset($tokens[$m[0]])) {
+            return '';
+        }
+        list($source_index, $line) = $tokens[$m[0]];
+        // Get the currently processed file path, and escape it.
+        $current_file = 'file://' . str_replace(' ', '%20', $this->sources[$source_index]);
+        $current_file = preg_replace('~[^\w-]~', '\\\\$0', $current_file);
+
+        return "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line}}";
     }
 
 
