@@ -186,14 +186,8 @@ class CssCrush_Importer
         // Convert all end-of-lines to unix style.
         $str = preg_replace('~\r\n?~', "\n", $str);
 
-        $str = self::captureCommentAndString($str);
-
-        // Avoid backtracking limit by trimming trailing WS and comments.
-        static $trailing_ws_and_comments;
-        if (! $trailing_ws_and_comments) {
-            $trailing_ws_and_comments = CssCrush_Regex::create('(?: \s | {{c-token}} )*$', 'xS');
-        }
-        $str = preg_replace($trailing_ws_and_comments, '', $str);
+        // rtrim is necessary to avoid catastrophic backtracking in large files and some edge cases.
+        $str = rtrim(self::captureCommentAndString($str));
 
         if (! self::checkSyntax($str)) {
 
