@@ -49,6 +49,7 @@ class CssCrush_Regex
         // Misc.
         $classes->vendor = '-[a-zA-Z]+-';
         $classes->hex = '[[:xdigit:]]';
+        $classes->newline = '(\r\n?|\n)';
 
         // Create standalone class patterns, add classes as class swaps.
         foreach ($classes as $name => $class) {

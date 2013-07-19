@@ -190,7 +190,7 @@ class CssCrush_Process
 
         // Pretty print.
         $EOL = $this->newline;
-        $boilerplate = preg_split('~[\t]*(\r\n?|\n)[\t]*~', $boilerplate);
+        $boilerplate = preg_split('~[\t]*'. CssCrush_Regex::$classes->newline . '[\t]*~', $boilerplate);
         $boilerplate = array_map('trim', $boilerplate);
         $boilerplate = "$EOL * " . implode("$EOL * ", $boilerplate);
 
