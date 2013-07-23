@@ -86,6 +86,9 @@ class CssCrush
             // Set true to output sass debug-info stubs that work with development tools like FireSass.
             'trace' => array(),
 
+            // Whether to generate a source map.
+            'source_map' => false,
+
             // Force newline type on output files. Defaults to the current platform newline.
             // Options: 'windows' (or 'win'), 'unix', 'use-platform'
             'newlines' => 'use-platform',

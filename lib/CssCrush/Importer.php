@@ -156,7 +156,7 @@ class CssCrush_Importer
             $non_import_urls_patt = CssCrush_Regex::create('(?<!@import ){{u-token}}', 'iS');
         }
 
-        $link = CssCrush_Util::getLinkBetweenDirs(
+        $link = CssCrush_Util::getLinkBetweenPaths(
             CssCrush::$process->input->dir, dirname($import->path));
 
         if (empty($link)) {
@@ -210,7 +210,7 @@ class CssCrush_Importer
 
         $str = $tokens->captureUrls($str, true);
 
-        self::addTracingStubs($str);
+        self::addMarkers($str);
 
         $str = CssCrush_Util::normalizeWhiteSpace($str);
 
@@ -244,24 +244,33 @@ class CssCrush_Importer
         return empty($parse_errors) ? true : false;
     }
 
-    static protected function addTracingStubs (&$str)
+    static protected function addMarkers (&$str)
     {
-        $current_file_index = count(CssCrush::$process->sources) -1;
+        $process = CssCrush::$process;
+        $current_file_index = count($process->sources) -1;
 
         $count = preg_match_all(CssCrush_Regex::$patt->ruleFirstPass, $str, $matches, PREG_OFFSET_CAPTURE);
         while ($count--) {
 
             $selector_offset = $matches['selector'][$count][1];
 
-            $line = 1;
+            $line = 0;
+            $before = substr($str, 0, $selector_offset);
             if ($selector_offset) {
-                $line = substr_count(substr($str, 0, $selector_offset), "\n") + 1;
+                $line = substr_count($before, "\n");
+            }
+
+            $point_data = array($current_file_index, $line);
+
+            // Source maps require column index too.
+            if ($process->generateMap) {
+                $point_data[] = strlen($before) - strrpos($before, "\n") - 1;
             }
 
             // Splice in tracing stub.
             $str = substr_replace(
                 $str,
-                CssCrush::$process->tokens->add(array($current_file_index, $line), 't'),
+                $process->tokens->add($point_data, 't'),
                 $selector_offset,
                 0);
         }

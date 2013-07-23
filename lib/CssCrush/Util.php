@@ -111,32 +111,38 @@ class CssCrush_Util
         return array_filter(array_map('trim', $list), 'strlen');
     }
 
-    static public function getLinkBetweenDirs ($dir1, $dir2)
+    static public function getLinkBetweenPaths ($path1, $path2, $directories = true)
     {
         // Normalise the paths.
-        $dir1 = trim(CssCrush_Util::normalizePath($dir1, true), '/');
-        $dir2 = trim(CssCrush_Util::normalizePath($dir2, true), '/');
+        $path1 = trim(CssCrush_Util::normalizePath($path1, true), '/');
+        $path2 = trim(CssCrush_Util::normalizePath($path2, true), '/');
 
         // The link between.
         $link = '';
 
-        if ($dir1 != $dir2) {
+        if ($path1 != $path2) {
 
             // Split the directory paths into arrays so we can compare segment by segment.
-            $dir1_segs = explode('/', $dir1);
-            $dir2_segs = explode('/', $dir2);
+            $path1_segs = explode('/', $path1);
+            $path2_segs = explode('/', $path2);
 
             // Shift the segments until they are on different branches.
-            while (isset($dir1_segs[0]) && isset($dir2_segs[0]) && ($dir1_segs[0] === $dir2_segs[0])) {
-                array_shift($dir1_segs);
-                array_shift($dir2_segs);
+            while (isset($path1_segs[0]) && isset($path2_segs[0]) && ($path1_segs[0] === $path2_segs[0])) {
+                array_shift($path1_segs);
+                array_shift($path2_segs);
             }
 
-            $link = str_repeat('../', count($dir1_segs)) . implode('/', $dir2_segs);
+            $link = str_repeat('../', count($path1_segs)) . implode('/', $path2_segs);
         }
 
-        // Add closing slash.
-        return $link !== '' ? rtrim($link, '/') . '/' : '';
+        $link = $link !== '' ? rtrim($link, '/') : '';
+
+        // Add end slash if getting a link between directories.
+        if ($link && $directories) {
+            $link .= '/';
+        }
+
+        return $link;
     }
 
     /*

@@ -43,11 +43,6 @@ class CssCrush_Process
         $this->selectorAliases = array();
         $this->selectorAliasesPatt = null;
 
-        // Shortcut commonly used options to avoid overhead with __get calls.
-        $this->minifyOutput = $this->options->minify;
-        $this->addTracingStubs = in_array('stubs', $this->options->trace);
-        $this->ruleFormatter = $this->options->formatter;
-
         // Pick a doc root.
         $this->docRoot = isset($this->options->doc_root) ?
             $this->options->doc_root : $config->docRoot;
@@ -898,7 +893,7 @@ class CssCrush_Process
         $urls = $this->tokens->store->u;
         if ($urls) {
 
-            $link = CssCrush_Util::getLinkBetweenDirs($this->output->dir, $this->input->dir);
+            $link = CssCrush_Util::getLinkBetweenPaths($this->output->dir, $this->input->dir);
             $make_urls_absolute = $options->rewrite_import_urls === 'absolute';
 
             foreach ($urls as $token => $url) {
@@ -926,13 +921,16 @@ class CssCrush_Process
         $this->stream->replaceTokens('u');
         $this->stream->replaceTokens('s');
 
-        if ($this->addTracingStubs) {
+        if ($this->addTracingStubs || $this->generateMap) {
             $this->captureMappings();
         }
     }
 
     public function compile ($io_context = 'file')
     {
+        // Always store start time.
+        $this->stat['compile_start_time'] = microtime(true);
+
         // Ensure relevant ini settings aren't too conservative.
         if (ini_get('pcre.backtrack_limit') < 1000000) {
             ini_set('pcre.backtrack_limit', 1000000);
@@ -943,8 +941,11 @@ class CssCrush_Process
 
         $this->ioContext = $io_context;
 
-        // Always store start time.
-        $this->stat['compile_start_time'] = microtime(true);
+        // Shortcut commonly used options during compilation to avoid overhead with __get calls.
+        $this->minifyOutput = $this->options->minify;
+        $this->addTracingStubs = in_array('stubs', $this->options->trace);
+        $this->generateMap = $this->ioContext === 'file' && $this->options->source_map;
+        $this->ruleFormatter = $this->options->formatter;
 
         $this->filterPlugins();
         $this->filterAliases();
@@ -998,16 +999,31 @@ class CssCrush_Process
 
     public function captureMappings ()
     {
-        $this->stream->replaceTokens('t', array($this, 'captureMappings_cb'));
+        if ($this->generateMap) {
+
+            $this->map = array(
+                'version' => '3',
+                'file' => $this->output->filename,
+                'sources' => array(),
+            );
+            foreach ($this->sources as $source) {
+                $this->map['sources'][] = CssCrush_Util::getLinkBetweenPaths($this->output->dir, $source, false);
+            }
+            $str = json_encode($this->map, JSON_PRETTY_PRINT);
+            // csscrush::log($str);
+        }
+        $this->stream->replaceTokens('t', array($this, 'generateTracingStub'));
     }
 
-    public function captureMappings_cb ($m)
+    public function generateTracingStub ($m)
     {
         $tokens =& $this->tokens->store->t;
         if (! isset($tokens[$m[0]])) {
             return '';
         }
         list($source_index, $line) = $tokens[$m[0]];
+        $line += 1;
+
         // Get the currently processed file path, and escape it.
         $current_file = 'file://' . str_replace(' ', '%20', $this->sources[$source_index]);
         $current_file = preg_replace('~[^\w-]~', '\\\\$0', $current_file);
