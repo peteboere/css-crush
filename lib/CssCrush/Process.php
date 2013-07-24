@@ -921,8 +921,11 @@ class CssCrush_Process
         $this->stream->replaceTokens('u');
         $this->stream->replaceTokens('s');
 
-        if ($this->addTracingStubs || $this->generateMap) {
-            $this->captureMappings();
+        if ($this->addTracingStubs) {
+            $this->stream->replaceTokens('t', array($this, 'generateTracingStub'));
+        }
+        if ($this->generateMap) {
+            $this->generateSourceMap();
         }
     }
 
@@ -997,38 +1000,42 @@ class CssCrush_Process
     #############################
     #  Source maps.
 
-    public function captureMappings ()
+    public function generateSourceMap ()
     {
-        if ($this->generateMap) {
-
-            $this->map = array(
-                'version' => '3',
-                'file' => $this->output->filename,
-                'sources' => array(),
-            );
-            foreach ($this->sources as $source) {
-                $this->map['sources'][] = CssCrush_Util::getLinkBetweenPaths($this->output->dir, $source, false);
-            }
-            $str = json_encode($this->map, JSON_PRETTY_PRINT);
-            // csscrush::log($str);
+        $this->map = array(
+            'version' => '3',
+            'file' => $this->output->filename,
+            'sources' => array(),
+        );
+        foreach ($this->sources as $source) {
+            $this->map['sources'][] = CssCrush_Util::getLinkBetweenPaths($this->output->dir, $source, false);
         }
-        $this->stream->replaceTokens('t', array($this, 'generateTracingStub'));
+        // $str = json_encode($this->map, JSON_PRETTY_PRINT);
     }
 
     public function generateTracingStub ($m)
     {
+        $token = $m[0];
         $tokens =& $this->tokens->store->t;
-        if (! isset($tokens[$m[0]])) {
+        if (! isset($tokens[$token])) {
             return '';
         }
-        list($source_index, $line) = $tokens[$m[0]];
+        list($source_index, $line) = $tokens[$token];
         $line += 1;
 
         // Get the currently processed file path, and escape it.
         $current_file = 'file://' . str_replace(' ', '%20', $this->sources[$source_index]);
         $current_file = preg_replace('~[^\w-]~', '\\\\$0', $current_file);
+        $debug_info = "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line}}";
 
-        return "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line}}";
+        if (! $this->minifyOutput) {
+            $debug_info .= $this->newline;
+        }
+        if ($this->generateMap) {
+            $debug_info .= $token;
+        }
+
+        return $debug_info;
     }
 
 

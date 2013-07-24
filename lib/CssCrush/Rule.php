@@ -118,21 +118,18 @@ class CssCrush_Rule implements IteratorAggregate
             return '';
         }
 
+        $stub = $this->tracingStub;
+
         // Concat and return.
         if ($process->minifyOutput) {
             $selectors = implode(',', $this->selectors);
             $block = implode(';', $this->declarations);
-            return "$this->tracingStub$selectors{{$block}}";
+            return "$stub$selectors{{$block}}";
         }
         else {
 
-            $EOL = CssCrush::$process->newline;
             $formatter = $process->ruleFormatter ?
                 $process->ruleFormatter : 'csscrush__fmtr_block';
-
-            if ($stub = $this->tracingStub) {
-                $stub .= $EOL;
-            }
 
             return "$stub{$formatter($this)}";
         }
