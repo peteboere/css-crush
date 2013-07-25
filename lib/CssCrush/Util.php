@@ -145,6 +145,19 @@ class CssCrush_Util
         return $link;
     }
 
+    static public function filePutContents ($file, $str, $caller = null)
+    {
+        if (@file_put_contents($file, $str, LOCK_EX)) {
+
+            return true;
+        }
+        $error = "Could not write file '$file'.";
+        CssCrush::logError($error);
+        trigger_error(($caller ? $caller : __METHOD__) . ": $error\n", E_USER_WARNING);
+
+        return false;
+    }
+
     /*
      * Encode integer to Base64 VLQ.
      */

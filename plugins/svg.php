@@ -280,10 +280,11 @@ function csscrush__svg_generator ($input, $fn_name) {
         $fingerprint = substr(md5($flattened_svg), 0, 7);
         $generated_filename = "svg-$name-$fingerprint.svg";
 
-        $generated_path = $process->output->dir . '/' . $generated_filename;
-        file_put_contents($generated_path, $flattened_svg, LOCK_EX);
-
         // Write to the same directory as the output css.
+        $generated_path = $process->output->dir . '/' . $generated_filename;
+
+        CssCrush_Util::filePutContents($generated_path, $flattened_svg, __METHOD__);
+
         $generated_url = $generated_filename;
         $url = new CssCrush_Url($generated_url);
         $url->noRewrite = true;

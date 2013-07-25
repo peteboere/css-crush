@@ -226,7 +226,7 @@ class CssCrush_IO
                 // Create config file.
                 CssCrush::log('Creating cache data file.');
             }
-            file_put_contents($process->cacheFile, json_encode(array()), LOCK_EX);
+            CssCrush_Util::filePutContents($process->cacheFile, json_encode(array()), __METHOD__);
         }
 
         return $cache_data;
@@ -237,21 +237,18 @@ class CssCrush_IO
         $process = CssCrush::$process;
 
         CssCrush::log('Saving config.');
-        file_put_contents($process->cacheFile, json_encode($process->cacheData), LOCK_EX);
+        CssCrush_Util::filePutContents($process->cacheFile, json_encode($process->cacheData), __METHOD__);
     }
 
     static public function write (CssCrush_Stream $stream)
     {
         $process = CssCrush::$process;
         $target = "{$process->output->dir}/{$process->output->filename}";
-        if (@file_put_contents($target, $stream, LOCK_EX)) {
+
+        if (CssCrush_Util::filePutContents($target, $stream, __METHOD__)) {
             return "{$process->output->dirUrl}/{$process->output->filename}";
         }
-        else {
-            $error = "Could not write file '$target'.";
-            CssCrush::logError($error);
-            trigger_error(__METHOD__ . ": $error\n", E_USER_WARNING);
-        }
+
         return false;
     }
 
