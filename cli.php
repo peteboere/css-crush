@@ -52,11 +52,12 @@ $optional_value_opts = array(
 );
 
 $flag_opts = array(
-    'p|pretty', // Pretty output.
-    'w|watch',  // Watch mode.
-    'list',     // List plugins.
-    'help',     // Display help.
-    'version',  // Display version.
+    'p|pretty',   // Pretty output.
+    'w|watch',    // Watch mode.
+    'list',       // List plugins.
+    'help',       // Display help.
+    'version',    // Display version.
+    'source-map', // Display version.
 );
 
 // Create option strings for getopt().
@@ -95,6 +96,7 @@ $args->watch = isset($opts['w']) ?: isset($opts['watch']);
 $args->list = isset($opts['l']) ?: isset($opts['list']);
 $args->help = isset($opts['h']) ?: isset($opts['help']);
 $args->version = isset($opts['version']);
+$args->source_map = isset($opts['source-map']);
 
 // Arguments that optionally accept a single value.
 $args->boilerplate = pick($opts, 'b', 'boilerplate');
@@ -267,6 +269,10 @@ if ($args->trace) {
 
 if ($args->vendor_target) {
     $process_opts['vendor_target'] = parse_list($args->vendor_target);
+}
+
+if ($args->source_map) {
+    $process_opts['source_map'] = true;
 }
 
 if ($args->vars) {

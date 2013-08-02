@@ -1,5 +1,17 @@
 ### 1.11 (2013-?)
 
+* Added source map support according to Google's Source Map v3 proposal (boolean option `source-map`).
+* Compile times are now 20%-30% reduced.
+* Added support for fragment calls within fragment definitions (Issue #48).
+* Added check and recovery for overly conservative ini settings.
+* The block nesting parent symbol can now be used multiple times (useful for adjacent/general sibling combinations).
+* Command utility now supports for the `trace` option.
+* Custom formatter callbacks have been simplified.
+* Simplified the `csscrush_stat()` function signature.
+* Added command line utility alias for composer's vendor/bin directory.
+* Removed Plugins.ini (use `csscrush_set()` instead).
+* Removed Prepend.css.
+* Various refactoring for cleaner under-the-hood APIs.
 
 ### 1.10 (2013-5-18)
 

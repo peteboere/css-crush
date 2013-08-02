@@ -31,7 +31,7 @@ class CssCrush_Fragment extends CssCrush_Template
             // Skip over same named fragments to avoid infinite recursion.
             if ($fragment && $name !== $this->name) {
                 $args = array();
-                if ($m['parens'][1] !== -1) {
+                if (isset($m['parens'][1])) {
                     $args = CssCrush_Function::parseArgs($m['parens_content'][0]);
                 }
                 $replacement = $fragment->apply($args);
