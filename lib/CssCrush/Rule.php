@@ -8,7 +8,7 @@ class CssCrush_Rule implements IteratorAggregate
 {
     public $vendorContext;
     public $label;
-    public $tracingStub;
+    public $marker;
 
     public $selectors = array();
     public $extendSelectors = array();
@@ -32,7 +32,7 @@ class CssCrush_Rule implements IteratorAggregate
         $regex = CssCrush_Regex::$patt;
         $process = CssCrush::$process;
         $this->label = $process->tokens->createLabel('r');
-        $this->tracingStub = $process->addTracingStubs ? $trace_token : null;
+        $this->marker = $process->addTracingStubs || $process->generateMap ? $trace_token : null;
 
         if (! empty(CssCrush_Hook::$register['rule_preprocess'])) {
             // Juggling to maintain the old API.
@@ -118,7 +118,7 @@ class CssCrush_Rule implements IteratorAggregate
             return '';
         }
 
-        $stub = $this->tracingStub;
+        $stub = $this->marker;
 
         // Concat and return.
         if ($process->minifyOutput) {

@@ -1,3 +1,6 @@
+### 1.11 (2013-?)
+
+
 ### 1.10 (2013-5-18)
 
 * Added SVG plugin for defining and generating SVG files/data URIs in CSS.

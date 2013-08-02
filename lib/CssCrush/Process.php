@@ -36,6 +36,7 @@ class CssCrush_Process
         $this->input = new stdClass();
         $this->output = new stdClass();
         $this->tokens = new CssCrush_Tokens();
+        $this->sourceMap = null;
 
         // Copy config values.
         $this->plugins = $config->plugins;
@@ -429,12 +430,6 @@ class CssCrush_Process
         if (! empty($option_vars)) {
             $this->vars = array_merge($this->vars, $option_vars);
         }
-
-        // Add state variables.
-        // $this->vars = array(
-        //     'input-path' => $this->input->dirUrl,
-        //     'output-path' => $this->output->dirUrl,
-        //) + $this->vars;
 
         // Place variables referenced inside variables. Excecute custom functions.
         foreach ($this->vars as $name => &$value) {
@@ -1002,15 +997,57 @@ class CssCrush_Process
 
     public function generateSourceMap ()
     {
-        $this->map = array(
+        $this->sourceMap = array(
             'version' => '3',
             'file' => $this->output->filename,
             'sources' => array(),
         );
         foreach ($this->sources as $source) {
-            $this->map['sources'][] = CssCrush_Util::getLinkBetweenPaths($this->output->dir, $source, false);
+            $this->sourceMap['sources'][] = CssCrush_Util::getLinkBetweenPaths($this->output->dir, $source, false);
         }
-        // $str = json_encode($this->map, JSON_PRETTY_PRINT);
+
+        $patt = CssCrush_Regex::create('\?[tm]{{token-id}}\?', 'S');
+        $mappings = array();
+        $lines = preg_split(CssCrush_Regex::$patt->newline, $this->stream->raw);
+        $tokens =& $this->tokens->store;
+
+        // All mappings are calculated as delta values.
+        $previous_dest_col = 0;
+        $previous_src_file = 0;
+        $previous_src_line = 0;
+        $previous_src_col = 0;
+
+        foreach ($lines as $line_number => &$line_text) {
+
+            $line_segments = array();
+
+            while (preg_match($patt, $line_text, $m, PREG_OFFSET_CAPTURE)) {
+
+                list($token, $dest_col) = $m[0];
+                $token_type = $token[1];
+
+                if (isset($tokens->{$token_type}[$token])) {
+
+                    list($src_file, $src_line, $src_col) = $tokens->{$token_type}[$token];
+                    $line_segments[] =
+                        CssCrush_Util::vlqEncode($dest_col - $previous_dest_col) .
+                        CssCrush_Util::vlqEncode($src_file - $previous_src_file) .
+                        CssCrush_Util::vlqEncode($src_line - $previous_src_line) .
+                        CssCrush_Util::vlqEncode($src_col - $previous_src_col);
+
+                    $previous_dest_col = $dest_col;
+                    $previous_src_file = $src_file;
+                    $previous_src_line = $src_line;
+                    $previous_src_col = $src_col;
+                }
+                $line_text = substr_replace($line_text, '', $dest_col, strlen($token));
+            }
+
+            $mappings[] = implode(',', $line_segments);
+        }
+
+        $this->stream->raw = implode($this->newline, $lines);
+        $this->sourceMap['mappings'] = implode(';', $mappings);
     }
 
     public function generateTracingStub ($m)
