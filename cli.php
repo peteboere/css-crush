@@ -565,8 +565,11 @@ function manpage () {
         Force newline style on output css. Defaults to the current platform
         newline. Possible values: 'windows' (or 'win'), 'unix', 'use-platform'.
 
+    <g>--source-map</>:
+        Output a source map (compliant with the Source Map v3 proposal).
+
     <g>--trace</>:
-        Output debug-info stubs compatible with client-side sass debuggers.
+        Output debug-info stubs compatible with client-side Sass debuggers.
 
     <g>--vars</>:
         Map of variable names in an http query string format.
