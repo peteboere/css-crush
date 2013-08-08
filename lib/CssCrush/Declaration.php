@@ -4,7 +4,9 @@
  * Declaration objects.
  *
  */
-class CssCrush_Declaration
+namespace CssCrush;
+
+class Declaration
 {
     public $property;
     public $canonicalProperty;
@@ -17,7 +19,7 @@ class CssCrush_Declaration
 
     public function __construct ($prop, $value, $contextIndex = 0)
     {
-        $regex = CssCrush_Regex::$patt;
+        $regex = Regex::$patt;
 
         // Normalize input. Lowercase the property name.
         $prop = strtolower(trim($prop));
@@ -96,9 +98,9 @@ class CssCrush_Declaration
             $context = (object) array(
                 'rule' => $parent_rule,
             );
-            CssCrush_Function::executeOnString(
+            Functions::executeOnString(
                 $this->value,
-                CssCrush_Regex::$patt->thisFunction,
+                Regex::$patt->thisFunction,
                 array(
                     'this' => 'csscrush_fn__this',
                 ),
@@ -111,7 +113,7 @@ class CssCrush_Declaration
                 'rule' => $parent_rule,
                 'property' => $this->property
             );
-            CssCrush_Function::executeOnString(
+            Functions::executeOnString(
                 $this->value,
                 null,
                 null,
@@ -141,7 +143,7 @@ class CssCrush_Declaration
     {
         // Create an index of all regular functions in the value.
         $functions = array();
-        if (preg_match_all(CssCrush_Regex::$patt->function, $this->value, $m)) {
+        if (preg_match_all(Regex::$patt->function, $this->value, $m)) {
             foreach ($m[1] as $index => $fn_name) {
                 $functions[strtolower($fn_name)] = true;
             }

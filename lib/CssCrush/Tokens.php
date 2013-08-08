@@ -4,7 +4,9 @@
  * Token API.
  *
  */
-class CssCrush_Tokens
+namespace CssCrush;
+
+class Tokens
 {
     public $store;
     protected $ids;
@@ -20,8 +22,8 @@ class CssCrush_Tokens
             't', // Traces
         );
 
-        $this->store = new stdClass;
-        $this->ids = new stdClass;
+        $this->store = new \stdClass;
+        $this->ids = new \stdClass;
 
         foreach ($types as $type) {
             $this->store->{$type} = array();
@@ -74,13 +76,13 @@ class CssCrush_Tokens
                     ');
                 }
 
-                $str = preg_replace_callback(CssCrush_Regex::$patt->u_token, $url_revert_callback, $str);
+                $str = preg_replace_callback(Regex::$patt->u_token, $url_revert_callback, $str);
                 break;
             default:
                 $token_table =& $this->store->{$type};
 
                 // Find matching tokens.
-                foreach (CssCrush_Regex::matchAll(CssCrush_Regex::$patt->{"{$type}_token"}, $str) as $m) {
+                foreach (Regex::matchAll(Regex::$patt->{"{$type}_token"}, $str) as $m) {
                     $label = $m[0][0];
                     if (isset($token_table[$label])) {
                         $str = str_replace($label, $token_table[$label], $str);
@@ -112,27 +114,23 @@ class CssCrush_Tokens
 
     public function captureParens ($str)
     {
-        static $callback;
-        if (! $callback) {
-            $callback = create_function('$m', 'return CssCrush::$process->tokens->add($m[0], \'p\');');
-        }
-        return preg_replace_callback(CssCrush_Regex::$patt->balancedParens, $callback, $str);
+        return preg_replace_callback(Regex::$patt->balancedParens, function ($m) {
+            return CssCrush::$process->tokens->add($m[0], 'p');
+        }, $str);
     }
 
     public function captureStrings ($str, $add_padding = false)
     {
-        static $callback;
-        if (! $callback) {
-            $callback = create_function('$m', 'return CssCrush::$process->tokens->add($m[0], \'s\');');
-        }
-        return preg_replace_callback(CssCrush_Regex::$patt->string, $callback, $str);
+        return preg_replace_callback(Regex::$patt->string, function ($m) {
+            return CssCrush::$process->tokens->add($m[0], 's');
+        }, $str);
     }
 
     public function captureUrls ($str, $add_padding = false)
     {
         static $url_patt;
         if (! $url_patt) {
-            $url_patt = CssCrush_Regex::create(
+            $url_patt = Regex::create(
                 '@import \s+ (?<import>{{s-token}}) | {{LB}} (?<func>url|data-uri) {{parens}}', 'ixS');
         }
 
@@ -146,7 +144,7 @@ class CssCrush_Tokens
             // @import directive.
             if ($import_offset !== -1) {
 
-                $url = new CssCrush_Url(trim($import_text));
+                $url = new Url(trim($import_text));
                 $str = str_replace($import_text, $add_padding ? str_pad($url->label, strlen($import_text)) : $url->label, $str);
             }
 
@@ -155,9 +153,9 @@ class CssCrush_Tokens
 
                 $func_name = strtolower($m['func'][$count][0]);
 
-                $url = new CssCrush_Url(trim($m['parens_content'][$count][0]));
+                $url = new Url(trim($m['parens_content'][$count][0]));
                 $url->convertToData = 'data-uri' === $func_name;
-                $str = substr_replace($str, $add_padding ? CssCrush_Tokens::pad($url->label, $full_text) : $url->label, $full_offset, strlen($full_text));
+                $str = substr_replace($str, $add_padding ? Tokens::pad($url->label, $full_text) : $url->label, $full_offset, strlen($full_text));
             }
         }
 
@@ -184,7 +182,7 @@ class CssCrush_Tokens
     {
         static $type_patt;
         if (! $type_patt) {
-            $type_patt = CssCrush_Regex::create('^ \? (?<type>[a-z]) {{token-id}} \? $', 'xS');
+            $type_patt = Regex::create('^ \? (?<type>[a-z]) {{token-id}} \? $', 'xS');
         }
         if (preg_match($type_patt, $label, $m)) {
             return $of_type ? ($of_type === $m['type']) : true;

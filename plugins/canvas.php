@@ -47,6 +47,9 @@
  *         canvas-filter: greyscale() colorize(45, 45, 0);
  *     }
  */
+namespace CssCrush\Plugins\Canvas;
+
+use CssCrush\Plugin, CssCrush\Hook, CssCrush\Function, CssCrush\Regex;
 
 CssCrush_Plugin::register('canvas', array(
     'enable' => 'csscrush__enable_canvas',
@@ -55,14 +58,14 @@ CssCrush_Plugin::register('canvas', array(
 
 function csscrush__enable_canvas () {
     CssCrush_Hook::add('capture_phase2', 'csscrush__canvas_capture');
-    CssCrush_Function::register('canvas', 'csscrush__canvas_generator');
-    CssCrush_Function::register('canvas-data', 'csscrush__canvas_generator');
+    CssCrush\Functions::register('canvas', 'csscrush__canvas_generator');
+    CssCrush\Functions::register('canvas-data', 'csscrush__canvas_generator');
 }
 
 function csscrush__disable_canvas () {
     CssCrush_Hook::remove('capture_phase2', 'csscrush__canvas_capture');
-    CssCrush_Function::deRegister('canvas');
-    CssCrush_Function::deRegister('canvas-data');
+    CssCrush\Functions::deRegister('canvas');
+    CssCrush\Functions::deRegister('canvas-data');
 }
 
 function csscrush__canvas_capture ($process) {
@@ -104,7 +107,7 @@ function csscrush__canvas_generator ($input, $context) {
     }
 
     // Parse args, bail if none.
-    $args = CssCrush_Function::parseArgs($input);
+    $args = CssCrush\Functions::parseArgs($input);
     if (! isset($args[0])) {
         return '';
     }
@@ -257,7 +260,7 @@ function csscrush__canvas_generator ($input, $context) {
 
 function csscrush__canvas_fn_linear_gradient ($input, $context) {
 
-    $args = CssCrush_Function::parseArgs($input) + array(
+    $args = CssCrush\Functions::parseArgs($input) + array(
         'white', 'black',
     );
 
@@ -302,7 +305,7 @@ function csscrush__canvas_fn_linear_gradient ($input, $context) {
 
 function csscrush__canvas_fn_filter ($input, $context) {
 
-    $args = CssCrush_Function::parseArgs($input);
+    $args = CssCrush\Functions::parseArgs($input);
 
     array_unshift($context->canvas->filters, array($context->function, $args));
 }
@@ -403,7 +406,7 @@ function csscrush__canvas_apply_css_funcs ($canvas) {
         );
 
         $generic_functions = array_diff_key(
-            CssCrush_Function::$functions, $map['fill']['functions']);
+            CssCrush\Functions::$functions, $map['fill']['functions']);
         $map['generic'] = array(
             'patt' => CssCrush_Regex::createFunctionPatt(
                 array_keys($generic_functions), array('bare_paren' => true)),
@@ -421,19 +424,19 @@ function csscrush__canvas_apply_css_funcs ($canvas) {
         }
 
         // Generic functions.
-        CssCrush_Function::executeOnString(
+        CssCrush\Functions::executeOnString(
             $value, $map['generic']['patt'], $map['generic']['functions']);
 
         // Fill functions.
         if (in_array($property, array('fill', 'background-fill'))) {
             $context->currentProperty = $property;
             $context->canvas = $canvas;
-            CssCrush_Function::executeOnString(
+            CssCrush\Functions::executeOnString(
                 $value, $map['fill']['patt'], $map['fill']['functions'], $context);
         }
         elseif ($property === 'canvas-filter') {
             $context->canvas = $canvas;
-            CssCrush_Function::executeOnString(
+            CssCrush\Functions::executeOnString(
                 $value, $map['filter']['patt'], $map['filter']['functions'], $context);
         }
     }

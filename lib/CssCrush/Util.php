@@ -4,7 +4,9 @@
  *  General utilities.
  *
  */
-class CssCrush_Util
+namespace CssCrush;
+
+class Util
 {
     /*
      * Create html attribute string from array.
@@ -33,7 +35,7 @@ class CssCrush_Util
             $path = substr($path, 2);
         }
 
-        return CssCrush_Util::simplifyPath($path);
+        return Util::simplifyPath($path);
     }
 
     static public function simplifyPath ($path)
@@ -60,7 +62,7 @@ class CssCrush_Util
 
     static public function stripCommentTokens ($str)
     {
-        return preg_replace(CssCrush_Regex::$patt->c_token, '', $str);
+        return preg_replace(Regex::$patt->c_token, '', $str);
     }
 
     static public function normalizeWhiteSpace ($str)
@@ -91,7 +93,7 @@ class CssCrush_Util
             return strlen($str) ? array($str) : array();
         }
 
-        if ($match_count = preg_match_all(CssCrush_Regex::$patt->balancedParens, $str, $matches)) {
+        if ($match_count = preg_match_all(Regex::$patt->balancedParens, $str, $matches)) {
             $keys = array();
             foreach ($matches[0] as $index => &$value) {
                 $keys[] = "?$index?";
@@ -114,8 +116,8 @@ class CssCrush_Util
     static public function getLinkBetweenPaths ($path1, $path2, $directories = true)
     {
         // Normalise the paths.
-        $path1 = trim(CssCrush_Util::normalizePath($path1, true), '/');
-        $path2 = trim(CssCrush_Util::normalizePath($path2, true), '/');
+        $path1 = trim(Util::normalizePath($path1, true), '/');
+        $path2 = trim(Util::normalizePath($path2, true), '/');
 
         // The link between.
         $link = '';

@@ -4,7 +4,9 @@
  * IO class for command line file watching.
  *
  */
-class CssCrush_IOWatch extends CssCrush_IO
+namespace CssCrush;
+
+class IOWatch extends IO
 {
     public static $cacheData = array();
 

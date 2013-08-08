@@ -11,18 +11,15 @@
  *    a:hover, a:focus, a:active { color: red; }
  * 
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('hocus-pocus', array(
-    'enable' => 'csscrush__enable_hocus_pocus',
-    'disable' => 'csscrush__disable_hocus_pocus',
+Plugin::register('hocus-pocus', array(
+    'enable' => function () {
+        CssCrush::addSelectorAlias('hocus', ':any(:hover,:focus)');
+        CssCrush::addSelectorAlias('pocus', ':any(:hover,:focus,:active)');
+    },
+    'disable' => function () {
+        CssCrush::removeSelectorAlias('hocus');
+        CssCrush::removeSelectorAlias('pocus');
+    },
 ));
-
-function csscrush__enable_hocus_pocus () {
-    CssCrush::addSelectorAlias('hocus', ':any(:hover,:focus)');
-    CssCrush::addSelectorAlias('pocus', ':any(:hover,:focus,:active)');
-}
-
-function csscrush__disable_hocus_pocus () {
-    CssCrush::removeSelectorAlias('hocus');
-    CssCrush::removeSelectorAlias('pocus');
-}

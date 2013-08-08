@@ -4,7 +4,9 @@
  * Regex management.
  *
  */
-class CssCrush_Regex
+namespace CssCrush;
+
+class Regex
 {
     // Patterns.
     static public $patt;
@@ -16,8 +18,8 @@ class CssCrush_Regex
 
     static public function init ()
     {
-        self::$patt = $patt = new stdClass();
-        self::$classes = $classes = new stdClass();
+        self::$patt = $patt = new \stdClass();
+        self::$classes = $classes = new \stdClass();
 
         // CSS type classes.
         $classes->ident = '[a-zA-Z0-9_-]+';
@@ -62,19 +64,19 @@ class CssCrush_Regex
         $patt->rooted_number = '~^' . $classes->number . '$~';
 
         // @-rules.
-        $patt->import = CssCrush_Regex::create('@import \s+ ({{u-token}}) \s? ([^;]*);', 'ixS');
-        $patt->charset = CssCrush_Regex::create('@charset \s+ ({{s-token}}) \s*;', 'ixS');
-        $patt->vars = CssCrush_Regex::create('@define \s* {{block}}', 'ixS');
-        $patt->mixin = CssCrush_Regex::create('@mixin \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
-        $patt->ifDefine = CssCrush_Regex::create('@ifdefine \s+ (not \s+)? ({{ident}}) \s* \{', 'ixS');
-        $patt->fragmentCapture = CssCrush_Regex::create('@fragment \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
-        $patt->fragmentInvoke = CssCrush_Regex::create('@fragment \s+ (?<name>{{ident}}) {{parens}}? \s* ;', 'ixS');
-        $patt->abstract = CssCrush_Regex::create('^@abstract \s+ (?<name>{{ident}})', 'ixS');
+        $patt->import = Regex::create('@import \s+ ({{u-token}}) \s? ([^;]*);', 'ixS');
+        $patt->charset = Regex::create('@charset \s+ ({{s-token}}) \s*;', 'ixS');
+        $patt->vars = Regex::create('@define \s* {{block}}', 'ixS');
+        $patt->mixin = Regex::create('@mixin \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
+        $patt->ifDefine = Regex::create('@ifdefine \s+ (not \s+)? ({{ident}}) \s* \{', 'ixS');
+        $patt->fragmentCapture = Regex::create('@fragment \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
+        $patt->fragmentInvoke = Regex::create('@fragment \s+ (?<name>{{ident}}) {{parens}}? \s* ;', 'ixS');
+        $patt->abstract = Regex::create('^@abstract \s+ (?<name>{{ident}})', 'ixS');
 
         // Functions.
-        $patt->function = CssCrush_Regex::create('{{LB}} ({{ident}}) ({{p-token}})', 'xS');
-        $patt->varFunction = CssCrush_Regex::create('\$\( \s* ({{ident}}) \s* \)', 'xS');
-        $patt->thisFunction = CssCrush_Regex::createFunctionPatt(array('this'));
+        $patt->function = Regex::create('{{LB}} ({{ident}}) ({{p-token}})', 'xS');
+        $patt->varFunction = Regex::create('\$\( \s* ({{ident}}) \s* \)', 'xS');
+        $patt->thisFunction = Regex::createFunctionPatt(array('this'));
 
         // Strings and comments.
         $patt->string = '~(\'|")(?:\\\\\1|[^\1])*?\1~xS';
@@ -87,7 +89,7 @@ class CssCrush_Regex
         ~xsS';
 
         // Rules.
-        $patt->ruleFirstPass = CssCrush_Regex::create('
+        $patt->ruleFirstPass = Regex::create('
             (?:^|(?<=[;{}]))
             (?<before>
                 (?: \s | {{c-token}} )*
@@ -102,7 +104,7 @@ class CssCrush_Regex
             )
             {{block}}', 'xS');
 
-        $patt->rule = CssCrush_Regex::create('
+        $patt->rule = Regex::create('
             (?<trace_token> {{t-token}} )
             \s*
             (?<selector> [^{]+ )
@@ -118,7 +120,7 @@ class CssCrush_Regex
         $patt->ruleDirective = '~^(?:(@include)|(@extends?)|(@name))[\s]+~iS';
         $patt->argListSplit = '~\s*[,\s]\s*~S';
         $patt->mathBlacklist = '~[^\.0-9\*\/\+\-\(\)]~S';
-        $patt->cruftyHex = CssCrush_Regex::create('\#({{hex}})\1({{hex}})\2({{hex}})\3', 'S');
+        $patt->cruftyHex = Regex::create('\#({{hex}})\1({{hex}})\2({{hex}})\3', 'S');
     }
 
     static public function create ($pattern_template, $flags = '', $delim = '~')
@@ -169,8 +171,8 @@ class CssCrush_Regex
 
         $flat_list = implode('|', $list);
 
-        return CssCrush_Regex::create("($template{{LB}}(?:$flat_list)$question)\(", 'iS');
+        return Regex::create("($template{{LB}}(?:$flat_list)$question)\(", 'iS');
     }
 }
 
-CssCrush_Regex::init();
+Regex::init();

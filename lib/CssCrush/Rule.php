@@ -4,7 +4,9 @@
  * CSS rule API.
  *
  */
-class CssCrush_Rule implements IteratorAggregate
+namespace CssCrush;
+
+class Rule implements \IteratorAggregate
 {
     public $vendorContext;
     public $label;
@@ -29,27 +31,27 @@ class CssCrush_Rule implements IteratorAggregate
 
     public function __construct ($selector_string, $declarations_string, $trace_token = null)
     {
-        $regex = CssCrush_Regex::$patt;
+        $regex = Regex::$patt;
         $process = CssCrush::$process;
         $this->label = $process->tokens->createLabel('r');
         $this->marker = $process->addTracingStubs || $process->generateMap ? $trace_token : null;
 
-        if (! empty(CssCrush_Hook::$register['rule_preprocess'])) {
+        if (! empty(Hook::$register['rule_preprocess'])) {
             // Juggling to maintain the old API.
             // TODO: rework this for 2.x?
-            $rule = new stdClass();
+            $rule = new \stdClass();
             $rule->selector_raw = $selector_string;
             $rule->declaration_raw = $declarations_string;
-            CssCrush_Hook::run('rule_preprocess', $rule);
+            Hook::run('rule_preprocess', $rule);
             $selector_string = $rule->selector_raw;
             $declarations_string = $rule->declaration_raw;
         }
 
         // Parse selectors.
         // Strip any other comments then create selector instances.
-        $selector_string = trim(CssCrush_Util::stripCommentTokens($selector_string));
+        $selector_string = trim(Util::stripCommentTokens($selector_string));
 
-        foreach (CssCrush_Util::splitDelimList($selector_string) as $selector) {
+        foreach (Util::splitDelimList($selector_string) as $selector) {
 
             // If the selector matches an absract directive
             if (preg_match($regex->abstract, $selector, $m)) {
@@ -58,12 +60,12 @@ class CssCrush_Rule implements IteratorAggregate
                 $process->references[strtolower($m['name'])] = $this;
             }
             else {
-                $this->addSelector(new CssCrush_Selector($selector));
+                $this->addSelector(new Selector($selector));
             }
         }
 
         // Parse rule block.
-        $pairs = CssCrush_Rule::parseBlock($declarations_string);
+        $pairs = Rule::parseBlock($declarations_string);
 
         foreach ($pairs as $index => $pair) {
 
@@ -271,8 +273,8 @@ class CssCrush_Rule implements IteratorAggregate
         // Reset if called earlier, last call wins by intention.
         $this->extendArgs = array();
 
-        foreach (CssCrush_Util::splitDelimList($raw_value) as $arg) {
-            $this->extendArgs[] = new CssCrush_ExtendArg($arg);
+        foreach (Util::splitDelimList($raw_value) as $arg) {
+            $this->extendArgs[] = new ExtendArg($arg);
         }
     }
 
@@ -356,7 +358,7 @@ class CssCrush_Rule implements IteratorAggregate
 
         static $any_patt, $reg_comma;
         if (! $any_patt) {
-            $any_patt = CssCrush_Regex::create(':any({{p-token}})', 'i');
+            $any_patt = Regex::create(':any({{p-token}})', 'i');
             $reg_comma = '~\s*,\s*~';
         }
 
@@ -414,7 +416,7 @@ class CssCrush_Rule implements IteratorAggregate
                 // Finish off.
                 foreach ($chain as &$row) {
 
-                    $new = new CssCrush_Selector($row . $selector->value);
+                    $new = new Selector($row . $selector->value);
                     $new_set[$new->readableValue] = $new;
                 }
             }
@@ -458,7 +460,7 @@ class CssCrush_Rule implements IteratorAggregate
         $stack = array();
         $rule_updated = false;
         $vendor_context = $this->vendorContext;
-        $regex = CssCrush_Regex::$patt;
+        $regex = Regex::$patt;
 
         foreach ($this->declarations as $declaration) {
 
@@ -587,8 +589,8 @@ class CssCrush_Rule implements IteratorAggregate
                     }
 
                     // Post fixes.
-                    if (isset(CssCrush_PostAliasFix::$functions[$group_id])) {
-                        call_user_func(CssCrush_PostAliasFix::$functions[$group_id], $prefixed_copies, $group_id);
+                    if (isset(PostAliasFix::$functions[$group_id])) {
+                        call_user_func(PostAliasFix::$functions[$group_id], $prefixed_copies, $group_id);
                     }
                 }
 
@@ -599,7 +601,7 @@ class CssCrush_Rule implements IteratorAggregate
 
                         // If the declaration is vendor specific only create aliases for the same vendor.
                         if ($declaration->vendor) {
-                            preg_match(CssCrush_Regex::$patt->vendorPrefix, $fn_alias, $m);
+                            preg_match(Regex::$patt->vendorPrefix, $fn_alias, $m);
                             if (
                                 $m[1] !== $declaration->vendor ||
                                 ($vendor_context && $m[1] !== $vendor_context)
@@ -621,8 +623,8 @@ class CssCrush_Rule implements IteratorAggregate
                     }
 
                     // Post fixes.
-                    if (isset(CssCrush_PostAliasFix::$functions[$fn_name])) {
-                        call_user_func(CssCrush_PostAliasFix::$functions[$fn_name], $prefixed_copies, $fn_name);
+                    if (isset(PostAliasFix::$functions[$fn_name])) {
+                        call_user_func(PostAliasFix::$functions[$fn_name], $prefixed_copies, $fn_name);
                     }
                 }
 
@@ -673,7 +675,7 @@ class CssCrush_Rule implements IteratorAggregate
                             }
 
                             // If the replacement property is null use the original declaration property.
-                            $new = new CssCrush_Declaration(
+                            $new = new Declaration(
                                 ! empty($values[0]) ? $values[0] : $declaration->property,
                                 $values[1]
                                 );
@@ -742,7 +744,7 @@ class CssCrush_Rule implements IteratorAggregate
     public function addDeclaration ($prop, $value, $contextIndex = 0)
     {
         // Create declaration, add to the stack if it's valid
-        $declaration = new CssCrush_Declaration($prop, $value, $contextIndex);
+        $declaration = new Declaration($prop, $value, $contextIndex);
 
         if (empty($declaration->inValid)) {
 
@@ -764,8 +766,8 @@ class CssCrush_Rule implements IteratorAggregate
 
     static public function parseBlock ($str, $options = array())
     {
-        $regex = CssCrush_Regex::$patt;
-        $str = CssCrush_Util::stripCommentTokens($str);
+        $regex = Regex::$patt;
+        $str = Util::stripCommentTokens($str);
 
         $lines = preg_split('~\s*;\s*~', $str, null, PREG_SPLIT_NO_EMPTY);
         $keyed = isset($options['keyed']);
@@ -806,7 +808,7 @@ class CssCrush_Rule implements IteratorAggregate
             // Add any mixins.
             if ($property === 'mixin') {
 
-                if ($mixables = CssCrush_Mixin::parseValue($value)) {
+                if ($mixables = Mixin::parseValue($value)) {
 
                     // Add mixin declarations to the stack.
                     while ($mixable = array_shift($mixables)) {

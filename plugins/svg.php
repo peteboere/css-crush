@@ -65,14 +65,14 @@ CssCrush_Plugin::register('svg', array(
 
 function csscrush__enable_svg () {
     CssCrush_Hook::add('capture_phase2', 'csscrush__svg_capture');
-    CssCrush_Function::register('svg', 'csscrush_fn__svg');
-    CssCrush_Function::register('svg-data', 'csscrush_fn__svg_data');
+    CssCrush\Functions::register('svg', 'csscrush_fn__svg');
+    CssCrush\Functions::register('svg-data', 'csscrush_fn__svg_data');
 }
 
 function csscrush__disable_svg () {
     CssCrush_Hook::remove('capture_phase2', 'csscrush__svg_capture');
-    CssCrush_Function::deRegister('svg');
-    CssCrush_Function::deRegister('svg-data');
+    CssCrush\Functions::deRegister('svg');
+    CssCrush\Functions::deRegister('svg-data');
 }
 
 function csscrush_fn__svg ($input) {
@@ -183,7 +183,7 @@ function csscrush__svg_generator ($input, $fn_name) {
     );
 
     // Bail if no args.
-    $args = CssCrush_Function::parseArgs($input);
+    $args = CssCrush\Functions::parseArgs($input);
     if (! isset($args[0])) {
 
         return '';
@@ -674,7 +674,7 @@ function csscrush__svg_apply_css_funcs ($element, &$raw_data) {
             'pattern' => 'csscrush__svg_fn_pattern',
         );
         $generic_functions =
-            array_diff_key(CssCrush_Function::$functions, $fill_functions);
+            array_diff_key(CssCrush\Functions::$functions, $fill_functions);
         $generic_functions_patt = CssCrush_Regex::createFunctionPatt(
             array_keys($generic_functions), array('bare_paren' => true));
         $fill_functions_patt = CssCrush_Regex::createFunctionPatt(
@@ -682,11 +682,11 @@ function csscrush__svg_apply_css_funcs ($element, &$raw_data) {
     }
 
     foreach ($raw_data as $property => &$value) {
-        CssCrush_Function::executeOnString($value, $generic_functions_patt);
+        CssCrush\Functions::executeOnString($value, $generic_functions_patt);
 
         // Only capturing fills for fill and stoke properties.
         if ($property === 'fill' || $property === 'stroke') {
-            CssCrush_Function::executeOnString(
+            CssCrush\Functions::executeOnString(
                 $value, $fill_functions_patt, $fill_functions, $element);
 
             // If the value is a color with alpha component we split the color
@@ -798,7 +798,7 @@ function csscrush__svg_fn_pattern ($input, $element) {
 
     // Get args in order with defaults.
     list($url, $transform_list, $width, $height, $x, $y) =
-        CssCrush_Function::parseArgs($input) +
+        CssCrush\Functions::parseArgs($input) +
         array('', '', 0, 0, 0, 0);
 
     $url = CssCrush::$process->tokens->get($url);

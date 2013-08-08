@@ -4,6 +4,8 @@
   * High level API.
   *
   */
+use CssCrush\CssCrush;
+
 function csscrush_file ($file, $options = null) {
     return CssCrush::file($file, $options);
 }

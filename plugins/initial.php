@@ -15,21 +15,18 @@
  *     max-height: auto;
  *
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('initial', array(
-    'enable' => 'csscrush__enable_initial',
-    'disable' => 'csscrush__disable_initial',
+Plugin::register('initial', array(
+    'enable' => function () {
+        Hook::add('rule_prealias', 'CssCrush\initial');
+    },
+    'disable' => function () {
+        Hook::remove('rule_prealias', 'CssCrush\initial');
+    },
 ));
 
-function csscrush__enable_initial () {
-    CssCrush_Hook::add('rule_prealias', 'csscrush__initial');
-}
-
-function csscrush__disable_initial () {
-    CssCrush_Hook::remove('rule_prealias', 'csscrush__initial');
-}
-
-function csscrush__initial (CssCrush_Rule $rule) {
+function initial (CssCrush_Rule $rule) {
 
     static $initial_values;
     if (! $initial_values) {

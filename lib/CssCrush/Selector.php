@@ -4,7 +4,9 @@
  * Selector objects.
  *
  */
-class CssCrush_Selector
+namespace CssCrush;
+
+class Selector
 {
     public $value;
     public $readableValue;
@@ -19,9 +21,9 @@ class CssCrush_Selector
         }
 
         // Take readable value from original un-altered state.
-        $this->readableValue = CssCrush_Selector::makeReadable($raw_selector);
+        $this->readableValue = Selector::makeReadable($raw_selector);
 
-        CssCrush_Process::applySelectorAliases($raw_selector);
+        Process::applySelectorAliases($raw_selector);
 
         // Capture top-level paren groups.
         $this->value = CssCrush::$process->tokens->captureParens($raw_selector);
@@ -30,7 +32,7 @@ class CssCrush_Selector
     public function __toString ()
     {
         if (! CssCrush::$process->minifyOutput) {
-            $this->value = CssCrush_Selector::normalizeWhiteSpace($this->value);
+            $this->value = Selector::normalizeWhiteSpace($this->value);
         }
         return $this->value;
     }
@@ -38,7 +40,7 @@ class CssCrush_Selector
     public function appendPseudo ($pseudo)
     {
         // Check to avoid doubling-up
-        if (! CssCrush_Stream::endsWith($this->readableValue, $pseudo)) {
+        if (! Stream::endsWith($this->readableValue, $pseudo)) {
 
             $this->readableValue .= $pseudo;
             $this->value .= $pseudo;
@@ -50,7 +52,7 @@ class CssCrush_Selector
     {
         // Create space around combinators, then normalize whitespace.
         $str = preg_replace('~([>+]|\~(?!=))~S', ' $1 ', $str);
-        return CssCrush_Util::normalizeWhiteSpace($str);
+        return Util::normalizeWhiteSpace($str);
     }
 
     static function makeReadable ($str)
@@ -60,7 +62,7 @@ class CssCrush_Selector
             $str = CssCrush::$process->tokens->restore($str, 'p');
         }
 
-        $str = CssCrush_Selector::normalizeWhiteSpace($str);
+        $str = Selector::normalizeWhiteSpace($str);
 
         // Quick test for string tokens.
         if (strpos($str, '?s') !== false) {

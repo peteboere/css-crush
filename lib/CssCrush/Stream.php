@@ -4,7 +4,9 @@
  *  Stream sugar.
  *
  */
-class CssCrush_Stream
+namespace CssCrush;
+
+class Stream
 {
     public function __construct ($str)
     {
@@ -42,7 +44,7 @@ class CssCrush_Stream
 
     public function matchAll ($patt, $preprocess_patt = false)
     {
-        return CssCrush_Regex::matchAll($patt, $this->raw, $preprocess_patt);
+        return Regex::matchAll($patt, $this->raw, $preprocess_patt);
     }
 
     public function replace ($find, $replacement)
@@ -71,7 +73,7 @@ class CssCrush_Stream
                 $tokens =& CssCrush::$process->tokens->store->' . $type . ';
                 return isset($tokens[$m[0]]) ? $tokens[$m[0]] : \'\';
             ');
-            $types[$type]['patt'] = CssCrush_Regex::create("\? $type {{token-id}} \?", 'xS');
+            $types[$type]['patt'] = Regex::create("\? $type {{token-id}} \?", 'xS');
         }
 
         $this->raw = preg_replace_callback($types[$type]['patt'], $callback ? $callback : $types[$type]['callback'], $this->raw);

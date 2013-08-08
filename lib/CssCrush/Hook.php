@@ -4,7 +4,9 @@
  *  Access to the execution flow.
  * 
  */
-class CssCrush_Hook
+namespace CssCrush;
+
+class Hook
 {
     // Table of hooks and the functions attached to them.
     static public $register = array();

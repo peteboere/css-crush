@@ -33,26 +33,24 @@
  * To convert all values, not just values of the font related properties,
  * set a variable named `rem__all` with a value of `yes`.
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('rem', array(
-    'enable' => 'csscrush__enable_rem',
-    'disable' => 'csscrush__disable_rem',
+Plugin::register('rem', array(
+    'enable' => function () {
+        Hook::add('rule_prealias', 'CssCrush\rem');
+    },
+    'disable' => function () {
+        Hook::remove('rule_prealias', 'CssCrush\rem');
+    },
 ));
 
-function csscrush__enable_rem () {
-    CssCrush_Hook::add('rule_prealias', 'csscrush__rem');
-}
 
-function csscrush__disable_rem () {
-    CssCrush_Hook::remove('rule_prealias', 'csscrush__rem');
-}
-
-function csscrush__rem (CssCrush_Rule $rule) {
+function rem (Rule $rule) {
 
     static $rem_patt, $px_patt, $font_props, $modes;
     if (! $modes) {
-        $rem_patt = CssCrush_Regex::create('{{LB}}({{number}})rem{{RB}}', 'iS');
-        $px_patt = CssCrush_Regex::create('{{LB}}({{number}})px{{RB}}', 'iS');
+        $rem_patt = Regex::create('{{LB}}({{number}})rem{{RB}}', 'iS');
+        $px_patt = Regex::create('{{LB}}({{number}})px{{RB}}', 'iS');
         $font_props = array(
             'font' => true,
             'font-size' => true,

@@ -4,7 +4,9 @@
  * Colour parsing and conversion.
  *
  */
-class CssCrush_Color
+namespace CssCrush;
+
+class Color
 {
     // Cached color keyword tables.
     static public $keywords;
@@ -34,7 +36,7 @@ class CssCrush_Color
             // If color name is longer than 4 and less than 8 test to see if its hex
             // representation could be shortened.
             $table = array();
-            $keywords =& CssCrush_Color::loadKeywords();
+            $keywords =& Color::loadKeywords();
 
             foreach ($keywords as $name => &$rgb) {
                 $name_len = strlen($name);
@@ -48,7 +50,7 @@ class CssCrush_Color
                     self::$minifyableKeywords[ $name ] = $hex;
                 }
                 else {
-                    if (preg_match(CssCrush_Regex::$patt->cruftyHex, $hex)) {
+                    if (preg_match(Regex::$patt->cruftyHex, $hex)) {
                         self::$minifyableKeywords[ $name ] = $hex;
                     }
                 }
@@ -62,7 +64,7 @@ class CssCrush_Color
     {
         $rgba = false;
 
-        if ($test = CssCrush_Color::test($str)) {
+        if ($test = Color::test($str)) {
             $color = $test['value'];
             $type = $test['type'];
         }
@@ -74,7 +76,7 @@ class CssCrush_Color
         switch ($type) {
 
             case 'hex':
-                $rgba = CssCrush_Color::hexToRgb($color);
+                $rgba = Color::hexToRgb($color);
                 break;
 
             case 'rgb':
@@ -90,10 +92,10 @@ class CssCrush_Color
                 $vals[3] = isset($vals[3]) ? floatval($vals[3]) : 1;
 
                 if (strpos($function, 'rgb') === 0) {
-                    $rgba = CssCrush_Color::normalizeCssRgb($vals);
+                    $rgba = Color::normalizeCssRgb($vals);
                 }
                 else {
-                    $rgba = CssCrush_Color::cssHslToRgb($vals);
+                    $rgba = Color::cssHslToRgb($vals);
                 }
                 break;
 
@@ -113,7 +115,7 @@ class CssCrush_Color
     {
         static $color_patt;
         if (! $color_patt) {
-            $color_patt = CssCrush_Regex::create('^(
+            $color_patt = Regex::create('^(
                 \#(?={{hex}}{3}) |
                 \#(?={{hex}}{6}) |
                 rgba?(?=[?(]) |
@@ -326,7 +328,7 @@ class CssCrush_Color
 
     static public function colorAdjust ($str, array $adjustments)
     {
-        $hsla = new CssCrush_Color($str, true);
+        $hsla = new Color($str, true);
 
         // On failure to parse return input.
         return $hsla->isValid ? $hsla->adjust($adjustments)->__toString() : $str;
@@ -334,7 +336,7 @@ class CssCrush_Color
 
     static public function colorSplit ($str)
     {
-        if ($test = CssCrush_Color::test($str)) {
+        if ($test = Color::test($str)) {
             $color = $test['value'];
             $type = $test['type'];
         }
@@ -351,7 +353,7 @@ class CssCrush_Color
 
         static $alpha_color_patt;
         if (! $alpha_color_patt) {
-            $alpha_color_patt = CssCrush_Regex::create(
+            $alpha_color_patt = Regex::create(
                 '^(rgb|hsl)a\(({{number}}%?,{{number}}%?,{{number}}%?),({{number}})\)$');
         }
 

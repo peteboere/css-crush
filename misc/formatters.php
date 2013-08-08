@@ -4,6 +4,8 @@
   * Formatter callbacks.
   *
   */
+use CssCrush\CssCrush;
+
 CssCrush::$config->formatters = array(
     'single-line' => 'csscrush__fmtr_single',
     'padded' => 'csscrush__fmtr_padded',

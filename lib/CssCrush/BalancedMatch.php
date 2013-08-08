@@ -4,9 +4,11 @@
  *  Balanced bracket matching on the main stream.
  *
  */
-class CssCrush_BalancedMatch
+namespace CssCrush;
+
+class BalancedMatch
 {
-    public function __construct (CssCrush_Stream $stream, $offset, $brackets = '{}')
+    public function __construct (Stream $stream, $offset, $brackets = '{}')
     {
         $this->stream = $stream;
         $this->offset = $offset;
@@ -26,7 +28,7 @@ class CssCrush_BalancedMatch
         }
 
         $patt = $opener === '{' ?
-            CssCrush_Regex::$patt->balancedCurlies : CssCrush_Regex::$patt->balancedParens;
+            Regex::$patt->balancedCurlies : Regex::$patt->balancedParens;
 
         if (preg_match($patt, $stream->raw, $m, PREG_OFFSET_CAPTURE, $this->offset)) {
 

@@ -1,4 +1,9 @@
-### 1.11 (2013-8-3)
+### 2.0.0 (?)
+
+
+********************************************************************
+
+### 1.11.0 (2013-8-3)
 
 * Added source map support according to the Source Map v3 proposal (boolean option `source-map`).
 * Compile times are now 20-30% reduced.
@@ -13,7 +18,7 @@
 * Removed Prepend.css.
 * Various refactoring for cleaner under-the-hood APIs.
 
-### 1.10 (2013-5-18)
+### 1.10.0 (2013-5-18)
 
 * Added SVG plugin for defining and generating SVG files/data URIs in CSS.
 * Added Canvas plugin for image generation and manipulation (requires GD extension).
@@ -65,7 +70,7 @@
 * Property/value aliases expanded and renamed as declaration aliases.
 * Classes now loaded via an autoloader, also some other refactoring for moving towards PSR-0 compliance.
 
-### 1.8 (2012-11-13)
+### 1.8.0 (2012-11-13)
 
 * Added selector aliasing with the `@selector-alias` directive.
 * Added `output_dir` option for specifying the destination of compiled files.
@@ -84,7 +89,7 @@
 * Improved minification.
 * Major refactoring.
 
-### 1.7 (2012-9-28)
+### 1.7.0 (2012-9-28)
 
 * Added `trace` option to output SASS compatible debug-info stubs for use with tools like FireSass.
 * Added `@ifdefine` directive for dynamically including/excluding parts of a CSS file based on the
@@ -103,7 +108,7 @@
 
 * Resolved issues #34 and #35.
 
-### 1.6 (2012-8-1)
+### 1.6.0 (2012-8-1)
 
 * Inheritance model improved to support adoption of pseudo classes and elements (see wiki).
 * Added rule self-referencing function `this()` and complimentary data-* properties.
@@ -131,7 +136,7 @@
 * Extended mixins to work with abstract rules and regular rules.
 * Fixed issue with selector grouping and inheritance in combination.
 
-### 1.5 (2012-5-21)
+### 1.5.0 (2012-5-21)
 
 * New feature: Rule inheritance / abstract rules.
 * New feature: Block nesting.
@@ -160,7 +165,7 @@
 * Initial-values updated.
 * Updated `CssCrush::string` method to correctly handle import statements.
 
-### 1.4 (2012-1-24)
+### 1.4.0 (2012-1-24)
 
 * Added initial-keyword plugin (shim for the CSS3 keyword).
 * Added inline method (Issue #18).
@@ -217,11 +222,11 @@
 * Added color functions.
 * Added aliases for IE10.
 
-### 1.2 (2011-9-8)
+### 1.2.0 (2011-9-8)
 
 * File importer rewritten.
 
-### 1.1 (2011-9-2)
+### 1.1.0 (2011-9-2)
 
 * Added support for global variables.
 * Added support for variable interpolation within string literals.
@@ -233,7 +238,7 @@
 * Minor correction to WAMP support.
 * Minor fix to rule API.
 
-### 1.0 (2011-7-14)
+### 1.0.0 (2011-7-14)
 
 * Major refactoring.
 * Custom functions.
@@ -242,6 +247,6 @@
 * Resolved document root issues.
 * Minification improvements.
 
-### 0.9 (2010-9-20)
+### 0.9.0 (2010-9-20)
 
 * Initial release.

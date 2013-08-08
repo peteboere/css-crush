@@ -4,18 +4,20 @@
  *  Mixin objects.
  *
  */
-class CssCrush_Mixin
+namespace CssCrush;
+
+class Mixin
 {
     public $template;
 
     public function __construct ($block)
     {
-        $this->template = new CssCrush_Template($block);
+        $this->template = new Template($block);
     }
 
     public function call ( array $args )
     {
-        return CssCrush_Rule::parseBlock($this->template->apply($args));
+        return Rule::parseBlock($this->template->apply($args));
     }
 
     static public function parseSingleValue ($message)
@@ -49,7 +51,7 @@ class CssCrush_Mixin
         // If no mixin or abstract rule matched, look for matching selector
         if (! $mixin && ! $non_mixin) {
 
-            $selector_test = CssCrush_Selector::makeReadable($message);
+            $selector_test = Selector::makeReadable($message);
 
             if (isset(CssCrush::$process->references[$selector_test])) {
                 $non_mixin = CssCrush::$process->references[$selector_test];
@@ -87,7 +89,7 @@ class CssCrush_Mixin
         // Determine what raw arguments there are to pass to the mixin
         $args = array();
         if ($message !== '') {
-            $args = CssCrush_Util::splitDelimList($message);
+            $args = Util::splitDelimList($message);
         }
 
         return $mixin->call($args);
@@ -98,7 +100,7 @@ class CssCrush_Mixin
         // Call the mixin and return the list of declarations
         $declarations = array();
 
-        foreach (CssCrush_Util::splitDelimList($message) as $item) {
+        foreach (Util::splitDelimList($message) as $item) {
 
             if ($result = self::parseSingleValue($item)) {
                 $declarations = array_merge($declarations, $result);

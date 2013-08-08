@@ -13,23 +13,21 @@
  *     font-size: .84615em;
  *     font-size: 1rem;
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register( 'px2em', array(
-    'enable' => 'csscrush__enable_px2em',
-    'disable' => 'csscrush__disable_px2em',
+Plugin::register('px2em', array(
+    'enable' => function () {
+        Functions::register('px2em', 'CssCrush\fn__px2em');
+        Functions::register('px2rem', 'CssCrush\fn__px2rem');
+    },
+    'disable' => function () {
+        Functions::deRegister('px2em');
+        Functions::deRegister('px2rem');
+    },
 ));
 
-function csscrush__enable_px2em () {
-    CssCrush_Function::register('px2em', 'csscrush_fn__px2em');
-    CssCrush_Function::register('px2rem', 'csscrush_fn__px2rem');
-}
 
-function csscrush__disable_px2em () {
-    CssCrush_Function::deRegister('px2em');
-    CssCrush_Function::deRegister('px2rem');
-}
-
-function csscrush_fn__px2em ($input) {
+function fn__px2em ($input) {
 
     $base = 16;
 
@@ -38,10 +36,10 @@ function csscrush_fn__px2em ($input) {
         $base = CssCrush::$process->vars['px2em__base'];
     }
 
-    return csscrush__px2em($input, 'em', $base);
+    return px2em($input, 'em', $base);
 }
 
-function csscrush_fn__px2rem ($input) {
+function fn__px2rem ($input) {
 
     $base = 16;
 
@@ -50,12 +48,12 @@ function csscrush_fn__px2rem ($input) {
         $base = CssCrush::$process->vars['px2rem__base'];
     }
 
-    return csscrush__px2em($input, 'rem', $base);
+    return px2em($input, 'rem', $base);
 }
 
-function csscrush__px2em ($input, $unit, $default_base) {
+function px2em ($input, $unit, $default_base) {
 
-    list($px, $base) = CssCrush_Function::parseArgsSimple($input) + array(
+    list($px, $base) = Functions::parseArgsSimple($input) + array(
         16,
         $default_base,
     );

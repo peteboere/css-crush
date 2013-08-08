@@ -46,13 +46,13 @@ CssCrush_Plugin::register('svg-gradients', array(
 ));
 
 function csscrush__enable_svg_gradients () {
-    CssCrush_Function::register('svg-linear-gradient', 'csscrush_fn__svg_linear_gradient');
-    CssCrush_Function::register('svg-radial-gradient', 'csscrush_fn__svg_radial_gradient');
+    CssCrush\Functions::register('svg-linear-gradient', 'csscrush_fn__svg_linear_gradient');
+    CssCrush\Functions::register('svg-radial-gradient', 'csscrush_fn__svg_radial_gradient');
 }
 
 function csscrush__disable_svg_gradients () {
-    CssCrush_Function::deRegister('svg-linear-gradient');
-    CssCrush_Function::deRegister('svg-radial-gradient');
+    CssCrush\Functions::deRegister('svg-linear-gradient');
+    CssCrush\Functions::deRegister('svg-radial-gradient');
 }
 
 function csscrush_fn__svg_linear_gradient ($input) {
@@ -120,7 +120,7 @@ function csscrush__create_svg_linear_gradient ($input) {
         $deg_patt = CssCrush_Regex::create('^{{number}}deg$', 'i');
     }
 
-    $args = CssCrush_Function::parseArgs($input);
+    $args = CssCrush\Functions::parseArgs($input);
 
     // If no angle argument is passed the default.
     $angle = 0;
@@ -251,7 +251,7 @@ function csscrush__create_svg_radial_gradient ($input) {
         $origin_patt = CssCrush_Regex::create('^({{number}}%?) +({{number}}%?)$');
     }
 
-    $args = CssCrush_Function::parseArgs($input);
+    $args = CssCrush\Functions::parseArgs($input);
 
     // Default origin,
     $position = $position_keywords['at center'];

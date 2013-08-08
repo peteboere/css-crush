@@ -4,7 +4,9 @@
  *  Plugin API
  * 
  */
-class CssCrush_Plugin
+namespace CssCrush;
+
+class Plugin
 {
     static protected $plugins = array();
 
@@ -17,7 +19,7 @@ class CssCrush_Plugin
 
             foreach (glob("$plugin_dir/*.php") as $path) {
                 $name = basename($path, '.php');
-                $plugin_data += array($name => CssCrush_Plugin::parseDoc($path));
+                $plugin_data += array($name => Plugin::parseDoc($path));
             }
         }
 
@@ -29,7 +31,7 @@ class CssCrush_Plugin
         $contents = file_get_contents($plugin_path);
         if (preg_match('~/\*\*(.*?)\*/~s', $contents, $m)) {
 
-            $lines = preg_split(CssCrush_Regex::$patt->newline, $m[1]);
+            $lines = preg_split(Regex::$patt->newline, $m[1]);
             foreach ($lines as &$line) {
                 $line = trim(ltrim($line, "* \t"));
             }

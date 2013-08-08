@@ -13,21 +13,18 @@
  *     opacity: 0.5;
  *
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('spiffing', array(
-    'enable' => 'csscrush__enable_spiffing',
-    'disable' => 'csscrush__disable_spiffing',
+Plugin::register('spiffing', array(
+    'enable' => function () {
+        Hook::add('rule_preprocess', 'spiffing');
+    },
+    'disable' => function () {
+        CssCrush_Hook::remove('rule_preprocess');
+    },
 ));
 
-function csscrush__enable_spiffing () {
-    CssCrush_Hook::add('rule_preprocess', 'csscrush__spiffing');
-}
-
-function csscrush__disable_spiffing () {
-    CssCrush_Hook::remove('rule_preprocess');
-}
-
-function csscrush__spiffing ($rule) {
+function spiffing ($rule) {
 
     $find = array('colour', 'grey', '!please', 'transparency', 'centre', 'plump', 'photograph', 'capitalise');
     $replace = array('color', 'gray', '!important', 'opacity', 'center', 'bold', 'image', 'capitalize');

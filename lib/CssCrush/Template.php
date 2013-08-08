@@ -4,7 +4,9 @@
  *  Generalized 'in CSS' templating.
  *
  */
-class CssCrush_Template
+namespace CssCrush;
+
+class Template
 {
     // Positional argument default values.
     public $defaults = array();
@@ -21,15 +23,15 @@ class CssCrush_Template
     {
         static $arg_patt;
         if (! $arg_patt) {
-            $arg_patt = CssCrush_Regex::createFunctionPatt(
+            $arg_patt = Regex::createFunctionPatt(
                 array('arg'), array('templating' => true));
         }
 
-        $str = CssCrush_Template::unTokenize($str);
+        $str = Template::unTokenize($str);
 
         // Parse all arg function calls in the passed string,
         // callback creates default values.
-        CssCrush_Function::executeOnString($str, $arg_patt, array(
+        Functions::executeOnString($str, $arg_patt, array(
                 'arg' => array($this, 'capture'),
                 '#' => array($this, 'capture'),
             ));
@@ -39,7 +41,7 @@ class CssCrush_Template
 
     public function capture ($str)
     {
-        $args = CssCrush_Function::parseArgsSimple($str);
+        $args = Functions::parseArgsSimple($str);
 
         $position = array_shift($args);
 
@@ -76,7 +78,7 @@ class CssCrush_Template
         $default = isset($this->defaults[$index]) ? $this->defaults[$index] : '';
 
         // Recurse for nested arg() calls.
-        while (preg_match(CssCrush_Regex::$patt->a_token, $default, $m)) {
+        while (preg_match(Regex::$patt->a_token, $default, $m)) {
             $default = str_replace(
                 $m[0],
                 $this->getArgValue((int) $m[1], $args),
@@ -137,7 +139,7 @@ class CssCrush_Template
         $str = isset($find) ? str_replace($find, $replace, $str) : $str;
 
         // Re-tokenize string on return.
-        return CssCrush_Template::tokenize($str);
+        return Template::tokenize($str);
     }
 
     static public function tokenize ($str)

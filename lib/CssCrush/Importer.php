@@ -4,14 +4,16 @@
  * Recursive file importing
  *
  */
-class CssCrush_Importer
+namespace CssCrush;
+
+class Importer
 {
     static public function hostfile ()
     {
         $config = CssCrush::$config;
         $process = CssCrush::$process;
         $options = $process->options;
-        $regex = CssCrush_Regex::$patt;
+        $regex = Regex::$patt;
         $input = $process->input;
 
         $str = '';
@@ -105,7 +107,7 @@ class CssCrush_Importer
             $filenames[] = $import->url->value;
 
             // Alter all the @import urls to be paths relative to the hostfile.
-            foreach (CssCrush_Regex::matchAll($regex->import, $import->content) as $m) {
+            foreach (Regex::matchAll($regex->import, $import->content) as $m) {
 
                 // Fetch the matched URL.
                 $url2 = $process->tokens->get($m[1][0]);
@@ -153,10 +155,10 @@ class CssCrush_Importer
     {
         static $non_import_urls_patt;
         if (! $non_import_urls_patt) {
-            $non_import_urls_patt = CssCrush_Regex::create('(?<!@import ){{u-token}}', 'iS');
+            $non_import_urls_patt = Regex::create('(?<!@import ){{u-token}}', 'iS');
         }
 
-        $link = CssCrush_Util::getLinkBetweenPaths(
+        $link = Util::getLinkBetweenPaths(
             CssCrush::$process->input->dir, dirname($import->path));
 
         if (empty($link)) {
@@ -179,7 +181,7 @@ class CssCrush_Importer
 
     static protected function prepareForStream (&$str)
     {
-        $regex = CssCrush_Regex::$patt;
+        $regex = Regex::$patt;
         $process = CssCrush::$process;
         $tokens = $process->tokens;
 
@@ -212,7 +214,7 @@ class CssCrush_Importer
 
         self::addMarkers($str);
 
-        $str = CssCrush_Util::normalizeWhiteSpace($str);
+        $str = Util::normalizeWhiteSpace($str);
 
         return true;
     }
@@ -249,7 +251,7 @@ class CssCrush_Importer
         $process = CssCrush::$process;
         $current_file_index = count($process->sources) -1;
 
-        $count = preg_match_all(CssCrush_Regex::$patt->ruleFirstPass, $str, $matches, PREG_OFFSET_CAPTURE);
+        $count = preg_match_all(Regex::$patt->ruleFirstPass, $str, $matches, PREG_OFFSET_CAPTURE);
         while ($count--) {
 
             $selector_offset = $matches['selector'][$count][1];
@@ -278,7 +280,7 @@ class CssCrush_Importer
 
     static protected function captureCommentAndString ($str)
     {
-        return preg_replace_callback(CssCrush_Regex::$patt->commentAndString,
+        return preg_replace_callback(Regex::$patt->commentAndString,
             array('self', 'cb_captureCommentAndString'), $str);
     }
 
@@ -294,7 +296,7 @@ class CssCrush_Importer
                 $process->minifyOutput ||
                 strpos($full_match, '/*$') === 0
             ) {
-                return CssCrush_Tokens::pad('', $full_match);
+                return Tokens::pad('', $full_match);
             }
 
             // Fix broken comments as they will break any subsquent
@@ -314,6 +316,6 @@ class CssCrush_Importer
             $label = $process->tokens->add($full_match, 's');
         }
 
-        return CssCrush_Tokens::pad($label, $full_match);
+        return Tokens::pad($label, $full_match);
     }
 }

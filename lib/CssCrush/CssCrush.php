@@ -4,9 +4,11 @@
  * Main script. Includes core public API.
  *
  */
+namespace CssCrush;
+
 class CssCrush
 {
-    const VERSION = '1.11';
+    const VERSION = '2.0.0';
 
     // Global settings.
     static public $config;
@@ -17,7 +19,7 @@ class CssCrush
     // Init called once manually post class definition.
     static public function init ()
     {
-        self::$config = new stdClass();
+        self::$config = new \stdClass();
 
         // Path to the project root folder.
         self::$config->location = dirname(dirname(dirname(__FILE__)));
@@ -26,13 +28,13 @@ class CssCrush
         self::$config->plugin_dirs = array(self::$config->location . '/plugins');
 
         // Establish version id.
-        self::$config->version = new CssCrush_Version(self::VERSION);
+        self::$config->version = new Version(self::VERSION);
 
         // Set the docRoot reference.
         self::setDocRoot();
 
         // Set the default IO handler.
-        self::$config->io = 'CssCrush_IO';
+        self::$config->io = 'CssCrush\IO';
 
         // Shared resources.
         self::$config->vars = array();
@@ -41,7 +43,7 @@ class CssCrush
         self::$config->plugins = array();
 
         // Default options.
-        self::$config->options = new CssCrush_Options(array(
+        self::$config->options = new Options(array(
 
             // Minify. Set false for formatting and comments.
             'minify' => true,
@@ -139,7 +141,7 @@ class CssCrush
             }
         }
 
-        self::$config->docRoot = CssCrush_Util::normalizePath($doc_root);
+        self::$config->docRoot = Util::normalizePath($doc_root);
     }
 
     // Aliases and macros loader.
@@ -152,7 +154,7 @@ class CssCrush
 
         // Find an aliases file in the root directory
         // a local file overrides the default
-        $aliases_file = CssCrush_Util::find('Aliases-local.ini', 'Aliases.ini');
+        $aliases_file = Util::find('Aliases-local.ini', 'Aliases.ini');
 
         // Load aliases file if it exists
         if ($aliases_file) {
@@ -160,7 +162,7 @@ class CssCrush
             $result = @parse_ini_file($aliases_file, true);
             if ($result !== false) {
 
-                $regex = CssCrush_Regex::$patt;
+                $regex = Regex::$patt;
 
                 foreach ($result as $section => $items) {
 
@@ -209,7 +211,7 @@ class CssCrush
 
                                     // We'll cache the function matching regex here.
                                     $vendor_grouped_aliases[$m[1]]['find'][] =
-                                        CssCrush_Regex::create('{{LB}}' . $func_name . '{{RTB}}', 'i');
+                                        Regex::create('{{LB}}' . $func_name . '{{RTB}}', 'i');
                                     $vendor_grouped_aliases[$m[1]]['replace'][] = $alias_func;
                                 }
                             }
@@ -254,7 +256,7 @@ class CssCrush
      */
     static public function file ($file, $options = null)
     {
-        self::$process = new CssCrush_Process($options);
+        self::$process = new Process($options);
 
         $config = self::$config;
         $process = self::$process;
@@ -286,7 +288,7 @@ class CssCrush
         }
 
         // Validate file input.
-        if (! CssCrush_IO::registerInputFile($file)) {
+        if (! IO::registerInputFile($file)) {
             return '';
         }
 
@@ -342,7 +344,7 @@ class CssCrush
             if (! isset($attributes['media'])) {
                 $attributes['media'] = 'all';
             }
-            $attr_string = CssCrush_Util::htmlAttributes($attributes);
+            $attr_string = Util::htmlAttributes($attributes);
             return "<link$attr_string />\n";
         }
         else {
@@ -383,7 +385,7 @@ class CssCrush
             $tag_close = '';
 
             if (is_array($attributes)) {
-                $attr_string = CssCrush_Util::htmlAttributes($attributes);
+                $attr_string = Util::htmlAttributes($attributes);
                 $tag_open = "<style$attr_string>";
                 $tag_close = '</style>';
             }
@@ -412,7 +414,7 @@ class CssCrush
             $options['boilerplate'] = false;
         }
 
-        self::$process = new CssCrush_Process($options);
+        self::$process = new Process($options);
 
         $config = self::$config;
         $process = self::$process;
@@ -503,7 +505,7 @@ class CssCrush
 
     static public function addSelectorAlias ($name, $body)
     {
-        CssCrush::$config->selectorAliases[$name] = new CssCrush_Template($body);
+        CssCrush::$config->selectorAliases[$name] = new Template($body);
     }
 
     static public function removeSelectorAlias ($name)

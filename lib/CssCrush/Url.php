@@ -4,7 +4,9 @@
  *  URL tokens.
  *
  */
-class CssCrush_Url
+namespace CssCrush;
+
+class Url
 {
     public $protocol;
 
@@ -20,7 +22,7 @@ class CssCrush_Url
 
     public function __construct ($raw_value, $convert_to_data = false)
     {
-        $regex = CssCrush_Regex::$patt;
+        $regex = Regex::$patt;
         $tokens = CssCrush::$process->tokens;
 
         if (preg_match($regex->s_token, $raw_value)) {
@@ -223,7 +225,7 @@ class CssCrush_Url
     public function simplify ()
     {
         if (! $this->isData) {
-            $this->value = CssCrush_Util::simplifyPath($this->value);
+            $this->value = Util::simplifyPath($this->value);
         }
         return $this;
     }

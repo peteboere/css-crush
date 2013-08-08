@@ -4,7 +4,9 @@
  *  Options handling.
  *
  */
-class CssCrush_Options
+namespace CssCrush;
+
+class Options
 {
     public $data = array();
 
@@ -52,7 +54,7 @@ class CssCrush_Options
             case 'output_dir':
             case 'doc_root':
                 if (is_string($value)) {
-                    $value = CssCrush_Util::normalizePath(realpath($value));
+                    $value = Util::normalizePath(realpath($value));
                 }
                 break;
 
@@ -77,7 +79,7 @@ class CssCrush_Options
         return isset($this->data[$name]);
     }
 
-    public function merge (CssCrush_Options $options_instance)
+    public function merge (Options $options_instance)
     {
         foreach ($options_instance->data as $key => $value) {
             if (! array_key_exists($key, $this->data)) {

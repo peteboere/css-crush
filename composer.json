@@ -16,12 +16,13 @@
         }
     ],
     "require": {
-        "php": ">=5.2.4"
+        "php": ">=5.3.4"
     },
     "bin": [
         "misc/csscrush"
     ],
     "autoload": {
-        "files": ["CssCrush.php"]
-    }
+        "psr-0": { "CssCrush": "lib/" },
+        "files": [ "lib/functions.php" ]
+    },
 }

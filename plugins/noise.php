@@ -72,43 +72,38 @@
  *      // Sand effect.
  *      background: turbulence( wheat 400x400, .35:.2 4 sharpen, normal, saturate .4 );
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('noise', array(
-    'enable' => 'csscrush__enable_noise',
-    'disable' => 'csscrush__disable_noise',
+Plugin::register('noise', array(
+
+    'enable' => function () {
+        Functions::register('noise', function ($input) {
+            return noise_generator($input, array(
+                'type' => 'fractalNoise',
+                'frequency' => .7,
+                'sharpen' => 'sharpen',
+                'dimensions' => array(150, 150),
+            ));
+        });
+        Functions::register('turbulence', function ($m) {
+            return noise_generator($input, array(
+                'type' => 'turbulence',
+                'frequency' => .01,
+                'sharpen' => 'normal',
+                'dimensions' => array(200, 200),
+            ));
+        });
+    },
+
+    'disable' => function () {
+        Functions::deRegister('noise');
+        Functions::deRegister('turbulence');
+    },
 ));
 
-function csscrush__enable_noise () {
-    CssCrush_Function::register('noise', 'csscrush_fn__noise');
-    CssCrush_Function::register('turbulence', 'csscrush_fn__turbulence');
-}
+function noise_generator ($input, $defaults) {
 
-function csscrush__disable_noise () {
-    CssCrush_Function::deRegister('noise');
-    CssCrush_Function::deRegister('turbulence');
-}
-
-function csscrush_fn__noise ($input) {
-    return csscrush__noise_generator($input, array(
-        'type' => 'fractalNoise',
-        'frequency' => .7,
-        'sharpen' => 'sharpen',
-        'dimensions' => array(150, 150),
-    ));
-}
-
-function csscrush_fn__turbulence ($input) {
-    return csscrush__noise_generator($input, array(
-        'type' => 'turbulence',
-        'frequency' => .01,
-        'sharpen' => 'normal',
-        'dimensions' => array(200, 200),
-    ));
-}
-
-function csscrush__noise_generator ($input, $defaults) {
-
-    $args = array_pad(CssCrush_Function::parseArgs($input), 4, 'default');
+    $args = array_pad(Functions::parseArgs($input), 4, 'default');
 
     $type = $defaults['type'];
 
@@ -117,7 +112,7 @@ function csscrush__noise_generator ($input, $defaults) {
     $dimensions = $defaults['dimensions'];
     if (($arg = array_shift($args)) !== 'default') {
         // May be a color function so explode(' ', $value) is not sufficient.
-        foreach (CssCrush_Function::parseArgs($arg, true) as $part) {
+        foreach (Functions::parseArgs($arg, true) as $part) {
             if (preg_match('~^(\d+)x(\d+)$~i', $part, $m)) {
                 $dimensions = array_slice($m, 1);
             }
@@ -224,7 +219,7 @@ function csscrush__noise_generator ($input, $defaults) {
     $svg .= '</svg>';
 
     // Create data-uri url and return token label.
-    $url = new CssCrush_Url('data:image/svg+xml;base64,' . base64_encode($svg));
+    $url = new Url('data:image/svg+xml;base64,' . base64_encode($svg));
 
     return $url->label;
 }

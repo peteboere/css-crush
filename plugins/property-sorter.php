@@ -22,21 +22,18 @@
  *     background: #000;
  *
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('property-sorter', array(
-    'enable' => 'csscrush__enable_property_sorter',
-    'disable' => 'csscrush__disable_property_sorter',
+Plugin::register('property-sorter', array(
+    'enable' => function () {
+        Hook::add('rule_prealias', 'property_sorter');
+    },
+    'disable' => function () {
+        Hook::remove('rule_prealias', 'property_sorter');
+    },
 ));
 
-function csscrush__enable_property_sorter () {
-    CssCrush_Hook::add('rule_prealias', 'csscrush__property_sorter');
-}
-
-function csscrush__disable_property_sorter () {
-    CssCrush_Hook::remove('rule_prealias', 'csscrush__property_sorter');
-}
-
-function csscrush__property_sorter (CssCrush_Rule $rule) {
+function property_sorter (Rule $rule) {
 
     $new_set = array();
 
@@ -45,7 +42,7 @@ function csscrush__property_sorter (CssCrush_Rule $rule) {
         $new_set[] = $declaration;
     }
 
-    usort($new_set, '_csscrush__property_sorter_callback');
+    usort($new_set, 'property_sorter_callback');
 
     $rule->setDeclarations($new_set);
 }
@@ -54,9 +51,9 @@ function csscrush__property_sorter (CssCrush_Rule $rule) {
 /*
     Callback for sorting.
 */
-function _csscrush__property_sorter_callback ($a, $b) {
+function property_sorter_callback ($a, $b) {
 
-    $map =& _csscrush__property_sorter_get_table();
+    $map =& property_sorter_get_table();
     $a_prop =& $a->canonicalProperty;
     $b_prop =& $b->canonicalProperty;
     $a_listed = isset($map[$a_prop]);
@@ -134,7 +131,7 @@ function _csscrush__property_sorter_callback ($a, $b) {
 /*
     Cache for the table of values to compare against.
 */
-function &_csscrush__property_sorter_get_table () {
+function &property_sorter_get_table () {
 
     // Check for cached table.
     if (isset($GLOBALS['CSSCRUSH_PROPERTY_SORT_ORDER_CACHE'])) {
@@ -178,7 +175,7 @@ function &_csscrush__property_sorter_get_table () {
     Get the current sorting table.
 */
 function csscrush_get_property_sort_order () {
-    _csscrush__property_sorter_get_table();
+    property_sorter_get_table();
     return $GLOBALS['CSSCRUSH_PROPERTY_SORT_ORDER'];
 }
 

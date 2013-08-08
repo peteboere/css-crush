@@ -4,7 +4,9 @@
  * Interface for writing files, retrieving files and checking caches
  *
  */
-class CssCrush_IO
+namespace CssCrush;
+
+class IO
 {
     // Any setup that needs to be done
     static public function init ()
@@ -114,7 +116,7 @@ class CssCrush_IO
                     }
                 }
 
-                // Cast because the cached options may be a stdClass if an IO adapter has been used.
+                // Cast because the cached options may be a \stdClass if an IO adapter has been used.
                 $cached_options = (array) $process->cacheData[$existingfile->filename]['options'];
                 $active_options = $options->get();
 
@@ -225,7 +227,7 @@ class CssCrush_IO
             else {
                 CssCrush::log('Creating cache data file.');
             }
-            CssCrush_Util::filePutContents($process->cacheFile, json_encode(array()), __METHOD__);
+            Util::filePutContents($process->cacheFile, json_encode(array()), __METHOD__);
         }
 
         return $cache_data;
@@ -236,10 +238,10 @@ class CssCrush_IO
         $process = CssCrush::$process;
 
         CssCrush::log('Saving config.');
-        CssCrush_Util::filePutContents($process->cacheFile, json_encode($process->cacheData), __METHOD__);
+        Util::filePutContents($process->cacheFile, json_encode($process->cacheData), __METHOD__);
     }
 
-    static public function write (CssCrush_Stream $stream)
+    static public function write (Stream $stream)
     {
         $process = CssCrush::$process;
         $target = "{$process->output->dir}/{$process->output->filename}";
@@ -249,7 +251,7 @@ class CssCrush_IO
             $stream->append($process->newline . "/*# sourceMappingURL=$source_map_filename */");
         }
 
-        if (CssCrush_Util::filePutContents($target, $stream, __METHOD__)) {
+        if (Util::filePutContents($target, $stream, __METHOD__)) {
 
             if ($process->sourceMap) {
                 if (defined('JSON_PRETTY_PRINT')) {
@@ -258,7 +260,7 @@ class CssCrush_IO
                 else {
                     $data = json_encode($process->sourceMap);
                 }
-                CssCrush_Util::filePutContents("{$process->output->dir}/$source_map_filename", $data, __METHOD__);
+                Util::filePutContents("{$process->output->dir}/$source_map_filename", $data, __METHOD__);
             }
 
             return "{$process->output->dirUrl}/{$process->output->filename}";

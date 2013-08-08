@@ -4,7 +4,9 @@
  *  Version string.
  *
  */
-class CssCrush_Version
+namespace CssCrush;
+
+class Version
 {
     public $major = 0;
     public $minor = 0;
@@ -54,7 +56,7 @@ class CssCrush_Version
         $MORE = 1;
         $EQUAL = 0;
 
-        $test = new CssCrush_Version($version_string);
+        $test = new Version($version_string);
 
         foreach (array('major', 'minor', 'revision') as $level) {
 
