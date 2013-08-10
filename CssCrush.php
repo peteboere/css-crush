@@ -15,7 +15,7 @@ function csscrush_autoload ($class) {
     $class = str_ireplace('csscrush', 'CssCrush', $class);
     $subpath = implode('/', array_map('ucfirst', explode('\\', $class)));
 
-    require_once dirname(__FILE__) . "/lib/$subpath.php";
+    require_once __DIR__ . "/lib/$subpath.php";
 }
 
 spl_autoload_register('csscrush_autoload');

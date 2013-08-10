@@ -11,21 +11,19 @@
  * @after
  *    transition: .2s cubic-bezier(.550,.085,.680,.530)
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('ease', array(
-    'enable' => 'csscrush__enable_ease',
-    'disable' => 'csscrush__disable_ease',
+Plugin::register('ease', array(
+    'enable' => function () {
+        Hook::add('rule_prealias', 'CssCrush\ease');
+    },
+    'disable' => function () {
+        Hook::remove('rule_prealias', 'CssCrush\ease');
+    },
 ));
 
-function csscrush__enable_ease () {
-    CssCrush_Hook::add('rule_prealias', 'csscrush__ease');
-}
 
-function csscrush__disable_ease () {
-    CssCrush_Hook::remove('rule_prealias', 'csscrush__ease');
-}
-
-function csscrush__ease (CssCrush_Rule $rule) {
+function ease (Rule $rule) {
 
     static $find, $replace, $easing_properties;
     if (! $find) {
@@ -62,7 +60,7 @@ function csscrush__ease (CssCrush_Rule $rule) {
         );
 
         foreach ($easings as $property => $value) {
-            $patt = CssCrush_Regex::create('{{LB}}' . $property . '{{RB}}', 'i');
+            $patt = Regex::create('{{LB}}' . $property . '{{RB}}', 'i');
             $find[] = $patt;
             $replace[] = $value;
         }

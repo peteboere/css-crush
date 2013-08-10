@@ -5,8 +5,6 @@
  * Command line utility.
  *
  */
-namespace CssCrush;
-
 require_once 'CssCrush.php';
 
 ##################################################################
@@ -145,7 +143,7 @@ elseif ($args->list) {
 
     $plugins = array();
 
-    foreach (Plugin::info() as $name => $docs) {
+    foreach (CssCrush\Plugin::info() as $name => $docs) {
         // Use first line of plugin doc for description.
         $headline = isset($docs[0]) ? $docs[0] : false;
         $plugins[] = colorize("<g>$name</>" . ($headline ? " - $headline" : ''));
@@ -303,7 +301,7 @@ if ($args->output_file) {
 if ($args->watch) {
 
     // Override the IO class.
-    csscrush_set('config', array('io' => 'CssCrush\IOWatch'));
+    csscrush_set('config', array('io' => 'CssCrush\IO\Watch'));
 
     stdout('CONTROL-C to quit.');
 

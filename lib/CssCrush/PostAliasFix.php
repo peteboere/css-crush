@@ -65,22 +65,24 @@ function postalias_fix_linear_gradients ($declaration_copies) {
         $angles_old = array_values($angles);
     }
 
-    static $deg_patt, $deg_convert_callback, $fn_patt;
+    static $deg_patt, $fn_patt;
     if (! $deg_patt) {
         $deg_patt = Regex::create('(?<=[\( ])({{number}})deg', 'i');
-        // Legacy angles move anti-clockwise and start from East, not North.
-        $deg_convert_callback = create_function('$m', '
-            $angle = floatval($m[1]);
-            $angle = ($angle + 90) - ($angle * 2);
-            return ($angle < 0 ? $angle + 360 : $angle) . \'deg\';
-        ');
         $fn_patt = Regex::create('{{LB}}{{vendor}}(?:(?:repeating-)?linear-gradient)({{p-token}})', 'iS');
     }
+
+    // Legacy angles move anti-clockwise and start from East, not North.
+    $deg_convert_callback = function ($m) {
+        $angle = floatval($m[1]);
+        $angle = ($angle + 90) - ($angle * 2);
+        return ($angle < 0 ? $angle + 360 : $angle) . 'deg';
+    };
 
     // Create new paren tokens based on the first prefixed declaration.
     // Replace the new syntax with the legacy syntax.
     $original_parens = array();
     $replacement_parens = array();
+
     foreach (Regex::matchAll($fn_patt, $declaration_copies[0]->value) as $m) {
 
         $original_parens[] = $m[1][0];

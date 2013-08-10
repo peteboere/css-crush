@@ -85,7 +85,7 @@ Plugin::register('noise', array(
                 'dimensions' => array(150, 150),
             ));
         });
-        Functions::register('turbulence', function ($m) {
+        Functions::register('turbulence', function ($input) {
             return noise_generator($input, array(
                 'type' => 'turbulence',
                 'frequency' => .01,
@@ -100,6 +100,7 @@ Plugin::register('noise', array(
         Functions::deRegister('turbulence');
     },
 ));
+
 
 function noise_generator ($input, $defaults) {
 
@@ -137,7 +138,7 @@ function noise_generator ($input, $defaults) {
                     break;
                 case 1:
                 case 2:
-                    if (preg_match(CssCrush_Regex::$patt->rooted_number, $value)) {
+                    if (preg_match(Regex::$patt->rooted_number, $value)) {
                         $octaves = $value;
                     }
                     elseif (in_array($value, $sharpen_modes)) {

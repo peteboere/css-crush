@@ -10,21 +10,19 @@
  *     *display: inline;
  *     *zoom: 1;
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('ie-inline-block', array(
-    'enable' => 'csscrush__enable_ie_inline_block',
-    'disable' => 'csscrush__disable_ie_inline_block',
+Plugin::register('ie-inline-block', array(
+    'enable' => function () {
+        Hook::add('rule_postalias', 'CssCrush\ie_inline_block');
+    },
+    'disable' => function () {
+        Hook::remove('rule_postalias', 'CssCrush\ie_inline_block');
+    },
 ));
 
-function csscrush__enable_ie_inline_block () {
-    CssCrush_Hook::add('rule_postalias', 'csscrush__ie_inline_block');
-}
 
-function csscrush__disable_ie_inline_block () {
-    CssCrush_Hook::remove('rule_postalias', 'csscrush__ie_inline_block');
-}
-
-function csscrush__ie_inline_block (CssCrush_Rule $rule) {
+function ie_inline_block (Rule $rule) {
 
     if ($rule->propertyCount('display') < 1) {
         return;
@@ -40,8 +38,8 @@ function csscrush__ie_inline_block (CssCrush_Rule $rule) {
             $is_display && $declaration->value !== 'inline-block') {
             continue;
         }
-        $stack[] = new CssCrush_Declaration('*display', 'inline');
-        $stack[] = new CssCrush_Declaration('*zoom', 1);
+        $stack[] = new Declaration('*display', 'inline');
+        $stack[] = new Declaration('*zoom', 1);
     }
     $rule->setDeclarations($stack);
 }

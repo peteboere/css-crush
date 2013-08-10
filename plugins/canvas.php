@@ -47,54 +47,50 @@
  *         canvas-filter: greyscale() colorize(45, 45, 0);
  *     }
  */
-namespace CssCrush\Plugins\Canvas;
+namespace CssCrush;
 
-use CssCrush\Plugin, CssCrush\Hook, CssCrush\Function, CssCrush\Regex;
+use stdClass;
 
-CssCrush_Plugin::register('canvas', array(
-    'enable' => 'csscrush__enable_canvas',
-    'disable' => 'csscrush__disable_canvas',
+Plugin::register('canvas', array(
+    'enable' => function () {
+        Hook::add('capture_phase2', 'CssCrush\canvas_capture');
+        Functions::register('canvas', 'CssCrush\canvas_generator');
+        Functions::register('canvas-data', 'CssCrush\canvas_generator');
+    },
+    'disable' => function () {
+        Hook::remove('capture_phase2', 'CssCrush\canvas_capture');
+        Functions::deRegister('canvas');
+        Functions::deRegister('canvas-data');
+    },
 ));
 
-function csscrush__enable_canvas () {
-    CssCrush_Hook::add('capture_phase2', 'csscrush__canvas_capture');
-    CssCrush\Functions::register('canvas', 'csscrush__canvas_generator');
-    CssCrush\Functions::register('canvas-data', 'csscrush__canvas_generator');
-}
 
-function csscrush__disable_canvas () {
-    CssCrush_Hook::remove('capture_phase2', 'csscrush__canvas_capture');
-    CssCrush\Functions::deRegister('canvas');
-    CssCrush\Functions::deRegister('canvas-data');
-}
-
-function csscrush__canvas_capture ($process) {
+function canvas_capture ($process) {
 
     static $callback, $patt;
     if (! $callback) {
-        $patt = CssCrush_Regex::create('@canvas \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
-        $callback = create_function('$m', '
-            $name = strtolower($m[\'name\']);
-            $block = $m[\'block_content\'];
-            if (! empty($block)) {
-                CssCrush::$process->misc->canvas_defs[$name] = new CssCrush_Template($block);
-            }
-            return \'\';
-        ');
+        $patt = Regex::create('@canvas \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
     }
 
     // Extract definitions.
-    $process->stream->pregReplaceCallback($patt, $callback);
+    $process->stream->pregReplaceCallback($patt, function ($m) {
+        $name = strtolower($m['name']);
+        $block = $m['block_content'];
+        if (! empty($block)) {
+            CssCrush::$process->misc->canvas_defs[$name] = new Template($block);
+        }
+        return '';
+    });
 }
 
-function csscrush__canvas_generator ($input, $context) {
+function canvas_generator ($input, $context) {
 
     $process = CssCrush::$process;
 
     // Check GD requirements are met.
     static $requirements;
     if (! isset($requirements)) {
-        $requirements = csscrush__canvas_requirements();
+        $requirements = canvas_requirements();
     }
     if ($requirements === false) {
         return '';
@@ -107,7 +103,7 @@ function csscrush__canvas_generator ($input, $context) {
     }
 
     // Parse args, bail if none.
-    $args = CssCrush\Functions::parseArgs($input);
+    $args = Functions::parseArgs($input);
     if (! isset($args[0])) {
         return '';
     }
@@ -124,10 +120,10 @@ function csscrush__canvas_generator ($input, $context) {
     $block = $canvas_defs[$name]->apply($args);
 
     // Parse the block into a keyed array.
-    $raw = array_change_key_case(CssCrush_Rule::parseBlock($block, array('keyed' => true)));
+    $raw = array_change_key_case(Rule::parseBlock($block, array('keyed' => true)));
 
     // Create canvas object.
-    $canvas = new CssCrush_Canvas();
+    $canvas = new Canvas();
 
     // Parseable canvas attributes with default values.
     static $schema = array(
@@ -144,10 +140,10 @@ function csscrush__canvas_generator ($input, $context) {
     $canvas->raw = array_intersect_key($raw, $schema) + $schema;
 
     // Pre-populate.
-    csscrush__canvas_preprocess($canvas);
+    canvas_preprocess($canvas);
 
     // Apply functions.
-    csscrush__canvas_apply_css_funcs($canvas);
+    canvas_apply_css_funcs($canvas);
     // csscrush::log($canvas);
 
     // Create fingerprint for this canvas based on canvas object.
@@ -160,7 +156,7 @@ function csscrush__canvas_generator ($input, $context) {
     if (! $cached_file) {
 
         // Source arguments take priority.
-        if ($src = csscrush__canvas_fetch_src($canvas->raw['src'])) {
+        if ($src = canvas_fetch_src($canvas->raw['src'])) {
 
             // Resolve the src image dimensions and positioning.
             $dst_w = $src->width;
@@ -183,13 +179,13 @@ function csscrush__canvas_generator ($input, $context) {
             $canvas->height = $dst_h;
 
             // Create base.
-            csscrush__canvas_create($canvas);
+            canvas_create($canvas);
 
             // Apply background layer.
-            csscrush__canvas_fill($canvas, 'background-fill');
+            canvas_fill($canvas, 'background-fill');
 
             // Filters.
-            csscrush__canvas_apply_filters($canvas, $src);
+            canvas_apply_filters($canvas, $src);
 
             // Place the src image on the base canvas image.
             imagecopyresized(
@@ -214,11 +210,11 @@ function csscrush__canvas_generator ($input, $context) {
             $canvas->fills += array('fill' => 'black');
 
             // Create base.
-            csscrush__canvas_create($canvas);
+            canvas_create($canvas);
 
             // Apply background layer.
-            csscrush__canvas_fill($canvas, 'background-fill');
-            csscrush__canvas_fill($canvas, 'fill');
+            canvas_fill($canvas, 'background-fill');
+            canvas_fill($canvas, 'fill');
         }
     }
     else {
@@ -234,7 +230,7 @@ function csscrush__canvas_generator ($input, $context) {
         }
 
         // Write to the same directory as the output css.
-        $url = new CssCrush_Url($generated_filename);
+        $url = new Url($generated_filename);
         $url->noRewrite = true;
     }
     // Or create data uri.
@@ -248,7 +244,7 @@ function csscrush__canvas_generator ($input, $context) {
             $data = file_get_contents($generated_filepath);
         }
 
-        $url = new CssCrush_Url('data:image/png;base64,' . base64_encode($data));
+        $url = new Url('data:image/png;base64,' . base64_encode($data));
     }
 
     // Cache the output URL.
@@ -258,9 +254,9 @@ function csscrush__canvas_generator ($input, $context) {
 }
 
 
-function csscrush__canvas_fn_linear_gradient ($input, $context) {
+function canvas_fn_linear_gradient ($input, $context) {
 
-    $args = CssCrush\Functions::parseArgs($input) + array(
+    $args = Functions::parseArgs($input) + array(
         'white', 'black',
     );
 
@@ -286,14 +282,14 @@ function csscrush__canvas_fn_linear_gradient ($input, $context) {
     $fill->stops = array();
     $fill->direction = $direction;
 
-    csscrush__canvas_set_fill_dims($fill, $context->canvas);
+    canvas_set_fill_dims($fill, $context->canvas);
 
     // Start color.
-    $color = CssCrush_Color::parse($args[0]);
+    $color = Color::parse($args[0]);
     $fill->stops[] = $color ? $color : array(0,0,0,1);
 
     // End color.
-    $color = CssCrush_Color::parse($args[1]);
+    $color = Color::parse($args[1]);
     $fill->stops[] = $color ? $color : array(255,255,255,1);
 
     if ($flip) {
@@ -303,15 +299,15 @@ function csscrush__canvas_fn_linear_gradient ($input, $context) {
     $context->canvas->fills[$context->currentProperty] = $fill;
 }
 
-function csscrush__canvas_fn_filter ($input, $context) {
+function canvas_fn_filter ($input, $context) {
 
-    $args = CssCrush\Functions::parseArgs($input);
+    $args = Functions::parseArgs($input);
 
     array_unshift($context->canvas->filters, array($context->function, $args));
 }
 
 
-function csscrush__canvas_apply_filters ($canvas, $src) {
+function canvas_apply_filters ($canvas, $src) {
 
     foreach ($canvas->filters as $filter) {
         list($name, $args) = $filter;
@@ -327,14 +323,14 @@ function csscrush__canvas_apply_filters ($canvas, $src) {
                 break;
 
             case 'opacity':
-                csscrush__canvas_fade($src, floatval($args[0]));
+                canvas_fade($src, floatval($args[0]));
                 break;
 
             case 'colorize':
                 $rgb = $args + array('black');
                 if (count($rgb) === 1) {
                     // If only one argument parse it as a CSS color value.
-                    $rgb = CssCrush_Color::parse($rgb[0]);
+                    $rgb = Color::parse($rgb[0]);
                     if (! $rgb) {
                         $rgb = array(0,0,0);
                     }
@@ -376,39 +372,38 @@ function csscrush__canvas_apply_filters ($canvas, $src) {
     }
 }
 
-function csscrush__canvas_apply_css_funcs ($canvas) {
+function canvas_apply_css_funcs ($canvas) {
 
     // Setup functions for using on values.
     static $map;
     if (! $map) {
 
         $fill_functions = array(
-            'canvas-linear-gradient' => 'csscrush__canvas_fn_linear_gradient',
+            'canvas-linear-gradient' => 'CssCrush\canvas_fn_linear_gradient',
         );
         $map['fill'] = array(
-            'patt' => CssCrush_Regex::createFunctionPatt(array_keys($fill_functions)),
+            'patt' => Regex::createFunctionPatt(array_keys($fill_functions)),
             'functions' => $fill_functions,
         );
 
         $filter_functions = array(
-            'contrast' => 'csscrush__canvas_fn_filter',
-            'opacity' => 'csscrush__canvas_fn_filter',
-            'colorize' => 'csscrush__canvas_fn_filter',
-            'grayscale' => 'csscrush__canvas_fn_filter',
-            'greyscale' => 'csscrush__canvas_fn_filter',
-            'brightness' => 'csscrush__canvas_fn_filter',
-            'invert' => 'csscrush__canvas_fn_filter',
-            'blur' => 'csscrush__canvas_fn_filter',
+            'contrast' => 'CssCrush\canvas_fn_filter',
+            'opacity' => 'CssCrush\canvas_fn_filter',
+            'colorize' => 'CssCrush\canvas_fn_filter',
+            'grayscale' => 'CssCrush\canvas_fn_filter',
+            'greyscale' => 'CssCrush\canvas_fn_filter',
+            'brightness' => 'CssCrush\canvas_fn_filter',
+            'invert' => 'CssCrush\canvas_fn_filter',
+            'blur' => 'CssCrush\canvas_fn_filter',
         );
         $map['filter'] = array(
-            'patt' => CssCrush_Regex::createFunctionPatt(array_keys($filter_functions)),
+            'patt' => Regex::createFunctionPatt(array_keys($filter_functions)),
             'functions' => $filter_functions,
         );
 
-        $generic_functions = array_diff_key(
-            CssCrush\Functions::$functions, $map['fill']['functions']);
+        $generic_functions = array_diff_key(Functions::$functions, $map['fill']['functions']);
         $map['generic'] = array(
-            'patt' => CssCrush_Regex::createFunctionPatt(
+            'patt' => Regex::createFunctionPatt(
                 array_keys($generic_functions), array('bare_paren' => true)),
             'functions' => $generic_functions,
         );
@@ -424,29 +419,29 @@ function csscrush__canvas_apply_css_funcs ($canvas) {
         }
 
         // Generic functions.
-        CssCrush\Functions::executeOnString(
+        Functions::executeOnString(
             $value, $map['generic']['patt'], $map['generic']['functions']);
 
         // Fill functions.
         if (in_array($property, array('fill', 'background-fill'))) {
             $context->currentProperty = $property;
             $context->canvas = $canvas;
-            CssCrush\Functions::executeOnString(
+            Functions::executeOnString(
                 $value, $map['fill']['patt'], $map['fill']['functions'], $context);
         }
         elseif ($property === 'canvas-filter') {
             $context->canvas = $canvas;
-            CssCrush\Functions::executeOnString(
+            Functions::executeOnString(
                 $value, $map['filter']['patt'], $map['filter']['functions'], $context);
         }
     }
 }
 
-function csscrush__canvas_preprocess ($canvas) {
+function canvas_preprocess ($canvas) {
 
     if (isset($canvas->raw['margin'])) {
 
-        $parts = csscrush__canvas_parselist($canvas->raw['margin']);
+        $parts = canvas_parselist($canvas->raw['margin']);
         $count = count($parts);
         if ($count === 1) {
             $margin = array($parts[0], $parts[0], $parts[0], $parts[0]);
@@ -481,7 +476,7 @@ function csscrush__canvas_preprocess ($canvas) {
     $canvas->height = $canvas->raw['height'];
 }
 
-function csscrush__canvas_fetch_src ($url_token) {
+function canvas_fetch_src ($url_token) {
 
     if ($url_token && $url = CssCrush::$process->tokens->get($url_token)) {
 
@@ -527,7 +522,7 @@ function csscrush__canvas_fetch_src ($url_token) {
     Adapted from GD Gradient Fill by Ozh (http://planetozh.com):
     http://planetozh.com/blog/my-projects/images-php-gd-gradient-fill
 */
-function csscrush__canvas_gradient ($canvas, $fill) {
+function canvas_gradient ($canvas, $fill) {
 
     $image = $canvas->image;
 
@@ -552,7 +547,7 @@ function csscrush__canvas_gradient ($canvas, $fill) {
         $g = $g2 - $g1 ? intval($g1 + ($g2 - $g1) * ($line / $line_numbers)): $g1;
         $b = $b2 - $b1 ? intval($b1 + ($b2 - $b1) * ($line / $line_numbers)): $b1;
         $a = $a2 - $a1 ? ($a1 + ($a2 - $a1) * ($line / $line_numbers)) : $a1;
-        $a = csscrush__canvas_opacity($a);
+        $a = canvas_opacity($a);
 
         if ($last != "$r,$g,$b,$a") {
             $color = imagecolorallocatealpha($image, $r, $g, $b, $a);
@@ -582,17 +577,17 @@ function csscrush__canvas_gradient ($canvas, $fill) {
     }
 }
 
-function csscrush__canvas_create ($canvas) {
+function canvas_create ($canvas) {
 
     $margin = $canvas->margin;
     $width = $canvas->width + $margin->right + $margin->left;
     $height = $canvas->height + $margin->top + $margin->bottom;
 
     // Create image object.
-    $canvas->image = csscrush__canvas_create_transparent($width, $height);
+    $canvas->image = canvas_create_transparent($width, $height);
 }
 
-function csscrush__canvas_create_transparent ($width, $height) {
+function canvas_create_transparent ($width, $height) {
 
     $image = imagecreatetruecolor($width, $height);
 
@@ -604,12 +599,12 @@ function csscrush__canvas_create_transparent ($width, $height) {
     return $image;
 }
 
-function csscrush__canvas_fade ($src, $opacity) {
+function canvas_fade ($src, $opacity) {
 
     $width = imagesx($src->image);
     $height = imagesy($src->image);
-    $new_image = csscrush__canvas_create_transparent($width, $height);
-    $opacity = csscrush__canvas_opacity($opacity);
+    $new_image = canvas_create_transparent($width, $height);
+    $opacity = canvas_opacity($opacity);
 
     // Perform pixel-based alpha map application
     for ($x = 0; $x < $width; $x++) {
@@ -625,7 +620,7 @@ function csscrush__canvas_fade ($src, $opacity) {
 }
 
 
-function csscrush__canvas_fill ($canvas, $property) {
+function canvas_fill ($canvas, $property) {
 
     if (! isset($canvas->fills[$property])) {
         return false;
@@ -634,18 +629,18 @@ function csscrush__canvas_fill ($canvas, $property) {
 
     // Gradient fill.
     if (is_object($fill)) {
-        csscrush__canvas_gradient($canvas, $fill);
+        canvas_gradient($canvas, $fill);
     }
 
     // Solid color fill.
-    elseif ($solid = CssCrush_Color::parse($fill)) {
+    elseif ($solid = Color::parse($fill)) {
 
         list($r, $g, $b, $a) = $solid;
-        $color = imagecolorallocatealpha($canvas->image, $r, $g, $b, csscrush__canvas_opacity($a));
+        $color = imagecolorallocatealpha($canvas->image, $r, $g, $b, canvas_opacity($a));
 
         $fill = new stdClass();
         $canvas->currentProperty = $property;
-        csscrush__canvas_set_fill_dims($fill, $canvas);
+        canvas_set_fill_dims($fill, $canvas);
 
         imagefilledrectangle($canvas->image, $fill->x1, $fill->y1, $fill->x2, $fill->y2, $color);
         imagealphablending($canvas->image, true);
@@ -657,7 +652,7 @@ function csscrush__canvas_fill ($canvas, $property) {
     }
 }
 
-function csscrush__canvas_set_fill_dims ($fill, $canvas) {
+function canvas_set_fill_dims ($fill, $canvas) {
 
     // Resolve fill dimensions and coordinates.
     $margin = $canvas->margin;
@@ -675,7 +670,7 @@ function csscrush__canvas_set_fill_dims ($fill, $canvas) {
     }
 }
 
-function csscrush__canvas_requirements () {
+function canvas_requirements () {
 
     $error_messages = array();
 
@@ -705,7 +700,7 @@ function csscrush__canvas_requirements () {
 /*
     Canvas object.
 */
-class CssCrush_Canvas
+class Canvas
 {
     public $image, $fills = array(), $filters = array();
 
@@ -720,11 +715,11 @@ class CssCrush_Canvas
 /*
     Helpers.
 */
-function csscrush__canvas_opacity ($float) {
+function canvas_opacity ($float) {
     return 127 - max(min(round($float * 127), 127), 0);
 }
 
-function csscrush__canvas_parselist ($str, $numbers = true) {
+function canvas_parselist ($str, $numbers = true) {
     $list = preg_split('~ +~', trim($str));
     return $numbers ? array_map('floatval', $list) : $list;
 }

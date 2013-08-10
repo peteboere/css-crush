@@ -15,21 +15,19 @@
  *     *filter: alpha(opacity=50), progid:DXImageTransform.Microsoft.Blur(strength=10);
  *     zoom: 1;
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('ie-filter', array(
-    'enable' => 'csscrush__enable_ie_filter',
-    'disable' => 'csscrush__disable_ie_filter',
+Plugin::register('ie-filter', array(
+    'enable' => function () {
+        Hook::add('rule_postalias', 'CssCrush\ie_filter');
+    },
+    'disable' => function () {
+        Hook::remove('rule_postalias', 'CssCrush\ie_filter');
+    },
 ));
 
-function csscrush__enable_ie_filter () {
-    CssCrush_Hook::add('rule_postalias', 'csscrush__ie_filter');
-}
 
-function csscrush__disable_ie_filter () {
-    CssCrush_Hook::remove('rule_postalias', 'csscrush__ie_filter');
-}
-
-function csscrush__ie_filter (CssCrush_Rule $rule) {
+function ie_filter (Rule $rule) {
 
     if ($rule->propertyCount('-ms-filter') < 1) {
         return;
@@ -55,13 +53,13 @@ function csscrush__ie_filter (CssCrush_Rule $rule) {
         }
         $declaration->value = implode(',', $list);
         if (! $rule->propertyCount('zoom')) {
-            // Filters need hasLayout
-            $new_set[] = new CssCrush_Declaration('zoom', 1);
+            // Filters need hasLayout.
+            $new_set[] = new Declaration('zoom', 1);
         }
-        // Quoted version for -ms-filter IE >= 8
-        $new_set[] = new CssCrush_Declaration('-ms-filter', "\"$declaration->value\"");
-        // Star escaped property for IE < 8
-        $new_set[] = new CssCrush_Declaration('*filter', $declaration->value);
+        // Quoted version for -ms-filter IE >= 8.
+        $new_set[] = new Declaration('-ms-filter', "\"$declaration->value\"");
+        // Star escaped property for IE < 8.
+        $new_set[] = new Declaration('*filter', $declaration->value);
     }
     $rule->setDeclarations($new_set);
 }

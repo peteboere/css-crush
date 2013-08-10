@@ -9,21 +9,19 @@
  *     min-height: 100px;
  *     _height: 100px;
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('ie-min-height', array(
-    'enable' => 'csscrush__enable_ie_min_height',
-    'disable' => 'csscrush__disable_ie_min_height',
+Plugin::register('ie-min-height', array(
+    'enable' => function () {
+        Hook::add('rule_postalias', 'CssCrush\ie_min_height');
+    },
+    'disable' => function () {
+        Hook::remove('rule_postalias', 'CssCrush\ie_min_height');
+    },
 ));
 
-function csscrush__enable_ie_min_height () {
-    CssCrush_Hook::add('rule_postalias', 'csscrush__ie_min_height');
-}
 
-function csscrush__disable_ie_min_height () {
-    CssCrush_Hook::remove('rule_postalias', 'csscrush__ie_min_height');
-}
-
-function csscrush__ie_min_height (CssCrush_Rule $rule) {
+function ie_min_height (Rule $rule) {
 
     if ($rule->propertyCount('min-height') < 1) {
         return;
@@ -36,7 +34,7 @@ function csscrush__ie_min_height (CssCrush_Rule $rule) {
             $declaration->property !== 'min-height') {
             continue;
         }
-        $new_set[] = new CssCrush_Declaration('_height', $declaration->value);
+        $new_set[] = new Declaration('_height', $declaration->value);
     }
     $rule->setDeclarations($new_set);
 }

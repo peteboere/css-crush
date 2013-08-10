@@ -17,12 +17,13 @@ namespace CssCrush;
 
 Plugin::register('spiffing', array(
     'enable' => function () {
-        Hook::add('rule_preprocess', 'spiffing');
+        Hook::add('rule_preprocess', 'CssCrush\spiffing');
     },
     'disable' => function () {
-        CssCrush_Hook::remove('rule_preprocess');
+        Hook::remove('rule_preprocess', 'CssCrush\spiffing');
     },
 ));
+
 
 function spiffing ($rule) {
 

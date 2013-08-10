@@ -131,7 +131,7 @@ class Rule implements \IteratorAggregate
         else {
 
             $formatter = $process->ruleFormatter ?
-                $process->ruleFormatter : 'csscrush__fmtr_block';
+                $process->ruleFormatter : 'CssCrush\fmtr_block';
 
             return "$stub{$formatter($this)}";
         }
@@ -701,7 +701,7 @@ class Rule implements \IteratorAggregate
 
     public function getIterator ()
     {
-        return new ArrayIterator($this->declarations);
+        return new \ArrayIterator($this->declarations);
     }
 
 

@@ -201,17 +201,17 @@ class Process
 
     protected function resolveSelectorAliases ()
     {
-        static $alias_patt, $callback;
+        static $alias_patt;
         if (! $alias_patt) {
             $alias_patt = Regex::create('@selector-alias +\:({{ident}}) +([^;]+) *;', 'iS');
-            $callback = create_function('$m', '
-                $name = strtolower($m[1]);
-                $body = Util::stripCommentTokens($m[2]);
-                $template = new Template($body);
-                CssCrush::$process->selectorAliases[$name] = $template;
-            ');
         }
-        $this->stream->pregReplaceCallback($alias_patt, $callback);
+
+        $this->stream->pregReplaceCallback($alias_patt, function ($m) {
+            $name = strtolower($m[1]);
+            $body = Util::stripCommentTokens($m[2]);
+            $template = new Template($body);
+            CssCrush::$process->selectorAliases[$name] = $template;
+        });
 
         // Merge with global selector aliases.
         $this->selectorAliases += CssCrush::$config->selectorAliases;
@@ -256,11 +256,10 @@ class Process
             if (isset($selector_alias_call[2])) {
 
                 // Parse argument list.
-                if (! preg_match(Regex::$patt->balancedParens, $str,
-                    $parens, PREG_OFFSET_CAPTURE, $start)) {
+                if (! preg_match(Regex::$patt->parens, $str, $parens, PREG_OFFSET_CAPTURE, $start)) {
                     continue;
                 }
-                $args = Functions::parseArgs($parens[1][0]);
+                $args = Functions::parseArgs($parens[2][0]);
 
                 // Amend offsets.
                 $paren_start = $parens[0][1];
@@ -416,13 +415,19 @@ class Process
     #############################
     #  Variables.
 
-    protected function calculateVars ()
+    protected function captureVars ()
     {
         $config = CssCrush::$config;
         $regex = Regex::$patt;
         $option_vars = $this->options->vars;
 
-        $this->stream->pregReplaceCallback($regex->vars, '\CssCrush\Process::cb_captureVars');
+        $this->stream->pregReplaceCallback($regex->vars, function ($m) {
+            CssCrush::$process->vars =
+                array_merge(
+                    CssCrush::$process->vars,
+                    Rule::parseBlock($m['block_content'], array('keyed' => true, 'ignore_directives' => true))
+                );
+        });
 
         // In-file variables override global variables.
         $this->vars = array_merge($config->vars, $this->vars);
@@ -432,16 +437,9 @@ class Process
             $this->vars = array_merge($this->vars, $option_vars);
         }
 
-        // Place variables referenced inside variables. Excecute custom functions.
+        // Place variables referenced inside variables.
         foreach ($this->vars as $name => &$value) {
-
-            // Referenced variables.
-            $value = preg_replace_callback($regex->varFunction, '\CssCrush\Process::cb_placeVars', $value);
-
-            // Variable values can be escaped from function parsing with a tilde prefix.
-            if (strpos($value, '~') !== 0) {
-                Functions::executeOnString($value);
-            }
+            $value = preg_replace_callback($regex->varFunction, 'CssCrush\Process::cb_placeVars', $value);
         }
     }
 
@@ -472,28 +470,29 @@ class Process
 
         // Variables with no default value.
         $value = preg_replace_callback($regex->varFunction,
-            '\CssCrush\Process::cb_placeVars', $value, -1, $count);
+            'CssCrush\Process::cb_placeVars', $value, -1, $vars_placed);
 
         if (strpos($value, '$(') !== false) {
 
-            // Variables with default value.
-            Functions::executeOnString($value, '~(\$)\(~',
-                array('$' => '\CssCrush\Process::cb_placeVarsWithDefault'));
+            // Assume at least one replace.
+            $vars_placed = 1;
 
-            // Assume at least 1 replace.
-            $count = 1;
+            // Variables with default value.
+            $callback = function ($raw_arg) {
+                list($name, $default_value) = Functions::parseArgsSimple($raw_arg);
+                if (isset(CssCrush::$process->vars[$name])) {
+                    return CssCrush::$process->vars[$name];
+                }
+                else {
+                    return $default_value;
+                }
+            };
+
+            Functions::executeOnString($value, '~(\$)\(~', array('$' => $callback));
         }
 
         // If we know replacements have been made we may want to update $value. e.g URL tokens.
-        return $count;
-    }
-
-    static public function cb_captureVars ($m)
-    {
-        CssCrush::$process->vars =
-            array_merge(
-                CssCrush::$process->vars,
-                Rule::parseBlock($m['block_content'], array('keyed' => true, 'ignore_directives' => true)));
+        return $vars_placed;
     }
 
     static protected function cb_placeVars ($m)
@@ -501,18 +500,6 @@ class Process
         $var_name = $m[1];
         if (isset(CssCrush::$process->vars[$var_name])) {
             return CssCrush::$process->vars[$var_name];
-        }
-    }
-
-    static public function cb_placeVarsWithDefault ($raw_arg)
-    {
-        list($name, $default_value) = Functions::parseArgsSimple($raw_arg);
-
-        if (isset(CssCrush::$process->vars[$name])) {
-            return CssCrush::$process->vars[$name];
-        }
-        else {
-            return $default_value;
         }
     }
 
@@ -555,14 +542,9 @@ class Process
 
     protected function captureMixins ()
     {
-        static $callback;
-        if (! $callback) {
-            $callback = create_function('$m', '
-                CssCrush::$process->mixins[$m[\'name\']] = new Mixin($m[\'block_content\']);
-            ');
-        }
-
-        $this->stream->pregReplaceCallback(Regex::$patt->mixin, $callback);
+        $this->stream->pregReplaceCallback(Regex::$patt->mixin, function ($m) {
+            CssCrush::$process->mixins[$m['name']] = new Mixin($m['block_content']);
+        });
     }
 
 
@@ -571,29 +553,27 @@ class Process
 
     protected function resolveFragments ()
     {
-        static $capture_callback, $invoke_callback;
-        if (! $capture_callback) {
+        $fragments =& CssCrush::$process->fragments;
 
-            $capture_callback = create_function('$m', '
-                CssCrush::$process->fragments[$m[\'name\']] = new CssCrush\Fragment(
-                    $m[\'block_content\'],
-                    array(\'name\' => strtolower($m[\'name\'])));
-                return \'\';');
+        $this->stream->pregReplaceCallback(Regex::$patt->fragmentCapture, function ($m) use (&$fragments) {
+            $fragments[$m['name']] = new Fragment(
+                    $m['block_content'],
+                    array('name' => strtolower($m['name']))
+                );
+            return '';
+        });
 
-            $invoke_callback = create_function('$m', '
-                $fragment = isset(CssCrush::$process->fragments[$m[\'name\']]) ? CssCrush::$process->fragments[$m[\'name\']] : null;
-                if ($fragment) {
-                    $args = array();
-                    if (isset($m[\'parens\'])) {
-                        $args = Functions::parseArgs($m[\'parens_content\']);
-                    }
-                    return $fragment->apply($args);
+        $this->stream->pregReplaceCallback(Regex::$patt->fragmentInvoke, function ($m) use (&$fragments) {
+            $fragment = isset($fragments[$m['name']]) ? $fragments[$m['name']] : null;
+            if ($fragment) {
+                $args = array();
+                if (isset($m['parens'])) {
+                    $args = Functions::parseArgs($m['parens_content']);
                 }
-                return \'\';');
-        }
-
-        $this->stream->pregReplaceCallback(Regex::$patt->fragmentCapture, $capture_callback);
-        $this->stream->pregReplaceCallback(Regex::$patt->fragmentInvoke, $invoke_callback);
+                return $fragment->apply($args);
+            }
+            return '';
+        });
     }
 
 
@@ -644,7 +624,6 @@ class Process
             if ($aliases['declarations']) {
                 $rule->addDeclarationAliases();
             }
-
             Hook::run('rule_postalias', $rule);
 
             $rule->expandSelectors();
@@ -660,7 +639,7 @@ class Process
     #############################
     #  @in blocks.
 
-    protected function prefixSelectors ()
+    protected function resolveInBlocks ()
     {
         $matches = $this->stream->matchAll('~@in\s+([^{]+)\{~iS');
         $tokens = CssCrush::$process->tokens;
@@ -952,7 +931,7 @@ class Process
         $this->stream = new Stream(Importer::hostfile($this->input));
 
         // Extract and calculate variables.
-        $this->calculateVars();
+        $this->captureVars();
 
         $this->placeAllVars();
 
@@ -973,7 +952,7 @@ class Process
         $this->captureRules();
         // csscrush::log(array_keys($this->references));
 
-        $this->prefixSelectors();
+        $this->resolveInBlocks();
 
         $this->aliasAtRules();
 
@@ -1108,27 +1087,24 @@ class Process
 
     protected function minifyColors ()
     {
-        static $keywords_patt, $keywords_callback, $functions_patt, $functions_callback;
+        static $keywords_patt, $functions_patt;
 
         if (! $keywords_patt) {
-
             $keywords =& Color::loadMinifyableKeywords();
-
             $keywords_patt = '~(?<![\w-\.#])(' . implode('|', array_keys($keywords)) . ')(?![\w-\.#\]])~iS';
-            $keywords_callback = create_function('$m',
-                'return Color::$minifyableKeywords[strtolower($m[0])];');
-
             $functions_patt = Regex::create('{{LB}}(rgb|hsl)\(([^\)]{5,})\)', 'iS');
-            $functions_callback = create_function('$m', '
-                $args = Functions::parseArgs(trim($m[2]));
-                if (stripos($m[1], \'hsl\') === 0) {
-                    $args = Color::cssHslToRgb($args);
-                }
-                return Color::rgbToHex($args);
-            ');
         }
 
-        $this->stream->pregReplaceCallback($keywords_patt, $keywords_callback);
-        $this->stream->pregReplaceCallback($functions_patt, $functions_callback);
+        $this->stream->pregReplaceCallback($keywords_patt, function ($m) {
+            return Color::$minifyableKeywords[strtolower($m[0])];
+        });
+
+        $this->stream->pregReplaceCallback($functions_patt, function ($m) {
+            $args = Functions::parseArgs(trim($m[2]));
+            if (stripos($m[1], 'hsl') === 0) {
+                $args = Color::cssHslToRgb($args);
+            }
+            return Color::rgbToHex($args);
+        });
     }
 }

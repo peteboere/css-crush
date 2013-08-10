@@ -102,7 +102,7 @@ class Declaration
                 $this->value,
                 Regex::$patt->thisFunction,
                 array(
-                    'this' => 'csscrush_fn__this',
+                    'this' => 'CssCrush\fn__this',
                 ),
                 $context);
 

@@ -111,10 +111,6 @@ class Regex
             \s*
             {{block}}', 'xiS');
 
-        // Balanced bracket matching.
-        $patt->balancedParens  = '~\(\s* ( (?: (?>[^()]+) | (?R) )* ) \s*\)~xS';
-        $patt->balancedCurlies = '~\{\s* ( (?: (?>[^{}]+) | (?R) )* ) \s*\}~xS';
-
         // Misc.
         $patt->vendorPrefix = '~^-([a-z]+)-([a-z-]+)~iS';
         $patt->ruleDirective = '~^(?:(@include)|(@extends?)|(@name))[\s]+~iS';

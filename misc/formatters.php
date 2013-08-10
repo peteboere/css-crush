@@ -4,15 +4,15 @@
   * Formatter callbacks.
   *
   */
-use CssCrush\CssCrush;
+namespace CssCrush;
 
 CssCrush::$config->formatters = array(
-    'single-line' => 'csscrush__fmtr_single',
-    'padded' => 'csscrush__fmtr_padded',
-    'block' => 'csscrush__fmtr_block',
+    'single-line' => 'CssCrush\fmtr_single',
+    'padded' => 'CssCrush\fmtr_padded',
+    'block' => 'CssCrush\fmtr_block',
 );
 
-function csscrush__fmtr_single ($rule) {
+function fmtr_single ($rule) {
 
     $EOL = CssCrush::$process->newline;
 
@@ -21,7 +21,7 @@ function csscrush__fmtr_single ($rule) {
     return "$selectors { $block; }$EOL";
 }
 
-function csscrush__fmtr_padded ($rule, $padding = 40) {
+function fmtr_padded ($rule, $padding = 40) {
 
     $EOL = CssCrush::$process->newline;
 
@@ -38,7 +38,7 @@ function csscrush__fmtr_padded ($rule, $padding = 40) {
     }
 }
 
-function csscrush__fmtr_block ($rule, $indent = '    ') {
+function fmtr_block ($rule, $indent = '    ') {
 
     $EOL = CssCrush::$process->newline;
 

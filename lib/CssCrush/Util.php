@@ -93,7 +93,7 @@ class Util
             return strlen($str) ? array($str) : array();
         }
 
-        if ($match_count = preg_match_all(Regex::$patt->balancedParens, $str, $matches)) {
+        if ($match_count = preg_match_all(Regex::$patt->parens, $str, $matches)) {
             $keys = array();
             foreach ($matches[0] as $index => &$value) {
                 $keys[] = "?$index?";

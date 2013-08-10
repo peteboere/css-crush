@@ -27,8 +27,7 @@ class BalancedMatch
             return;
         }
 
-        $patt = $opener === '{' ?
-            Regex::$patt->balancedCurlies : Regex::$patt->balancedParens;
+        $patt = ($opener === '{') ? Regex::$patt->block : Regex::$patt->parens;
 
         if (preg_match($patt, $stream->raw, $m, PREG_OFFSET_CAPTURE, $this->offset)) {
 
@@ -45,7 +44,7 @@ class BalancedMatch
 
     public function inside ()
     {
-        return $this->match[1][0];
+        return $this->match[2][0];
     }
 
     public function whole ()

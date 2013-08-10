@@ -26,7 +26,7 @@ Plugin::register('initial', array(
     },
 ));
 
-function initial (CssCrush_Rule $rule) {
+function initial (Rule $rule) {
 
     static $initial_values;
     if (! $initial_values) {

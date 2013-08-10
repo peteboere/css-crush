@@ -39,25 +39,23 @@
  *      background-image: svg-radial-gradient( 100% 50%, rgba(255,255,255,.5), rgba(255,255,255,0) );
  *
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('svg-gradients', array(
-    'enable' => 'csscrush__enable_svg_gradients',
-    'disable' => 'csscrush__disable_svg_gradients',
+Plugin::register('svg-gradients', array(
+    'enable' => function () {
+        Functions::register('svg-linear-gradient', 'CssCrush\fn__svg_linear_gradient');
+        Functions::register('svg-radial-gradient', 'CssCrush\fn__svg_radial_gradient');
+    },
+    'disable' => function () {
+        Functions::deRegister('svg-linear-gradient');
+        Functions::deRegister('svg-radial-gradient');
+    },
 ));
 
-function csscrush__enable_svg_gradients () {
-    CssCrush\Functions::register('svg-linear-gradient', 'csscrush_fn__svg_linear_gradient');
-    CssCrush\Functions::register('svg-radial-gradient', 'csscrush_fn__svg_radial_gradient');
-}
 
-function csscrush__disable_svg_gradients () {
-    CssCrush\Functions::deRegister('svg-linear-gradient');
-    CssCrush\Functions::deRegister('svg-radial-gradient');
-}
+function fn__svg_linear_gradient ($input) {
 
-function csscrush_fn__svg_linear_gradient ($input) {
-
-    $gradient = csscrush__create_svg_linear_gradient($input);
+    $gradient = create_svg_linear_gradient($input);
     $gradient_markup = reset($gradient);
     $gradient_id = key($gradient);
 
@@ -70,15 +68,15 @@ function csscrush_fn__svg_linear_gradient ($input) {
     $svg .= '</svg>';
 
     // Create data-uri url and return token label.
-    $url = new CssCrush_Url('data:image/svg+xml;base64,' . base64_encode($svg));
+    $url = new Url('data:image/svg+xml;base64,' . base64_encode($svg));
 
     return $url->label;
 }
 
 
-function csscrush_fn__svg_radial_gradient ($input) {
+function fn__svg_radial_gradient ($input) {
 
-    $gradient = csscrush__create_svg_radial_gradient($input);
+    $gradient = create_svg_radial_gradient($input);
     $gradient_markup = reset($gradient);
     $gradient_id = key($gradient);
 
@@ -91,13 +89,13 @@ function csscrush_fn__svg_radial_gradient ($input) {
     $svg .= '</svg>';
 
     // Create data-uri url and return token label.
-    $url = new CssCrush_Url('data:image/svg+xml;base64,' . base64_encode($svg));
+    $url = new Url('data:image/svg+xml;base64,' . base64_encode($svg));
 
     return $url->label;
 }
 
 
-function csscrush__create_svg_linear_gradient ($input) {
+function create_svg_linear_gradient ($input) {
 
     static $angle_keywords, $deg_patt;
     if (! $angle_keywords) {
@@ -117,10 +115,10 @@ function csscrush__create_svg_linear_gradient ($input) {
         $angle_keywords['to right bottom'] = $angle_keywords['to bottom right'];
         $angle_keywords['to left bottom'] = $angle_keywords['to bottom left'];
 
-        $deg_patt = CssCrush_Regex::create('^{{number}}deg$', 'i');
+        $deg_patt = Regex::create('^{{number}}deg$', 'i');
     }
 
-    $args = CssCrush\Functions::parseArgs($input);
+    $args = Functions::parseArgs($input);
 
     // If no angle argument is passed the default.
     $angle = 0;
@@ -212,7 +210,7 @@ function csscrush__create_svg_linear_gradient ($input) {
     // - Capture their color values and if specified color offset percentages.
     // - Only percentages are supported as SVG gradients to accept other length values
     //   for color stop offsets.
-    $color_stops = csscrush__parse_gradient_color_stops($args);
+    $color_stops = parse_gradient_color_stops($args);
 
     // Create the gradient markup with a unique id.
     static $uid = 0;
@@ -227,7 +225,7 @@ function csscrush__create_svg_linear_gradient ($input) {
 }
 
 
-function csscrush__create_svg_radial_gradient ($input) {
+function create_svg_radial_gradient ($input) {
 
     static $position_keywords, $origin_patt;
     if (! $position_keywords) {
@@ -248,10 +246,10 @@ function csscrush__create_svg_radial_gradient ($input) {
         $position_keywords['at right bottom'] = $position_keywords['at bottom right'];
         $position_keywords['at left bottom'] = $position_keywords['at bottom left'];
 
-        $origin_patt = CssCrush_Regex::create('^({{number}}%?) +({{number}}%?)$');
+        $origin_patt = Regex::create('^({{number}}%?) +({{number}}%?)$');
     }
 
-    $args = CssCrush\Functions::parseArgs($input);
+    $args = Functions::parseArgs($input);
 
     // Default origin,
     $position = $position_keywords['at center'];
@@ -279,7 +277,7 @@ function csscrush__create_svg_radial_gradient ($input) {
     // - Capture their color values and if specified color offset percentages.
     // - Only percentages are supported as SVG gradients to accept other length values
     //   for color stop offsets.
-    $color_stops = csscrush__parse_gradient_color_stops($args);
+    $color_stops = parse_gradient_color_stops($args);
 
     // Create the gradient markup with a unique id.
     static $uid = 0;
@@ -294,7 +292,7 @@ function csscrush__create_svg_radial_gradient ($input) {
 }
 
 
-function csscrush__parse_gradient_color_stops (array $color_stop_args) {
+function parse_gradient_color_stops (array $color_stop_args) {
 
     $offsets = array();
     $colors = array();
@@ -323,7 +321,7 @@ function csscrush__parse_gradient_color_stops (array $color_stop_args) {
         // For hsla()/rgba() extract alpha component from color values and
         // convert to hsl()/rgb().
         // Webkit doesn't support them for SVG colors.
-        $colors[] = CssCrush_Color::colorSplit($color);
+        $colors[] = Color::colorSplit($color);
     }
 
     // For unspecified color offsets fill in the blanks.

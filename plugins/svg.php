@@ -57,54 +57,51 @@
  * https://bugzilla.mozilla.org/show_bug.cgi?id=628747#c0
  *
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('svg', array(
-    'enable' => 'csscrush__enable_svg',
-    'disable' => 'csscrush__disable_svg',
+Plugin::register('svg', array(
+    'enable' => function () {
+        Hook::add('capture_phase2', 'CssCrush\svg_capture');
+        Functions::register('svg', 'CssCrush\fn__svg');
+        Functions::register('svg-data', 'CssCrush\fn__svg_data');
+    },
+    'disable' => function () {
+        Hook::remove('capture_phase2', 'CssCrush\svg_capture');
+        Functions::deRegister('svg');
+        Functions::deRegister('svg-data');
+    },
 ));
 
-function csscrush__enable_svg () {
-    CssCrush_Hook::add('capture_phase2', 'csscrush__svg_capture');
-    CssCrush\Functions::register('svg', 'csscrush_fn__svg');
-    CssCrush\Functions::register('svg-data', 'csscrush_fn__svg_data');
+
+function fn__svg ($input) {
+
+    return svg_generator($input, 'svg');
 }
 
-function csscrush__disable_svg () {
-    CssCrush_Hook::remove('capture_phase2', 'csscrush__svg_capture');
-    CssCrush\Functions::deRegister('svg');
-    CssCrush\Functions::deRegister('svg-data');
+function fn__svg_data ($input) {
+
+    return svg_generator($input, 'svg-data');
 }
 
-function csscrush_fn__svg ($input) {
+function svg_capture ($process) {
 
-    return csscrush__svg_generator($input, 'svg');
-}
-
-function csscrush_fn__svg_data ($input) {
-
-    return csscrush__svg_generator($input, 'svg-data');
-}
-
-function csscrush__svg_capture ($process) {
-
-    static $callback, $patt;
-    if (! $callback) {
-        $patt = CssCrush_Regex::create('@svg \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
-        $callback = create_function('$m', '
-            $name = strtolower($m[\'name\']);
-            $block = $m[\'block_content\'];
-            if (! empty($block)) {
-                CssCrush::$process->misc->svg_defs[$name] = new CssCrush_Template($block);
-            }
-            return \'\';
-        ');
+    static $patt;
+    if (! $patt) {
+        $patt = Regex::create('@svg \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
     }
 
     // Extract svg definitions.
-    $process->stream->pregReplaceCallback($patt, $callback);
+    $process->stream->pregReplaceCallback($patt, function ($m) {
+        $name = strtolower($m['name']);
+        $block = $m['block_content'];
+        if (! empty($block)) {
+            CssCrush::$process->misc->svg_defs[$name] = new Template($block);
+        }
+        return '';
+    });
 }
 
-function csscrush__svg_generator ($input, $fn_name) {
+function svg_generator ($input, $fn_name) {
 
     $process = CssCrush::$process;
 
@@ -183,7 +180,7 @@ function csscrush__svg_generator ($input, $fn_name) {
     );
 
     // Bail if no args.
-    $args = CssCrush\Functions::parseArgs($input);
+    $args = Functions::parseArgs($input);
     if (! isset($args[0])) {
 
         return '';
@@ -202,7 +199,7 @@ function csscrush__svg_generator ($input, $fn_name) {
     $block = $svg_defs[$name]->apply($args);
 
     // Parse the block into a keyed assoc array.
-    $raw_data = array_change_key_case(CssCrush_Rule::parseBlock($block, array('keyed' => true)));
+    $raw_data = array_change_key_case(Rule::parseBlock($block, array('keyed' => true)));
 
     // Resolve the type.
     // Bail if type not recognised.
@@ -242,7 +239,7 @@ function csscrush__svg_generator ($input, $fn_name) {
         }
     }
 
-    csscrush__svg_apply_css_funcs($element, $raw_data);
+    svg_apply_css_funcs($element, $raw_data);
 
     // Initialize element attributes.
     $element->attrs = array_intersect_key($raw_data, $schemas[$type]['attrs']);
@@ -252,19 +249,19 @@ function csscrush__svg_generator ($input, $fn_name) {
     $element->styles = array_diff_key($raw_data, $custom_attrs, $schemas[$type]['attrs']);
 
     // Pre-populate common attributes.
-    csscrush__svg_preprocess($element);
+    svg_preprocess($element);
 
     // Filters.
-    csscrush__svg_apply_filters($element);
+    svg_apply_filters($element);
 
     // Apply element type callback.
-    call_user_func("csscrush__svg_$type", $element);
+    call_user_func("CssCrush\svg_$type", $element);
 
     // Apply optimizations.
-    csscrush__svg_compress($element);
+    svg_compress($element);
 
     // Build markup.
-    $svg = csscrush__svg_render($element);
+    $svg = svg_render($element);
 
     // Debugging...
     // $code = implode("\n", $svg);
@@ -283,15 +280,15 @@ function csscrush__svg_generator ($input, $fn_name) {
         // Write to the same directory as the output css.
         $generated_path = $process->output->dir . '/' . $generated_filename;
 
-        CssCrush_Util::filePutContents($generated_path, $flattened_svg, __METHOD__);
+        Util::filePutContents($generated_path, $flattened_svg, __METHOD__);
 
         $generated_url = $generated_filename;
-        $url = new CssCrush_Url($generated_url);
+        $url = new Url($generated_url);
         $url->noRewrite = true;
     }
     // Or create data uri.
     else {
-        $url = new CssCrush_Url('data:image/svg+xml;base64,' . base64_encode(implode('', $svg)));
+        $url = new Url('data:image/svg+xml;base64,' . base64_encode(implode('', $svg)));
     }
 
     // Cache the output URL.
@@ -304,7 +301,7 @@ function csscrush__svg_generator ($input, $fn_name) {
 /*
     Circle callback.
 */
-function csscrush__svg_circle ($element) {
+function svg_circle ($element) {
 
     // Ensure required attributes have defaults set.
     $element->data += array(
@@ -314,12 +311,12 @@ function csscrush__svg_circle ($element) {
     list($margin_top, $margin_right, $margin_bottom, $margin_left) = $element->data['margin'];
 
     $element->attrs['r'] =
-    $radius = csscrush__ifset($element->attrs['r'], $element->data['diameter'] / 2);
+    $radius = svg_ifset($element->attrs['r'], $element->data['diameter'] / 2);
 
     $diameter = $radius * 2;
 
-    $element->attrs['cx'] = csscrush__ifset($element->attrs['cx'], $margin_left + $radius);
-    $element->attrs['cy'] = csscrush__ifset($element->attrs['cy'], $margin_top + $radius);
+    $element->attrs['cx'] = svg_ifset($element->attrs['cx'], $margin_left + $radius);
+    $element->attrs['cy'] = svg_ifset($element->attrs['cy'], $margin_top + $radius);
 
     $element->svg_attrs['width'] = $margin_left + $diameter + $margin_right;
     $element->svg_attrs['height'] = $margin_top + $diameter + $margin_bottom;
@@ -328,7 +325,7 @@ function csscrush__svg_circle ($element) {
 /*
     Rect callback.
 */
-function csscrush__svg_rect ($element) {
+function svg_rect ($element) {
 
     $element->data += array(
         'width' => 50,
@@ -343,7 +340,7 @@ function csscrush__svg_rect ($element) {
     $element->attrs['height'] = $element->data['height'];
 
     if (isset($element->data['corner-radius'])) {
-        $args = csscrush__svg_parselist($element->data['corner-radius']);
+        $args = svg_parselist($element->data['corner-radius']);
         $element->attrs['rx'] = isset($args[0]) ? $args[0] : 0;
         $element->attrs['ry'] = isset($args[1]) ? $args[1] : $args[0];
     }
@@ -355,14 +352,14 @@ function csscrush__svg_rect ($element) {
 /*
     Ellipse callback.
 */
-function csscrush__svg_ellipse ($element) {
+function svg_ellipse ($element) {
 
     $element->data += array(
         'diameter' => '100 50',
     );
 
     if (! isset($element->attrs['rx']) && ! isset($element->attrs['ry'])) {
-        $diameter = csscrush__svg_parselist($element->data['diameter']);
+        $diameter = svg_parselist($element->data['diameter']);
         $element->attrs['rx'] = $diameter[0] / 2;
         $element->attrs['ry'] = isset($diameter[1]) ? $diameter[1] / 2 : $diameter[0] / 2;
     }
@@ -379,7 +376,7 @@ function csscrush__svg_ellipse ($element) {
 /*
     Path callback.
 */
-function csscrush__svg_path ($element) {
+function svg_path ($element) {
 
     // Ensure minimum required attributes have defaults set.
     $element->data += array(
@@ -395,7 +392,7 @@ function csscrush__svg_path ($element) {
 /*
     Polyline callback.
 */
-function csscrush__svg_polyline ($element) {
+function svg_polyline ($element) {
 
     // Ensure required attributes have defaults set.
     $element->data += array(
@@ -411,7 +408,7 @@ function csscrush__svg_polyline ($element) {
 /*
     Line callback.
 */
-function csscrush__svg_line ($element) {
+function svg_line ($element) {
 
     // Set a default stroke.
     $element->styles += array(
@@ -429,7 +426,7 @@ function csscrush__svg_line ($element) {
 /*
     Polygon callback.
 */
-function csscrush__svg_polygon ($element) {
+function svg_polygon ($element) {
 
     if (! isset($element->attrs['points'])) {
 
@@ -443,7 +440,7 @@ function csscrush__svg_polygon ($element) {
 
         list($margin_top, $margin_right, $margin_bottom, $margin_left) = $element->data['margin'];
 
-        $diameter = csscrush__svg_parselist($element->data['diameter']);
+        $diameter = svg_parselist($element->data['diameter']);
         $diameter = $diameter[0];
         $radius = $diameter / 2;
 
@@ -451,7 +448,7 @@ function csscrush__svg_polygon ($element) {
         $cy = $radius + $margin_top;
         $sides = $element->data['sides'];
 
-        $element->attrs['d'] = csscrush__svg_starpath($cx, $cy, $sides, $radius);
+        $element->attrs['d'] = svg_starpath($cx, $cy, $sides, $radius);
 
         $element->svg_attrs['width'] = $diameter + $margin_left + $margin_right;
         $element->svg_attrs['height'] = $diameter + $margin_top + $margin_bottom;
@@ -461,7 +458,7 @@ function csscrush__svg_polygon ($element) {
 /*
     Star callback.
 */
-function csscrush__svg_star ($element) {
+function svg_star ($element) {
 
     // Minimum required attributes have defaults.
     $element->data += array(
@@ -472,7 +469,7 @@ function csscrush__svg_star ($element) {
 
     list($margin_top, $margin_right, $margin_bottom, $margin_left) = $element->data['margin'];
 
-    $diameter = csscrush__svg_parselist($element->data['diameter']);
+    $diameter = svg_parselist($element->data['diameter']);
     if (! isset($diameter[1])) {
         $diameter[1] = ($diameter[0] / 2);
     }
@@ -484,7 +481,7 @@ function csscrush__svg_star ($element) {
     $points = $element->data['star-points'];
     $twist = $element->data['twist'] * 10;
 
-    $element->attrs['d'] = csscrush__svg_starpath($cx, $cy, $points, $outer_r, $inner_r, $twist);
+    $element->attrs['d'] = svg_starpath($cx, $cy, $points, $outer_r, $inner_r, $twist);
 
     $element->svg_attrs['width'] = $margin_left + ($outer_r * 2) + $margin_left;
     $element->svg_attrs['height'] = $margin_top + ($outer_r * 2) + $margin_bottom;
@@ -494,7 +491,7 @@ function csscrush__svg_star ($element) {
     Text callback.
     Warning: Very limited for svg-as-image situations.
 */
-function csscrush__svg_text ($element) {
+function svg_text ($element) {
 
     // Minimum required attributes have defaults.
     $element->data += array(
@@ -528,7 +525,7 @@ function csscrush__svg_text ($element) {
 
     Adapted from http://svg-whiz.com/svg/StarMaker.svg by Doug Schepers.
 */
-function csscrush__svg_starpath ($cx, $cy, $points, $outer_r, $inner_r = null, $twist = 0, $orient = 'point') {
+function svg_starpath ($cx, $cy, $points, $outer_r, $inner_r = null, $twist = 0, $orient = 'point') {
 
     $d = array();
 
@@ -575,11 +572,11 @@ function csscrush__svg_starpath ($cx, $cy, $points, $outer_r, $inner_r = null, $
     return 'M' . implode(' ', $d) . 'Z';
 }
 
-function csscrush__svg_apply_filters ($element) {
+function svg_apply_filters ($element) {
 
     if (isset($element->data['drop-shadow'])) {
 
-        $parts = csscrush__svg_parselist($element->data['drop-shadow'], false);
+        $parts = svg_parselist($element->data['drop-shadow'], false);
 
         list($ds_x, $ds_y, $ds_strength, $ds_color) = $parts += array(
             2, // x offset.
@@ -590,7 +587,7 @@ function csscrush__svg_apply_filters ($element) {
 
         // Opacity.
         $drop_shadow_opacity = null;
-        if ($color_components = CssCrush_Color::colorSplit($ds_color)) {
+        if ($color_components = Color::colorSplit($ds_color)) {
             list($ds_color, $drop_shadow_opacity) = $color_components;
         }
 
@@ -615,13 +612,13 @@ function csscrush__svg_apply_filters ($element) {
     }
 }
 
-function csscrush__svg_preprocess ($element) {
+function svg_preprocess ($element) {
 
     if (isset($element->data['margin'])) {
 
         $margin =& $element->data['margin'];
 
-        $parts = csscrush__svg_parselist($margin);
+        $parts = svg_parselist($margin);
         $count = count($parts);
         if ($count === 1) {
             $margin = array($parts[0], $parts[0], $parts[0], $parts[0]);
@@ -647,7 +644,7 @@ function csscrush__svg_preprocess ($element) {
 
             $value = $element->attrs[$point_data_attr];
 
-            if (CssCrush_Tokens::is($value, 's')) {
+            if (Tokens::is($value, 's')) {
                 $element->attrs[$point_data_attr] =
                     trim(CssCrush::$process->tokens->get($value), '"\'');;
             }
@@ -662,37 +659,37 @@ function csscrush__svg_preprocess ($element) {
     }
 }
 
-function csscrush__svg_apply_css_funcs ($element, &$raw_data) {
+function svg_apply_css_funcs ($element, &$raw_data) {
 
     // Setup functions for using on values.
     // Note using custom versions of svg-*-gradient().
     static $generic_functions_patt, $fill_functions, $fill_functions_patt;
     if (! $generic_functions_patt) {
         $fill_functions = array(
-            'svg-linear-gradient' => 'csscrush__svg_fn_linear_gradient',
-            'svg-radial-gradient' => 'csscrush__svg_fn_radial_gradient',
-            'pattern' => 'csscrush__svg_fn_pattern',
+            'svg-linear-gradient' => 'CssCrush\svg_fn_linear_gradient',
+            'svg-radial-gradient' => 'CssCrush\svg_fn_radial_gradient',
+            'pattern' => 'CssCrush\svg_fn_pattern',
         );
         $generic_functions =
-            array_diff_key(CssCrush\Functions::$functions, $fill_functions);
-        $generic_functions_patt = CssCrush_Regex::createFunctionPatt(
+            array_diff_key(Functions::$functions, $fill_functions);
+        $generic_functions_patt = Regex::createFunctionPatt(
             array_keys($generic_functions), array('bare_paren' => true));
-        $fill_functions_patt = CssCrush_Regex::createFunctionPatt(
+        $fill_functions_patt = Regex::createFunctionPatt(
             array_keys($fill_functions));
     }
 
     foreach ($raw_data as $property => &$value) {
-        CssCrush\Functions::executeOnString($value, $generic_functions_patt);
+        Functions::executeOnString($value, $generic_functions_patt);
 
         // Only capturing fills for fill and stoke properties.
         if ($property === 'fill' || $property === 'stroke') {
-            CssCrush\Functions::executeOnString(
+            Functions::executeOnString(
                 $value, $fill_functions_patt, $fill_functions, $element);
 
             // If the value is a color with alpha component we split the color
             // and set the corresponding *-opacity property because Webkit doesn't
             // support rgba()/hsla() in SVG.
-            if ($components = CssCrush_Color::colorSplit($value)) {
+            if ($components = Color::colorSplit($value)) {
                 list($color, $opacity) = $components;
                 $raw_data[$property] = $color;
                 if ($opacity < 1) {
@@ -703,19 +700,21 @@ function csscrush__svg_apply_css_funcs ($element, &$raw_data) {
     }
 }
 
-function csscrush__svg_compress ($element) {
+function svg_compress ($element) {
 
     foreach ($element->attrs as $key => &$value) {
 
         // Compress numbers on data attributes.
         if (in_array($key, array('points', 'd'))) {
             $value = preg_replace_callback(
-                CssCrush_Regex::$patt->number, 'csscrush__svg_number_compress', $value);
+                Regex::$patt->number,
+                function ($m) { return round($m[0], 2); },
+                $value);
         }
     }
 }
 
-function csscrush__svg_render ($element) {
+function svg_render ($element) {
 
     // Flatten styles.
     $styles = '';
@@ -736,8 +735,8 @@ function csscrush__svg_render ($element) {
     $styles = CssCrush::$process->tokens->restore($styles, 'u', true);
     $styles = CssCrush::$process->tokens->restore($styles, 's');
 
-    $attrs = CssCrush_Util::htmlAttributes($element->attrs);
-    $svg_attrs = CssCrush_Util::htmlAttributes($element->svg_attrs);
+    $attrs = Util::htmlAttributes($element->attrs);
+    $svg_attrs = Util::htmlAttributes($element->svg_attrs);
 
     // Markup.
     $svg[] = "<svg$svg_attrs>";
@@ -769,36 +768,36 @@ function csscrush__svg_render ($element) {
 /*
     Custom versions of svg-*-gradient() for integrating.
 */
-function csscrush__svg_fn_linear_gradient ($input, $element) {
+function svg_fn_linear_gradient ($input, $element) {
 
     // Relies on functions from svg-gradients plugin.
-    CssCrush_Plugin::load('svg-gradients');
+    Plugin::load('svg-gradients');
 
-    $generated_gradient = csscrush__create_svg_linear_gradient($input);
+    $generated_gradient = create_svg_linear_gradient($input);
     $element->fills['gradients'][] = reset($generated_gradient);
 
     return 'url(#' . key($generated_gradient) . ')';
 }
 
-function csscrush__svg_fn_radial_gradient ($input, $element) {
+function svg_fn_radial_gradient ($input, $element) {
 
     // Relies on functions from svg-gradients plugin.
-    CssCrush_Plugin::load('svg-gradients');
+    Plugin::load('svg-gradients');
 
-    $generated_gradient = csscrush__create_svg_radial_gradient($input);
+    $generated_gradient = create_svg_radial_gradient($input);
     $element->fills['gradients'][] = reset($generated_gradient);
 
     return 'url(#' . key($generated_gradient) . ')';
 }
 
-function csscrush__svg_fn_pattern ($input, $element) {
+function svg_fn_pattern ($input, $element) {
 
     static $uid = 0;
     $pid = 'p' . (++$uid);
 
     // Get args in order with defaults.
     list($url, $transform_list, $width, $height, $x, $y) =
-        CssCrush\Functions::parseArgs($input) +
+        Functions::parseArgs($input) +
         array('', '', 0, 0, 0, 0);
 
     $url = CssCrush::$process->tokens->get($url);
@@ -832,16 +831,12 @@ function csscrush__svg_fn_pattern ($input, $element) {
 /*
     Helpers.
 */
-function csscrush__svg_parselist ($str, $numbers = true) {
+function svg_parselist ($str, $numbers = true) {
     $list = preg_split('~ +~', trim($str));
     return $numbers ? array_map('floatval', $list) : $list;
 }
 
-function csscrush__svg_number_compress ($m) {
-    return round($m[0], 2);
-}
-
-function csscrush__ifset (&$var, $fallback = null) {
+function svg_ifset (&$var, $fallback = null) {
     if (isset($var)) {
         return $var;
     }

@@ -269,7 +269,7 @@ class Importer
                 $point_data[] = strlen($before) - strrpos($before, "\n") - 1;
             }
 
-            // Splice in tracing stub.
+            // Splice in marker token.
             $str = substr_replace(
                 $str,
                 $process->tokens->add($point_data, 't'),
@@ -280,42 +280,41 @@ class Importer
 
     static protected function captureCommentAndString ($str)
     {
-        return preg_replace_callback(Regex::$patt->commentAndString,
-            array('self', 'cb_captureCommentAndString'), $str);
-    }
+        $callback = function ($m) {
 
-    static protected function cb_captureCommentAndString ($match)
-    {
-        $full_match = $match[0];
-        $process = CssCrush::$process;
+            $full_match = $m[0];
+            $process = CssCrush::$process;
 
-        if (strpos($full_match, '/*') === 0) {
+            if (strpos($full_match, '/*') === 0) {
 
-            // Bail without storing comment if output is minified or a private comment.
-            if (
-                $process->minifyOutput ||
-                strpos($full_match, '/*$') === 0
-            ) {
-                return Tokens::pad('', $full_match);
+                // Bail without storing comment if output is minified or a private comment.
+                if (
+                    $process->minifyOutput ||
+                    strpos($full_match, '/*$') === 0
+                ) {
+                    return Tokens::pad('', $full_match);
+                }
+
+                // Fix broken comments as they will break any subsquent
+                // imported files that are inlined.
+                if (! preg_match('~\*/$~', $full_match)) {
+                    $full_match .= '*/';
+                }
+                $label = $process->tokens->add($full_match, 'c');
+            }
+            else {
+
+                // Fix broken strings as they will break any subsquent
+                // imported files that are inlined.
+                if ($full_match[0] !== $full_match[strlen($full_match)-1]) {
+                    $full_match .= $full_match[0];
+                }
+                $label = $process->tokens->add($full_match, 's');
             }
 
-            // Fix broken comments as they will break any subsquent
-            // imported files that are inlined.
-            if (! preg_match('~\*/$~', $full_match)) {
-                $full_match .= '*/';
-            }
-            $label = $process->tokens->add($full_match, 'c');
-        }
-        else {
+            return Tokens::pad($label, $full_match);
+        };
 
-            // Fix broken strings as they will break any subsquent
-            // imported files that are inlined.
-            if ($full_match[0] !== $full_match[strlen($full_match)-1]) {
-                $full_match .= $full_match[0];
-            }
-            $label = $process->tokens->add($full_match, 's');
-        }
-
-        return Tokens::pad($label, $full_match);
+        return preg_replace_callback(Regex::$patt->commentAndString, $callback, $str);
     }
 }

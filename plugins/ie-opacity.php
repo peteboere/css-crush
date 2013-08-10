@@ -11,21 +11,19 @@
  *     *filter: alpha(opacity=45);
  *     zoom: 1;
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('ie-opacity', array(
-    'enable' => 'csscrush__enable_ie_opacity',
-    'disable' => 'csscrush__disable_ie_opacity',
+Plugin::register('ie-opacity', array(
+    'enable' => function () {
+        Hook::add('rule_postalias', 'CssCrush\ie_opacity');
+    },
+    'disable' => function () {
+        Hook::remove('rule_postalias', 'CssCrush\ie_opacity');
+    },
 ));
 
-function csscrush__enable_ie_opacity () {
-    CssCrush_Hook::add('rule_postalias', 'csscrush__ie_opacity');
-}
 
-function csscrush__disable_ie_opacity () {
-    CssCrush_Hook::remove('rule_postalias', 'csscrush__ie_opacity');
-}
-
-function csscrush__ie_opacity (CssCrush_Rule $rule) {
+function ie_opacity (Rule $rule) {
 
     if ($rule->propertyCount('opacity') < 1) {
         return;
@@ -45,11 +43,11 @@ function csscrush__ie_opacity (CssCrush_Rule $rule) {
 
         if (! $rule->propertyCount('zoom')) {
             // Filters need hasLayout
-            $new_set[] = new CssCrush_Declaration('zoom', 1);
+            $new_set[] = new Declaration('zoom', 1);
         }
         $value = "alpha(opacity=$opacity)";
-        $new_set[] = new CssCrush_Declaration('-ms-filter', "\"$value\"");
-        $new_set[] = new CssCrush_Declaration('*filter', $value);
+        $new_set[] = new Declaration('-ms-filter', "\"$value\"");
+        $new_set[] = new Declaration('*filter', $value);
     }
     $rule->setDeclarations($new_set);
 }

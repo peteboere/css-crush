@@ -68,15 +68,10 @@ class Tokens
             case 'u':
                 // Currently this always releases URLs
                 // may need to refactor later.
-                static $url_revert_callback;
-                if (! $url_revert_callback) {
-                    $url_revert_callback = create_function('$m', '
-                        $url = CssCrush::$process->tokens->pop($m[0]);
-                        return $url ? $url->getOriginalValue() : \'\';
-                    ');
-                }
-
-                $str = preg_replace_callback(Regex::$patt->u_token, $url_revert_callback, $str);
+                $str = preg_replace_callback(Regex::$patt->u_token, function ($m) {
+                    $url = CssCrush::$process->tokens->pop($m[0]);
+                    return $url ? $url->getOriginalValue() : '';
+                }, $str);
                 break;
             default:
                 $token_table =& $this->store->{$type};
@@ -114,7 +109,7 @@ class Tokens
 
     public function captureParens ($str)
     {
-        return preg_replace_callback(Regex::$patt->balancedParens, function ($m) {
+        return preg_replace_callback(Regex::$patt->parens, function ($m) {
             return CssCrush::$process->tokens->add($m[0], 'p');
         }, $str);
     }

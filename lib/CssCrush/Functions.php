@@ -18,18 +18,18 @@ class Functions
     static protected $builtinFunctions = array(
 
         // These functions must come first in this order.
-        'query' => 'csscrush_fn__query',
+        'query' => 'CssCrush\fn__query',
 
         // These functions can be any order.
-        'math' => 'csscrush_fn__math',
-        'percent' => 'csscrush_fn__percent',
-        'pc' => 'csscrush_fn__percent',
-        'hsla-adjust' => 'csscrush_fn__hsla_adjust',
-        'hsl-adjust' => 'csscrush_fn__hsl_adjust',
-        'h-adjust' => 'csscrush_fn__h_adjust',
-        's-adjust' => 'csscrush_fn__s_adjust',
-        'l-adjust' => 'csscrush_fn__l_adjust',
-        'a-adjust' => 'csscrush_fn__a_adjust',
+        'math' => 'CssCrush\fn__math',
+        'percent' => 'CssCrush\fn__percent',
+        'pc' => 'CssCrush\fn__percent',
+        'hsla-adjust' => 'CssCrush\fn__hsla_adjust',
+        'hsl-adjust' => 'CssCrush\fn__hsl_adjust',
+        'h-adjust' => 'CssCrush\fn__h_adjust',
+        's-adjust' => 'CssCrush\fn__s_adjust',
+        'l-adjust' => 'CssCrush\fn__l_adjust',
+        'a-adjust' => 'CssCrush\fn__a_adjust',
     );
 
     static public function setMatchPatt ()
@@ -71,8 +71,7 @@ class Functions
 
             $offset = $match[0][1];
 
-            if (! preg_match(Regex::$patt->balancedParens,
-                $str, $parens, PREG_OFFSET_CAPTURE, $offset)) {
+            if (! preg_match(Regex::$patt->parens, $str, $parens, PREG_OFFSET_CAPTURE, $offset)) {
                 continue;
             }
 
@@ -88,7 +87,7 @@ class Functions
             $closing_paren = $opening_paren + strlen($parens[0][0]);
 
             // Get the function arguments.
-            $raw_args = trim($parens[1][0]);
+            $raw_args = trim($parens['parens_content'][0]);
 
             // Workaround the signs.
             $before_operator = '-' === $raw_fn_name ? '-' : '';
@@ -144,7 +143,7 @@ class Functions
 #############################
 #  Stock CSS functions.
 
-function csscrush_fn__math ($input) {
+function fn__math ($input) {
 
     // Swap in math constants.
     $input = preg_replace(
@@ -160,7 +159,7 @@ function csscrush_fn__math ($input) {
     return $result === false ? 0 : round($result, 5);
 }
 
-function csscrush_fn__percent ($input) {
+function fn__percent ($input) {
 
     // Strip non-numeric and non delimiter characters
     $input = preg_replace('~[^\d\.\s,]~S', '', $input);
@@ -202,37 +201,37 @@ function csscrush_fn__percent ($input) {
     return $result . '%';
 }
 
-function csscrush_fn__hsla_adjust ($input) {
+function fn__hsla_adjust ($input) {
     list($color, $h, $s, $l, $a) = array_pad(Functions::parseArgs($input, true), 5, 0);
     return Color::colorAdjust($color, array($h, $s, $l, $a));
 }
 
-function csscrush_fn__hsl_adjust ($input) {
+function fn__hsl_adjust ($input) {
     list($color, $h, $s, $l) = array_pad(Functions::parseArgs($input, true), 4, 0);
     return Color::colorAdjust($color, array($h, $s, $l, 0));
 }
 
-function csscrush_fn__h_adjust ($input) {
+function fn__h_adjust ($input) {
     list($color, $h) = array_pad(Functions::parseArgs($input, true), 2, 0);
     return Color::colorAdjust($color, array($h, 0, 0, 0));
 }
 
-function csscrush_fn__s_adjust ($input) {
+function fn__s_adjust ($input) {
     list($color, $s) = array_pad(Functions::parseArgs($input, true), 2, 0);
     return Color::colorAdjust($color, array(0, $s, 0, 0));
 }
 
-function csscrush_fn__l_adjust ($input) {
+function fn__l_adjust ($input) {
     list($color, $l) = array_pad(Functions::parseArgs($input, true), 2, 0);
     return Color::colorAdjust($color, array(0, 0, $l, 0));
 }
 
-function csscrush_fn__a_adjust ($input) {
+function fn__a_adjust ($input) {
     list($color, $a) = array_pad(Functions::parseArgs($input, true), 2, 0);
     return Color::colorAdjust($color, array(0, 0, 0, $a));
 }
 
-function csscrush_fn__this ($input, $context) {
+function fn__this ($input, $context) {
 
     $args = Functions::parseArgsSimple($input);
     $property = $args[0];
@@ -259,7 +258,7 @@ function csscrush_fn__this ($input, $context) {
     return '';
 }
 
-function csscrush_fn__query ($input, $context) {
+function fn__query ($input, $context) {
 
     $args = Functions::parseArgs($input);
 

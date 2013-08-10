@@ -12,21 +12,19 @@
  *     background: rgb(0,0,0);
  *     background: rgba(0,0,0,.5);
  */
+namespace CssCrush;
 
-CssCrush_Plugin::register('rgba-fallback', array(
-    'enable' => 'csscrush__enable_rgba_fallback',
-    'disable' => 'csscrush__disable_rgba_fallback',
+Plugin::register('rgba-fallback', array(
+    'enable' => function () {
+        Hook::add('rule_postalias', 'CssCrush\rgba_fallback');
+    },
+    'disable' => function () {
+        Hook::remove('rule_postalias', 'CssCrush\rgba_fallback');
+    },
 ));
 
-function csscrush__enable_rgba_fallback () {
-    CssCrush_Hook::add('rule_postalias', 'csscrush__rgba_fallback');
-}
 
-function csscrush__disable_rgba_fallback () {
-    CssCrush_Hook::remove('rule_postalias', 'csscrush__rgba_fallback');
-}
-
-function csscrush__rgba_fallback (CssCrush_Rule $rule) {
+function rgba_fallback (Rule $rule) {
 
     $props = array_keys($rule->properties);
 
@@ -43,7 +41,7 @@ function csscrush__rgba_fallback (CssCrush_Rule $rule) {
 
     static $rgb_patt;
     if (! $rgb_patt) {
-        $rgb_patt = CssCrush_Regex::create('^rgba{{p-token}}$', 'i');
+        $rgb_patt = Regex::create('^rgba{{p-token}}$', 'i');
     }
 
     $new_set = array();
@@ -65,7 +63,7 @@ function csscrush__rgba_fallback (CssCrush_Rule $rule) {
         list($r, $g, $b, $a) = explode(',', $raw_value);
 
         // Add rgb value to the stack, followed by rgba.
-        $new_set[] = new CssCrush_Declaration($declaration->property, "rgb($r,$g,$b)");
+        $new_set[] = new Declaration($declaration->property, "rgb($r,$g,$b)");
         $new_set[] = $declaration;
     }
     $rule->setDeclarations($new_set);
