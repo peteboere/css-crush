@@ -1005,7 +1005,7 @@ class Process
 
                 if (isset($tokens->{$token_type}[$token])) {
 
-                    list($src_file, $src_line, $src_col) = $tokens->{$token_type}[$token];
+                    list($src_file, $src_line, $src_col) = explode(',', $tokens->{$token_type}[$token]);
                     $line_segments[] =
                         Util::vlqEncode($dest_col - $previous_dest_col) .
                         Util::vlqEncode($src_file - $previous_src_file) .
@@ -1034,7 +1034,7 @@ class Process
         if (! isset($tokens[$token])) {
             return '';
         }
-        list($source_index, $line) = $tokens[$token];
+        list($source_index, $line) = explode(',', $tokens[$token]);
         $line += 1;
 
         // Get the currently processed file path, and escape it.

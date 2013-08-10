@@ -269,10 +269,10 @@ class Importer
                 $point_data[] = strlen($before) - strrpos($before, "\n") - 1;
             }
 
-            // Splice in marker token.
+            // Splice in marker token (packing point_data into string is more memory efficient).
             $str = substr_replace(
                 $str,
-                $process->tokens->add($point_data, 't'),
+                $process->tokens->add(implode(',', $point_data), 't'),
                 $selector_offset,
                 0);
         }
