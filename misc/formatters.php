@@ -44,5 +44,5 @@ function fmtr_block ($rule, $indent = '    ') {
 
     $selectors = implode(",$EOL", $rule->selectors);
     $block = implode(";$EOL$indent", $rule->declarations);
-    return "$selectors {{$EOL}$indent$block;$EOL$indent}$EOL$EOL";
+    return "$selectors {{$EOL}$indent$block;$EOL$indent}$EOL";
 }

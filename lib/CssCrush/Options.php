@@ -41,7 +41,7 @@ class Options
 
             // Resolve a formatter callback name and check it's callable.
             case 'formatter':
-                if (isset(CssCrush::$config->formatters[$value])) {
+                if (is_string($value) && isset(CssCrush::$config->formatters[$value])) {
                     $value = CssCrush::$config->formatters[$value];
                 }
                 if (! is_callable($value)) {

@@ -73,7 +73,6 @@ class Process
     {
         unset(
             $this->tokens,
-            $this->vars,
             $this->mixins,
             $this->references,
             $this->misc,
@@ -137,8 +136,7 @@ class Process
         $boilerplate_option = $this->options->boilerplate;
 
         if ($boilerplate_option === true) {
-            $file = Util::find(
-                'CssCrush-local.boilerplate', 'CssCrush.boilerplate');
+            $file = Util::find('CssCrush-local.boilerplate', 'CssCrush.boilerplate');
         }
         elseif (is_string($boilerplate_option)) {
             if (file_exists($boilerplate_option)) {
@@ -156,30 +154,31 @@ class Process
         // Substitute any tags
         if (preg_match_all('~\{\{([^}]+)\}\}~', $boilerplate, $boilerplate_matches)) {
 
-            $command = 'n/a';
+            // Command line arguments (if any).
+            $command_args = 'n/a';
             if (isset($_SERVER['argv'])) {
                 $argv = $_SERVER['argv'];
                 array_shift($argv);
-                $command = 'csscrush ' . implode(' ', $argv);
+                $command_args = 'csscrush ' . implode(' ', $argv);
             }
 
             $tags = array(
                 'datetime' => @date('Y-m-d H:i:s O'),
                 'year' => @date('Y'),
-                'version' => 'v' . CssCrush::$config->version,
-
-                // Command line arguments (if any).
-                'command' => $command,
-
-                // Enabled plugins.
+                'version' => 'v' . csscrush_version(),
+                'command' => $command_args,
                 'plugins' => implode(',', array_keys($this->plugins)),
+                'compile_time' => function () {
+                    $now = microtime(true) - CssCrush::$process->stat['compile_start_time'];
+                    return round($now, 4) . ' seconds';
+                },
             );
 
             foreach ($boilerplate_matches[0] as $index => $tag) {
                 $tag_name = $boilerplate_matches[1][$index];
                 $replacement = '?';
                 if (isset($tags[$tag_name])) {
-                    $replacement = $tags[$tag_name];
+                    $replacement =  is_callable($tags[$tag_name]) ? $tags[$tag_name]() : $tags[$tag_name];
                 }
                 $replacements[] = $replacement;
             }
@@ -819,6 +818,9 @@ class Process
 
             // Trim leading spaces on @-rules and some tokens.
             $regex_replacements[Regex::create(' +([@}]|\?[rc]{{token-id}}\?)', 'S')] = "$1";
+
+            // Additional newline between adjacent rules and comments.
+            $regex_replacements[Regex::create('({{r-token}}) (\s*) ({{c-token}})', 'xS')] = "$1$EOL$2$3";
         }
 
         // Apply all formatting replacements.
@@ -851,7 +853,7 @@ class Process
 
             // Add newlines after comments.
             foreach ($this->tokens->store->c as $token => &$comment) {
-                $comment .= "$EOL$EOL";
+                $comment .= $EOL;
             }
 
             // Insert comments and do final whitespace cleanup.
