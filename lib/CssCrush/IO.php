@@ -165,7 +165,7 @@ class IO
     static public function clearCache ($dir)
     {
         if (empty($dir)) {
-            $dir = dirname(__FILE__);
+            $dir = __DIR__;
         }
         else if (! file_exists($dir)) {
             return;

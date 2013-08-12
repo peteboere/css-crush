@@ -22,7 +22,7 @@ class CssCrush
         self::$config = new \stdClass();
 
         // Path to the project root folder.
-        self::$config->location = dirname(dirname(dirname(__FILE__)));
+        self::$config->location = dirname(dirname(__DIR__));
 
         // Plugin directories.
         self::$config->plugin_dirs = array(self::$config->location . '/plugins');
@@ -279,7 +279,7 @@ class CssCrush
         }
         // Relative path.
         else {
-            $pathtest = $process->setContext(dirname(dirname(__FILE__) . '/' . $file));
+            $pathtest = $process->setContext(dirname(__DIR__ . '/' . $file));
         }
 
         if (! $pathtest) {
