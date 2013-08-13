@@ -505,7 +505,7 @@ class CssCrush
 
     static public function addSelectorAlias ($name, $body)
     {
-        CssCrush::$config->selectorAliases[$name] = new Template($body);
+        CssCrush::$config->selectorAliases[$name] = is_callable($body) ? $body : new Template($body);
     }
 
     static public function removeSelectorAlias ($name)

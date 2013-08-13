@@ -207,9 +207,7 @@ class Process
 
         $this->stream->pregReplaceCallback($alias_patt, function ($m) {
             $name = strtolower($m[1]);
-            $body = Util::stripCommentTokens($m[2]);
-            $template = new Template($body);
-            CssCrush::$process->selectorAliases[$name] = $template;
+            CssCrush::$process->selectorAliases[$name] = new Template(Util::stripCommentTokens($m[2]));
         });
 
         // Merge with global selector aliases.
@@ -246,7 +244,6 @@ class Process
                 continue;
             }
 
-            $template = $table[$selector_alias_name];
             $start = $selector_alias_call[0][1];
             $length = strlen($selector_alias_call[0][0]);
             $args = array();
@@ -264,6 +261,12 @@ class Process
                 $paren_start = $parens[0][1];
                 $paren_len = strlen($parens[0][0]);
                 $length = ($paren_start + $paren_len) - $start;
+            }
+
+            // Resolve the selector alias value to a template instance if a callable is given.
+            $template = $table[$selector_alias_name];
+            if (is_callable($template)) {
+                $template = new Template($template($args));
             }
 
             // Splice in the result.
