@@ -18,7 +18,6 @@
  *      [aria-expanded="false"] {...}
  *      [aria-label] {...}
  *      [aria-label="foobarbaz"] {...}
- *
  */
 namespace CssCrush;
 
