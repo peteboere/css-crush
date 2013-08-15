@@ -199,7 +199,10 @@ function svg_generator ($input, $fn_name) {
     $block = $svg_defs[$name]->apply($args);
 
     // Parse the block into a keyed assoc array.
-    $raw_data = array_change_key_case(Rule::parseBlock($block, array('keyed' => true)));
+    $raw_data = array_change_key_case(Rule::parseBlock($block, array(
+        'keyed' => true,
+        'flatten' => true,
+    )));
 
     // Resolve the type.
     // Bail if type not recognised.

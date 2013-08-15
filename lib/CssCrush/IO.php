@@ -238,7 +238,9 @@ class IO
         $process = CssCrush::$process;
 
         CssCrush::log('Saving config.');
-        Util::filePutContents($process->cacheFile, json_encode($process->cacheData), __METHOD__);
+
+        $flags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
+        Util::filePutContents($process->cacheFile, json_encode($process->cacheData, $flags), __METHOD__);
     }
 
     static public function write (Stream $stream)
@@ -254,13 +256,9 @@ class IO
         if (Util::filePutContents($target, $stream, __METHOD__)) {
 
             if ($process->sourceMap) {
-                if (defined('JSON_PRETTY_PRINT')) {
-                    $data = json_encode($process->sourceMap, JSON_PRETTY_PRINT);
-                }
-                else {
-                    $data = json_encode($process->sourceMap);
-                }
-                Util::filePutContents("{$process->output->dir}/$source_map_filename", $data, __METHOD__);
+                $flags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
+                Util::filePutContents("{$process->output->dir}/$source_map_filename",
+                    json_encode($process->sourceMap, $flags), __METHOD__);
             }
 
             return "{$process->output->dirUrl}/{$process->output->filename}";

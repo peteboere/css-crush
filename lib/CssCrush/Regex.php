@@ -132,13 +132,8 @@ class Regex
         return "$delim{$pattern}$delim{$flags}";
     }
 
-    static public function matchAll ($patt, $subject, $preprocess_patt = false, $offset = 0)
+    static public function matchAll ($patt, $subject, $offset = 0)
     {
-        if ($preprocess_patt) {
-            // Assume case-insensitive.
-            $patt = self::create($patt, 'i');
-        }
-
         $count = preg_match_all($patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset);
 
         return $count ? $matches : array();
@@ -154,18 +149,13 @@ class Regex
             $list[] = '-';
         }
 
-        // Escape function names.
-        foreach ($list as &$fn_name) {
-            $fn_name = preg_quote($fn_name);
-        }
-
         // Templating func.
         $template = '';
         if (! empty($options['templating'])) {
             $template = '#|';
         }
 
-        $flat_list = implode('|', $list);
+        $flat_list = implode('|', array_map('preg_quote', $list));
 
         return Regex::create("($template{{LB}}(?:$flat_list)$question)\(", 'iS');
     }

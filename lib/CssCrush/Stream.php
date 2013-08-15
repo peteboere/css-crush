@@ -42,9 +42,9 @@ class Stream
         }
     }
 
-    public function matchAll ($patt, $preprocess_patt = false)
+    public function matchAll ($patt, $offset = 0)
     {
-        return Regex::matchAll($patt, $this->raw, $preprocess_patt);
+        return Regex::matchAll($patt, $this->raw, $offset);
     }
 
     public function replace ($find, $replacement)

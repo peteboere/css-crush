@@ -11,6 +11,9 @@ class Rule implements \IteratorAggregate
     public $vendorContext;
     public $label;
     public $marker;
+    public $name;
+    public $isAbstract;
+    public $isFlat = true;
 
     public $selectors = array();
     public $extendSelectors = array();
@@ -31,7 +34,6 @@ class Rule implements \IteratorAggregate
 
     public function __construct ($selector_string, $declarations_string, $trace_token = null)
     {
-        $regex = Regex::$patt;
         $process = CssCrush::$process;
         $this->label = $process->tokens->createLabel('r');
         $this->marker = $process->addTracingStubs || $process->generateMap ? $trace_token : null;
@@ -53,11 +55,9 @@ class Rule implements \IteratorAggregate
 
         foreach (Util::splitDelimList($selector_string) as $selector) {
 
-            // If the selector matches an absract directive
-            if (preg_match($regex->abstract, $selector, $m)) {
-
-                // Link the rule to the abstract name and skip forward to declaration parsing.
-                $process->references[strtolower($m['name'])] = $this;
+            if (preg_match(Regex::$patt->abstract, $selector, $m)) {
+                $this->name = strtolower($m['name']);
+                $this->isAbstract = true;
             }
             else {
                 $this->addSelector(new Selector($selector));
@@ -79,8 +79,9 @@ class Rule implements \IteratorAggregate
             }
             elseif ($prop === 'name') {
 
-                // Link the rule as a reference.
-                $process->references[$value] = $this;
+                if (! $this->name) {
+                    $this->name = $value;
+                }
                 unset($pairs[$index]);
             }
         }
@@ -92,14 +93,18 @@ class Rule implements \IteratorAggregate
 
             if (trim($value) !== '') {
 
-                // Only store to $this->selfData if the value does not itself make a
-                // this() call to avoid circular references.
-                if (! preg_match($regex->thisFunction, $value)) {
-                    $this->selfData[strtolower($prop)] = $value;
+                if ($prop === 'mixin') {
+                    $this->isFlat = false;
+                    $this->declarations[] = $pair;
                 }
-
-                // Add declaration.
-                $this->addDeclaration($prop, $value, $index);
+                else {
+                    // Only store to $this->selfData if the value does not itself make a
+                    // this() call to avoid circular references.
+                    if (! preg_match(Regex::$patt->thisFunction, $value)) {
+                        $this->selfData[strtolower($prop)] = $value;
+                    }
+                    $this->addDeclaration($prop, $value, $index);
+                }
             }
         }
     }
@@ -159,6 +164,30 @@ class Rule implements \IteratorAggregate
         unset($this->selfData);
 
         $this->declarationsProcessed = true;
+    }
+
+    public function flatten ()
+    {
+        if ($this->isFlat) {
+            return;
+        }
+
+        // Flatten mixins.
+        $new_set = array();
+        foreach ($this->declarations as $declaration) {
+            if (is_array($declaration) && $declaration[0] === 'mixin') {
+                foreach (Mixin::merge(array(), $declaration[1], array('context' => $this)) as $pair) {
+                    $new_set[] = new Declaration($pair[0], $pair[1], count($new_set));
+                }
+            }
+            else {
+                $declaration->index = count($new_set);
+                $new_set[] = $declaration;
+            }
+        }
+
+        $this->setDeclarations($new_set);
+        $this->isFlat = true;
     }
 
     public function expandDataSet ($dataset, $property)
@@ -434,14 +463,6 @@ class Rule implements \IteratorAggregate
     public function addSelector ($selector)
     {
         $this->selectors[$selector->readableValue] = $selector;
-
-        // Link reference.
-        CssCrush::$process->references[$selector->readableValue] = $this;
-    }
-
-    public function addSelectors ($list, $extend_selectors = false)
-    {
-        $this->selectors += $list;
     }
 
 
@@ -766,17 +787,15 @@ class Rule implements \IteratorAggregate
 
     static public function parseBlock ($str, $options = array())
     {
-        $regex = Regex::$patt;
         $str = Util::stripCommentTokens($str);
-
         $lines = preg_split('~\s*;\s*~', $str, null, PREG_SPLIT_NO_EMPTY);
-        $keyed = isset($options['keyed']);
-        $directives = ! isset($options['ignore_directives']);
+        $keyed = ! empty($options['keyed']);
+        $directives = empty($options['ignore_directives']);
         $out = array();
 
         foreach ($lines as $line) {
 
-            if ($directives && preg_match($regex->ruleDirective, $line, $m)) {
+            if ($directives && preg_match(Regex::$patt->ruleDirective, $line, $m)) {
 
                 if (! empty($m[1])) {
                     $property = 'mixin';
@@ -792,35 +811,21 @@ class Rule implements \IteratorAggregate
             elseif (($colon_pos = strpos($line, ':')) !== false) {
 
                 $property = trim(substr($line, 0, $colon_pos));
-
-                // Extract the value part of the declaration.
                 $value = trim(substr($line, $colon_pos + 1));
             }
             else {
                 continue;
             }
 
-            // Empty strings are ignored.
             if (! isset($property[0]) || ! isset($value[0])) {
                 continue;
             }
 
-            // Add any mixins.
-            if ($property === 'mixin') {
-
-                if ($mixables = Mixin::parseValue($value)) {
-
-                    // Add mixin declarations to the stack.
-                    while ($mixable = array_shift($mixables)) {
-                        list($mix_prop, $mix_val) = $mixable;
-                        if ($keyed) {
-                            $out[$mix_prop] = $mix_val;
-                        }
-                        else {
-                            $out[] = array($mix_prop, $mix_val);
-                        }
-                    }
-                }
+            if ($property === 'mixin' && ! empty($options['flatten'])) {
+                $out = Mixin::merge($out, $value, array(
+                    'keyed' => $keyed,
+                    'context' => isset($options['context']) ? $options['context'] : null,
+                ));
             }
             elseif ($keyed) {
                 $out[$property] = $value;

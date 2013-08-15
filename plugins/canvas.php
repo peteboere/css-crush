@@ -120,7 +120,10 @@ function canvas_generator ($input, $context) {
     $block = $canvas_defs[$name]->apply($args);
 
     // Parse the block into a keyed array.
-    $raw = array_change_key_case(Rule::parseBlock($block, array('keyed' => true)));
+    $raw = array_change_key_case(Rule::parseBlock($block, array(
+        'keyed' => true,
+        'flatten' => true,
+    )));
 
     // Create canvas object.
     $canvas = new Canvas();

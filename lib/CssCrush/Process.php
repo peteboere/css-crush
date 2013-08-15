@@ -427,12 +427,15 @@ class Process
             CssCrush::$process->vars =
                 array_merge(
                     CssCrush::$process->vars,
-                    Rule::parseBlock($m['block_content'], array('keyed' => true, 'ignore_directives' => true))
+                    Rule::parseBlock($m['block_content'], array(
+                        'keyed' => true,
+                        'ignore_directives' => true,
+                    ))
                 );
         });
 
         // In-file variables override global variables.
-        $this->vars = array_merge($config->vars, $this->vars);
+        $this->vars += $config->vars;
 
         // Runtime variables override in-file variables.
         if (! empty($option_vars)) {
@@ -609,21 +612,35 @@ class Process
 
     protected function processRules ()
     {
-        $aliases =& $this->aliases;
+        // Create table of name/selector to rule references.
+        $named_references = array();
+        foreach ($this->tokens->store->r as $rule) {
+            if ($rule->name) {
+                $named_references[$rule->name] = $rule;
+            }
+            foreach ($rule->selectors as $selector) {
+                $this->references[$selector->readableValue] = $rule;
+            }
+        }
+
+        // Explicit named references take precedence.
+        $this->references = $named_references + $this->references;
 
         foreach ($this->tokens->store->r as $rule) {
+
+            $rule->flatten();
 
             $rule->processDeclarations();
 
             Hook::run('rule_prealias', $rule);
 
-            if ($aliases['properties']) {
+            if ($this->aliases['properties']) {
                 $rule->addPropertyAliases();
             }
-            if ($aliases['functions']) {
+            if ($this->aliases['functions']) {
                 $rule->addFunctionAliases();
             }
-            if ($aliases['declarations']) {
+            if ($this->aliases['declarations']) {
                 $rule->addDeclarationAliases();
             }
             Hook::run('rule_postalias', $rule);
@@ -961,7 +978,6 @@ class Process
 
         $this->aliasAtRules();
 
-        // Main processing on the rule objects.
         $this->processRules();
 
         $this->collate();
