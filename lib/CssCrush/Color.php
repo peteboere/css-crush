@@ -115,12 +115,12 @@ class Color
     {
         static $color_patt;
         if (! $color_patt) {
-            $color_patt = Regex::create('^(
+            $color_patt = Regex::make('~^(
                 \#(?={{hex}}{3}) |
                 \#(?={{hex}}{6}) |
                 rgba?(?=[?(]) |
                 hsla?(?=[?(])
-            )', 'ixS');
+            )~ixS');
         }
 
         $color_test = array();
@@ -351,18 +351,16 @@ class Color
             return array($color, 1);
         }
 
-        static $alpha_color_patt;
-        if (! $alpha_color_patt) {
-            $alpha_color_patt = Regex::create(
-                '^(rgb|hsl)a\(({{number}}%?,{{number}}%?,{{number}}%?),({{number}})\)$');
-        }
-
         // Strip all whitespace.
         $color = preg_replace('~\s+~', '', $color);
 
         // Extract alpha component if one is matched.
         $opacity = 1;
-        if (preg_match($alpha_color_patt, $color, $m)) {
+        if (preg_match(
+                Regex::make('~^(rgb|hsl)a\(({{number}}%?,{{number}}%?,{{number}}%?),({{number}})\)$~i'),
+                $color,
+                $m)
+        ) {
             $opacity = floatval($m[3]);
             $color = "$m[1]($m[2])";
         }

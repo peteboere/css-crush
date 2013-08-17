@@ -123,13 +123,11 @@ class Tokens
 
     public function captureUrls ($str, $add_padding = false)
     {
-        static $url_patt;
-        if (! $url_patt) {
-            $url_patt = Regex::create(
-                '@import \s+ (?<import>{{s-token}}) | {{LB}} (?<func>url|data-uri) {{parens}}', 'ixS');
-        }
-
-        $count = preg_match_all($url_patt, $str, $m, PREG_OFFSET_CAPTURE);
+        $count = preg_match_all(
+            Regex::make('~@import \s+ (?<import>{{s-token}}) | {{LB}} (?<func>url|data-uri) {{parens}}~ixS'),
+            $str,
+            $m,
+            PREG_OFFSET_CAPTURE);
 
         while ($count--) {
 
@@ -140,7 +138,9 @@ class Tokens
             if ($import_offset !== -1) {
 
                 $url = new Url(trim($import_text));
-                $str = str_replace($import_text, $add_padding ? str_pad($url->label, strlen($import_text)) : $url->label, $str);
+                $str = str_replace(
+                        $import_text,
+                        $add_padding ? str_pad($url->label, strlen($import_text)) : $url->label, $str);
             }
 
             // A URL function.
@@ -150,7 +150,11 @@ class Tokens
 
                 $url = new Url(trim($m['parens_content'][$count][0]));
                 $url->convertToData = 'data-uri' === $func_name;
-                $str = substr_replace($str, $add_padding ? Tokens::pad($url->label, $full_text) : $url->label, $full_offset, strlen($full_text));
+                $str = substr_replace(
+                        $str,
+                        $add_padding ? Tokens::pad($url->label, $full_text) : $url->label,
+                        $full_offset,
+                        strlen($full_text));
             }
         }
 
@@ -175,13 +179,11 @@ class Tokens
 
     static public function is ($label, $of_type)
     {
-        static $type_patt;
-        if (! $type_patt) {
-            $type_patt = Regex::create('^ \? (?<type>[a-z]) {{token-id}} \? $', 'xS');
-        }
-        if (preg_match($type_patt, $label, $m)) {
+        if (preg_match(Regex::make('~^ \? (?<type>[a-z]) {{token-id}} \? $~xS'), $label, $m)) {
+
             return $of_type ? ($of_type === $m['type']) : true;
         }
+
         return false;
     }
 }

@@ -387,7 +387,7 @@ class Rule implements \IteratorAggregate
 
         static $any_patt, $reg_comma;
         if (! $any_patt) {
-            $any_patt = Regex::create(':any({{p-token}})', 'i');
+            $any_patt = Regex::make('~:any({{p-token}})~i');
             $reg_comma = '~\s*,\s*~';
         }
 

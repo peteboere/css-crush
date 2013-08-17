@@ -49,8 +49,8 @@ function rem (Rule $rule) {
 
     static $rem_patt, $px_patt, $font_props, $modes;
     if (! $modes) {
-        $rem_patt = Regex::create('{{LB}}({{number}})rem{{RB}}', 'iS');
-        $px_patt = Regex::create('{{LB}}({{number}})px{{RB}}', 'iS');
+        $rem_patt = Regex::make('~{{LB}}({{number}})rem{{RB}}~iS');
+        $px_patt = Regex::make('~{{LB}}({{number}})px{{RB}}~iS');
         $font_props = array(
             'font' => true,
             'font-size' => true,

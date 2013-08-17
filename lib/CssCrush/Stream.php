@@ -67,17 +67,12 @@ class Stream
 
     public function replaceTokens ($type, $callback = null)
     {
-        static $patts = array();
-        if (! isset($patts[$type])) {
-            $patts[$type] = Regex::create("\? $type {{token-id}} \?", 'xS');
-        }
-
         $tokens =& CssCrush::$process->tokens->store->{ $type };
         $callback = $callback ?: function ($m) use (&$tokens) {
             return isset($tokens[$m[0]]) ? $tokens[$m[0]] : '';
         };
 
-        $this->raw = preg_replace_callback($patts[$type], $callback, $this->raw);
+        $this->raw = preg_replace_callback(Regex::make("~\? $type {{token-id}} \?~xS"), $callback, $this->raw);
         return $this;
     }
 

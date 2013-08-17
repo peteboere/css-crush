@@ -67,8 +67,8 @@ function postalias_fix_linear_gradients ($declaration_copies) {
 
     static $deg_patt, $fn_patt;
     if (! $deg_patt) {
-        $deg_patt = Regex::create('(?<=[\( ])({{number}})deg', 'i');
-        $fn_patt = Regex::create('{{LB}}{{vendor}}(?:(?:repeating-)?linear-gradient)({{p-token}})', 'iS');
+        $deg_patt = Regex::make('~(?<=[\( ])({{number}})deg~i');
+        $fn_patt = Regex::make('~{{LB}}{{vendor}}(?:(?:repeating-)?linear-gradient)({{p-token}})~iS');
     }
 
     // Legacy angles move anti-clockwise and start from East, not North.
@@ -124,7 +124,7 @@ function postalias_fix_radial_gradients ($declaration_copies) {
     // Replace the new syntax with the legacy syntax.
     static $fn_patt;
     if (! $fn_patt) {
-        $fn_patt = Regex::create('{{LB}}{{vendor}}(?:(?:repeating-)?radial-gradient)({{p-token}})', 'iS');
+        $fn_patt = Regex::make('~{{LB}}{{vendor}}(?:(?:repeating-)?radial-gradient)({{p-token}})~iS');
     }
     $original_parens = array();
     $replacement_parens = array();

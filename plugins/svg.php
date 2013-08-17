@@ -85,20 +85,17 @@ function fn__svg_data ($input) {
 
 function svg_capture ($process) {
 
-    static $patt;
-    if (! $patt) {
-        $patt = Regex::create('@svg \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
-    }
-
     // Extract svg definitions.
-    $process->stream->pregReplaceCallback($patt, function ($m) {
-        $name = strtolower($m['name']);
-        $block = $m['block_content'];
-        if (! empty($block)) {
-            CssCrush::$process->misc->svg_defs[$name] = new Template($block);
-        }
-        return '';
-    });
+    $process->stream->pregReplaceCallback(
+        Regex::make('~@svg \s+ (?<name>{{ident}}) \s* {{block}}~ixS'),
+        function ($m) {
+            $name = strtolower($m['name']);
+            $block = $m['block_content'];
+            if (! empty($block)) {
+                CssCrush::$process->misc->svg_defs[$name] = new Template($block);
+            }
+            return '';
+        });
 }
 
 function svg_generator ($input, $fn_name) {
@@ -675,9 +672,9 @@ function svg_apply_css_funcs ($element, &$raw_data) {
         );
         $generic_functions =
             array_diff_key(Functions::$functions, $fill_functions);
-        $generic_functions_patt = Regex::createFunctionPatt(
+        $generic_functions_patt = Regex::makeFunctionPatt(
             array_keys($generic_functions), array('bare_paren' => true));
-        $fill_functions_patt = Regex::createFunctionPatt(
+        $fill_functions_patt = Regex::makeFunctionPatt(
             array_keys($fill_functions));
     }
 

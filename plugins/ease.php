@@ -60,7 +60,7 @@ function ease (Rule $rule) {
         );
 
         foreach ($easings as $property => $value) {
-            $patt = Regex::create('{{LB}}' . $property . '{{RB}}', 'i');
+            $patt = Regex::make('~{{LB}}' . $property . '{{RB}}~i');
             $find[] = $patt;
             $replace[] = $value;
         }

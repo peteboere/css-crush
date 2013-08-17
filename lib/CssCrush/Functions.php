@@ -35,7 +35,7 @@ class Functions
     static public function setMatchPatt ()
     {
         self::$functions = self::$builtinFunctions + self::$customFunctions;
-        self::$functionPatt = Regex::createFunctionPatt(
+        self::$functionPatt = Regex::makeFunctionPatt(
             array_keys(self::$functions), array('bare_paren' => true));
     }
 

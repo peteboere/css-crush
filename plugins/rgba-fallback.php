@@ -39,10 +39,7 @@ function rgba_fallback (Rule $rule) {
         return;
     }
 
-    static $rgb_patt;
-    if (! $rgb_patt) {
-        $rgb_patt = Regex::create('^rgba{{p-token}}$', 'i');
-    }
+    $rgb_patt = Regex::make('~^rgba{{p-token}}$~i');
 
     $new_set = array();
     foreach ($rule as $declaration) {

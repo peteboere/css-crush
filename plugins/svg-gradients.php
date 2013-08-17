@@ -115,7 +115,7 @@ function create_svg_linear_gradient ($input) {
         $angle_keywords['to right bottom'] = $angle_keywords['to bottom right'];
         $angle_keywords['to left bottom'] = $angle_keywords['to bottom left'];
 
-        $deg_patt = Regex::create('^{{number}}deg$', 'i');
+        $deg_patt = Regex::make('~^{{number}}deg$~i');
     }
 
     $args = Functions::parseArgs($input);
@@ -246,7 +246,7 @@ function create_svg_radial_gradient ($input) {
         $position_keywords['at right bottom'] = $position_keywords['at bottom right'];
         $position_keywords['at left bottom'] = $position_keywords['at bottom left'];
 
-        $origin_patt = Regex::create('^({{number}}%?) +({{number}}%?)$');
+        $origin_patt = Regex::make('~^({{number}}%?) +({{number}}%?)$~');
     }
 
     $args = Functions::parseArgs($input);

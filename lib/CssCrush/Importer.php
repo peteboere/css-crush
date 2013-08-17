@@ -153,20 +153,16 @@ class Importer
 
     static protected function rewriteImportedUrls ($import)
     {
-        static $non_import_urls_patt;
-        if (! $non_import_urls_patt) {
-            $non_import_urls_patt = Regex::create('(?<!@import ){{u-token}}', 'iS');
-        }
-
         $link = Util::getLinkBetweenPaths(
             CssCrush::$process->input->dir, dirname($import->path));
 
         if (empty($link)) {
+
             return;
         }
 
         // Match all urls that are not imports.
-        preg_match_all($non_import_urls_patt, $import->content, $matches);
+        preg_match_all(Regex::make('~(?<!@import ){{u-token}}~iS'), $import->content, $matches);
 
         foreach ($matches[0] as $token) {
 

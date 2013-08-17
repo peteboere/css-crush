@@ -67,20 +67,17 @@ Plugin::register('canvas', array(
 
 function canvas_capture ($process) {
 
-    static $callback, $patt;
-    if (! $callback) {
-        $patt = Regex::create('@canvas \s+ (?<name>{{ident}}) \s* {{block}}', 'ixS');
-    }
-
     // Extract definitions.
-    $process->stream->pregReplaceCallback($patt, function ($m) {
-        $name = strtolower($m['name']);
-        $block = $m['block_content'];
-        if (! empty($block)) {
-            CssCrush::$process->misc->canvas_defs[$name] = new Template($block);
-        }
-        return '';
-    });
+    $process->stream->pregReplaceCallback(
+        Regex::make('~@canvas \s+ (?<name>{{ident}}) \s* {{block}}~ixS'),
+        function ($m) {
+            $name = strtolower($m['name']);
+            $block = $m['block_content'];
+            if (! empty($block)) {
+                CssCrush::$process->misc->canvas_defs[$name] = new Template($block);
+            }
+            return '';
+        });
 }
 
 function canvas_generator ($input, $context) {
@@ -385,7 +382,7 @@ function canvas_apply_css_funcs ($canvas) {
             'canvas-linear-gradient' => 'CssCrush\canvas_fn_linear_gradient',
         );
         $map['fill'] = array(
-            'patt' => Regex::createFunctionPatt(array_keys($fill_functions)),
+            'patt' => Regex::makeFunctionPatt(array_keys($fill_functions)),
             'functions' => $fill_functions,
         );
 
@@ -400,13 +397,13 @@ function canvas_apply_css_funcs ($canvas) {
             'blur' => 'CssCrush\canvas_fn_filter',
         );
         $map['filter'] = array(
-            'patt' => Regex::createFunctionPatt(array_keys($filter_functions)),
+            'patt' => Regex::makeFunctionPatt(array_keys($filter_functions)),
             'functions' => $filter_functions,
         );
 
         $generic_functions = array_diff_key(Functions::$functions, $map['fill']['functions']);
         $map['generic'] = array(
-            'patt' => Regex::createFunctionPatt(
+            'patt' => Regex::makeFunctionPatt(
                 array_keys($generic_functions), array('bare_paren' => true)),
             'functions' => $generic_functions,
         );

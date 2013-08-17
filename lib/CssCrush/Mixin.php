@@ -17,11 +17,6 @@ class Mixin
 
     static public function call ($message, $context = null)
     {
-        static $message_patt;
-        if (! $message_patt) {
-            $message_patt = Regex::create('^(?<name>{{ident}}) {{parens}}?', 'xS');
-        }
-
         $process = CssCrush::$process;
         $mixable = null;
         $message = trim($message);
@@ -29,7 +24,7 @@ class Mixin
         // Test for mixin or abstract rule. e.g:
         //   named-mixin( 50px, rgba(0,0,0,0), left 100% )
         //   abstract-rule
-        if (preg_match($message_patt, $message, $message_match)) {
+        if (preg_match(Regex::make('~^(?<name>{{ident}}) {{parens}}?~xS'), $message, $message_match)) {
 
             $name = $message_match['name'];
 

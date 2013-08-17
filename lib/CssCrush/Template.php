@@ -23,7 +23,7 @@ class Template
     {
         static $arg_patt;
         if (! $arg_patt) {
-            $arg_patt = Regex::createFunctionPatt(
+            $arg_patt = Regex::makeFunctionPatt(
                 array('arg'), array('templating' => true));
         }
 

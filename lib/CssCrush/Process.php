@@ -200,15 +200,12 @@ class Process
 
     protected function resolveSelectorAliases ()
     {
-        static $alias_patt;
-        if (! $alias_patt) {
-            $alias_patt = Regex::create('@selector-alias +\:({{ident}}) +([^;]+) *;', 'iS');
-        }
-
-        $this->stream->pregReplaceCallback($alias_patt, function ($m) {
-            $name = strtolower($m[1]);
-            CssCrush::$process->selectorAliases[$name] = new Template(Util::stripCommentTokens($m[2]));
-        });
+        $this->stream->pregReplaceCallback(
+            Regex::make('~@selector-alias +\:?({{ident}}) +([^;]+) *;~iS'),
+            function ($m) {
+                $name = strtolower($m[1]);
+                CssCrush::$process->selectorAliases[$name] = new Template(Util::stripCommentTokens($m[2]));
+            });
 
         // Merge with global selector aliases.
         $this->selectorAliases += CssCrush::$config->selectorAliases;
@@ -217,7 +214,7 @@ class Process
         if ($this->selectorAliases) {
             $names = implode('|', array_keys($this->selectorAliases));
             $this->selectorAliasesPatt
-                = Regex::create('\:(' . $names . '){{RB}}(\()?', 'iS');
+                = Regex::make('~\:(' . $names . '){{RB}}(\()?~iS');
         }
     }
 
@@ -837,10 +834,10 @@ class Process
             $regex_replacements['~ ?(@[^;]+\;)~'] = "$1$EOL";
 
             // Trim leading spaces on @-rules and some tokens.
-            $regex_replacements[Regex::create(' +([@}]|\?[rc]{{token-id}}\?)', 'S')] = "$1";
+            $regex_replacements[Regex::make('~ +([@}]|\?[rc]{{token-id}}\?)~S')] = "$1";
 
             // Additional newline between adjacent rules and comments.
-            $regex_replacements[Regex::create('({{r-token}}) (\s*) ({{c-token}})', 'xS')] = "$1$EOL$2$3";
+            $regex_replacements[Regex::make('~({{r-token}}) (\s*) ({{c-token}})~xS')] = "$1$EOL$2$3";
         }
 
         // Apply all formatting replacements.
@@ -1004,7 +1001,7 @@ class Process
             $this->sourceMap['sources'][] = Util::getLinkBetweenPaths($this->output->dir, $source, false);
         }
 
-        $patt = Regex::create('\?[tm]{{token-id}}\?', 'S');
+        $token_patt = Regex::make('~\?[tm]{{token-id}}\?~S');
         $mappings = array();
         $lines = preg_split(Regex::$patt->newline, $this->stream->raw);
         $tokens =& $this->tokens->store;
@@ -1019,7 +1016,7 @@ class Process
 
             $line_segments = array();
 
-            while (preg_match($patt, $line_text, $m, PREG_OFFSET_CAPTURE)) {
+            while (preg_match($token_patt, $line_text, $m, PREG_OFFSET_CAPTURE)) {
 
                 list($token, $dest_col) = $m[0];
                 $token_type = $token[1];
@@ -1113,7 +1110,7 @@ class Process
         if (! $keywords_patt) {
             $keywords =& Color::loadMinifyableKeywords();
             $keywords_patt = '~(?<![\w-\.#])(' . implode('|', array_keys($keywords)) . ')(?![\w-\.#\]])~iS';
-            $functions_patt = Regex::create('{{LB}}(rgb|hsl)\(([^\)]{5,})\)', 'iS');
+            $functions_patt = Regex::make('~{{LB}}(rgb|hsl)\(([^\)]{5,})\)~iS');
         }
 
         $this->stream->pregReplaceCallback($keywords_patt, function ($m) {
