@@ -416,32 +416,41 @@ class Process
 
     protected function captureVars ()
     {
-        $config = CssCrush::$config;
-        $regex = Regex::$patt;
-        $option_vars = $this->options->vars;
+        $vars_patt = Regex::make('~
+            @define
+            (?:
+                \s* {{block}} |
+                \s+ (?<name>{{ident}}) \s+ (?<value>[^;]+) \s* ;
+            )
+        ~ixS');
 
-        $this->stream->pregReplaceCallback($regex->vars, function ($m) {
-            CssCrush::$process->vars =
-                array_merge(
-                    CssCrush::$process->vars,
-                    Rule::parseBlock($m['block_content'], array(
-                        'keyed' => true,
-                        'ignore_directives' => true,
-                    ))
-                );
+        $this->stream->pregReplaceCallback($vars_patt, function ($m) {
+            if (isset($m['name'])) {
+                CssCrush::$process->vars[strtolower($m['name'])] = $m['value'];
+            }
+            else {
+                CssCrush::$process->vars =
+                    array_merge(
+                        CssCrush::$process->vars,
+                        Rule::parseBlock($m['block_content'], array(
+                            'keyed' => true,
+                            'ignore_directives' => true,
+                        ))
+                    );
+            }
         });
 
         // In-file variables override global variables.
-        $this->vars += $config->vars;
+        $this->vars += CssCrush::$config->vars;
 
         // Runtime variables override in-file variables.
-        if (! empty($option_vars)) {
-            $this->vars = array_merge($this->vars, $option_vars);
+        if (! empty($this->options->vars)) {
+            $this->vars = array_merge($this->vars, $this->options->vars);
         }
 
         // Place variables referenced inside variables.
         foreach ($this->vars as $name => &$value) {
-            $value = preg_replace_callback($regex->varFunction, 'CssCrush\Process::cb_placeVars', $value);
+            $value = preg_replace_callback(Regex::$patt->varFunction, 'CssCrush\Process::cb_placeVars', $value);
         }
     }
 

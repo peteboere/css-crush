@@ -66,7 +66,6 @@ class Regex
         // @-rules.
         $patt->import = Regex::make('~@import \s+ ({{u-token}}) \s? ([^;]*);~ixS');
         $patt->charset = Regex::make('~@charset \s+ ({{s-token}}) \s*;~ixS');
-        $patt->vars = Regex::make('~@define \s* {{block}}~ixS');
         $patt->mixin = Regex::make('~@mixin \s+ (?<name>{{ident}}) \s* {{block}}~ixS');
         $patt->ifDefine = Regex::make('~@ifdefine \s+ (not \s+)? ({{ident}}) \s* \{~ixS');
         $patt->fragmentCapture = Regex::make('~@fragment \s+ (?<name>{{ident}}) \s* {{block}}~ixS');
