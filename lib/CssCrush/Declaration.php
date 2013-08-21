@@ -98,7 +98,7 @@ class Declaration
             $context = (object) array(
                 'rule' => $parent_rule,
             );
-            Functions::executeOnString(
+            $this->value = Functions::executeOnString(
                 $this->value,
                 Regex::$patt->thisFunction,
                 array(
@@ -113,7 +113,7 @@ class Declaration
                 'rule' => $parent_rule,
                 'property' => $this->property
             );
-            Functions::executeOnString(
+            $this->value = Functions::executeOnString(
                 $this->value,
                 null,
                 null,

@@ -452,13 +452,13 @@ class CssCrush
 
         // Merge into the stack, overrides existing variables of the same name
         if (is_array($vars)) {
-            $config->vars = array_merge($config->vars, $vars);
+            $config->vars = $vars + $config->vars;
         }
 
         // Test for a file. If it is attempt to parse it
         elseif (is_string($vars) && file_exists($vars)) {
             if ($result = @parse_ini_file($vars)) {
-                $config->vars = array_merge($config->vars, $result);
+                $config->vars = $result + $config->vars;
             }
         }
 

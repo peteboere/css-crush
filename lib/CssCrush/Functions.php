@@ -39,12 +39,12 @@ class Functions
             array_keys(self::$functions), array('bare_paren' => true));
     }
 
-    static public function executeOnString (&$str, $patt = null, $process_callback = null, \stdClass $context = null)
+    static public function executeOnString ($str, $patt = null, $process_callback = null, \stdClass $context = null)
     {
         // No bracketed expressions, early return.
         if (strpos($str, '(') === false) {
 
-            return;
+            return $str;
         }
 
         // Set default pattern if not set.
@@ -55,16 +55,16 @@ class Functions
         // No custom functions, early return.
         if (! preg_match($patt, $str)) {
 
-            return;
+            return $str;
         }
-
-        // Find custom function matches.
-        $matches = Regex::matchAll($patt, $str);
 
         // Always pass in a context object.
         if (! $context) {
             $context = new \stdClass();
         }
+
+        // Find custom function matches.
+        $matches = Regex::matchAll($patt, $str);
 
         // Step through the matches from last to first.
         while ($match = array_pop($matches)) {
@@ -109,6 +109,8 @@ class Functions
             // Splice in the function result.
             $str = substr_replace($str, "$before_operator$func_returns", $offset, $closing_paren - $offset);
         }
+
+        return $str;
     }
 
 

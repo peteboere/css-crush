@@ -426,17 +426,13 @@ class Process
 
         $this->stream->pregReplaceCallback($vars_patt, function ($m) {
             if (isset($m['name'])) {
-                CssCrush::$process->vars[strtolower($m['name'])] = $m['value'];
+                CssCrush::$process->vars[$m['name']] = $m['value'];
             }
             else {
-                CssCrush::$process->vars =
-                    array_merge(
-                        CssCrush::$process->vars,
-                        Rule::parseBlock($m['block_content'], array(
-                            'keyed' => true,
-                            'ignore_directives' => true,
-                        ))
-                    );
+                CssCrush::$process->vars = Rule::parseBlock($m['block_content'], array(
+                                                'keyed' => true,
+                                                'ignore_directives' => true,
+                                            )) + CssCrush::$process->vars;
             }
         });
 
@@ -445,7 +441,7 @@ class Process
 
         // Runtime variables override in-file variables.
         if (! empty($this->options->vars)) {
-            $this->vars = array_merge($this->vars, $this->options->vars);
+            $this->vars = $this->options->vars + $this->vars;
         }
 
         // Place variables referenced inside variables.
@@ -477,29 +473,27 @@ class Process
 
     static protected function placeVars (&$value)
     {
-        $regex = Regex::$patt;
-
         // Variables with no default value.
-        $value = preg_replace_callback($regex->varFunction,
+        $value = preg_replace_callback(Regex::$patt->varFunction,
             'CssCrush\Process::cb_placeVars', $value, -1, $vars_placed);
 
+        // Variables with default value.
         if (strpos($value, '$(') !== false) {
 
             // Assume at least one replace.
             $vars_placed = 1;
 
-            // Variables with default value.
-            $callback = function ($raw_arg) {
-                list($name, $default_value) = Functions::parseArgsSimple($raw_arg);
-                if (isset(CssCrush::$process->vars[$name])) {
-                    return CssCrush::$process->vars[$name];
-                }
-                else {
-                    return $default_value;
-                }
-            };
-
-            Functions::executeOnString($value, '~(\$)\(~', array('$' => $callback));
+            // Variables may be nested so need to apply full function parsing.
+            $value = Functions::executeOnString($value, '~(\$)\(~',
+                array('$' => function ($raw_args) {
+                    list($name, $default_value) = Functions::parseArgsSimple($raw_args);
+                    if (isset(CssCrush::$process->vars[$name])) {
+                        return CssCrush::$process->vars[$name];
+                    }
+                    else {
+                        return $default_value;
+                    }
+                }));
         }
 
         // If we know replacements have been made we may want to update $value. e.g URL tokens.

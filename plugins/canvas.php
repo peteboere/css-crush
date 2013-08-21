@@ -419,19 +419,19 @@ function canvas_apply_css_funcs ($canvas) {
         }
 
         // Generic functions.
-        Functions::executeOnString(
+        $value = Functions::executeOnString(
             $value, $map['generic']['patt'], $map['generic']['functions']);
 
         // Fill functions.
         if (in_array($property, array('fill', 'background-fill'))) {
             $context->currentProperty = $property;
             $context->canvas = $canvas;
-            Functions::executeOnString(
+            $value = Functions::executeOnString(
                 $value, $map['fill']['patt'], $map['fill']['functions'], $context);
         }
         elseif ($property === 'canvas-filter') {
             $context->canvas = $canvas;
-            Functions::executeOnString(
+            $value = Functions::executeOnString(
                 $value, $map['filter']['patt'], $map['filter']['functions'], $context);
         }
     }

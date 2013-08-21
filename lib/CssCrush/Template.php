@@ -31,12 +31,10 @@ class Template
 
         // Parse all arg function calls in the passed string,
         // callback creates default values.
-        Functions::executeOnString($str, $arg_patt, array(
+        $this->string = Functions::executeOnString($str, $arg_patt, array(
                 'arg' => array($this, 'capture'),
                 '#' => array($this, 'capture'),
             ));
-
-        $this->string = $str;
     }
 
     public function capture ($str)

@@ -679,11 +679,11 @@ function svg_apply_css_funcs ($element, &$raw_data) {
     }
 
     foreach ($raw_data as $property => &$value) {
-        Functions::executeOnString($value, $generic_functions_patt);
+        $value = Functions::executeOnString($value, $generic_functions_patt);
 
         // Only capturing fills for fill and stoke properties.
         if ($property === 'fill' || $property === 'stroke') {
-            Functions::executeOnString(
+            $value = Functions::executeOnString(
                 $value, $fill_functions_patt, $fill_functions, $element);
 
             // If the value is a color with alpha component we split the color
