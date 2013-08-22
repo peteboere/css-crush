@@ -189,6 +189,7 @@ class Importer
 
         if (! self::checkSyntax($str)) {
 
+            $str = '';
             return false;
         }
 
@@ -217,19 +218,56 @@ class Importer
 
     static protected function checkSyntax (&$str)
     {
-        // TODO: add more sophisticated error detection such as line/column of an unmatched bracket.
-
         // Catch obvious typing errors.
         $parse_errors = array();
         $current_file = 'file://' . end(CssCrush::$process->sources);
         $balanced_parens = substr_count($str, "(") === substr_count($str, ")");
         $balanced_curlies = substr_count($str, "{") === substr_count($str, "}");
 
-        if (! $balanced_parens) {
-            $parse_errors[] = "Unmatched '(' in $current_file.";
-        }
+        $validate_pairings = function ($str, $pairing) use ($current_file) {
+            if ($pairing === '{}') {
+                $opener_patt = '~\{~';
+                $balancer_patt = Regex::make('~^{{block}}~');
+            }
+            else {
+                $opener_patt = '~\(~';
+                $balancer_patt = Regex::make('~^{{parens}}~');
+            }
+
+            // Find unbalanced opening brackets.
+            preg_match_all($opener_patt, $str, $matches, PREG_OFFSET_CAPTURE);
+            foreach ($matches[0] as $m) {
+                $offset = $m[1];
+                if (! preg_match($balancer_patt, substr($str, $offset), $m)) {
+                    $substr = substr($str, 0, $offset);
+                    $line = substr_count($substr, "\n") + 1;
+                    $column = strlen($substr) - strrpos($substr, "\n");
+                    return "Unbalanced '{$pairing[0]}' in $current_file, Line $line, Column $column.";
+                }
+            }
+
+            // Reverse the stream (and brackets) to find stray closing brackets.
+            $str = strtr(strrev($str), $pairing, strrev($pairing));
+
+            preg_match_all($opener_patt, $str, $matches, PREG_OFFSET_CAPTURE);
+            foreach ($matches[0] as $m) {
+                $offset = $m[1];
+                $substr = substr($str, $offset);
+                if (! preg_match($balancer_patt, $substr, $m)) {
+                    $line = substr_count($substr, "\n") + 1;
+                    $column = strpos($substr, "\n");
+                    return "Stray '{$pairing[1]}' in $current_file, Line $line, Column $column.";
+                }
+            }
+
+            return false;
+        };
+
         if (! $balanced_curlies) {
-            $parse_errors[] = "Unmatched '{' in $current_file.";
+            $parse_errors[] = $validate_pairings($str, '{}') ?: "Unbalanced '{' in $current_file.";
+        }
+        if (! $balanced_parens) {
+            $parse_errors[] = $validate_pairings($str, '()') ?: "Unbalanced '(' in $current_file.";
         }
 
         if ($parse_errors) {

@@ -450,19 +450,19 @@ class CssCrush
     {
         $config = self::$config;
 
-        // Merge into the stack, overrides existing variables of the same name
+        // Merge into the stack, overrides existing variables of the same name.
         if (is_array($vars)) {
             $config->vars = $vars + $config->vars;
         }
 
-        // Test for a file. If it is attempt to parse it
+        // Test for a file. If it is attempt to parse it.
         elseif (is_string($vars) && file_exists($vars)) {
             if ($result = @parse_ini_file($vars)) {
                 $config->vars = $result + $config->vars;
             }
         }
 
-        // Clear the stack if the argument is explicitly null
+        // Clear the stack if the argument is explicitly null.
         elseif (is_null($vars)) {
             $config->vars = array();
         }
