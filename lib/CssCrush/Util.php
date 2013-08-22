@@ -26,6 +26,7 @@ class Util
         if ($strip_drive_letter) {
             $path = preg_replace('~^[a-z]\:~i', '', $path);
         }
+
         // Backslashes and repeat slashes to a single forward slash.
         $path = rtrim(preg_replace('~[\\\\/]+~', '/', $path), '/');
 

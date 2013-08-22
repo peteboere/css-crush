@@ -82,7 +82,6 @@ class Process
         );
     }
 
-    // Establish the input and output directories and optionally test output dir.
     public function setContext ($input_dir, $test_output_dir = true)
     {
         $doc_root = $this->docRoot;

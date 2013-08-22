@@ -277,9 +277,9 @@ class CssCrush
         else if (strpos($file, '/') === 0) {
             $pathtest = $process->setContext(dirname($doc_root . $file));
         }
-        // Relative path.
+        // Relative path. Try resolving based on the directory of the executing script.
         else {
-            $pathtest = $process->setContext(dirname(__DIR__ . '/' . $file));
+            $pathtest = $process->setContext(dirname($_SERVER['SCRIPT_FILENAME']) . '/' . dirname($file));
         }
 
         if (! $pathtest) {
