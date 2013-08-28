@@ -47,7 +47,7 @@ function aria () {
         $aria = array(
 
             // Roles.
-            'role' => '[role="#(0)"]',
+            'role' => $optional_value('role'),
 
             // States and properties.
             'aria-activedescendant' => $optional_value('aria-activedescendant'),

@@ -47,8 +47,7 @@ class Process
         $this->selectorAliasesPatt = null;
 
         // Pick a doc root.
-        $this->docRoot = isset($this->options->doc_root) ?
-            $this->options->doc_root : $config->docRoot;
+        $this->docRoot = isset($this->options->doc_root) ? $this->options->doc_root : $config->docRoot;
 
         // Shortcut the newline option and attach it to the process.
         switch ($this->options->newlines) {
@@ -86,43 +85,39 @@ class Process
     {
         $doc_root = $this->docRoot;
 
+        // If not a system path.
         if (strpos($input_dir, $doc_root) !== 0) {
-            // Not a system path.
-            $input_dir = realpath("$doc_root/$input_dir");
+            $input_dir = Util::normalizePath(realpath("$doc_root/$input_dir"));
         }
 
         // Initialise input object and store input directory.
         $this->input->path = null;
         $this->input->filename = null;
         $this->input->dir = $input_dir;
-        $this->input->dirUrl = substr($this->input->dir, strlen($doc_root));
+        $this->input->dirUrl = substr($input_dir, strlen($doc_root));
 
         // Store reference to the output dir.
-        $this->output->dir = $this->ioCall('getOutputDir');
+        $this->output->dir = $this->io('getOutputDir');
         $this->output->dirUrl = substr($this->output->dir, strlen($doc_root));
 
         // Test the output directory to see it exists and is writable.
         $output_dir_ok = false;
         if ($test_output_dir) {
-            $output_dir_ok = $this->ioCall('testOutputDir');
+            $output_dir_ok = $this->io('testOutputDir');
         }
 
-        // Setup the IO handler.
-        $this->ioCall('init');
+        $this->io('init');
 
         return $output_dir_ok;
     }
 
-    public function ioCall ($method)
+    public function io ($method)
     {
-        // Fetch the argument list, shift off the first item
+        // Get argument list (excluding the method name which comes first).
         $args = func_get_args();
         array_shift($args);
 
-        // The method address
-        $the_method = array(CssCrush::$config->io, $method);
-
-        return call_user_func_array($the_method, $args);
+        return call_user_func_array(array(CssCrush::$config->io, $method), $args);
     }
 
 

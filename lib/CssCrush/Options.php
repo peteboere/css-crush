@@ -49,9 +49,16 @@ class Options
                 }
                 break;
 
-            // Sanitize path options.
-            case 'context':
+            // Path options.
             case 'output_dir':
+            case 'boilerplate':
+                if (is_string($value)) {
+                    $value = Util::resolveUserPath($value);
+                }
+                break;
+
+            // Path options that only accept system paths.
+            case 'context':
             case 'doc_root':
                 if (is_string($value)) {
                     $value = Util::normalizePath(realpath($value));

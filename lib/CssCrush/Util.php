@@ -8,9 +8,6 @@ namespace CssCrush;
 
 class Util
 {
-    /*
-     * Create html attribute string from array.
-     */
     static public function htmlAttributes (array $attributes)
     {
         $attr_string = '';
@@ -23,6 +20,10 @@ class Util
 
     static public function normalizePath ($path, $strip_drive_letter = false)
     {
+        if (! $path) {
+            return '';
+        }
+
         if ($strip_drive_letter) {
             $path = preg_replace('~^[a-z]\:~i', '', $path);
         }
@@ -41,13 +42,31 @@ class Util
 
     static public function simplifyPath ($path)
     {
-        // Reduce redundant path segments (issue #32):
-        // e.g 'foo/../bar' => 'bar'
+        // Reduce redundant path segments. e.g 'foo/../bar' => 'bar'
         $patt = '~[^/.]+/\.\./~S';
         while (preg_match($patt, $path)) {
             $path = preg_replace($patt, '', $path);
         }
         return $path;
+    }
+
+    static public function resolveUserPath ($path)
+    {
+        // System path.
+        if ($realpath = realpath($path)) {
+            $path = $realpath;
+        }
+        // WWW root path.
+        elseif (strpos($path, '/') === 0) {
+            $doc_root = isset(CssCrush::$process) ? CssCrush::$process->docRoot : CssCrush::$config->docRoot;
+            $path = realpath($doc_root . $path);
+        }
+        // Relative path. Try resolving based on the directory of the executing script.
+        else {
+            $path = realpath(CssCrush::$config->scriptDir . '/' . $path);
+        }
+
+        return $path ? Util::normalizePath($path) : false;
     }
 
     static public function find ()

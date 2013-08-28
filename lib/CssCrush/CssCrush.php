@@ -25,15 +25,13 @@ class CssCrush
         self::$config->location = dirname(dirname(__DIR__));
 
         // Plugin directories.
-        self::$config->plugin_dirs = array(self::$config->location . '/plugins');
+        self::$config->pluginDirs = array(self::$config->location . '/plugins');
 
-        // Establish version id.
         self::$config->version = new Version(self::VERSION);
+        self::$config->scriptDir = dirname($_SERVER['SCRIPT_FILENAME']);
+        self::$config->docRoot = self::resolveDocRoot();
 
-        // Set the docRoot reference.
-        self::setDocRoot();
-
-        // Set the default IO handler.
+        // Set default IO handler.
         self::$config->io = 'CssCrush\IO';
 
         // Shared resources.
@@ -51,7 +49,7 @@ class CssCrush
             // Alternative formatter to use for un-minified output.
             'formatter' => null,
 
-            // Append 'checksum' to output file name.
+            // Appends checksum query string to output file name.
             'versioning' => true,
 
             // Use the template boilerplate.
@@ -63,7 +61,7 @@ class CssCrush
             // Enable/disable the cache.
             'cache' => true,
 
-            // Output filename. Defaults the host-filename.
+            // Output filename. Defaults the hostfile filename.
             'output_file' => null,
 
             // Output directory. Defaults to the same directory as the host file.
@@ -100,7 +98,7 @@ class CssCrush
         require_once self::$config->location . '/misc/formatters.php';
     }
 
-    static protected function setDocRoot ($doc_root = null)
+    static protected function resolveDocRoot ($doc_root = null)
     {
         // Get document_root reference
         // $_SERVER['DOCUMENT_ROOT'] is unreliable in certain CGI/Apache/IIS setups
@@ -141,7 +139,7 @@ class CssCrush
             }
         }
 
-        self::$config->docRoot = Util::normalizePath($doc_root);
+        return Util::normalizePath($doc_root);
     }
 
     // Aliases and macros loader.
@@ -263,47 +261,36 @@ class CssCrush
         $options = $process->options;
         $doc_root = $process->docRoot;
 
-        // Since we're comparing strings, we need to iron out OS differences.
-        $file = str_replace('\\', '/', $file);
+        if (! ($input_file = Util::resolveUserPath($file))) {
+            $basename = basename($file);
+            $error = "Input file '$basename' not found.";
+            CssCrush::logError($error);
+            trigger_error(__METHOD__ . ": $error\n", E_USER_WARNING);
 
-        // Finding the system path of the input file and validating it.
-        $pathtest = true;
-
-        // System path.
-        if (strpos($file, $doc_root) === 0) {
-            $pathtest = $process->setContext(dirname($file));
-        }
-        // WWW root path.
-        else if (strpos($file, '/') === 0) {
-            $pathtest = $process->setContext(dirname($doc_root . $file));
-        }
-        // Relative path. Try resolving based on the directory of the executing script.
-        else {
-            $pathtest = $process->setContext(dirname($_SERVER['SCRIPT_FILENAME']) . '/' . dirname($file));
-        }
-
-        if (! $pathtest) {
-            // Main directory not found or is not writable return an empty string.
             return '';
         }
 
-        // Validate file input.
-        if (! IO::registerInputFile($file)) {
+        if ($process->setContext(dirname($input_file))) {
+            $process->input->path = $input_file;
+            $process->input->filename = basename($input_file);
+            $process->input->mtime = filemtime($input_file);
+        }
+        else {
             return '';
         }
 
         // Create a filename that will be used later
         // Used in validateCache, and writing to filesystem
-        $process->output->filename = $process->ioCall('getOutputFileName');
+        $process->output->filename = $process->io('getOutputFileName');
 
         // Caching.
         if ($options->cache) {
 
             // Load the cache data.
-            $process->cacheData = $process->ioCall('getCacheData');
+            $process->cacheData = $process->io('getCacheData');
 
             // If cache is enabled check for a valid compiled file.
-            $valid_compliled_file = $process->ioCall('validateExistingOutput');
+            $valid_compliled_file = $process->io('validateExistingOutput');
 
             if (is_string($valid_compliled_file)) {
                 return $valid_compliled_file;
@@ -313,7 +300,7 @@ class CssCrush
         $stream = $process->compile();
 
         // Create file and return url. Return empty string on failure.
-        if ($url = $process->ioCall('write', $stream)) {
+        if ($url = $process->io('write', $stream)) {
             $timestamp = $options->versioning ? '?' . time() : '';
             return "$url$timestamp";
         }
@@ -475,7 +462,7 @@ class CssCrush
      */
     static public function clearCache ($dir = '')
     {
-        return $process->ioCall('clearCache', $dir);
+        return $process->io('clearCache', $dir);
     }
 
     /**

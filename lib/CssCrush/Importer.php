@@ -145,7 +145,7 @@ class Importer
             );
 
             // Save config changes.
-            $process->ioCall('saveCacheData');
+            $process->io('saveCacheData');
         }
 
         return $str;

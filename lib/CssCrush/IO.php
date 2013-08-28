@@ -8,7 +8,6 @@ namespace CssCrush;
 
 class IO
 {
-    // Any setup that needs to be done
     static public function init ()
     {
         $process = CssCrush::$process;
@@ -33,7 +32,7 @@ class IO
             $error = "Output directory '$output_dir' doesn't exist.";
             $pathtest = false;
         }
-        else if (! is_writable($output_dir)) {
+        elseif (! is_writable($output_dir)) {
 
             CssCrush::log('Attempting to change permissions.');
 
@@ -150,7 +149,7 @@ class IO
                     }
                 }
             }
-            else if (file_exists($existingfile->path)) {
+            elseif (file_exists($existingfile->path)) {
 
                 CssCrush::log('Recompiling - file exists but no cache data.');
             }
@@ -167,7 +166,7 @@ class IO
         if (empty($dir)) {
             $dir = __DIR__;
         }
-        else if (! file_exists($dir)) {
+        elseif (! file_exists($dir)) {
             return;
         }
 
@@ -265,27 +264,5 @@ class IO
         }
 
         return false;
-    }
-
-    static final function registerInputFile ($file)
-    {
-        $input = CssCrush::$process->input;
-
-        $input->filename = basename($file);
-        $input->path = "$input->dir/$input->filename";
-
-        if (! file_exists($input->path)) {
-
-            // On failure return false.
-            $error = "Input file '$input->filename' not found.";
-            CssCrush::logError($error);
-            trigger_error(__METHOD__ . ": $error\n", E_USER_WARNING);
-            return false;
-        }
-        else {
-            // Capture the modified time.
-            $input->mtime = filemtime($input->path);
-            return true;
-        }
     }
 }

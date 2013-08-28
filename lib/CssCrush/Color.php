@@ -62,16 +62,16 @@ class Color
 
     static public function parse ($str)
     {
-        $rgba = false;
-
         if ($test = Color::test($str)) {
             $color = $test['value'];
             $type = $test['type'];
         }
         else {
 
-            return $rgba;
+            return false;
         }
+
+        $rgba = false;
 
         switch ($type) {
 
@@ -380,7 +380,7 @@ class Color
     public function __construct ($color, $use_hsl_color_space = false)
     {
         $this->value = is_array($color) ? $color : self::parse($color);
-        $this->isValid = $this->value;
+        $this->isValid = ! empty($this->value);
         if ($use_hsl_color_space && $this->isValid) {
             $this->toHsl();
         }
@@ -388,13 +388,20 @@ class Color
 
     public function __toString ()
     {
-        if ($this->value[3] !== 1) {
+        // For opaque colors return hex notation as it's the most compact.
+        if ($this->value[3] === 1) {
 
-            return 'rgba(' . implode(',', $this->hslColorSpace ? $this->getRgb() : $this->value) . ')';
+            return $this->getHex();
         }
         else {
 
-            return $this->getHex();
+            // R, G and B components must be integers.
+            $components = array();
+            foreach (($this->hslColorSpace ? $this->getRgb() : $this->value) as $component_index => $component) {
+                $components[] = $component_index === 3 ? $component : min(round($component), 255);
+            }
+
+            return 'rgba(' . implode(',', $components) . ')';
         }
     }
 
@@ -448,6 +455,7 @@ class Color
         $was_hsl_color_space = $this->hslColorSpace;
 
         $this->toHsl();
+
         // Normalize percentage adjustment parameters to floating point numbers.
         foreach ($adjustments as $index => $val) {
 

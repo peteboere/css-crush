@@ -12,7 +12,7 @@ class Plugin
 
     static public function info ()
     {
-        $plugin_dirs = CssCrush::$config->plugin_dirs;
+        $plugin_dirs = CssCrush::$config->pluginDirs;
         $plugin_data = array();
 
         foreach ($plugin_dirs as $plugin_dir) {
@@ -57,7 +57,7 @@ class Plugin
             $found = false;
 
             // Loop plugin_dirs to find the plugin.
-            foreach (CssCrush::$config->plugin_dirs as $plugin_dir) {
+            foreach (CssCrush::$config->pluginDirs as $plugin_dir) {
 
                 $path = "$plugin_dir/$plugin_name.php";
                 if (file_exists($path)) {
@@ -68,8 +68,7 @@ class Plugin
             }
 
             if (! $found) {
-                trigger_error(__METHOD__ .
-                        ": <b>$plugin_name</b> plugin not found.\n", E_USER_NOTICE);
+                trigger_error(__METHOD__ . ": Plugin '$plugin_name' not found.\n", E_USER_NOTICE);
             }
         }
 
