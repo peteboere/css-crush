@@ -11,9 +11,9 @@ class Tokens
     public $store;
     protected $ids;
 
-    public function __construct ()
+    public function __construct (array $types = null)
     {
-        $types = array(
+        $types = $types ?: array(
             's', // Strings
             'c', // Comments
             'r', // Rules
@@ -179,7 +179,7 @@ class Tokens
 
     static public function is ($label, $of_type)
     {
-        if (preg_match(Regex::make('~^ \? (?<type>[a-z]) {{token-id}} \? $~xS'), $label, $m)) {
+        if (preg_match(Regex::make('~^ \? (?<type>[a-zA-Z]) {{token-id}} \? $~xS'), $label, $m)) {
 
             return $of_type ? ($of_type === $m['type']) : true;
         }
