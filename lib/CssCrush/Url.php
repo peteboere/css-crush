@@ -58,10 +58,11 @@ class Url
 
     public function evaluate ()
     {
-        // Protocol based url.
-        if (preg_match('~^([a-z]+)\:~i', $this->value, $m)) {
+        // Protocol or protocol-relative (//) based URL.
+        if (preg_match('~^(?: (?<protocol>[a-z]+)\: | \/{2} )~ix', $this->value, $m)) {
 
-            $this->protocol = strtolower($m[1]);
+            $this->protocol = ! empty($m['protocol']) ? strtolower($m['protocol']) : 'relative';
+
             switch ($this->protocol) {
                 case 'data':
                     $type = 'data';
@@ -71,8 +72,7 @@ class Url
                     break;
             }
         }
-
-        // Relative and rooted urls.
+        // Relative and rooted URLs.
         else {
             $type = 'relative';
             $leading_variable = strpos($this->value, '$(') === 0;
@@ -224,7 +224,7 @@ class Url
 
     public function simplify ()
     {
-        if (! $this->isData) {
+        if ($this->isRelative || $this->isRooted) {
             $this->value = Util::simplifyPath($this->value);
         }
         return $this;
