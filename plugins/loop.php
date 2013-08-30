@@ -15,16 +15,20 @@
  *      ...
  *
  * @example
- *      @for i in range(1, 12) {
- *          .grid-#(i)-of-12 {
- *              width: (#(i) / 12 * 100)%;
- *              }
+ *      @for base in range(2, 24) {
+ *          @for i in range(1, #(base)) {
+ *              .grid-#(i)-of-#(base) {
+ *                  width: (#(i) / #(base) * 100)%;
+ *                  }
+ *          }
  *      }
  *
  *      // Yields:
- *      .grid-1-of-12 { width: 8.33333%; }
+ *      .grid-1-of-2 { width: 50%; }
+ *      .grid-2-of-2 { width: 100%; }
  *      ...
- *      .grid-12-of-12 { width: 100%; }
+ *      .grid-23-of-24 { width: 95.83333%; }
+ *      .grid-24-of-24 { width: 100%; }
  *
  * @example
  *      // The last argument to color-range() is an integer specifying how many
@@ -56,92 +60,98 @@ Plugin::register('loop', array(
 ));
 
 
+define('CssCrush\LOOP_VAR_PATT',
+    '~\#\( \s* (?<arg>[a-zA-Z][\.a-zA-Z0-9-_]*) \s* \)~x');
+define('CssCrush\LOOP_PATT',
+    Regex::make('~(?<expression> @for \s+ (?<var>{{ident}}) \s+ in \s+ (?<list>[^{]+) ) \s* {{block}}~xiS'));
+
+
 function loop () {
 
-    $for_block_patt_base = '@for \s+ (?<var>{{ident}}) \s+ in \s+ (?<list>[^{]+) \s*';
-    $for_block_patt = Regex::make('~' . $for_block_patt_base . '{{block}}~xiS');
-    $start_for_block_patt = Regex::make('~' . $for_block_patt_base . '\{~xiS');
-    $generator_func_patt = Regex::make('~(?<func>range|color-range) {{parens}}~ix');
-    $loop_var_patt = '~\#\( \s* (?<arg>[a-zA-Z][\.a-zA-Z0-9-_]*) \s* \)~x';
+    CssCrush::$process->stream->pregReplaceCallback(LOOP_PATT, function ($m) {
 
-    // Matching each root level loop construct then evaluating all nested loops and the enclosing loop.
-    CssCrush::$process->stream->pregReplaceCallback($for_block_patt, function ($top_m) use (
-        $start_for_block_patt,
-        $for_block_patt,
-        $generator_func_patt,
-        $loop_var_patt
-    ) {
-
-        $full_match = $top_m[0];
-
-        $count = preg_match_all($start_for_block_patt, $full_match, $loops, PREG_OFFSET_CAPTURE);
-        while ($count--) {
-
-            preg_match($for_block_patt, $full_match, $loop, PREG_OFFSET_CAPTURE, $loops[0][$count][1]);
-
-            $list_text = Functions::executeOnString($loop['list'][0]);
-
-            // Resolve the list of items for iteration.
-            // Either a generator function or a plain list.
-            $items = array();
-            if (preg_match($generator_func_patt, $list_text, $m)) {
-                $func = strtolower($m['func']);
-                $args = Functions::parseArgs($m['parens_content']);
-                switch ($func) {
-                    case 'range':
-                        $items = call_user_func_array('range', $args);
-                        break;
-                    default:
-                        $func = str_replace('-', '_', $func);
-                        if (function_exists("CssCrush\loop_$func")) {
-                            $items = call_user_func_array("CssCrush\loop_$func", $args);
-                        }
-                }
-            }
-            else {
-                $items = Util::splitDelimList($list_text);
-            }
-
-            // Multiply the text applying each iterated value.
-            $source_text = Template::unTokenize($loop['block_content'][0]);
-            $loop_output = '';
-            $loop_var = $loop['var'][0];
-
-            foreach ($items as $index => $item) {
-                $loop_output .= preg_replace_callback($loop_var_patt,
-                    function ($m) use ($index, $item, $loop_var) {
-                        $arg = $m['arg'];
-                        $arg_lc = strtolower($m['arg']);
-
-                        $parent_ref_patt = '~^loop\.parent\.~i';
-                        if (preg_match($parent_ref_patt, $arg)) {
-                            return '#(' . preg_replace($parent_ref_patt, 'loop.', $arg) . ')';
-                        }
-                        elseif ($arg_lc === 'loop.counter') {
-                            return $index + 1;
-                        }
-                        elseif ($arg_lc === 'loop.counter0') {
-                            return $index;
-                        }
-                        elseif ($arg === $loop_var || preg_replace('~^loop\.~i', 'loop.', $arg) === "loop.$loop_var") {
-                            return $item;
-                        }
-                        else {
-                            // Skip over.
-                            return $m[0];
-                        }
-                    }, $source_text);
-            }
-            $loop_output = Template::tokenize($loop_output);
-
-            $full_match = substr_replace($full_match, $loop_output, $loop[0][1], strlen($loop[0][0]));
-        }
-
-        // Remove unused loop variables before returning.
-        return preg_replace($loop_var_patt, '', $full_match);
+        return Template::tokenize(loop_unroll(Template::unTokenize($m[0])));
     });
 }
 
+function loop_unroll ($str, $context = array()) {
+
+    $str = loop_apply_scope($str, $context);
+
+    while (preg_match(LOOP_PATT, $str, $m, PREG_OFFSET_CAPTURE)) {
+
+        $str = substr_replace($str, '', $m[0][1], strlen($m[0][0]));
+
+        $context['loop.parent.counter'] = isset($context['loop.counter']) ? $context['loop.counter'] : -1;
+        $context['loop.parent.counter0'] = isset($context['loop.counter0']) ? $context['loop.counter0'] : -1;
+
+        foreach (loop_resolve_list($m['list'][0]) as $index => $value) {
+
+            $str .= loop_unroll($m['block_content'][0], array(
+                            $m['var'][0] => $value,
+                            'loop.counter' => $index + 1,
+                            'loop.counter0' => $index,
+                        ) + $context);
+        }
+    }
+
+    return $str;
+}
+
+function loop_resolve_list ($list_text) {
+
+    // Resolve the list of items for iteration.
+    // Either a generator function or a plain list.
+    $items = array();
+
+    $list_text = Functions::executeOnString($list_text);
+    $generator_func_patt = Regex::make('~(?<func>range|color-range) {{parens}}~ix');
+
+    if (preg_match($generator_func_patt, $list_text, $m)) {
+        $func = strtolower($m['func']);
+        $args = Functions::parseArgs($m['parens_content']);
+        switch ($func) {
+            case 'range':
+                $items = call_user_func_array('range', $args);
+                break;
+            default:
+                $func = str_replace('-', '_', $func);
+                if (function_exists("CssCrush\loop_$func")) {
+                    $items = call_user_func_array("CssCrush\loop_$func", $args);
+                }
+        }
+    }
+    else {
+        $items = Util::splitDelimList($list_text);
+    }
+
+    return $items;
+}
+
+function loop_apply_scope ($str, $context) {
+
+    // Need to temporarily hide child block scopes.
+    $child_scopes = array();
+
+    $str = preg_replace_callback(LOOP_PATT, function ($m) use (&$child_scopes) {
+        $label = '?B' . count($child_scopes) . '?';
+        $child_scopes[$label] = $m['block'];
+        return $m['expression'] . $label;
+    }, $str);
+
+    $str = preg_replace_callback(LOOP_VAR_PATT, function ($m) use ($context) {
+
+        // Normalize casing of built-in loop variables.
+        // User variables are case-sensitive.
+        $arg = preg_replace_callback('~^loop\.(parent\.)?counter0?$~i', function ($m) {
+            return strtolower($m[0]);
+        }, $m['arg']);
+
+        return isset($context[$arg]) ? $context[$arg] : '';
+    }, $str);
+
+    return str_replace(array_keys($child_scopes), array_values($child_scopes), $str);
+}
 
 function loop_color_range () {
 
