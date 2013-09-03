@@ -135,11 +135,9 @@ class Util
 
     static public function getLinkBetweenPaths ($path1, $path2, $directories = true)
     {
-        // Normalise the paths.
         $path1 = trim(Util::normalizePath($path1, true), '/');
         $path2 = trim(Util::normalizePath($path2, true), '/');
 
-        // The link between.
         $link = '';
 
         if ($path1 != $path2) {
@@ -159,7 +157,7 @@ class Util
 
         $link = $link !== '' ? rtrim($link, '/') : '';
 
-        // Add end slash if getting a link between directories.
+        // Append end slash if getting a link between directories.
         if ($link && $directories) {
             $link .= '/';
         }

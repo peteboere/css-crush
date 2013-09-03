@@ -56,6 +56,13 @@ class Url
         return "url($quote$this->value$quote)";
     }
 
+    public function update ($new_value)
+    {
+        $this->value = $new_value;
+
+        return $this->evaluate();
+    }
+
     public function evaluate ()
     {
         // Protocol or protocol-relative (//) based URL.
@@ -121,19 +128,6 @@ class Url
         }
 
         return "$function($this->value)";
-    }
-
-    public function resolveRootedPath ()
-    {
-        $process = CssCrush::$process;
-
-        if (! file_exists ($process->docRoot . $this->value)) {
-            return false;
-        }
-
-        // Move upwards '..' by the number of slashes in baseURL to get a relative path.
-        $this->value = str_repeat('../', substr_count($process->input->dirUrl, '/')) .
-            substr($this->value, 1);
     }
 
     public function prepend ($path_fragment)

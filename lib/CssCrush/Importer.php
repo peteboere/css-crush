@@ -54,32 +54,27 @@ class Importer
                 continue;
             }
 
-            // Fetch the URL object.
-            $url = $process->tokens->get($match[1][0]);
+            // Create import object for convenience.
+            $import = new \stdClass();
+            $import->url = $process->tokens->get($match[1][0]);
+            $import->media = trim($match[2][0]);
 
-            // Pass over protocoled import urls.
-            if ($url->protocol) {
+            // Skip import if the import URL is protocoled.
+            if ($import->url->protocol) {
                 $search_offset = $match_end;
                 continue;
             }
 
-            // The media context (if specified).
-            $media_context = trim($match[2][0]);
-
-            // Create import object.
-            $import = (object) array();
-            $import->url = $url;
-            $import->mediaContext = $media_context;
-
-            // Resolve import realpath.
-            if ($url->isRooted) {
+            // Resolve import path information.
+            if ($import->url->isRooted) {
                 $import->path = realpath($process->docRoot . $import->url->value);
             }
             else {
                 $import->path = realpath("$input->dir/{$import->url->value}");
             }
+            $import->dir = dirname($import->path);
 
-            // Get the import contents, if unsuccessful just continue with the import line removed.
+            // If unsuccessful getting import contents continue with the import line removed.
             $import->content = @file_get_contents($import->path);
             if ($import->content === false) {
 
@@ -88,37 +83,38 @@ class Importer
                 continue;
             }
 
-            // Import file opened successfully so we process it:
-            //   - We need to resolve import statement urls in all imported files since
-            //     they will be brought inline with the hostfile
+            // Import file exists so register it.
             $process->sources[] = $import->path;
+            $mtimes[] = filemtime($import->path);
+            $filenames[] = $import->url->value;
 
-            // If there are unmatched brackets inside the import, strip it.
+            // If the import content doesn't pass syntax validation skip to next import.
             if (! self::prepareForStream($import->content)) {
 
                 $str = substr_replace($str, '', $match_start, $match_len);
                 continue;
             }
 
-            $import->dir = dirname($import->url->value);
+            // Resolve a relative link between the import file and the host-file.
+            if ($import->url->isRooted) {
+                $import->relativeDir = Util::getLinkBetweenPaths($import->dir, $input->dir);
+            }
+            else {
+                $import->relativeDir = dirname($import->url->value);
+            }
 
-            // Store import file info for cache validation.
-            $mtimes[] = filemtime($import->path);
-            $filenames[] = $import->url->value;
-
-            // Alter all the @import urls to be paths relative to the hostfile.
+            // Alter all embedded import URLs to be relative to the host-file.
             foreach (Regex::matchAll($regex->import, $import->content) as $m) {
 
-                // Fetch the matched URL.
-                $url2 = $process->tokens->get($m[1][0]);
+                $nested_url = $process->tokens->get($m[1][0]);
 
-                // Try to resolve absolute paths.
-                // On failure strip the @import statement.
-                if ($url2->isRooted) {
-                    $url2->resolveRootedPath();
+                // Resolve rooted paths.
+                if ($nested_url->isRooted) {
+                    $link = Util::getLinkBetweenPaths(dirname($nested_url->getAbsolutePath()), $import->dir);
+                    $nested_url->update($link . basename($nested_url->value));
                 }
-                else {
-                    $url2->prepend("$import->dir/");
+                elseif (strlen($import->relativeDir)) {
+                    $nested_url->prepend("$import->relativeDir/");
                 }
             }
 
@@ -127,9 +123,8 @@ class Importer
                 self::rewriteImportedUrls($import);
             }
 
-            // Add media context if it exists.
-            if ($import->mediaContext) {
-                $import->content = "@media $import->mediaContext {{$import->content}}";
+            if ($import->media) {
+                $import->content = "@media $import->media {{$import->content}}";
             }
 
             $str = substr_replace($str, $import->content, $match_start, $match_len);
