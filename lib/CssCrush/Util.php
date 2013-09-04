@@ -50,20 +50,27 @@ class Util
         return $path;
     }
 
-    static public function resolveUserPath ($path)
+    static public function resolveUserPath ($path, $recovery = null)
     {
         // System path.
         if ($realpath = realpath($path)) {
             $path = $realpath;
         }
-        // WWW root path.
-        elseif (strpos($path, '/') === 0) {
-            $doc_root = isset(CssCrush::$process) ? CssCrush::$process->docRoot : CssCrush::$config->docRoot;
-            $path = realpath($doc_root . $path);
-        }
-        // Relative path. Try resolving based on the directory of the executing script.
         else {
-            $path = realpath(CssCrush::$config->scriptDir . '/' . $path);
+            // WWW root path.
+            if (strpos($path, '/') === 0) {
+                $doc_root = isset(CssCrush::$process) ? CssCrush::$process->docRoot : CssCrush::$config->docRoot;
+                $path = $doc_root . $path;
+            }
+            // Relative path. Try resolving based on the directory of the executing script.
+            else {
+                $path = CssCrush::$config->scriptDir . '/' . $path;
+            }
+
+            if (! file_exists($path) && is_callable($recovery)) {
+                $path = call_user_func($recovery, $path);
+            }
+            $path = realpath($path);
         }
 
         return $path ? Util::normalizePath($path) : false;

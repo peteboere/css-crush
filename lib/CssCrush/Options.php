@@ -50,10 +50,21 @@ class Options
                 break;
 
             // Path options.
-            case 'output_dir':
             case 'boilerplate':
                 if (is_string($value)) {
                     $value = Util::resolveUserPath($value);
+                }
+                break;
+
+            case 'output_dir':
+                if (is_string($value)) {
+                    $value = Util::resolveUserPath($value, function ($dir) use ($name) {
+                        if (! @mkdir($dir)) {
+                            trigger_error(__METHOD__ . ': Could not find or create directory ' .
+                                "specified by `$name` option.\n", E_USER_NOTICE);
+                        }
+                        return $dir;
+                    });
                 }
                 break;
 
