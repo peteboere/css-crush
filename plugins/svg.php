@@ -203,7 +203,7 @@ function svg_generator ($input, $fn_name) {
 
     // Resolve the type.
     // Bail if type not recognised.
-    $type = isset($raw_data['type']) ? strtolower($raw_data['type']) : 'rect';
+    $type = isset($raw_data['type']) ? strtolower($raw_data['type']) : 'path';
     if (! isset($schemas[$type])) {
 
         return '';
@@ -549,7 +549,7 @@ function svg_starpath ($cx, $cy, $points, $outer_r, $inner_r = null, $twist = 0,
         $y = ( $outer_r * sin($outer_angle) ) + $cy;
 
         if ($points != $s) {
-            $d[] = "$x,$y";
+            $d[] = "$x $y";
         }
 
         // If star shape is required need inner angles too.
@@ -565,11 +565,11 @@ function svg_starpath ($cx, $cy, $points, $outer_r, $inner_r = null, $twist = 0,
             $ix = ( $inner_r * cos($inner_angle) ) + $cx;
             $iy = ( $inner_r * sin($inner_angle) ) + $cy;
 
-            $d[] = "$ix,$iy";
+            $d[] = "$ix $iy";
         }
     }
 
-    return 'M' . implode(' ', $d) . 'Z';
+    return 'M' . implode('L', $d) . 'Z';
 }
 
 function svg_apply_filters ($element) {
@@ -721,7 +721,6 @@ function svg_render ($element) {
     $styles_data = array(
         '@font-face' => $element->face_styles,
         'svg' => $element->svg_styles,
-        $element->tag => $element->styles,
     );
     foreach ($styles_data as $selector => $declarations) {
         if ($declarations) {
@@ -735,24 +734,46 @@ function svg_render ($element) {
     $styles = CssCrush::$process->tokens->restore($styles, 'u', true);
     $styles = CssCrush::$process->tokens->restore($styles, 's');
 
-    $attrs = Util::htmlAttributes($element->attrs);
+    // Add element styles as attributes which tend to work better with svg2png converters.
+    $attrs = Util::htmlAttributes($element->attrs + $element->styles);
+
+    // Add viewbox to help IE scale correctly.
+    if (isset($element->svg_attrs['width']) && isset($element->svg_attrs['height'])) {
+        $element->svg_attrs += array(
+            'viewbox' => implode(' ', array(
+                0,
+                0,
+                $element->svg_attrs['width'],
+                $element->svg_attrs['height']
+            )),
+        );
+    }
     $svg_attrs = Util::htmlAttributes($element->svg_attrs);
 
     // Markup.
     $svg[] = "<svg$svg_attrs>";
-    $svg[] = '<defs>';
-    $svg[] = implode($element->fills['gradients']);
-    $svg[] = implode($element->fills['patterns']);
-    $svg[] = implode($element->filters);
-    if ($styles) {
-        $cdata = preg_match('~[<>&]~', $styles);
-        $svg[] = '<style type="text/css">';
-        $svg[] = $cdata ? '<![CDATA[' : '';
-        $svg[] = $styles;
-        $svg[] = $cdata ? ']]>' : '';
-        $svg[] = '</style>';
+
+    if (
+        $element->fills['gradients'] ||
+        $element->fills['patterns'] ||
+        $element->filters ||
+        $styles
+    ) {
+        $svg[] = '<defs>';
+        $svg[] = implode($element->fills['gradients']);
+        $svg[] = implode($element->fills['patterns']);
+        $svg[] = implode($element->filters);
+        if ($styles) {
+            $cdata = preg_match('~[<>&]~', $styles);
+            $svg[] = '<style type="text/css">';
+            $svg[] = $cdata ? '<![CDATA[' : '';
+            $svg[] = $styles;
+            $svg[] = $cdata ? ']]>' : '';
+            $svg[] = '</style>';
+        }
+        $svg[] = '</defs>';
     }
-    $svg[] = '</defs>';
+
     if ($element->tag === 'text') {
         $svg[] = "<text$attrs>{$element->data['text']}</text>";
     }
