@@ -124,7 +124,7 @@ class Functions
 
     static public function deRegister ($name)
     {
-        unset(Functions::$customFunctions[ $name]);
+        unset(Functions::$customFunctions[$name]);
     }
 
     static public function parseArgs ($input, $allowSpaceDelim = false)

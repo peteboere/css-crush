@@ -20,7 +20,7 @@ class Url
     public $value;
     public $label;
 
-    public function __construct ($raw_value, $convert_to_data = false)
+    public function __construct ($raw_value)
     {
         $regex = Regex::$patt;
         $tokens = CssCrush::$process->tokens;
