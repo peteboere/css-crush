@@ -456,16 +456,6 @@ class CssCrush
     }
 
     /**
-     * Clear config file and compiled files for the specified directory.
-     *
-     * @param string $dir  System path to the directory.
-     */
-    static public function clearCache ($dir = '')
-    {
-        return $process->io('clearCache', $dir);
-    }
-
-    /**
      * Get debug info.
      * Depends on arguments passed to the trace option.
      */
@@ -480,7 +470,7 @@ class CssCrush
             'compile_time' => 0
         );
 
-        // Lose stats that are only useful internally.
+        // Lose stats that are only used internally.
         unset($stats['compile_start_time']);
 
         return $stats;

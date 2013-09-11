@@ -161,33 +161,6 @@ class IO
         return false;
     }
 
-    static public function clearCache ($dir)
-    {
-        if (empty($dir)) {
-            $dir = __DIR__;
-        }
-        elseif (! file_exists($dir)) {
-            return;
-        }
-
-        $configPath = $dir . '/' . CssCrush::$process->cacheFile;
-        if (file_exists($configPath)) {
-            unlink($configPath);
-        }
-
-        // Remove any compiled files
-        $suffix = '.crush.css';
-        $suffixLength = strlen($suffix);
-
-        foreach (scandir($dir) as $file) {
-            if (
-                strpos($file, $suffix) === strlen($file) - $suffixLength
-            ) {
-                unlink($dir . "/{$file}");
-            }
-        }
-    }
-
     static public function getCacheData ()
     {
         $config = CssCrush::$config;
