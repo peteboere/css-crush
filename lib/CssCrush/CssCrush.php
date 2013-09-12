@@ -210,7 +210,7 @@ class CssCrush
 
 
     #############################
-    #  External API.
+    #  Public API.
 
     /**
      * Process host CSS file and return a new compiled file.
@@ -395,33 +395,6 @@ class CssCrush
 
         // Note we're passing the alternative ioContext.
         return $process->compile('filter');
-    }
-
-    /**
-     * Add variables globally.
-     *
-     * @param mixed $var  Assoc array of variable names and values, a php ini filename or null.
-     */
-    static public function globalVars ($vars)
-    {
-        $config = self::$config;
-
-        // Merge into the stack, overrides existing variables of the same name.
-        if (is_array($vars)) {
-            $config->vars = $vars + $config->vars;
-        }
-
-        // Test for a file. If it is attempt to parse it.
-        elseif (is_string($vars) && file_exists($vars)) {
-            if ($result = @parse_ini_file($vars)) {
-                $config->vars = $result + $config->vars;
-            }
-        }
-
-        // Clear the stack if the argument is explicitly null.
-        elseif (is_null($vars)) {
-            $config->vars = array();
-        }
     }
 
     /**

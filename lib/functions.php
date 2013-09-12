@@ -22,10 +22,6 @@ function csscrush_string ($string, $options = null) {
     return CssCrush::string($string, $options);
 }
 
-function csscrush_globalvars ($vars) {
-    return CssCrush::globalVars($vars);
-}
-
 function csscrush_stat () {
     return CssCrush::stat();
 }
