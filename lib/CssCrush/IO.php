@@ -227,10 +227,20 @@ class IO
 
         if (Util::filePutContents($target, $stream, __METHOD__)) {
 
+            $json_encode_flags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
+
             if ($process->sourceMap) {
-                $flags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
                 Util::filePutContents("{$process->output->dir}/$source_map_filename",
-                    json_encode($process->sourceMap, $flags), __METHOD__);
+                    json_encode($process->sourceMap, $json_encode_flags), __METHOD__);
+            }
+
+            if ($process->options->stat_dump) {
+                $stat_file = is_string($process->options->stat_dump) ?
+                    $process->options->stat_dump :
+                    $process->output->dir . '/' . $process->output->filename . '.json';
+
+                $GLOBALS['CSSCRUSH_STAT_FILE'] = $stat_file;
+                Util::filePutContents($stat_file, json_encode(csscrush_stat(), $json_encode_flags), __METHOD__);
             }
 
             return "{$process->output->dirUrl}/{$process->output->filename}";

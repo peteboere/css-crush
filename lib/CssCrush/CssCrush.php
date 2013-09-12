@@ -40,57 +40,24 @@ class CssCrush
         self::$config->selectorAliases = array();
         self::$config->plugins = array();
 
-        // Default options.
+        // Set option defaults, see wiki for details.
         self::$config->options = new Options(array(
-
-            // Minify. Set false for formatting and comments.
             'minify' => true,
-
-            // Alternative formatter to use for un-minified output.
             'formatter' => null,
-
-            // Appends checksum query string to output file name.
             'versioning' => true,
-
-            // Use the template boilerplate.
             'boilerplate' => true,
-
-            // Variables passed in at runtime.
             'vars' => array(),
-
-            // Enable/disable the cache.
             'cache' => true,
-
-            // Output filename. Defaults the hostfile filename.
             'output_file' => null,
-
-            // Output directory. Defaults to the same directory as the host file.
             'output_dir' => null,
-
-            // Alternative document_root may be used to workaround server aliases and rewrites.
             'doc_root' => null,
-
-            // Vendor target. Only apply prefixes for a specific vendor, set to 'none' for no prefixes.
             'vendor_target' => 'all',
-
-            // Whether to rewrite the url references inside imported files.
             'rewrite_import_urls' => true,
-
-            // List of plugins to enable (as Array of names).
             'enable' => null,
-
-            // List of plugins to disable (as Array of names).
             'disable' => null,
-
-            // Debugging options.
-            // Set true to output sass debug-info stubs that work with development tools like FireSass.
+            'stat_dump' => false,
             'trace' => array(),
-
-            // Whether to generate a source map.
             'source_map' => false,
-
-            // Force newline type on output files. Defaults to the current platform newline.
-            // Options: 'windows' (or 'win'), 'unix', 'use-platform'
             'newlines' => 'use-platform',
         ));
 
@@ -274,6 +241,7 @@ class CssCrush
             $process->input->path = $input_file;
             $process->input->filename = basename($input_file);
             $process->input->mtime = filemtime($input_file);
+            CssCrush::runStat('hostfile');
         }
         else {
             return '';
@@ -293,6 +261,7 @@ class CssCrush
             $valid_compliled_file = $process->io('validateExistingOutput');
 
             if (is_string($valid_compliled_file)) {
+                $process->release();
                 return $valid_compliled_file;
             }
         }
@@ -457,7 +426,6 @@ class CssCrush
 
     /**
      * Get debug info.
-     * Depends on arguments passed to the trace option.
      */
     static public function stat ()
     {
@@ -467,11 +435,8 @@ class CssCrush
         // Get logged errors as late as possible.
         $stats['errors'] = $process->errors;
         $stats += array(
-            'compile_time' => 0
+            'compile_time' => 0,
         );
-
-        // Lose stats that are only used internally.
-        unset($stats['compile_start_time']);
 
         return $stats;
     }
@@ -552,35 +517,42 @@ class CssCrush
         }
     }
 
-    static public function runStat ($name)
+    static public function runStat ()
     {
         $process = CssCrush::$process;
-        $trace = $process->options->trace;
-
-        if ($name == 'compile_time') {
-            $time = microtime(true);
-            $process->stat['compile_time'] = $time - $process->stat['compile_start_time'];
-            return;
-        }
-
-        if (! $trace || ! in_array($name, $trace)) {
-            return;
-        }
-
         $all_rules =& $process->tokens->store->r;
 
-        switch ($name) {
+        foreach (func_get_args() as $stat_name) {
 
-            case 'selector_count':
-                $process->stat['selector_count'] = 0;
-                foreach ($all_rules as $rule) {
-                    $process->stat['selector_count'] += count($rule->selectors);
-                }
-                break;
+            switch ($stat_name) {
+                case 'hostfile':
+                    $process->stat['hostfile'] = $process->input->filename;
+                    break;
 
-            case 'rule_count':
-                $process->stat['rule_count'] = count($all_rules);
-                break;
+                case 'vars':
+                    $process->stat['vars'] = $process->vars;
+                    break;
+
+                case 'computed_vars':
+                    $process->stat['computed_vars'] = array_map('CssCrush\Functions::executeOnString', $process->vars);
+                    break;
+
+                case 'compile_time':
+                    $process->stat['compile_time'] = microtime(true) - $process->stat['compile_start_time'];
+                    unset($process->stat['compile_start_time']);
+                    break;
+
+                case 'selector_count':
+                    $process->stat['selector_count'] = 0;
+                    foreach ($all_rules as $rule) {
+                        $process->stat['selector_count'] += count($rule->selectors);
+                    }
+                    break;
+
+                case 'rule_count':
+                    $process->stat['rule_count'] = count($all_rules);
+                    break;
+            }
         }
     }
 }

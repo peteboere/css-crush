@@ -20,12 +20,15 @@ class Url
     public $value;
     public $label;
 
-    public function __construct ($raw_value)
+    public function __construct ($raw_value, $options = array())
     {
-        $regex = Regex::$patt;
-        $tokens = CssCrush::$process->tokens;
+        $standalone = ! empty($options['standalone']);
+        if (! $standalone) {
+            $tokens = CssCrush::$process->tokens;
+            $this->label = $tokens->add($this, 'u');
+        }
 
-        if (preg_match($regex->s_token, $raw_value)) {
+        if (! $standalone && preg_match(Regex::$patt->s_token, $raw_value)) {
             $this->value = trim($tokens->get($raw_value), '\'"');
             $tokens->release($raw_value);
         }
@@ -34,7 +37,6 @@ class Url
         }
 
         $this->evaluate();
-        $this->label = $tokens->add($this, 'u');
     }
 
     public function __toString ()

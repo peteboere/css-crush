@@ -56,14 +56,23 @@ class Options
                 }
                 break;
 
+            case 'stat_dump':
+                if (is_string($value)) {
+                    $value = Util::resolveUserPath($value, function ($path) {
+                        touch($path);
+                        return $path;
+                    });
+                }
+                break;
+
             case 'output_dir':
                 if (is_string($value)) {
-                    $value = Util::resolveUserPath($value, function ($dir) use ($name) {
-                        if (! @mkdir($dir)) {
+                    $value = Util::resolveUserPath($value, function ($path) use ($name) {
+                        if (! @mkdir($path)) {
                             trigger_error(__METHOD__ . ': Could not find or create directory ' .
                                 "specified by `$name` option.\n", E_USER_NOTICE);
                         }
-                        return $dir;
+                        return $path;
                     });
                 }
                 break;

@@ -74,6 +74,7 @@ class Process
             $this->tokens,
             $this->mixins,
             $this->references,
+            $this->cacheData,
             $this->misc,
             $this->plugins,
             $this->aliases,
@@ -842,9 +843,8 @@ class Process
 
         $this->stream->replaceTokens('r');
 
-        // Run rule related stats then reclaim memory.
-        CssCrush::runStat('selector_count');
-        CssCrush::runStat('rule_count');
+        // Record stats then drop rule objects to reclaim memory.
+        CssCrush::runStat('selector_count', 'rule_count', 'vars', 'computed_vars');
         $this->tokens->store->r = array();
 
         $this->stream->replaceTokens('p');
