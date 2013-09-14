@@ -12,7 +12,6 @@ class Process
     {
         $config = CssCrush::$config;
 
-        // Load in aliases and plugins.
         CssCrush::loadAssets();
 
         // Create options instance for this process.
@@ -131,7 +130,7 @@ class Process
         $boilerplate_option = $this->options->boilerplate;
 
         if ($boilerplate_option === true) {
-            $file = Util::find('CssCrush-local.boilerplate', 'CssCrush.boilerplate');
+            $file = CssCrush::$dir . '/boilerplate.txt';
         }
         elseif (is_string($boilerplate_option)) {
             if (file_exists($boilerplate_option)) {
@@ -283,7 +282,7 @@ class Process
 
         // For expicit 'none' argument turn off aliases.
         if ('none' === $vendors) {
-            $this->aliases = CssCrush::$config->bareAliasGroups;
+            $this->aliases = CssCrush::$config->bareAliases;
 
             return;
         }

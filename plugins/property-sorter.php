@@ -151,7 +151,7 @@ namespace CssCrush {
 
             // Load from property-sorting.ini.
             $sorting_file_contents =
-                file_get_contents(CssCrush::$config->location . '/misc/property-sorting.ini');
+                file_get_contents(CssCrush::$dir . '/misc/property-sorting.ini');
             if ($sorting_file_contents !== false) {
 
                 $sorting_file_contents = preg_replace('~;[^\r\n]*~', '', $sorting_file_contents);

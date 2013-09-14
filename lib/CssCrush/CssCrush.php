@@ -16,16 +16,18 @@ class CssCrush
     // The current active process.
     static public $process;
 
+    // Library root directory.
+    static public $dir;
+
     // Init called once manually post class definition.
     static public function init ()
     {
+        self::$dir = dirname(dirname(__DIR__));
+
         self::$config = new \stdClass();
 
-        // Path to the project root folder.
-        self::$config->location = dirname(dirname(__DIR__));
-
         // Plugin directories.
-        self::$config->pluginDirs = array(self::$config->location . '/plugins');
+        self::$config->pluginDirs = array(self::$dir . '/plugins');
 
         self::$config->version = new Version(self::VERSION);
         self::$config->scriptDir = dirname($_SERVER['SCRIPT_FILENAME']);
@@ -36,7 +38,15 @@ class CssCrush
 
         // Shared resources.
         self::$config->vars = array();
+        self::$config->aliasesFile = self::$dir . '/aliases.ini';
         self::$config->aliases = array();
+        self::$config->bareAliases = array(
+            'properties' => array(),
+            'functions' => array(),
+            'function_groups' => array(),
+            'declarations' => array(),
+            'at-rules' => array(),
+        );
         self::$config->selectorAliases = array();
         self::$config->plugins = array();
 
@@ -62,7 +72,7 @@ class CssCrush
         ));
 
         // Include and register stock formatters.
-        require_once self::$config->location . '/misc/formatters.php';
+        require_once self::$dir . '/misc/formatters.php';
     }
 
     static protected function resolveDocRoot ($doc_root = null)
@@ -109,103 +119,90 @@ class CssCrush
         return Util::normalizePath($doc_root);
     }
 
-    // Aliases and macros loader.
     static public function loadAssets ()
     {
         static $called;
         if ($called) {
             return;
         }
+        $called = true;
 
-        // Find an aliases file in the root directory
-        // a local file overrides the default
-        $aliases_file = Util::find('Aliases-local.ini', 'Aliases.ini');
+        if (! self::$config->aliases) {
+            $aliases = self::parseAliasesFile(self::$config->aliasesFile);
+            self::$config->aliases = $aliases ?: self::$config->bareAliases;
+        }
+    }
 
-        // Load aliases file if it exists
-        if ($aliases_file) {
+    static public function parseAliasesFile ($file)
+    {
+        $tree = @parse_ini_file($file, true);
 
-            $result = @parse_ini_file($aliases_file, true);
-            if ($result !== false) {
+        if ($tree === false) {
 
-                $regex = Regex::$patt;
+            trigger_error(__METHOD__ . ": Could not parse aliases file '$file'.\n", E_USER_NOTICE);
 
-                foreach ($result as $section => $items) {
+            return false;
+        }
 
-                    // Declaration aliases require a little preparation.
-                    // Also extracting vendor context (if any).
-                    if ($section === 'declarations') {
+        $regex = Regex::$patt;
 
-                        $store = array();
-                        foreach ($items as $prop_val => $aliases) {
+        // Some alias groups need further parsing to unpack useful information into the tree.
+        foreach ($tree as $section => $items) {
 
-                            list($prop, $value) = array_map('trim', explode(':', $prop_val));
+            if ($section === 'declarations') {
 
-                            foreach ($aliases as &$alias) {
+                $store = array();
+                foreach ($items as $prop_val => $aliases) {
 
-                                list($p, $v) = explode(':', $alias);
-                                $vendor = null;
+                    list($prop, $value) = array_map('trim', explode(':', $prop_val));
 
-                                // Try to detect the vendor from property and value in turn.
-                                if (
-                                    preg_match($regex->vendorPrefix, $p, $m) ||
-                                    preg_match($regex->vendorPrefix, $v, $m)
-                                ) {
-                                    $vendor = $m[1];
-                                }
-                                $alias = array($p, $v, $vendor);
-                            }
-                            $store[$prop][$value] = $aliases;
+                    foreach ($aliases as &$alias) {
+
+                        list($p, $v) = explode(':', $alias);
+                        $vendor = null;
+
+                        // Try to detect the vendor from property and value in turn.
+                        if (
+                            preg_match($regex->vendorPrefix, $p, $m) ||
+                            preg_match($regex->vendorPrefix, $v, $m)
+                        ) {
+                            $vendor = $m[1];
                         }
-                        $result['declarations'] = $store;
+                        $alias = array($p, $v, $vendor);
                     }
+                    $store[$prop][$value] = $aliases;
+                }
+                $tree['declarations'] = $store;
+            }
 
-                    // Function groups.
-                    elseif (strpos($section, 'functions:') === 0) {
-                        $group = substr($section, strlen('functions'));
+            // Function groups.
+            elseif (strpos($section, 'functions:') === 0) {
 
-                        $vendor_grouped_aliases = array();
-                        foreach ($items as $func_name => $aliases) {
+                $group = substr($section, strlen('functions'));
 
-                            // Assign group name to the aliasable function.
-                            $result['functions'][$func_name] = $group;
+                $vendor_grouped_aliases = array();
+                foreach ($items as $func_name => $aliases) {
 
-                            foreach ($aliases as $alias_func) {
+                    // Assign group name to the aliasable function.
+                    $tree['functions'][$func_name] = $group;
 
-                                // Only supporting vendor prefixed aliases, for now.
-                                if (preg_match($regex->vendorPrefix, $alias_func, $m)) {
+                    foreach ($aliases as $alias_func) {
 
-                                    // We'll cache the function matching regex here.
-                                    $vendor_grouped_aliases[$m[1]]['find'][] =
-                                        Regex::make('~{{LB}}' . $func_name . '{{RTB}}~i');
-                                    $vendor_grouped_aliases[$m[1]]['replace'][] = $alias_func;
-                                }
-                            }
+                        // Only supporting vendor prefixed aliases, for now.
+                        if (preg_match($regex->vendorPrefix, $alias_func, $m)) {
+
+                            // We'll cache the function matching regex here.
+                            $vendor_grouped_aliases[$m[1]]['find'][] =
+                                Regex::make('~{{LB}}' . $func_name . '{{RTB}}~i');
+                            $vendor_grouped_aliases[$m[1]]['replace'][] = $alias_func;
                         }
-                        $result['function_groups'][$group] = $vendor_grouped_aliases;
                     }
                 }
-
-                self::$config->aliases = $result;
-
-                // Ensure all alias groups are at least set (issue #34)
-                self::$config->bareAliasGroups = array(
-                    'properties' => array(),
-                    'functions' => array(),
-                    'function_groups' => array(),
-                    'declarations' => array(),
-                    'at-rules' => array(),
-                );
-                self::$config->aliases += self::$config->bareAliasGroups;
-            }
-            else {
-                trigger_error(__METHOD__ . ": Aliases file could not be parsed.\n", E_USER_NOTICE);
+                $tree['function_groups'][$group] = $vendor_grouped_aliases;
             }
         }
-        else {
-            trigger_error(__METHOD__ . ": Aliases file not found.\n", E_USER_NOTICE);
-        }
 
-        $called = true;
+        return $tree + self::$config->bareAliases;
     }
 
 

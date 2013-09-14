@@ -76,17 +76,6 @@ class Util
         return $path ? Util::normalizePath($path) : false;
     }
 
-    static public function find ()
-    {
-        foreach (func_get_args() as $file) {
-            $file_path = CssCrush::$config->location . '/' . $file;
-            if (file_exists($file_path)) {
-                return $file_path;
-            }
-        }
-        return false;
-    }
-
     static public function stripCommentTokens ($str)
     {
         return preg_replace(Regex::$patt->c_token, '', $str);
