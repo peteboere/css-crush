@@ -277,12 +277,18 @@ function svg_generator ($input, $fn_name) {
         $fingerprint = substr(md5($flattened_svg), 0, 7);
         $generated_filename = "svg-$name-$fingerprint.svg";
 
-        // Write to the same directory as the output css.
-        $generated_path = $process->output->dir . '/' . $generated_filename;
+        if (! empty($process->options->asset_dir)) {
+            $generated_filepath = $process->options->asset_dir . '/' . $generated_filename;
+            $generated_url = Util::getLinkBetweenPaths(
+                $process->output->dir, $process->options->asset_dir) . $generated_filename;
+        }
+        else {
+            $generated_filepath = $process->output->dir . '/' . $generated_filename;
+            $generated_url = $generated_filename;
+        }
 
-        Util::filePutContents($generated_path, $flattened_svg, __METHOD__);
+        Util::filePutContents($generated_filepath, $flattened_svg, __METHOD__);
 
-        $generated_url = $generated_filename;
         $url = new Url($generated_url);
         $url->noRewrite = true;
     }

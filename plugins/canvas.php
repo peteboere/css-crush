@@ -149,7 +149,16 @@ function canvas_generator ($input, $context) {
     // Create fingerprint for this canvas based on canvas object.
     $fingerprint = substr(md5(serialize($canvas)), 0, 7);
     $generated_filename = "cnv-$name-$fingerprint.png";
-    $generated_filepath = $process->output->dir . '/' . $generated_filename;
+
+    if (! empty($process->options->asset_dir)) {
+        $generated_filepath = $process->options->asset_dir . '/' . $generated_filename;
+        $generated_url = Util::getLinkBetweenPaths(
+            $process->output->dir, $process->options->asset_dir) . $generated_filename;
+    }
+    else {
+        $generated_filepath = $process->output->dir . '/' . $generated_filename;
+        $generated_url = $generated_filename;
+    }
     $cached_file = file_exists($generated_filepath);
 
     // $cached_file = false;
@@ -229,8 +238,7 @@ function canvas_generator ($input, $context) {
             imagepng($canvas->image, $generated_filepath);
         }
 
-        // Write to the same directory as the output css.
-        $url = new Url($generated_filename);
+        $url = new Url($generated_url);
         $url->noRewrite = true;
     }
     // Or create data uri.

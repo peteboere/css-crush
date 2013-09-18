@@ -66,6 +66,7 @@ class Options
                 break;
 
             case 'output_dir':
+            case 'asset_dir':
                 if (is_string($value)) {
                     $value = Util::resolveUserPath($value, function ($path) use ($name) {
                         if (! @mkdir($path)) {

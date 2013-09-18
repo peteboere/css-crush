@@ -60,6 +60,7 @@ class CssCrush
             'cache' => true,
             'output_file' => null,
             'output_dir' => null,
+            'asset_dir' => null,
             'doc_root' => null,
             'vendor_target' => 'all',
             'rewrite_import_urls' => true,
