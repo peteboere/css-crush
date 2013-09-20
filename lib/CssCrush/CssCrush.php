@@ -30,7 +30,7 @@ class CssCrush
         self::$config->pluginDirs = array(self::$dir . '/plugins');
 
         self::$config->version = new Version(self::VERSION);
-        self::$config->scriptDir = dirname($_SERVER['SCRIPT_FILENAME']);
+        self::$config->scriptDir = dirname(realpath($_SERVER['SCRIPT_FILENAME']));
         self::$config->docRoot = self::resolveDocRoot();
 
         // Set default IO handler.
@@ -226,6 +226,8 @@ class CssCrush
         $options = $process->options;
         $doc_root = $process->docRoot;
 
+        $process->input->raw = $file;
+
         if (! ($input_file = Util::resolveUserPath($file))) {
             $basename = basename($file);
             $error = "Input file '$basename' not found.";
@@ -235,45 +237,25 @@ class CssCrush
             return '';
         }
 
-        if ($process->setContext(dirname($input_file))) {
-            $process->input->path = $input_file;
-            $process->input->filename = basename($input_file);
-            $process->input->mtime = filemtime($input_file);
-            CssCrush::runStat('hostfile');
-        }
-        else {
+        if (! $process->resolveContext(dirname($input_file), $input_file)) {
+
             return '';
         }
 
-        // Create a filename that will be used later
-        // Used in validateCache, and writing to filesystem
-        $process->output->filename = $process->io('getOutputFileName');
+        CssCrush::runStat('hostfile');
 
-        // Caching.
         if ($options->cache) {
-
-            // Load the cache data.
             $process->cacheData = $process->io('getCacheData');
-
-            // If cache is enabled check for a valid compiled file.
-            $valid_compliled_file = $process->io('validateExistingOutput');
-
-            if (is_string($valid_compliled_file)) {
+            if ($process->io('validateCache')) {
                 $process->release();
-                return $valid_compliled_file;
+
+                return $process->io('getOutputUrl');
             }
         }
 
         $stream = $process->compile();
 
-        // Create file and return url. Return empty string on failure.
-        if ($url = $process->io('write', $stream)) {
-            $timestamp = $options->versioning ? '?' . time() : '';
-            return "$url$timestamp";
-        }
-        else {
-            return '';
-        }
+        return $process->io('write', $stream) ?  $process->io('getOutputUrl') : '';
     }
 
     /**
@@ -284,28 +266,25 @@ class CssCrush
      * @param array $attributes  An array of HTML attributes.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    static public function tag ($file, $options = null, $attributes = array())
+    static public function tag ($file, $options = null, $tag_attributes = array())
     {
         $file = self::file($file, $options);
 
         if (! empty($file)) {
+            $tag_attributes['href'] = $file;
+            $tag_attributes += array(
+                'rel' => 'stylesheet',
+                'media' => 'all',
+            );
+            $attrs = Util::htmlAttributes($tag_attributes, array('rel', 'href', 'media'));
 
-            // On success return the tag with any custom attributes
-            $attributes['rel'] = 'stylesheet';
-            $attributes['href'] = $file;
-
-            // Should media type be forced to 'all'?
-            if (! isset($attributes['media'])) {
-                $attributes['media'] = 'all';
-            }
-            $attr_string = Util::htmlAttributes($attributes);
-            return "<link$attr_string />\n";
+            return "<link$attrs />\n";
         }
         else {
-
             // Return an HTML comment with message on failure
             $class = __CLASS__;
             $errors = implode("\n", self::$process->errors);
+
             return "<!-- $class: $errors -->\n";
         }
     }
@@ -318,7 +297,7 @@ class CssCrush
      * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    static public function inline ($file, $options = null, $attributes = array())
+    static public function inline ($file, $options = null, $tag_attributes = array())
     {
         // For inline output set boilerplate to not display by default
         if (! is_array($options)) {
@@ -333,13 +312,12 @@ class CssCrush
         if (! empty($file)) {
 
             // On success fetch the CSS text
-            $content = file_get_contents(self::$process->output->dir . '/'
-                . self::$process->output->filename);
+            $content = file_get_contents(self::$process->output->dir . '/' . self::$process->output->filename);
             $tag_open = '';
             $tag_close = '';
 
-            if (is_array($attributes)) {
-                $attr_string = Util::htmlAttributes($attributes);
+            if (is_array($tag_attributes)) {
+                $attr_string = Util::htmlAttributes($tag_attributes);
                 $tag_open = "<style$attr_string>";
                 $tag_close = '</style>';
             }
@@ -377,10 +355,10 @@ class CssCrush
         // Set the path context if one is given.
         // Fallback to document root.
         if (! empty($options->context)) {
-            $process->setContext($options->context, false);
+            $process->resolveContext($options->context);
         }
         else {
-            $process->setContext($process->docRoot, false);
+            $process->resolveContext($process->docRoot);
         }
 
         // Set the string on the input object.
@@ -391,8 +369,7 @@ class CssCrush
             $process->input->importIgnore = true;
         }
 
-        // Note we're passing the alternative ioContext.
-        return $process->compile('filter');
+        return $process->compile();
     }
 
     /**

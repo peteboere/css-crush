@@ -18,27 +18,28 @@ class IO
     {
         $process = CssCrush::$process;
         $output_dir = $process->options->output_dir;
+
         return $output_dir ? $output_dir : $process->input->dir;
     }
 
     static public function testOutputDir ()
     {
-        $output_dir = CssCrush::$process->output->dir;
+        $dir = CssCrush::$process->output->dir;
         $pathtest = true;
         $error = false;
 
-        if (! file_exists($output_dir)) {
+        if (! file_exists($dir)) {
 
-            $error = "Output directory '$output_dir' doesn't exist.";
+            $error = "Output directory '$dir' doesn't exist.";
             $pathtest = false;
         }
-        elseif (! is_writable($output_dir)) {
+        elseif (! is_writable($dir)) {
 
             CssCrush::log('Attempting to change permissions.');
 
-            if (! @chmod($output_dir, 0755)) {
+            if (! @chmod($dir, 0755)) {
 
-                $error = "Output directory '$output_dir' is unwritable.";
+                $error = "Output directory '$dir' is unwritable.";
                 $pathtest = false;
             }
             else {
@@ -68,97 +69,105 @@ class IO
         return "$output_basename.crush.css";
     }
 
-    static public function validateExistingOutput ()
+    static public function getOutputUrl ()
     {
         $process = CssCrush::$process;
         $options = $process->options;
+        $filename = $process->output->filename;
+
+        $url = $process->output->dirUrl . '/' . $filename;
+
+        // Make URL relative if the input path was relative.
+        $input_path = new Url($process->input->raw, array('standalone' => true));
+        if ($input_path->isRelative) {
+            $url = Util::getLinkBetweenPaths(CssCrush::$config->scriptDir, $process->output->dir) . $filename;
+        }
+
+        // Optional query-string timestamp.
+        if ($options->versioning !== false) {
+            $url .= '?';
+            if (isset($process->cacheData[$filename]['datem_sum'])) {
+                $url .= $process->cacheData[$filename]['datem_sum'];
+            }
+            else {
+                $url .= time();
+            }
+        }
+
+        return $url;
+    }
+
+    static public function validateCache ()
+    {
+        $process = CssCrush::$process;
         $config = CssCrush::$config;
+        $options = $process->options;
         $input = $process->input;
+        $output = $process->output;
 
-        // Search base directory for an existing compiled file.
-        foreach (scandir($process->output->dir) as $filename) {
+        $filename = $output->filename;
 
-            if ($process->output->filename != $filename) {
-                continue;
-            }
-
-            // Cached file exists.
-            CssCrush::log('Cached file exists.');
-
-            $existingfile = (object) array();
-            $existingfile->filename = $filename;
-            $existingfile->path = "{$process->output->dir}/$existingfile->filename";
-            $existingfile->URL = "{$process->output->dirUrl}/$existingfile->filename";
-
-            // Start off with the input file then add imported files
-            $all_files = array($input->mtime);
-
-            if (file_exists($existingfile->path) && isset($process->cacheData[$process->output->filename])) {
-
-                // File exists and has config
-                CssCrush::log('Cached file is registered.');
-
-                foreach ($process->cacheData[$existingfile->filename]['imports'] as $import_file) {
-
-                    // Check if this is docroot relative or input dir relative.
-                    $root = strpos($import_file, '/') === 0 ? $process->docRoot : $process->input->dir;
-                    $import_filepath = realpath($root) . "/$import_file";
-
-                    if (file_exists($import_filepath)) {
-                        $all_files[] = filemtime($import_filepath);
-                    }
-                    else {
-                        // File has been moved, remove old file and skip to compile.
-                        CssCrush::log('Recompiling - an import file has been moved.');
-
-                        return false;
-                    }
-                }
-
-                // Cast because the cached options may be a \stdClass if an IO adapter has been used.
-                $cached_options = (array) $process->cacheData[$existingfile->filename]['options'];
-                $active_options = $options->get();
-
-                // Compare runtime options and cached options for differences.
-                $options_changed = false;
-                foreach ($cached_options as $key => &$value) {
-                    if (isset($active_options[$key]) && $active_options[$key] !== $value) {
-                        $options_changed = true;
-                        break;
-                    }
-                }
-
-                // Check if any of the files have changed.
-                $existing_datesum = $process->cacheData[$existingfile->filename]['datem_sum'];
-                $files_changed = $existing_datesum != array_sum($all_files);
-
-                if (! $options_changed && ! $files_changed) {
-
-                    // Files have not been modified and config is the same: return the old file.
-                    CssCrush::log(
-                        "Files and options have not been modified, returning existing file '$existingfile->URL'.");
-                    return $existingfile->URL . ($options->versioning !== false  ? "?$existing_datesum" : '');
-                }
-                else {
-
-                    if ($options_changed) {
-                        CssCrush::log('Recompiling - options have been modified.');
-                    }
-                    if ($files_changed) {
-                        CssCrush::log('Recompiling - files have been modified.');
-                    }
-                }
-            }
-            elseif (file_exists($existingfile->path)) {
-
-                CssCrush::log('Recompiling - file exists but no cache data.');
-            }
+        if (! file_exists($output->dir . '/' . $filename)) {
+            CssCrush::log('No file cached.');
 
             return false;
+        }
 
-        } // foreach
+        if (! isset($process->cacheData[$filename])) {
+            CssCrush::log('Cached file exists but is not registered.');
 
-        return false;
+            return false;
+        }
+
+        $data =& $process->cacheData[$filename];
+
+        // Make stack of file mtimes starting with the input file.
+        $file_sums = array($input->mtime);
+        foreach ($data['imports'] as $import_file) {
+
+            // Check if this is docroot relative or input dir relative.
+            $root = strpos($import_file, '/') === 0 ? $process->docRoot : $input->dir;
+            $import_filepath = realpath($root) . "/$import_file";
+
+            if (file_exists($import_filepath)) {
+                $file_sums[] = filemtime($import_filepath);
+            }
+            else {
+                // File has been moved, remove old file and skip to compile.
+                CssCrush::log('Recompiling - an import file has been moved.');
+
+                return false;
+            }
+        }
+
+        $files_changed = $data['datem_sum'] != array_sum($file_sums);
+        if ($files_changed) {
+            CssCrush::log('Files have been modified. Recompiling.');
+        }
+
+        // Compare runtime options and cached options for differences.
+        // Cast because the cached options may be a \stdClass if an IO adapter has been used.
+        $options_changed = false;
+        $cached_options = (array) $data['options'];
+        $active_options = $options->get();
+        foreach ($cached_options as $key => &$value) {
+            if (isset($active_options[$key]) && $active_options[$key] !== $value) {
+                CssCrush::log('Options have been changed. Recompiling.');
+                $options_changed = true;
+                break;
+            }
+        }
+
+        if (! $options_changed && ! $files_changed) {
+            CssCrush::log("Files and options have not been modified, returning cached file.");
+
+            return true;
+        }
+        else {
+            $data['datem_sum'] = array_sum($file_sums);
+
+            return false;
+        }
     }
 
     static public function getCacheData ()
@@ -218,32 +227,30 @@ class IO
     static public function write (Stream $stream)
     {
         $process = CssCrush::$process;
-        $target = "{$process->output->dir}/{$process->output->filename}";
+        $output = $process->output;
 
         if ($process->sourceMap) {
-            $source_map_filename = $process->output->filename . '.map';
-            $stream->append($process->newline . "/*# sourceMappingURL=$source_map_filename */");
+            $stream->append($process->newline . "/*# sourceMappingURL=$source_map_filename.map */");
         }
 
-        if (Util::filePutContents($target, $stream, __METHOD__)) {
+        if (Util::filePutContents("$output->dir/$output->filename", $stream, __METHOD__)) {
 
             $json_encode_flags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
 
             if ($process->sourceMap) {
-                Util::filePutContents("{$process->output->dir}/$source_map_filename",
+                Util::filePutContents("$output->dir/$source_map_filename",
                     json_encode($process->sourceMap, $json_encode_flags), __METHOD__);
             }
 
             if ($process->options->stat_dump) {
                 $stat_file = is_string($process->options->stat_dump) ?
-                    $process->options->stat_dump :
-                    $process->output->dir . '/' . $process->output->filename . '.json';
+                    $process->options->stat_dump : "$output->dir/$output->filename.json";
 
                 $GLOBALS['CSSCRUSH_STAT_FILE'] = $stat_file;
                 Util::filePutContents($stat_file, json_encode(csscrush_stat(), $json_encode_flags), __METHOD__);
             }
 
-            return "{$process->output->dirUrl}/{$process->output->filename}";
+            return true;
         }
 
         return false;

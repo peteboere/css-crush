@@ -8,14 +8,39 @@ namespace CssCrush;
 
 class Util
 {
-    static public function htmlAttributes (array $attributes)
+    static public function htmlAttributes (array $attributes, array $sort_order = null)
     {
-        $attr_string = '';
+        // Optionally sort attributes (for better readability).
+        if ($sort_order) {
+            uksort($attributes, function ($a, $b) use ($sort_order) {
+                $a_index = array_search($a, $sort_order);
+                $b_index = array_search($b, $sort_order);
+                $a_found = is_int($a_index);
+                $b_found = is_int($b_index);
+
+                if ($a_found && $b_found) {
+                    if ($a_index == $b_index) {
+                        return 0;
+                    }
+                    return $a_index > $b_index ? 1 : -1;
+                }
+                elseif ($a_found && ! $b_found) {
+                    return -1;
+                }
+                elseif ($b_found && ! $a_found) {
+                    return 1;
+                }
+
+                return strcmp($a, $b);
+            });
+        }
+
+        $str = '';
         foreach ($attributes as $name => $value) {
             $value = htmlspecialchars($value, ENT_COMPAT, 'UTF-8', false);
-            $attr_string .= " $name=\"$value\"";
+            $str .= " $name=\"$value\"";
         }
-        return $attr_string;
+        return $str;
     }
 
     static public function normalizePath ($path, $strip_drive_letter = false)

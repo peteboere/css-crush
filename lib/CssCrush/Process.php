@@ -81,34 +81,35 @@ class Process
         );
     }
 
-    public function setContext ($input_dir, $test_output_dir = true)
+    public function resolveContext ($input_dir, $input_file = null)
     {
-        $doc_root = $this->docRoot;
-
-        // If not a system path.
-        if (strpos($input_dir, $doc_root) !== 0) {
-            $input_dir = Util::normalizePath(realpath("$doc_root/$input_dir"));
+        if ($input_file) {
+            $this->ioContext = 'file';
+            $this->input->path = $input_file;
+            $this->input->filename = basename($input_file);
+            $this->input->mtime = filemtime($input_file);
+        }
+        else {
+            $this->ioContext = 'filter';
+            $this->input->path = null;
+            $this->input->filename = null;
         }
 
-        // Initialise input object and store input directory.
-        $this->input->path = null;
-        $this->input->filename = null;
         $this->input->dir = $input_dir;
-        $this->input->dirUrl = substr($input_dir, strlen($doc_root));
+        $this->input->dirUrl = substr($input_dir, strlen($this->docRoot));
 
-        // Store reference to the output dir.
         $this->output->dir = $this->io('getOutputDir');
-        $this->output->dirUrl = substr($this->output->dir, strlen($doc_root));
+        $this->output->filename = $this->io('getOutputFileName');
+        $this->output->dirUrl = substr($this->output->dir, strlen($this->docRoot));
 
-        // Test the output directory to see it exists and is writable.
-        $output_dir_ok = false;
-        if ($test_output_dir) {
-            $output_dir_ok = $this->io('testOutputDir');
+        $context_resolved = true;
+        if ($input_file) {
+            $context_resolved = $this->io('testOutputDir');
         }
 
         $this->io('init');
 
-        return $output_dir_ok;
+        return $context_resolved;
     }
 
     public function io ($method)
@@ -916,7 +917,7 @@ class Process
         }
     }
 
-    public function compile ($io_context = 'file')
+    public function compile ()
     {
         // Always store start time.
         $this->stat['compile_start_time'] = microtime(true);
@@ -928,8 +929,6 @@ class Process
         if (preg_match('~^(\d+)M$~', ini_get('memory_limit'), $m) && $m[1] < 128) {
             ini_set('memory_limit', '128M');
         }
-
-        $this->ioContext = $io_context;
 
         // Shortcut commonly used options during compilation to avoid overhead with __get calls.
         $this->minifyOutput = $this->options->minify;
