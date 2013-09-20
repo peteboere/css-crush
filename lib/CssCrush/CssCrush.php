@@ -72,7 +72,7 @@ class CssCrush
             'newlines' => 'use-platform',
         ));
 
-        // Include and register stock formatters.
+        // Register stock formatters.
         require_once self::$dir . '/misc/formatters.php';
     }
 

@@ -20,6 +20,11 @@ class Process
         // Populate option defaults.
         $this->options->merge($config->options);
 
+        // Override the minify option if a formatter is specified.
+        if ($this->options->formatter) {
+            $this->options->minify = false;
+        }
+
         // Keep track of global vars to maintain cache integrity.
         $this->options->global_vars = $config->vars;
 

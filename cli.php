@@ -545,8 +545,7 @@ function manpage () {
         taking raw input from STDIN.
 
     <g>--formatter</>:
-        Formatter to use for formatted (<g>--pretty</>) output.
-        Available formatters:
+        Formatting styles.
 
         'block' (default) -
             Rules are block formatted.
