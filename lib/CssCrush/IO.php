@@ -8,13 +8,13 @@ namespace CssCrush;
 
 class IO
 {
-    static public function init ()
+    public static function init ()
     {
         $process = CssCrush::$process;
         $process->cacheFile = "{$process->output->dir}/.csscrush";
     }
 
-    static public function getOutputDir ()
+    public static function getOutputDir ()
     {
         $process = CssCrush::$process;
         $output_dir = $process->options->output_dir;
@@ -22,7 +22,7 @@ class IO
         return $output_dir ? $output_dir : $process->input->dir;
     }
 
-    static public function testOutputDir ()
+    public static function testOutputDir ()
     {
         $dir = CssCrush::$process->output->dir;
         $logger = CssCrush::$process->logger;
@@ -48,7 +48,7 @@ class IO
         return $pathtest;
     }
 
-    static public function getOutputFileName ()
+    public static function getOutputFileName ()
     {
         $process = CssCrush::$process;
         $options = $process->options;
@@ -62,7 +62,7 @@ class IO
         return "$output_basename.crush.css";
     }
 
-    static public function getOutputUrl ()
+    public static function getOutputUrl ()
     {
         $process = CssCrush::$process;
         $options = $process->options;
@@ -90,7 +90,7 @@ class IO
         return $url;
     }
 
-    static public function validateCache ()
+    public static function validateCache ()
     {
         $process = CssCrush::$process;
         $config = CssCrush::$config;
@@ -163,7 +163,7 @@ class IO
         }
     }
 
-    static public function getCacheData ()
+    public static function getCacheData ()
     {
         $config = CssCrush::$config;
         $process = CssCrush::$process;
@@ -204,7 +204,7 @@ class IO
         return $cache_data;
     }
 
-    static public function saveCacheData ()
+    public static function saveCacheData ()
     {
         $process = CssCrush::$process;
 
@@ -214,7 +214,7 @@ class IO
         Util::filePutContents($process->cacheFile, json_encode($process->cacheData, $flags), __METHOD__);
     }
 
-    static public function write (Stream $stream)
+    public static function write (Stream $stream)
     {
         $process = CssCrush::$process;
         $output = $process->output;

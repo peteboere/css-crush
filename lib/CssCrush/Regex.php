@@ -9,14 +9,14 @@ namespace CssCrush;
 class Regex
 {
     // Patterns.
-    static public $patt;
+    public static $patt;
 
     // Character classes.
-    static public $classes;
+    public static $classes;
 
-    static public $swaps = array();
+    public static $swaps = array();
 
-    static public function init ()
+    public static function init ()
     {
         self::$patt = $patt = new \stdClass();
         self::$classes = $classes = new \stdClass();
@@ -120,7 +120,7 @@ class Regex
         $patt->cruftyHex = Regex::make('~\#({{hex}})\1({{hex}})\2({{hex}})\3~S');
     }
 
-    static public function make ($pattern)
+    public static function make ($pattern)
     {
         static $cache = array(), $find, $replace;
         if (isset($cache[$pattern])) {
@@ -135,14 +135,14 @@ class Regex
         return $cache[$pattern] = str_replace($find, $replace, $pattern);
     }
 
-    static public function matchAll ($patt, $subject, $offset = 0)
+    public static function matchAll ($patt, $subject, $offset = 0)
     {
         $count = preg_match_all($patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset);
 
         return $count ? $matches : array();
     }
 
-    static public function makeFunctionPatt ($list, $options = array())
+    public static function makeFunctionPatt ($list, $options = array())
     {
         // Bare parens.
         $question = '';

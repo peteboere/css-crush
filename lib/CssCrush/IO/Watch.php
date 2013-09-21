@@ -13,7 +13,7 @@ class Watch extends IO
 {
     public static $cacheData = array();
 
-    static public function getOutputFileName ()
+    public static function getOutputFileName ()
     {
         $process = CssCrush::$process;
         $options = $process->options;

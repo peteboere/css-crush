@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class Importer
 {
-    static public function hostfile ()
+    public static function hostfile ()
     {
         $config = CssCrush::$config;
         $process = CssCrush::$process;

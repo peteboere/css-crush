@@ -161,7 +161,7 @@ class Tokens
         return $str;
     }
 
-    static public function pad ($label, $replaced_text)
+    public static function pad ($label, $replaced_text)
     {
         // Padding token labels to maintain whitespace and newlines.
 
@@ -177,7 +177,7 @@ class Tokens
         return $label;
     }
 
-    static public function is ($label, $of_type)
+    public static function is ($label, $of_type)
     {
         if (preg_match(Regex::make('~^ \? (?<type>[a-zA-Z]) {{token-id}} \? $~xS'), $label, $m)) {
 

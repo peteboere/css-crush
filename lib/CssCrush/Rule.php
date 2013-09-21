@@ -785,7 +785,7 @@ class Rule implements \IteratorAggregate
         $this->updatePropertyIndex();
     }
 
-    static public function parseBlock ($str, $options = array())
+    public static function parseBlock ($str, $options = array())
     {
         $str = Util::stripCommentTokens($str);
         $lines = preg_split('~\s*;\s*~', $str, null, PREG_SPLIT_NO_EMPTY);

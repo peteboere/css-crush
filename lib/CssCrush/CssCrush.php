@@ -11,16 +11,16 @@ class CssCrush
     const VERSION = '2.0.0';
 
     // Global settings.
-    static public $config;
+    public static $config;
 
     // The current active process.
-    static public $process;
+    public static $process;
 
     // Library root directory.
-    static public $dir;
+    public static $dir;
 
     // Init called once manually post class definition.
-    static public function init ()
+    public static function init ()
     {
         self::$dir = dirname(dirname(__DIR__));
 
@@ -67,6 +67,7 @@ class CssCrush
             'enable' => null,
             'disable' => null,
             'stat_dump' => false,
+            'logger' => null,
             'trace' => array(),
             'source_map' => false,
             'newlines' => 'use-platform',
@@ -114,7 +115,7 @@ class CssCrush
         return Util::normalizePath($doc_root);
     }
 
-    static public function loadAssets ()
+    public static function loadAssets ()
     {
         static $called;
         if ($called) {
@@ -128,7 +129,7 @@ class CssCrush
         }
     }
 
-    static public function parseAliasesFile ($file)
+    public static function parseAliasesFile ($file)
     {
         $tree = @parse_ini_file($file, true);
 
@@ -210,7 +211,7 @@ class CssCrush
      * @param mixed $options  An array of options or null.
      * @return string  The public path to the compiled file or an empty string.
      */
-    static public function file ($file, $options = null)
+    public static function file ($file, $options = null)
     {
         self::$process = new Process($options);
 
@@ -256,7 +257,7 @@ class CssCrush
      * @param array $attributes  An array of HTML attributes.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    static public function tag ($file, $options = null, $tag_attributes = array())
+    public static function tag ($file, $options = null, $tag_attributes = array())
     {
         $file = self::file($file, $options);
 
@@ -287,7 +288,7 @@ class CssCrush
      * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    static public function inline ($file, $options = null, $tag_attributes = array())
+    public static function inline ($file, $options = null, $tag_attributes = array())
     {
         // For inline output set boilerplate to not display by default
         if (! is_array($options)) {
@@ -329,7 +330,7 @@ class CssCrush
      * @param mixed $options  An array of options or null.
      * @return string  CSS text.
      */
-    static public function string ($string, $options = null)
+    public static function string ($string, $options = null)
     {
         // For strings set boilerplate to not display by default
         if (! isset($options['boilerplate'])) {
@@ -365,7 +366,7 @@ class CssCrush
     /**
      * Get debug info.
      */
-    static public function stat ()
+    public static function stat ()
     {
         $process = CssCrush::$process;
         $stats = $process->stat;
@@ -383,12 +384,12 @@ class CssCrush
     #############################
     #  Global selector aliases.
 
-    static public function addSelectorAlias ($name, $body)
+    public static function addSelectorAlias ($name, $body)
     {
         CssCrush::$config->selectorAliases[$name] = is_callable($body) ? $body : new Template($body);
     }
 
-    static public function removeSelectorAlias ($name)
+    public static function removeSelectorAlias ($name)
     {
         unset(CssCrush::$config->selectorAliases[$name]);
     }
@@ -397,7 +398,7 @@ class CssCrush
     #############################
     #  Logging and stats.
 
-    static public function printLog ()
+    public static function printLog ()
     {
         if (! empty(self::$process->debugLog)) {
 
@@ -414,7 +415,7 @@ class CssCrush
         }
     }
 
-    static public function runStat ()
+    public static function runStat ()
     {
         $process = CssCrush::$process;
         $all_rules =& $process->tokens->store->r;

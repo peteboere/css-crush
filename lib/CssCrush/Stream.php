@@ -18,7 +18,7 @@ class Stream
         return $this->raw;
     }
 
-    static public function endsWith ($haystack, $needle)
+    public static function endsWith ($haystack, $needle)
     {
         return substr($haystack, -strlen($needle)) === $needle;
     }

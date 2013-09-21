@@ -219,7 +219,7 @@ class Process
         }
     }
 
-    static public function applySelectorAliases (&$str)
+    public static function applySelectorAliases (&$str)
     {
         $process = CssCrush::$process;
 

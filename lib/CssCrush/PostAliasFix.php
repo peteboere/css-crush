@@ -9,11 +9,11 @@ namespace CssCrush;
 class PostAliasFix
 {
     // Currently only post fixing aliased functions.
-    static public $functions = array(
+    public static $functions = array(
         ':gradients' => 'CssCrush\postalias_fix_gradients',
     );
 
-    static public function add ($alias_type, $key, $callback)
+    public static function add ($alias_type, $key, $callback)
     {
         if ($alias_type === 'function') {
             // $key is the aliased css function name.
@@ -21,7 +21,7 @@ class PostAliasFix
         }
     }
 
-    static public function remove ($alias_type, $key)
+    public static function remove ($alias_type, $key)
     {
         if ($type === 'function') {
             // $key is the aliased css function name.

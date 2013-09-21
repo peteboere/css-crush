@@ -9,9 +9,9 @@ namespace CssCrush;
 class Hook
 {
     // Table of hooks and the functions attached to them.
-    static public $register = array();
+    public static $register = array();
 
-    static public function add ($hook, $fn_name)
+    public static function add ($hook, $fn_name)
     {
         // Bail early is the named hook and callback combination is already loaded.
         if (! isset(self::$register[$hook][$fn_name])) {
@@ -24,12 +24,12 @@ class Hook
         }
     }
 
-    static public function remove ($hook, $fn_name)
+    public static function remove ($hook, $fn_name)
     {
         unset(self::$register[$hook][$fn_name]);
     }
 
-    static public function run ($hook, $arg_obj = null)
+    public static function run ($hook, $arg_obj = null)
     {
         // Run all callbacks attached to the hook.
         if (isset(self::$register[$hook])) {

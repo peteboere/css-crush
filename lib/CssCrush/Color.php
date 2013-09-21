@@ -9,10 +9,10 @@ namespace CssCrush;
 class Color
 {
     // Cached color keyword tables.
-    static public $keywords;
-    static public $minifyableKeywords;
+    public static $keywords;
+    public static $minifyableKeywords;
 
-    static public function &loadKeywords ()
+    public static function &loadKeywords ()
     {
         if (! isset(self::$keywords)) {
 
@@ -29,7 +29,7 @@ class Color
         return self::$keywords;
     }
 
-    static public function &loadMinifyableKeywords ()
+    public static function &loadMinifyableKeywords ()
     {
         if (! isset(self::$minifyableKeywords)) {
 
@@ -60,7 +60,7 @@ class Color
         return self::$minifyableKeywords;
     }
 
-    static public function parse ($str)
+    public static function parse ($str)
     {
         if ($test = Color::test($str)) {
             $color = $test['value'];
@@ -111,7 +111,7 @@ class Color
         return $rgba;
     }
 
-    static public function test ($str)
+    public static function test ($str)
     {
         static $color_patt;
         if (! $color_patt) {
@@ -170,7 +170,7 @@ class Color
      * Assumes r, g, and b are contained in the set [0, 255] and
      * returns h, s, and l in the set [0, 1].
      */
-    static public function rgbToHsl (array $rgba)
+    public static function rgbToHsl (array $rgba)
     {
         list($r, $g, $b, $a) = $rgba;
         $r /= 255;
@@ -214,7 +214,7 @@ class Color
      * Assumes h, s, and l are contained in the set [0, 1] and
      * returns r, g, and b in the set [0, 255].
      */
-    static public function hslToRgb (array $hsla)
+    public static function hslToRgb (array $hsla)
     {
         // Populate unspecified alpha value.
         if (! isset($hsla[3])) {
@@ -240,7 +240,7 @@ class Color
     }
 
     // Convert percentages to points (0-255).
-    static public function normalizeCssRgb (array $rgba)
+    public static function normalizeCssRgb (array $rgba)
     {
         foreach ($rgba as &$val) {
             if (strpos($val, '%') !== false) {
@@ -252,7 +252,7 @@ class Color
         return $rgba;
     }
 
-    static public function cssHslToRgb (array $hsla)
+    public static function cssHslToRgb (array $hsla)
     {
         // Populate unspecified alpha value.
         if (! isset($hsla[3])) {
@@ -280,7 +280,7 @@ class Color
         return self::hslToRgb(array($h, $s, $l, $a));
     }
 
-    static public function hueToRgb ($p, $q, $t)
+    public static function hueToRgb ($p, $q, $t)
     {
         if ($t < 0) $t += 1;
         if ($t > 1) $t -= 1;
@@ -290,7 +290,7 @@ class Color
         return $p;
     }
 
-    static public function rgbToHex (array $rgba)
+    public static function rgbToHex (array $rgba)
     {
         // Drop alpha component.
         array_pop($rgba);
@@ -303,7 +303,7 @@ class Color
         return $hex_out;
     }
 
-    static public function hexToRgb ($hex)
+    public static function hexToRgb ($hex)
     {
         $hex = substr($hex, 1);
 
@@ -326,7 +326,7 @@ class Color
         return $rgba;
     }
 
-    static public function colorAdjust ($str, array $adjustments)
+    public static function colorAdjust ($str, array $adjustments)
     {
         $hsla = new Color($str, true);
 
@@ -334,7 +334,7 @@ class Color
         return $hsla->isValid ? $hsla->adjust($adjustments)->__toString() : $str;
     }
 
-    static public function colorSplit ($str)
+    public static function colorSplit ($str)
     {
         if ($test = Color::test($str)) {
             $color = $test['value'];

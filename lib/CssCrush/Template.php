@@ -140,7 +140,7 @@ class Template
         return Template::tokenize($str);
     }
 
-    static public function tokenize ($str)
+    public static function tokenize ($str)
     {
         $str = CssCrush::$process->tokens->capture($str, 's');
         $str = CssCrush::$process->tokens->capture($str, 'u');
@@ -148,7 +148,7 @@ class Template
         return $str;
     }
 
-    static public function unTokenize ($str)
+    public static function unTokenize ($str)
     {
         $str = CssCrush::$process->tokens->restore($str, 'u', true);
         $str = CssCrush::$process->tokens->restore($str, 's', true);

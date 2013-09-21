@@ -48,7 +48,7 @@ class Selector
         return $this->readableValue;
     }
 
-    static public function normalizeWhiteSpace ($str)
+    public static function normalizeWhiteSpace ($str)
     {
         // Create space around combinators, then normalize whitespace.
         $str = preg_replace('~([>+]|\~(?!=))~S', ' $1 ', $str);

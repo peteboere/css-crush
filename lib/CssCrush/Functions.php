@@ -9,9 +9,9 @@ namespace CssCrush;
 class Functions
 {
     // Regex pattern for finding custom functions.
-    static public $functionPatt;
+    public static $functionPatt;
 
-    static public $functions;
+    public static $functions;
 
     static protected $customFunctions = array();
 
@@ -32,14 +32,14 @@ class Functions
         'a-adjust' => 'CssCrush\fn__a_adjust',
     );
 
-    static public function setMatchPatt ()
+    public static function setMatchPatt ()
     {
         self::$functions = self::$builtinFunctions + self::$customFunctions;
         self::$functionPatt = Regex::makeFunctionPatt(
             array_keys(self::$functions), array('bare_paren' => true));
     }
 
-    static public function executeOnString ($str, $patt = null, $process_callback = null, \stdClass $context = null)
+    public static function executeOnString ($str, $patt = null, $process_callback = null, \stdClass $context = null)
     {
         // No bracketed expressions, early return.
         if (strpos($str, '(') === false) {
@@ -117,17 +117,17 @@ class Functions
     #############################
     #  API and helpers.
 
-    static public function register ($name, $callback)
+    public static function register ($name, $callback)
     {
         Functions::$customFunctions[ $name] = $callback;
     }
 
-    static public function deRegister ($name)
+    public static function deRegister ($name)
     {
         unset(Functions::$customFunctions[$name]);
     }
 
-    static public function parseArgs ($input, $allowSpaceDelim = false)
+    public static function parseArgs ($input, $allowSpaceDelim = false)
     {
         return Util::splitDelimList(
             $input, ($allowSpaceDelim ? '\s*[,\s]\s*' : ','));
@@ -135,7 +135,7 @@ class Functions
 
     // Intended as a quick arg-list parse for function that take up-to 2 arguments
     // with the proviso the first argument is an ident.
-    static public function parseArgsSimple ($input)
+    public static function parseArgsSimple ($input)
     {
         return preg_split(Regex::$patt->argListSplit, $input, 2);
     }
