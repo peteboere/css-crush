@@ -103,17 +103,11 @@ class CssCrush
             }
 
             if (! $doc_root) {
-
-                // If doc_root is still falsy, fallback to DOCUMENT_ROOT
                 $doc_root = realpath($_SERVER['DOCUMENT_ROOT']);
             }
 
             if (! $doc_root) {
-
-                // If doc_root is still falsy, log an error
-                $error = "Could not get a document_root reference.";
-                CssCrush::logError($error);
-                trigger_error(__METHOD__ . ": $error\n", E_USER_NOTICE);
+                CssCrush::$process->logger->warning("[[CssCrush]] - Could not get a valid DOCUMENT_ROOT reference.");
             }
         }
 
@@ -139,8 +133,7 @@ class CssCrush
         $tree = @parse_ini_file($file, true);
 
         if ($tree === false) {
-
-            trigger_error(__METHOD__ . ": Could not parse aliases file '$file'.\n", E_USER_NOTICE);
+            CssCrush::$process->logger->notice("[[CssCrush]] - Could not parse aliases file '$file'.");
 
             return false;
         }
@@ -229,10 +222,7 @@ class CssCrush
         $process->input->raw = $file;
 
         if (! ($input_file = Util::resolveUserPath($file))) {
-            $basename = basename($file);
-            $error = "Input file '$basename' not found.";
-            CssCrush::logError($error);
-            trigger_error(__METHOD__ . ": $error\n", E_USER_WARNING);
+            $process->logger->warning('[[CssCrush]] - Input file \'' . basename($file) . '\' not found.');
 
             return '';
         }
@@ -407,61 +397,20 @@ class CssCrush
     #############################
     #  Logging and stats.
 
-    static public $logging = false;
-
-    static public $log = array();
-
-    static public function log ($arg = null, $label = null, $var_dump = false)
+    static public function printLog ()
     {
-        if (! self::$logging) {
-
-            return;
-        }
-
-        // If no arguments are passed return the log.
-        if (! func_num_args()) {
+        if (! empty(self::$process->debugLog)) {
 
             if (PHP_SAPI !== 'cli') {
                 $out = array();
-                foreach (CssCrush::$log as $item) {
+                foreach (self::$process->debugLog as $item) {
                     $out[] = '<pre>' . htmlspecialchars($item) . '</pre>';
                 }
-                return implode('<hr>', $out);
+                echo implode('<hr>', $out);
             }
             else {
-                return implode(PHP_EOL, CssCrush::$log) . PHP_EOL;
+                echo implode(PHP_EOL, self::$process->debugLog), PHP_EOL;
             }
-        }
-
-        if ($label) {
-            $label = PHP_EOL . "$label" . PHP_EOL . str_repeat('=', strlen($label)) . PHP_EOL;
-        }
-        else {
-            $label = '';
-        }
-
-        if (is_string($arg)) {
-            CssCrush::$log[] = "$label$arg";
-        }
-        else {
-            ob_start();
-            $var_dump ? var_dump($arg) : print_r($arg);
-            CssCrush::$log[] = $label . ob_get_clean();
-        }
-    }
-
-    static public function clearLog ()
-    {
-        CssCrush::$log = array();
-    }
-
-    static public function logError ($errors)
-    {
-        $errors = (array) $errors;
-        self::$process->errors = array_merge($errors, self::$process->errors);
-
-        foreach ($errors as $error) {
-            self::log($error);
         }
     }
 

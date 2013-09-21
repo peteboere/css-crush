@@ -68,7 +68,7 @@ class Plugin
             }
 
             if (! $found) {
-                trigger_error(__METHOD__ . ": Plugin '$plugin_name' not found.\n", E_USER_NOTICE);
+                CssCrush::$process->logger->notice("[[CssCrush]] - Plugin '$plugin_name' not found.");
             }
         }
 

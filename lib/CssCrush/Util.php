@@ -192,9 +192,7 @@ class Util
 
             return true;
         }
-        $error = "Could not write file '$file'.";
-        CssCrush::logError($error);
-        trigger_error(($caller ? $caller : __METHOD__) . ": $error\n", E_USER_WARNING);
+        CssCrush::$process->logger->warning("[[CssCrush]] - Could not write file '$file'.");
 
         return false;
     }

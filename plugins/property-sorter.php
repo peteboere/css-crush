@@ -150,15 +150,14 @@ namespace CssCrush {
         else {
 
             // Load from property-sorting.ini.
-            $sorting_file_contents =
-                file_get_contents(CssCrush::$dir . '/misc/property-sorting.ini');
+            $sorting_file_contents = file_get_contents(CssCrush::$dir . '/misc/property-sorting.ini');
             if ($sorting_file_contents !== false) {
 
                 $sorting_file_contents = preg_replace('~;[^\r\n]*~', '', $sorting_file_contents);
                 $table = preg_split('~\s+~', trim($sorting_file_contents));
             }
             else {
-                trigger_error(__METHOD__ . ": Property sorting file not found.\n", E_USER_NOTICE);
+                CssCrush::$process->logger->notice("[[CssCrush]] - Property sorting file not found.");
             }
 
             // Store to the global variable.

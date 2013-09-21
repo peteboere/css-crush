@@ -78,7 +78,7 @@ class Importer
             $import->content = @file_get_contents($import->path);
             if ($import->content === false) {
 
-                CssCrush::log("Import file '{$import->url->value}' not found");
+                $process->logger->debug("Import file '{$import->url->value}' not found");
                 $str = substr_replace($str, '', $match_start, $match_len);
                 continue;
             }
@@ -214,12 +214,13 @@ class Importer
     static protected function checkSyntax (&$str)
     {
         // Catch obvious typing errors.
-        $parse_errors = array();
+        $errors = false;
         $current_file = 'file://' . end(CssCrush::$process->sources);
         $balanced_parens = substr_count($str, "(") === substr_count($str, ")");
         $balanced_curlies = substr_count($str, "{") === substr_count($str, "}");
 
-        $validate_pairings = function ($str, $pairing) use ($current_file) {
+        $validate_pairings = function ($str, $pairing) use ($current_file)
+        {
             if ($pairing === '{}') {
                 $opener_patt = '~\{~';
                 $balancer_patt = Regex::make('~^{{block}}~');
@@ -259,20 +260,17 @@ class Importer
         };
 
         if (! $balanced_curlies) {
-            $parse_errors[] = $validate_pairings($str, '{}') ?: "Unbalanced '{' in $current_file.";
+            $errors = true;
+            CssCrush::$process->logger->warning(
+                '[[CssCrush]] - ' . $validate_pairings($str, '{}') ?: "Unbalanced '{' in $current_file.");
         }
         if (! $balanced_parens) {
-            $parse_errors[] = $validate_pairings($str, '()') ?: "Unbalanced '(' in $current_file.";
+            $errors = true;
+            CssCrush::$process->logger->warning(
+                '[[CssCrush]] - ' . $validate_pairings($str, '()') ?: "Unbalanced '(' in $current_file.");
         }
 
-        if ($parse_errors) {
-            foreach ($parse_errors as $error_msg) {
-                CssCrush::logError($error_msg);
-                trigger_error("$error_msg\n", E_USER_WARNING);
-            }
-        }
-
-        return empty($parse_errors) ? true : false;
+        return $errors ? false : true;
     }
 
     static protected function addMarkers (&$str)

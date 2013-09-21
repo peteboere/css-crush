@@ -33,8 +33,6 @@ class Process
         $this->mixins = array();
         $this->fragments = array();
         $this->references = array();
-        $this->errors = array();
-        $this->stat = array();
         $this->charset = null;
         $this->sources = array();
         $this->vars = array();
@@ -43,15 +41,18 @@ class Process
         $this->output = new \stdClass();
         $this->tokens = new Tokens();
         $this->sourceMap = null;
-
-        // Copy config values.
-        $this->plugins = $config->plugins;
-        $this->aliases = $config->aliases;
         $this->selectorAliases = array();
         $this->selectorAliasesPatt = null;
 
-        // Pick a doc root.
+        $this->debugLog = array();
+        $this->errors = array();
+        $this->stat = array();
+
+        $this->plugins = $config->plugins;
+        $this->aliases = $config->aliases;
+
         $this->docRoot = isset($this->options->doc_root) ? $this->options->doc_root : $config->docRoot;
+        $this->logger = isset($this->options->logger) ? $this->options->logger : new Logger();
 
         // Shortcut the newline option and attach it to the process.
         switch ($this->options->newlines) {
@@ -969,7 +970,7 @@ class Process
         Hook::run('capture_phase2', $this);
 
         $this->captureRules();
-        // csscrush::log(array_keys($this->references));
+        // $process->logger->debug(array_keys($this->references));
 
         $this->resolveInBlocks();
 

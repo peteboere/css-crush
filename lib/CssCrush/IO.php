@@ -25,31 +25,24 @@ class IO
     static public function testOutputDir ()
     {
         $dir = CssCrush::$process->output->dir;
+        $logger = CssCrush::$process->logger;
         $pathtest = true;
-        $error = false;
 
         if (! file_exists($dir)) {
-
-            $error = "Output directory '$dir' doesn't exist.";
+            $logger->warning("[[CssCrush]] - Output directory '$dir' doesn't exist.");
             $pathtest = false;
         }
         elseif (! is_writable($dir)) {
 
-            CssCrush::log('Attempting to change permissions.');
+            $logger->debug('Attempting to change permissions.');
 
             if (! @chmod($dir, 0755)) {
-
-                $error = "Output directory '$dir' is unwritable.";
+                $logger->warning("[[CssCrush]] - Output directory '$dir' is unwritable.");
                 $pathtest = false;
             }
             else {
-                CssCrush::log('Permissions updated.');
+                $logger->debug('Permissions updated.');
             }
-        }
-
-        if ($error) {
-            CssCrush::logError($error);
-            trigger_error(__METHOD__ . ": $error\n", E_USER_WARNING);
         }
 
         return $pathtest;
@@ -108,13 +101,13 @@ class IO
         $filename = $output->filename;
 
         if (! file_exists($output->dir . '/' . $filename)) {
-            CssCrush::log('No file cached.');
+            $process->logger->debug('No file cached.');
 
             return false;
         }
 
         if (! isset($process->cacheData[$filename])) {
-            CssCrush::log('Cached file exists but is not registered.');
+            $process->logger->debug('Cached file exists but is not registered.');
 
             return false;
         }
@@ -134,7 +127,7 @@ class IO
             }
             else {
                 // File has been moved, remove old file and skip to compile.
-                CssCrush::log('Recompiling - an import file has been moved.');
+                $process->logger->debug('Recompiling - an import file has been moved.');
 
                 return false;
             }
@@ -142,7 +135,7 @@ class IO
 
         $files_changed = $data['datem_sum'] != array_sum($file_sums);
         if ($files_changed) {
-            CssCrush::log('Files have been modified. Recompiling.');
+            $process->logger->debug('Files have been modified. Recompiling.');
         }
 
         // Compare runtime options and cached options for differences.
@@ -152,14 +145,14 @@ class IO
         $active_options = $options->get();
         foreach ($cached_options as $key => &$value) {
             if (isset($active_options[$key]) && $active_options[$key] !== $value) {
-                CssCrush::log('Options have been changed. Recompiling.');
+                $process->logger->debug('Options have been changed. Recompiling.');
                 $options_changed = true;
                 break;
             }
         }
 
         if (! $options_changed && ! $files_changed) {
-            CssCrush::log("Files and options have not been modified, returning cached file.");
+            $process->logger->debug("Files and options have not been modified, returning cached file.");
 
             return true;
         }
@@ -193,20 +186,17 @@ class IO
             $cache_data = json_decode(file_get_contents($process->cacheFile), true)
         ) {
             // Successfully loaded config file.
-            CssCrush::log('Cache data loaded.');
+            $process->logger->debug('Cache data loaded.');
         }
         else {
             // Config file may exist but not be writable (may not be visible in some ftp situations?)
             if ($cache_data_exists) {
                 if (! @unlink($process->cacheFile)) {
-
-                    $error = "Could not delete config data file.";
-                    CssCrush::logError($error);
-                    trigger_error(__METHOD__ . ": $error\n", E_USER_NOTICE);
+                    CssCrush::$process->logger->notice('[[CssCrush]] - Could not delete cache data file.');
                 }
             }
             else {
-                CssCrush::log('Creating cache data file.');
+                $process->logger->debug('Creating cache data file.');
             }
             Util::filePutContents($process->cacheFile, json_encode(array()), __METHOD__);
         }
@@ -218,7 +208,7 @@ class IO
     {
         $process = CssCrush::$process;
 
-        CssCrush::log('Saving config.');
+        $process->logger->debug('Saving config.');
 
         $flags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
         Util::filePutContents($process->cacheFile, json_encode($process->cacheData, $flags), __METHOD__);

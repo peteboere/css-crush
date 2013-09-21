@@ -144,7 +144,7 @@ function canvas_generator ($input, $context) {
 
     // Apply functions.
     canvas_apply_css_funcs($canvas);
-    // csscrush::log($canvas);
+    // $process->logger->debug($canvas);
 
     // Create fingerprint for this canvas based on canvas object.
     $fingerprint = substr(md5(serialize($canvas)), 0, 7);
@@ -227,7 +227,7 @@ function canvas_generator ($input, $context) {
         }
     }
     else {
-        // csscrush::log('file cached');
+        // $process->logger->debug('file cached');
     }
 
 
@@ -680,28 +680,23 @@ function canvas_set_fill_dims ($fill, $canvas) {
 
 function canvas_requirements () {
 
-    $error_messages = array();
+    $requirements_met = true;
 
     if (! extension_loaded('gd')) {
-        $error_messages[] = 'GD extension not available.';
+        $requirements_met = false;
+        CssCrush::$process->logger->warning('[[CssCrush]] - GD extension not available.');
     }
     else {
         $info = array_change_key_case(gd_info());
         foreach (array('png', 'jpeg') as $key) {
             if (empty($info["$key support"])) {
-                $error_messages[] = "GD extension has no $key support.";
+                $requirements_met = false;
+                CssCrush::$process->logger->warning("[[CssCrush]] - GD extension has no $key support.");
             }
         }
     }
 
-    if ($error_messages) {
-        CssCrush::logError($error_messages);
-        $error = implode(' ' . PHP_EOL, $error_messages);
-        trigger_error(__METHOD__ . ": $error\n", E_USER_WARNING);
-
-        return false;
-    }
-    return true;
+    return $requirements_met;
 }
 
 

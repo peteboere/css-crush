@@ -18,12 +18,14 @@ class BalancedMatch
         list($opener, $closer) = str_split($brackets, 1);
 
         if (strpos($stream->raw, $opener, $this->offset) === false) {
+
             return;
         }
 
         if (substr_count($stream->raw, $opener) !== substr_count($stream->raw, $closer)) {
             $sample = substr($stream->raw, $this->offset, 25);
-            trigger_error(__METHOD__ . ": Unmatched token near '$sample'.\n", E_USER_WARNING);
+            CssCrush::$process->logger->warning("[[CssCrush]] - Unmatched token near '$sample'.");
+
             return;
         }
 
@@ -38,7 +40,7 @@ class BalancedMatch
             $this->length = $this->matchEnd - $this->offset;
         }
         else {
-            trigger_error(__METHOD__ . ": Could not match '$opener'. Exiting.\n", E_USER_WARNING);
+            CssCrush::$process->logger->warning("[[CssCrush]] - Could not match '$opener'. Exiting.");
         }
     }
 
