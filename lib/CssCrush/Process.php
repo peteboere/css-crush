@@ -52,7 +52,6 @@ class Process
         $this->aliases = $config->aliases;
 
         $this->docRoot = isset($this->options->doc_root) ? $this->options->doc_root : $config->docRoot;
-        $this->logger = isset($this->options->logger) ? $this->options->logger : new Logger();
 
         // Shortcut the newline option and attach it to the process.
         switch ($this->options->newlines) {
@@ -970,7 +969,6 @@ class Process
         Hook::run('capture_phase2', $this);
 
         $this->captureRules();
-        // $process->logger->debug(array_keys($this->references));
 
         $this->resolveInBlocks();
 

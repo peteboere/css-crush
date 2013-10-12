@@ -157,7 +157,7 @@ namespace CssCrush {
                 $table = preg_split('~\s+~', trim($sorting_file_contents));
             }
             else {
-                CssCrush::$process->logger->notice("[[CssCrush]] - Property sorting file not found.");
+                CssCrush::$config->logger->notice("[[CssCrush]] - Property sorting file not found.");
             }
 
             // Store to the global variable.

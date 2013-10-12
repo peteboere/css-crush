@@ -70,7 +70,7 @@ class Options
                 if (is_string($value)) {
                     $value = Util::resolveUserPath($value, function ($path) use ($name) {
                         if (! @mkdir($path)) {
-                            CssCrush::$process->logger->notice(
+                            CssCrush::$config->logger->notice(
                                 "[[CssCrush]] - Could not find or create directory specified by `$name` option.");
                         }
                         return $path;

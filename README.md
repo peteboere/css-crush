@@ -29,6 +29,7 @@ If you're not using Composer yet just download the library into a convenient loc
 <?php require_once 'path/to/CssCrush.php'; ?>
 ```
 
+
 ### Basic usage
 
 ```php

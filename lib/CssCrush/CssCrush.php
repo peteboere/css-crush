@@ -32,6 +32,7 @@ class CssCrush
         self::$config->version = new Version(self::VERSION);
         self::$config->scriptDir = dirname(realpath($_SERVER['SCRIPT_FILENAME']));
         self::$config->docRoot = self::resolveDocRoot();
+        self::$config->logger = new Logger();
 
         // Set default IO handler.
         self::$config->io = 'CssCrush\IO';
@@ -67,7 +68,6 @@ class CssCrush
             'enable' => null,
             'disable' => null,
             'stat_dump' => false,
-            'logger' => null,
             'trace' => array(),
             'source_map' => false,
             'newlines' => 'use-platform',
@@ -108,7 +108,7 @@ class CssCrush
             }
 
             if (! $doc_root) {
-                CssCrush::$process->logger->warning("[[CssCrush]] - Could not get a valid DOCUMENT_ROOT reference.");
+                CssCrush::$config->logger->warning("[[CssCrush]] - Could not get a valid DOCUMENT_ROOT reference.");
             }
         }
 
@@ -134,7 +134,7 @@ class CssCrush
         $tree = @parse_ini_file($file, true);
 
         if ($tree === false) {
-            CssCrush::$process->logger->notice("[[CssCrush]] - Could not parse aliases file '$file'.");
+            CssCrush::$config->logger->notice("[[CssCrush]] - Could not parse aliases file '$file'.");
 
             return false;
         }
@@ -223,7 +223,7 @@ class CssCrush
         $process->input->raw = $file;
 
         if (! ($input_file = Util::resolveUserPath($file))) {
-            $process->logger->warning('[[CssCrush]] - Input file \'' . basename($file) . '\' not found.');
+            $config->logger->warning('[[CssCrush]] - Input file \'' . basename($file) . '\' not found.');
 
             return '';
         }

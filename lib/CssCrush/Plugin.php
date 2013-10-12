@@ -68,7 +68,7 @@ class Plugin
             }
 
             if (! $found) {
-                CssCrush::$process->logger->notice("[[CssCrush]] - Plugin '$plugin_name' not found.");
+                CssCrush::$config->logger->notice("[[CssCrush]] - Plugin '$plugin_name' not found.");
             }
         }
 
