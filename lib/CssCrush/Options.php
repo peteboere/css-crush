@@ -21,6 +21,9 @@ class Options
 
     public function __set ($name, $value)
     {
+        $config = CssCrush::$config;
+        $logger = $config->logger;
+
         switch ($name) {
 
             // For legacy debug option, check minify has not been set then
@@ -41,8 +44,8 @@ class Options
 
             // Resolve a formatter callback name and check it's callable.
             case 'formatter':
-                if (is_string($value) && isset(CssCrush::$config->formatters[$value])) {
-                    $value = CssCrush::$config->formatters[$value];
+                if (is_string($value) && isset($config->formatters[$value])) {
+                    $value = $config->formatters[$value];
                 }
                 if (! is_callable($value)) {
                     $value = null;
@@ -68,10 +71,13 @@ class Options
             case 'output_dir':
             case 'asset_dir':
                 if (is_string($value)) {
-                    $value = Util::resolveUserPath($value, function ($path) use ($name) {
+                    $value = Util::resolveUserPath($value, function ($path) use ($name, $logger) {
                         if (! @mkdir($path)) {
-                            CssCrush::$config->logger->notice(
-                                "[[CssCrush]] - Could not find or create directory specified by `$name` option.");
+                            $logger->notice(
+                                "[[CssCrush]] - Could not create directory $path (setting `$name` option).");
+                        }
+                        else {
+                            $logger->notice("[[CssCrush]] - Created directory $path (setting `$name` option).");
                         }
                         return $path;
                     });

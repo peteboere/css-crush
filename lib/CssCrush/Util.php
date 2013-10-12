@@ -82,10 +82,14 @@ class Util
             $path = $realpath;
         }
         else {
-            // WWW root path.
+            $doc_root = isset(CssCrush::$process) ? CssCrush::$process->docRoot : CssCrush::$config->docRoot;
+
+            // Absolute path.
             if (strpos($path, '/') === 0) {
-                $doc_root = isset(CssCrush::$process) ? CssCrush::$process->docRoot : CssCrush::$config->docRoot;
-                $path = $doc_root . $path;
+                // If $path is not doc_root based assume it's doc_root relative and prepend doc_root.
+                if (strpos($path, $doc_root) !== 0) {
+                    $path = $doc_root . $path;
+                }
             }
             // Relative path. Try resolving based on the directory of the executing script.
             else {
