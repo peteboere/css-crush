@@ -36,28 +36,29 @@ if ($version < $required_version) {
 
 $required_value_opts = array(
     'i|input|f|file', // Input file. Defaults to STDIN.
-    'o|output',       // Output file. Defaults to STDOUT.
-    'E|enable' ,      // List of plugins to enable.
-    'D|disable',      // List of plugins to disable.
-    'vars|variables', // Map of variable names in an http query string format.
-    'formatter',      // Formatter name for formatted output.
-    'vendor-target',  // Vendor target.
-    'context',        // Context for resolving URLs.
-    'newlines',       // Newline style.
+    'o|output', // Output file. Defaults to STDOUT.
+    'E|enable' ,
+    'D|disable',
+    'vars|variables',
+    'formatter',
+    'vendor-target',
+    'context',
+    'newlines',
 );
 
 $optional_value_opts = array(
-    'b|boilerplate', // Boilerplate.
-    'trace',         // Debug info.
+    'b|boilerplate',
+    'stat-dump',
+    'trace',
 );
 
 $flag_opts = array(
-    'p|pretty',   // Pretty output.
-    'w|watch',    // Watch mode.
-    'list',       // List plugins.
-    'help',       // Display help.
-    'version',    // Display version.
-    'source-map', // Display version.
+    'p|pretty',
+    'w|watch',
+    'list',
+    'help',
+    'version',
+    'source-map',
 );
 
 // Create option strings for getopt().
@@ -82,7 +83,6 @@ $join_opts($flag_opts, '');
 
 // Parse opts.
 $opts = getopt(implode($short_opts), $long_opts);
-
 $args = new stdClass();
 
 // File arguments.
@@ -100,6 +100,7 @@ $args->source_map = isset($opts['source-map']);
 
 // Arguments that optionally accept a single value.
 $args->boilerplate = pick($opts, 'b', 'boilerplate');
+$args->stat_dump = pick($opts, 'stat-dump');
 $args->trace = pick($opts, 'trace');
 
 // Arguments that require a single value.
@@ -194,7 +195,6 @@ if (is_string($args->boilerplate)) {
     }
 }
 
-
 // Run multiple value arguments through array cast.
 foreach (array('enable_plugins', 'disable_plugins', 'vendor_target') as $arg) {
     if ($args->{$arg}) {
@@ -267,6 +267,10 @@ if ($args->trace) {
     $process_opts['trace'] = is_array($args->trace) ? parse_list($args->trace) : true;
 }
 
+if ($args->stat_dump) {
+    $process_opts['stat_dump'] = $args->stat_dump;
+}
+
 if ($args->vendor_target) {
     $process_opts['vendor_target'] = parse_list($args->vendor_target);
 }
@@ -294,6 +298,7 @@ if ($args->output_file) {
     $process_opts['output_dir'] = dirname($args->output_file);
     $process_opts['output_file'] = basename($args->output_file);
 }
+
 
 ##################################################################
 ##  Output.

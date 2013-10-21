@@ -1,4 +1,23 @@
-### 2.0.0 (?)
+### 2.0.0 (2013-)
+
+* Raised PHP version requirement to PHP 5.3.1.
+* Library code (excluding API functions) is now namespaced.
+* Added loop plugin: For...in loops with lists and generator functions.
+* Added ARIA plugin for working with aria roles states and properties.
+* Added forms plugin: pseudo classes for working with forms.
+* Removed legacy IE plugins (ie-clip, ie-filter, ie-min-height, rgba-fallback) and spiffing.
+* Added parsing for single line variable definitions e.g. `@define col-width 30px;`
+* Added support for relative input/output file paths (based on the current excecuting script path).
+* Added support for protocol-relative (//) URLs.
+* Removed `csscrush_clearcache()` function – Its functionality can be easily replicated in plain PHP since all output files have a '.crush.css' file extension.
+* Removed `csscrush_globalvars()` function. Use `csscrush_set()` instead.
+* Added `stat_dump` option for saving stats and variables used to a file in json format.
+* Added `asset_dir` option for directing generated svg and image files.
+* Deprecated and removed the *-local.ini now there is a better ways of augmenting the default aliases.
+* If `formatter` option is set will now override the `minify` option (setting it to false)
+* Now using a PSR-3 compatible logging interface (default implementation can be overridden).
+* Better error reporting for syntax errors.
+* Various Bug fixes.
 
 
 ********************************************************************
