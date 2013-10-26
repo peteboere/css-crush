@@ -55,7 +55,7 @@ There are several other [functions](http://the-echoplex.net/csscrush#api) for wo
 There are a number of [options](http://the-echoplex.net/csscrush#options) available for tailoring the output, and a collection of bundled [plugins](http://the-echoplex.net/csscrush#plugins) that cover many workflow issues in contemporary CSS development.
 
 
-### Contibuting
+### Contributing
 
 If you think you've found a bug please create an [issue](https://github.com/peteboere/css-crush/issues) explaining the problem and expected result.
 
