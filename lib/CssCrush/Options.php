@@ -77,7 +77,7 @@ class Options
                                 "[[CssCrush]] - Could not create directory $path (setting `$name` option).");
                         }
                         else {
-                            $logger->notice("[[CssCrush]] - Created directory $path (setting `$name` option).");
+                            $logger->debug("Created directory $path (setting `$name` option).");
                         }
                         return $path;
                     });
