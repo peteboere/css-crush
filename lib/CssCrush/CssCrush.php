@@ -238,9 +238,10 @@ class CssCrush
         if ($options->cache) {
             $process->cacheData = $process->io('getCacheData');
             if ($process->io('validateCache')) {
+                $file_url = $process->io('getOutputUrl');
                 $process->release();
 
-                return $process->io('getOutputUrl');
+                return $file_url;
             }
         }
 
