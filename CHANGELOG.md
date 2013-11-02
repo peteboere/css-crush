@@ -1,4 +1,4 @@
-### 2.0.0 (2013-)
+### 2.0.0 (2013-11-2)
 
 * Raised PHP version requirement to PHP 5.3.1.
 * Library code (excluding API functions) is now namespaced.
