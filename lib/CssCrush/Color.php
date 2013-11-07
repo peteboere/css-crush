@@ -60,7 +60,7 @@ class Color
         return self::$minifyableKeywords;
     }
 
-    public static function parse ($str)
+    public static function parse($str)
     {
         if ($test = Color::test($str)) {
             $color = $test['value'];
@@ -111,7 +111,7 @@ class Color
         return $rgba;
     }
 
-    public static function test ($str)
+    public static function test($str)
     {
         static $color_patt;
         if (! $color_patt) {
@@ -170,7 +170,7 @@ class Color
      * Assumes r, g, and b are contained in the set [0, 255] and
      * returns h, s, and l in the set [0, 1].
      */
-    public static function rgbToHsl (array $rgba)
+    public static function rgbToHsl(array $rgba)
     {
         list($r, $g, $b, $a) = $rgba;
         $r /= 255;
@@ -214,7 +214,7 @@ class Color
      * Assumes h, s, and l are contained in the set [0, 1] and
      * returns r, g, and b in the set [0, 255].
      */
-    public static function hslToRgb (array $hsla)
+    public static function hslToRgb(array $hsla)
     {
         // Populate unspecified alpha value.
         if (! isset($hsla[3])) {
@@ -240,7 +240,7 @@ class Color
     }
 
     // Convert percentages to points (0-255).
-    public static function normalizeCssRgb (array $rgba)
+    public static function normalizeCssRgb(array $rgba)
     {
         foreach ($rgba as &$val) {
             if (strpos($val, '%') !== false) {
@@ -252,7 +252,7 @@ class Color
         return $rgba;
     }
 
-    public static function cssHslToRgb (array $hsla)
+    public static function cssHslToRgb(array $hsla)
     {
         // Populate unspecified alpha value.
         if (! isset($hsla[3])) {
@@ -280,7 +280,7 @@ class Color
         return self::hslToRgb(array($h, $s, $l, $a));
     }
 
-    public static function hueToRgb ($p, $q, $t)
+    public static function hueToRgb($p, $q, $t)
     {
         if ($t < 0) $t += 1;
         if ($t > 1) $t -= 1;
@@ -290,7 +290,7 @@ class Color
         return $p;
     }
 
-    public static function rgbToHex (array $rgba)
+    public static function rgbToHex(array $rgba)
     {
         // Drop alpha component.
         array_pop($rgba);
@@ -303,7 +303,7 @@ class Color
         return $hex_out;
     }
 
-    public static function hexToRgb ($hex)
+    public static function hexToRgb($hex)
     {
         $hex = substr($hex, 1);
 
@@ -326,7 +326,7 @@ class Color
         return $rgba;
     }
 
-    public static function colorAdjust ($str, array $adjustments)
+    public static function colorAdjust($str, array $adjustments)
     {
         $hsla = new Color($str, true);
 
@@ -334,7 +334,7 @@ class Color
         return $hsla->isValid ? $hsla->adjust($adjustments)->__toString() : $str;
     }
 
-    public static function colorSplit ($str)
+    public static function colorSplit($str)
     {
         if ($test = Color::test($str)) {
             $color = $test['value'];
@@ -377,7 +377,7 @@ class Color
     protected $hslColorSpace;
     public $isValid;
 
-    public function __construct ($color, $use_hsl_color_space = false)
+    public function __construct($color, $use_hsl_color_space = false)
     {
         $this->value = is_array($color) ? $color : self::parse($color);
         $this->isValid = ! empty($this->value);
@@ -386,7 +386,7 @@ class Color
         }
     }
 
-    public function __toString ()
+    public function __toString()
     {
         // For opaque colors return hex notation as it's the most compact.
         if ($this->value[3] === 1) {
@@ -405,7 +405,7 @@ class Color
         }
     }
 
-    public function toRgb ()
+    public function toRgb()
     {
         if ($this->hslColorSpace) {
             $this->hslColorSpace = false;
@@ -415,7 +415,7 @@ class Color
         return $this;
     }
 
-    public function toHsl ()
+    public function toHsl()
     {
         if (! $this->hslColorSpace) {
             $this->hslColorSpace = true;
@@ -425,32 +425,32 @@ class Color
         return $this;
     }
 
-    public function getHex ()
+    public function getHex()
     {
         return self::rgbToHex($this->getRgb());
     }
 
-    public function getHsl ()
+    public function getHsl()
     {
         return ! $this->hslColorSpace ? self::rgbToHsl($this->value) : $this->value;
     }
 
-    public function getRgb ()
+    public function getRgb()
     {
         return $this->hslColorSpace ? self::hslToRgb($this->value) : $this->value;
     }
 
-    public function getComponent ($index)
+    public function getComponent($index)
     {
         return $this->value[$index];
     }
 
-    public function setComponent ($index, $new_component_value)
+    public function setComponent($index, $new_component_value)
     {
         $this->value[$index] = $new_component_value;
     }
 
-    public function adjust (array $adjustments)
+    public function adjust(array $adjustments)
     {
         $was_hsl_color_space = $this->hslColorSpace;
 

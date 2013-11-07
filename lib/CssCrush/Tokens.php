@@ -11,7 +11,7 @@ class Tokens
     public $store;
     protected $ids;
 
-    public function __construct (array $types = null)
+    public function __construct(array $types = null)
     {
         $types = $types ?: array(
             's', // Strings
@@ -31,38 +31,38 @@ class Tokens
         }
     }
 
-    public function get ($label)
+    public function get($label)
     {
         $path =& $this->store->{$label[1]};
         return isset($path[$label]) ? $path[$label] : null;
     }
 
-    public function pop ($label)
+    public function pop($label)
     {
         $value = $this->get($label);
         $this->release($label);
         return $value;
     }
 
-    public function release ($label)
+    public function release($label)
     {
         unset($this->store->{$label[1]}[$label]);
     }
 
-    public function add ($value, $type, $existing_label = null)
+    public function add($value, $type, $existing_label = null)
     {
         $label = $existing_label ? $existing_label : $this->createLabel($type);
         $this->store->{$type}[$label] = $value;
         return $label;
     }
 
-    public function createLabel ($type)
+    public function createLabel($type)
     {
         $counter = base_convert(++$this->ids->{$type}, 10, 36);
         return "?$type$counter?";
     }
 
-    public function restore ($str, $type, $release = false)
+    public function restore($str, $type, $release = false)
     {
         switch ($type) {
             case 'u':
@@ -92,7 +92,7 @@ class Tokens
         return $str;
     }
 
-    public function capture ($str, $type)
+    public function capture($str, $type)
     {
         switch ($type) {
             case 'u':
@@ -107,21 +107,21 @@ class Tokens
         }
     }
 
-    public function captureParens ($str)
+    public function captureParens($str)
     {
         return preg_replace_callback(Regex::$patt->parens, function ($m) {
             return CssCrush::$process->tokens->add($m[0], 'p');
         }, $str);
     }
 
-    public function captureStrings ($str, $add_padding = false)
+    public function captureStrings($str, $add_padding = false)
     {
         return preg_replace_callback(Regex::$patt->string, function ($m) {
             return CssCrush::$process->tokens->add($m[0], 's');
         }, $str);
     }
 
-    public function captureUrls ($str, $add_padding = false)
+    public function captureUrls($str, $add_padding = false)
     {
         $count = preg_match_all(
             Regex::make('~@import \s+ (?<import>{{s-token}}) | {{LB}} (?<func>url|data-uri) {{parens}}~ixS'),
@@ -161,7 +161,7 @@ class Tokens
         return $str;
     }
 
-    public static function pad ($label, $replaced_text)
+    public static function pad($label, $replaced_text)
     {
         // Padding token labels to maintain whitespace and newlines.
 
@@ -177,7 +177,7 @@ class Tokens
         return $label;
     }
 
-    public static function is ($label, $of_type)
+    public static function is($label, $of_type)
     {
         if (preg_match(Regex::make('~^ \? (?<type>[a-zA-Z]) {{token-id}} \? $~xS'), $label, $m)) {
 

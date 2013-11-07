@@ -13,7 +13,7 @@ class Version
     public $revision = 0;
     public $extra;
 
-    public function __construct ($version_string)
+    public function __construct($version_string)
     {
         if (($hyphen_pos = strpos($version_string, '-' )) !== false) {
             $this->extra = substr($version_string, $hyphen_pos + 1);
@@ -33,7 +33,7 @@ class Version
         }
     }
 
-    public function __toString ()
+    public function __toString()
     {
         $out = (string) $this->major;
 
@@ -50,7 +50,7 @@ class Version
         return $out;
     }
 
-    public function compare ($version_string)
+    public function compare($version_string)
     {
         $LESS = -1;
         $MORE = 1;

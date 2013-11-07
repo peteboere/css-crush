@@ -20,7 +20,7 @@ Plugin::register('hsl-to-hex', array(
 ));
 
 
-function hsl_to_hex (Rule $rule) {
+function hsl_to_hex(Rule $rule) {
 
     $hsl_patt = Regex::make('~{{LB}}hsl({{p-token}})~i');
 

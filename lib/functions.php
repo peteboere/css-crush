@@ -6,27 +6,27 @@
   */
 use CssCrush\CssCrush;
 
-function csscrush_file ($file, $options = null) {
+function csscrush_file($file, $options = null) {
     return CssCrush::file($file, $options);
 }
 
-function csscrush_tag ($file, $options = null, $attributes = array()) {
+function csscrush_tag($file, $options = null, $attributes = array()) {
     return CssCrush::tag($file, $options, $attributes);
 }
 
-function csscrush_inline ($file, $options = null, $attributes = array()) {
+function csscrush_inline($file, $options = null, $attributes = array()) {
     return CssCrush::inline($file, $options, $attributes);
 }
 
-function csscrush_string ($string, $options = null) {
+function csscrush_string($string, $options = null) {
     return CssCrush::string($string, $options);
 }
 
-function csscrush_stat () {
+function csscrush_stat() {
     return CssCrush::stat();
 }
 
-function csscrush_version () {
+function csscrush_version() {
     return CssCrush::$config->version;
 }
 
@@ -36,7 +36,7 @@ function csscrush_version () {
  * @param string $object_name  Name of object you want to modify: 'config' or 'options'.
  * @param mixed $modifier  Assoc array of keys and values to set, or callable which is passed the object.
  */
-function csscrush_set ($object_name, $modifier) {
+function csscrush_set($object_name, $modifier) {
 
     if (in_array($object_name, array('options', 'config'))) {
 
@@ -60,7 +60,7 @@ function csscrush_set ($object_name, $modifier) {
  * @param string $object_name  Name of object you want to modify: 'config' or 'options'.
  * @param mixed $property  The property name to retrieve.
  */
-function csscrush_get ($object_name, $property = null) {
+function csscrush_get($object_name, $property = null) {
 
     if (in_array($object_name, array('options', 'config'))) {
 

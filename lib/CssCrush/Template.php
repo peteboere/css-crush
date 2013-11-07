@@ -19,7 +19,7 @@ class Template
     // The string passed in with arg calls replaced by tokens.
     public $string;
 
-    public function __construct ($str, $options = array())
+    public function __construct($str, $options = array())
     {
         static $arg_patt;
         if (! $arg_patt) {
@@ -37,7 +37,7 @@ class Template
             ));
     }
 
-    public function capture ($str)
+    public function capture($str)
     {
         $args = Functions::parseArgsSimple($str);
 
@@ -64,7 +64,7 @@ class Template
         return "?a$position?";
     }
 
-    public function getArgValue ($index, &$args)
+    public function getArgValue($index, &$args)
     {
         // First lookup a passed value.
         if (isset($args[$index]) && $args[$index] !== 'default') {
@@ -86,7 +86,7 @@ class Template
         return $default;
     }
 
-    public function prepare (array $args, $persist = true)
+    public function prepare(array $args, $persist = true)
     {
         // Create table of substitutions.
         $find = array();
@@ -112,12 +112,12 @@ class Template
         return $substitutions;
     }
 
-    public function reset ()
+    public function reset()
     {
         unset($this->substitutions);
     }
 
-    public function apply (array $args = null, $str = null)
+    public function apply(array $args = null, $str = null)
     {
         $str = isset($str) ? $str : $this->string;
 
@@ -140,7 +140,7 @@ class Template
         return Template::tokenize($str);
     }
 
-    public static function tokenize ($str)
+    public static function tokenize($str)
     {
         $str = CssCrush::$process->tokens->capture($str, 's');
         $str = CssCrush::$process->tokens->capture($str, 'u');
@@ -148,7 +148,7 @@ class Template
         return $str;
     }
 
-    public static function unTokenize ($str)
+    public static function unTokenize($str)
     {
         $str = CssCrush::$process->tokens->restore($str, 'u', true);
         $str = CssCrush::$process->tokens->restore($str, 's', true);

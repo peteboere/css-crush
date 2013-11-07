@@ -27,7 +27,7 @@ Plugin::register('px2em', array(
 ));
 
 
-function fn__px2em ($input) {
+function fn__px2em($input) {
 
     $base = 16;
 
@@ -39,7 +39,7 @@ function fn__px2em ($input) {
     return px2em($input, 'em', $base);
 }
 
-function fn__px2rem ($input) {
+function fn__px2rem($input) {
 
     $base = 16;
 
@@ -51,7 +51,7 @@ function fn__px2rem ($input) {
     return px2em($input, 'rem', $base);
 }
 
-function px2em ($input, $unit, $default_base) {
+function px2em($input, $unit, $default_base) {
 
     list($px, $base) = Functions::parseArgsSimple($input) + array(
         16,

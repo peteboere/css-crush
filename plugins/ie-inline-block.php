@@ -22,7 +22,7 @@ Plugin::register('ie-inline-block', array(
 ));
 
 
-function ie_inline_block (Rule $rule) {
+function ie_inline_block(Rule $rule) {
 
     if ($rule->propertyCount('display') < 1) {
         return;

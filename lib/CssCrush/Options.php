@@ -10,7 +10,7 @@ class Options
 {
     public $data = array();
 
-    public function __construct ($properties)
+    public function __construct($properties)
     {
         if ($properties) {
             foreach ($properties as $key => $value) {
@@ -19,7 +19,7 @@ class Options
         }
     }
 
-    public function __set ($name, $value)
+    public function __set($name, $value)
     {
         $config = CssCrush::$config;
         $logger = $config->logger;
@@ -103,17 +103,17 @@ class Options
         $this->data[$name] = $value;
     }
 
-    public function __get ($name)
+    public function __get($name)
     {
         return isset($this->data[$name]) ? $this->data[$name] : null;
     }
 
-    public function __isset ($name)
+    public function __isset($name)
     {
         return isset($this->data[$name]);
     }
 
-    public function merge (Options $options_instance)
+    public function merge(Options $options_instance)
     {
         foreach ($options_instance->data as $key => $value) {
             if (! array_key_exists($key, $this->data)) {
@@ -122,7 +122,7 @@ class Options
         }
     }
 
-    public function get ()
+    public function get()
     {
         return $this->data;
     }

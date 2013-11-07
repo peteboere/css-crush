@@ -1,6 +1,6 @@
 <img src="http://the-echoplex.net/csscrush/images/css-crush-external.svg" alt="Logo"/>
 
-CSS without the Mess — CSS-Crush is a standards inspired preprocessor designed to enable a modern and uncluttered CSS workflow.
+CSS-Crush is a standards inspired preprocessor designed to enable a modern and uncluttered CSS workflow.
 
 * Automatic vendor prefixing
 * Variables

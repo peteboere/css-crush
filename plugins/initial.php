@@ -26,7 +26,7 @@ Plugin::register('initial', array(
     },
 ));
 
-function initial (Rule $rule) {
+function initial(Rule $rule) {
 
     static $initial_values;
     if (! $initial_values) {

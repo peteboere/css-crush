@@ -53,7 +53,7 @@ Plugin::register('svg-gradients', array(
 ));
 
 
-function fn__svg_linear_gradient ($input) {
+function fn__svg_linear_gradient($input) {
 
     $gradient = create_svg_linear_gradient($input);
     $gradient_markup = reset($gradient);
@@ -74,7 +74,7 @@ function fn__svg_linear_gradient ($input) {
 }
 
 
-function fn__svg_radial_gradient ($input) {
+function fn__svg_radial_gradient($input) {
 
     $gradient = create_svg_radial_gradient($input);
     $gradient_markup = reset($gradient);
@@ -95,7 +95,7 @@ function fn__svg_radial_gradient ($input) {
 }
 
 
-function create_svg_linear_gradient ($input) {
+function create_svg_linear_gradient($input) {
 
     static $angle_keywords, $deg_patt;
     if (! $angle_keywords) {
@@ -225,7 +225,7 @@ function create_svg_linear_gradient ($input) {
 }
 
 
-function create_svg_radial_gradient ($input) {
+function create_svg_radial_gradient($input) {
 
     static $position_keywords, $origin_patt;
     if (! $position_keywords) {
@@ -292,7 +292,7 @@ function create_svg_radial_gradient ($input) {
 }
 
 
-function parse_gradient_color_stops (array $color_stop_args) {
+function parse_gradient_color_stops(array $color_stop_args) {
 
     $offsets = array();
     $colors = array();

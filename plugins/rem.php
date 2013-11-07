@@ -45,7 +45,7 @@ Plugin::register('rem', array(
 ));
 
 
-function rem (Rule $rule) {
+function rem(Rule $rule) {
 
     static $rem_patt, $px_patt, $font_props, $modes;
     if (! $modes) {

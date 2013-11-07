@@ -10,7 +10,7 @@ class Plugin
 {
     static protected $plugins = array();
 
-    public static function info ()
+    public static function info()
     {
         $plugin_dirs = CssCrush::$config->pluginDirs;
         $plugin_data = array();
@@ -26,7 +26,7 @@ class Plugin
         return $plugin_data;
     }
 
-    public static function parseDoc ($plugin_path)
+    public static function parseDoc($plugin_path)
     {
         $contents = file_get_contents($plugin_path);
         if (preg_match('~/\*\*(.*?)\*/~s', $contents, $m)) {
@@ -44,12 +44,12 @@ class Plugin
         return false;
     }
 
-    public static function register ($plugin_name, $callbacks)
+    public static function register($plugin_name, $callbacks)
     {
         self::$plugins[$plugin_name] = $callbacks;
     }
 
-    public static function load ($plugin_name)
+    public static function load($plugin_name)
     {
         // Assume the the plugin file is not loaded if null.
         if (! isset(self::$plugins[$plugin_name])) {
@@ -75,7 +75,7 @@ class Plugin
         return isset(self::$plugins[$plugin_name]) ? self::$plugins[$plugin_name] : null;
     }
 
-    public static function enable ($plugin_name)
+    public static function enable($plugin_name)
     {
         $plugin = self::load($plugin_name);
 
@@ -86,7 +86,7 @@ class Plugin
         return true;
     }
 
-    public static function disable ($plugin_name)
+    public static function disable($plugin_name)
     {
         $plugin = isset(self::$plugins[$plugin_name]) ? self::$plugins[$plugin_name] : null;
 

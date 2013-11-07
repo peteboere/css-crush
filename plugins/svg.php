@@ -73,17 +73,17 @@ Plugin::register('svg', array(
 ));
 
 
-function fn__svg ($input) {
+function fn__svg($input) {
 
     return svg_generator($input, 'svg');
 }
 
-function fn__svg_data ($input) {
+function fn__svg_data($input) {
 
     return svg_generator($input, 'svg-data');
 }
 
-function svg_capture ($process) {
+function svg_capture($process) {
 
     // Extract svg definitions.
     $process->stream->pregReplaceCallback(
@@ -98,7 +98,7 @@ function svg_capture ($process) {
         });
 }
 
-function svg_generator ($input, $fn_name) {
+function svg_generator($input, $fn_name) {
 
     $process = CssCrush::$process;
 
@@ -307,7 +307,7 @@ function svg_generator ($input, $fn_name) {
 /*
     Circle callback.
 */
-function svg_circle ($element) {
+function svg_circle($element) {
 
     // Ensure required attributes have defaults set.
     $element->data += array(
@@ -331,7 +331,7 @@ function svg_circle ($element) {
 /*
     Rect callback.
 */
-function svg_rect ($element) {
+function svg_rect($element) {
 
     $element->data += array(
         'width' => 50,
@@ -358,7 +358,7 @@ function svg_rect ($element) {
 /*
     Ellipse callback.
 */
-function svg_ellipse ($element) {
+function svg_ellipse($element) {
 
     $element->data += array(
         'diameter' => '100 50',
@@ -382,7 +382,7 @@ function svg_ellipse ($element) {
 /*
     Path callback.
 */
-function svg_path ($element) {
+function svg_path($element) {
 
     // Ensure minimum required attributes have defaults set.
     $element->data += array(
@@ -398,7 +398,7 @@ function svg_path ($element) {
 /*
     Polyline callback.
 */
-function svg_polyline ($element) {
+function svg_polyline($element) {
 
     // Ensure required attributes have defaults set.
     $element->data += array(
@@ -414,7 +414,7 @@ function svg_polyline ($element) {
 /*
     Line callback.
 */
-function svg_line ($element) {
+function svg_line($element) {
 
     // Set a default stroke.
     $element->styles += array(
@@ -432,7 +432,7 @@ function svg_line ($element) {
 /*
     Polygon callback.
 */
-function svg_polygon ($element) {
+function svg_polygon($element) {
 
     if (! isset($element->attrs['points'])) {
 
@@ -464,7 +464,7 @@ function svg_polygon ($element) {
 /*
     Star callback.
 */
-function svg_star ($element) {
+function svg_star($element) {
 
     // Minimum required attributes have defaults.
     $element->data += array(
@@ -497,7 +497,7 @@ function svg_star ($element) {
     Text callback.
     Warning: Very limited for svg-as-image situations.
 */
-function svg_text ($element) {
+function svg_text($element) {
 
     // Minimum required attributes have defaults.
     $element->data += array(
@@ -531,7 +531,7 @@ function svg_text ($element) {
 
     Adapted from http://svg-whiz.com/svg/StarMaker.svg by Doug Schepers.
 */
-function svg_starpath ($cx, $cy, $points, $outer_r, $inner_r = null, $twist = 0, $orient = 'point') {
+function svg_starpath($cx, $cy, $points, $outer_r, $inner_r = null, $twist = 0, $orient = 'point') {
 
     $d = array();
 
@@ -578,7 +578,7 @@ function svg_starpath ($cx, $cy, $points, $outer_r, $inner_r = null, $twist = 0,
     return 'M' . implode('L', $d) . 'Z';
 }
 
-function svg_apply_filters ($element) {
+function svg_apply_filters($element) {
 
     if (isset($element->data['drop-shadow'])) {
 
@@ -618,7 +618,7 @@ function svg_apply_filters ($element) {
     }
 }
 
-function svg_preprocess ($element) {
+function svg_preprocess($element) {
 
     if (isset($element->data['margin'])) {
 
@@ -665,7 +665,7 @@ function svg_preprocess ($element) {
     }
 }
 
-function svg_apply_css_funcs ($element, &$raw_data) {
+function svg_apply_css_funcs($element, &$raw_data) {
 
     // Setup functions for using on values.
     // Note using custom versions of svg-*-gradient().
@@ -706,7 +706,7 @@ function svg_apply_css_funcs ($element, &$raw_data) {
     }
 }
 
-function svg_compress ($element) {
+function svg_compress($element) {
 
     foreach ($element->attrs as $key => &$value) {
 
@@ -720,7 +720,7 @@ function svg_compress ($element) {
     }
 }
 
-function svg_render ($element) {
+function svg_render($element) {
 
     // Flatten styles.
     $styles = '';
@@ -795,7 +795,7 @@ function svg_render ($element) {
 /*
     Custom versions of svg-*-gradient() for integrating.
 */
-function svg_fn_linear_gradient ($input, $element) {
+function svg_fn_linear_gradient($input, $element) {
 
     // Relies on functions from svg-gradients plugin.
     Plugin::load('svg-gradients');
@@ -806,7 +806,7 @@ function svg_fn_linear_gradient ($input, $element) {
     return 'url(#' . key($generated_gradient) . ')';
 }
 
-function svg_fn_radial_gradient ($input, $element) {
+function svg_fn_radial_gradient($input, $element) {
 
     // Relies on functions from svg-gradients plugin.
     Plugin::load('svg-gradients');
@@ -817,7 +817,7 @@ function svg_fn_radial_gradient ($input, $element) {
     return 'url(#' . key($generated_gradient) . ')';
 }
 
-function svg_fn_pattern ($input, $element) {
+function svg_fn_pattern($input, $element) {
 
     static $uid = 0;
     $pid = 'p' . (++$uid);
@@ -858,12 +858,12 @@ function svg_fn_pattern ($input, $element) {
 /*
     Helpers.
 */
-function svg_parselist ($str, $numbers = true) {
+function svg_parselist($str, $numbers = true) {
     $list = preg_split('~ +~', trim($str));
     return $numbers ? array_map('floatval', $list) : $list;
 }
 
-function svg_ifset (&$var, $fallback = null) {
+function svg_ifset(&$var, $fallback = null) {
     if (isset($var)) {
         return $var;
     }

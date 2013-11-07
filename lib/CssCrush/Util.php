@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class Util
 {
-    public static function htmlAttributes (array $attributes, array $sort_order = null)
+    public static function htmlAttributes(array $attributes, array $sort_order = null)
     {
         // Optionally sort attributes (for better readability).
         if ($sort_order) {
@@ -43,7 +43,7 @@ class Util
         return $str;
     }
 
-    public static function normalizePath ($path, $strip_drive_letter = false)
+    public static function normalizePath($path, $strip_drive_letter = false)
     {
         if (! $path) {
             return '';
@@ -65,7 +65,7 @@ class Util
         return Util::simplifyPath($path);
     }
 
-    public static function simplifyPath ($path)
+    public static function simplifyPath($path)
     {
         // Reduce redundant path segments. e.g 'foo/../bar' => 'bar'
         $patt = '~[^/.]+/\.\./~S';
@@ -75,7 +75,7 @@ class Util
         return $path;
     }
 
-    public static function resolveUserPath ($path, $recovery = null)
+    public static function resolveUserPath($path, $recovery = null)
     {
         // System path.
         if ($realpath = realpath($path)) {
@@ -105,12 +105,12 @@ class Util
         return $path ? Util::normalizePath($path) : false;
     }
 
-    public static function stripCommentTokens ($str)
+    public static function stripCommentTokens($str)
     {
         return preg_replace(Regex::$patt->c_token, '', $str);
     }
 
-    public static function normalizeWhiteSpace ($str)
+    public static function normalizeWhiteSpace($str)
     {
         static $find, $replace;
         if (! $find) {
@@ -129,7 +129,7 @@ class Util
         return preg_replace($find, $replace, $str);
     }
 
-    public static function splitDelimList ($str, $delim = ',')
+    public static function splitDelimList($str, $delim = ',')
     {
         $do_preg_split = strlen($delim) > 1;
         $str = trim($str);
@@ -158,7 +158,7 @@ class Util
         return array_filter(array_map('trim', $list), 'strlen');
     }
 
-    public static function getLinkBetweenPaths ($path1, $path2, $directories = true)
+    public static function getLinkBetweenPaths($path1, $path2, $directories = true)
     {
         $path1 = trim(Util::normalizePath($path1, true), '/');
         $path2 = trim(Util::normalizePath($path2, true), '/');
@@ -190,7 +190,7 @@ class Util
         return $link;
     }
 
-    public static function filePutContents ($file, $str, $caller = null)
+    public static function filePutContents($file, $str, $caller = null)
     {
         if (@file_put_contents($file, $str, LOCK_EX)) {
 
@@ -204,7 +204,7 @@ class Util
     /*
      * Encode integer to Base64 VLQ.
      */
-    public static function vlqEncode ($value)
+    public static function vlqEncode($value)
     {
         static $VLQ_BASE_SHIFT, $VLQ_BASE, $VLQ_BASE_MASK, $VLQ_CONTINUATION_BIT, $BASE64_MAP;
         if (! $VLQ_BASE_SHIFT) {

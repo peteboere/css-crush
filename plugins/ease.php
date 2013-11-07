@@ -23,7 +23,7 @@ Plugin::register('ease', array(
 ));
 
 
-function ease (Rule $rule) {
+function ease(Rule $rule) {
 
     static $find, $replace, $easing_properties;
     if (! $find) {

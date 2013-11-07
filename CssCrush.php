@@ -4,7 +4,7 @@
   * Bootstrap file with autoloader.
   *
   */
-function csscrush_autoload ($class) {
+function csscrush_autoload($class) {
 
     // We're only autoloading this library.
     if (stripos($class, 'csscrush') !== 0) {

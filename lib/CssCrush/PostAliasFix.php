@@ -13,7 +13,7 @@ class PostAliasFix
         ':gradients' => 'CssCrush\postalias_fix_gradients',
     );
 
-    public static function add ($alias_type, $key, $callback)
+    public static function add($alias_type, $key, $callback)
     {
         if ($alias_type === 'function') {
             // $key is the aliased css function name.
@@ -21,7 +21,7 @@ class PostAliasFix
         }
     }
 
-    public static function remove ($alias_type, $key)
+    public static function remove($alias_type, $key)
     {
         if ($type === 'function') {
             // $key is the aliased css function name.
@@ -33,7 +33,7 @@ class PostAliasFix
 /**
  * Post alias fix callback for all gradients.
  */
-function postalias_fix_gradients ($declaration_copies) {
+function postalias_fix_gradients($declaration_copies) {
     postalias_fix_linear_gradients($declaration_copies);
     postalias_fix_radial_gradients($declaration_copies);
 }
@@ -42,7 +42,7 @@ function postalias_fix_gradients ($declaration_copies) {
  * Convert the new angle syntax (keyword and degree) on -x-linear-gradient() functions
  * to legacy equivalents.
  */
-function postalias_fix_linear_gradients ($declaration_copies) {
+function postalias_fix_linear_gradients($declaration_copies) {
 
     static $angles_new, $angles_old;
     if (! $angles_new) {
@@ -118,7 +118,7 @@ function postalias_fix_linear_gradients ($declaration_copies) {
 /**
  * Remove the 'at' keyword from -x-radial-gradient() for legacy implementations.
  */
-function postalias_fix_radial_gradients ($declaration_copies) {
+function postalias_fix_radial_gradients($declaration_copies) {
 
     // Create new paren tokens based on the first prefixed declaration.
     // Replace the new syntax with the legacy syntax.

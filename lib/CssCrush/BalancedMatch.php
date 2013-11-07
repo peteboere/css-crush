@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class BalancedMatch
 {
-    public function __construct (Stream $stream, $offset, $brackets = '{}')
+    public function __construct(Stream $stream, $offset, $brackets = '{}')
     {
         $this->stream = $stream;
         $this->offset = $offset;
@@ -44,27 +44,27 @@ class BalancedMatch
         }
     }
 
-    public function inside ()
+    public function inside()
     {
         return $this->match[2][0];
     }
 
-    public function whole ()
+    public function whole()
     {
         return substr($this->stream->raw, $this->offset, $this->length);
     }
 
-    public function replace ($replacement)
+    public function replace($replacement)
     {
         $this->stream->splice($replacement, $this->offset, $this->length);
     }
 
-    public function unWrap ()
+    public function unWrap()
     {
         $this->stream->splice($this->inside(), $this->offset, $this->length);
     }
 
-    public function nextIndexOf ($needle)
+    public function nextIndexOf($needle)
     {
         return strpos($this->stream->raw, $needle, $this->offset);
     }

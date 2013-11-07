@@ -32,7 +32,7 @@ class Rule implements \IteratorAggregate
     // Declarations hash table for external query() referencing.
     public $queryData = array();
 
-    public function __construct ($selector_string, $declarations_string, $trace_token = null)
+    public function __construct($selector_string, $declarations_string, $trace_token = null)
     {
         $process = CssCrush::$process;
         $this->label = $process->tokens->createLabel('r');
@@ -109,7 +109,7 @@ class Rule implements \IteratorAggregate
         }
     }
 
-    public function __toString ()
+    public function __toString()
     {
         $process = CssCrush::$process;
 
@@ -143,7 +143,7 @@ class Rule implements \IteratorAggregate
     }
 
     public $declarationsProcessed = false;
-    public function processDeclarations ()
+    public function processDeclarations()
     {
         if ($this->declarationsProcessed) {
             return;
@@ -166,7 +166,7 @@ class Rule implements \IteratorAggregate
         $this->declarationsProcessed = true;
     }
 
-    public function flatten ()
+    public function flatten()
     {
         if ($this->isFlat) {
             return;
@@ -190,7 +190,7 @@ class Rule implements \IteratorAggregate
         $this->isFlat = true;
     }
 
-    public function expandDataSet ($dataset, $property)
+    public function expandDataSet($dataset, $property)
     {
         // Expand shorthand properties to make them available
         // as data for this() and query().
@@ -297,7 +297,7 @@ class Rule implements \IteratorAggregate
     #############################
     #  Rule inheritance.
 
-    public function setExtendSelectors ($raw_value)
+    public function setExtendSelectors($raw_value)
     {
         // Reset if called earlier, last call wins by intention.
         $this->extendArgs = array();
@@ -308,7 +308,7 @@ class Rule implements \IteratorAggregate
     }
 
     public $resolvedExtendables = false;
-    public function resolveExtendables ()
+    public function resolveExtendables()
     {
         if (! $this->extendArgs) {
 
@@ -340,7 +340,7 @@ class Rule implements \IteratorAggregate
         return true;
     }
 
-    public function applyExtendables ()
+    public function applyExtendables()
     {
         if (! $this->resolveExtendables()) {
 
@@ -381,7 +381,7 @@ class Rule implements \IteratorAggregate
     #############################
     #  Selectors.
 
-    public function expandSelectors ()
+    public function expandSelectors()
     {
         $new_set = array();
 
@@ -460,7 +460,7 @@ class Rule implements \IteratorAggregate
         $this->selectors = $new_set;
     }
 
-    public function addSelector ($selector)
+    public function addSelector($selector)
     {
         $this->selectors[$selector->readableValue] = $selector;
     }
@@ -469,7 +469,7 @@ class Rule implements \IteratorAggregate
     #############################
     #  Aliasing.
 
-    public function addPropertyAliases ()
+    public function addPropertyAliases()
     {
         $aliased_properties =& CssCrush::$process->aliases['properties'];
 
@@ -538,7 +538,7 @@ class Rule implements \IteratorAggregate
         }
     }
 
-    public function addFunctionAliases ()
+    public function addFunctionAliases()
     {
         $function_aliases =& CssCrush::$process->aliases['functions'];
         $function_alias_groups =& CssCrush::$process->aliases['function_groups'];
@@ -660,7 +660,7 @@ class Rule implements \IteratorAggregate
         }
     }
 
-    public function addDeclarationAliases ()
+    public function addDeclarationAliases()
     {
         $declaration_aliases =& CssCrush::$process->aliases['declarations'];
 
@@ -720,7 +720,7 @@ class Rule implements \IteratorAggregate
     #############################
     #  IteratorAggregate interface.
 
-    public function getIterator ()
+    public function getIterator()
     {
         return new \ArrayIterator($this->declarations);
     }
@@ -729,7 +729,7 @@ class Rule implements \IteratorAggregate
     #############################
     #  Property indexing.
 
-    public function indexProperty ($declaration)
+    public function indexProperty($declaration)
     {
         $prop = $declaration->property;
 
@@ -742,7 +742,7 @@ class Rule implements \IteratorAggregate
         $this->canonicalProperties[$declaration->canonicalProperty] = true;
     }
 
-    public function updatePropertyIndex ()
+    public function updatePropertyIndex()
     {
         // Reset tables.
         $this->properties = array();
@@ -757,12 +757,12 @@ class Rule implements \IteratorAggregate
     #############################
     #  Rule API.
 
-    public function propertyCount ($prop)
+    public function propertyCount($prop)
     {
         return isset($this->properties[$prop]) ? $this->properties[$prop] : 0;
     }
 
-    public function addDeclaration ($prop, $value, $contextIndex = 0)
+    public function addDeclaration($prop, $value, $contextIndex = 0)
     {
         // Create declaration, add to the stack if it's valid
         $declaration = new Declaration($prop, $value, $contextIndex);
@@ -777,7 +777,7 @@ class Rule implements \IteratorAggregate
         return false;
     }
 
-    public function setDeclarations (array $declaration_stack)
+    public function setDeclarations(array $declaration_stack)
     {
         $this->declarations = $declaration_stack;
 
@@ -785,7 +785,7 @@ class Rule implements \IteratorAggregate
         $this->updatePropertyIndex();
     }
 
-    public static function parseBlock ($str, $options = array())
+    public static function parseBlock($str, $options = array())
     {
         $str = Util::stripCommentTokens($str);
         $lines = preg_split('~\s*;\s*~', $str, null, PREG_SPLIT_NO_EMPTY);

@@ -34,7 +34,7 @@ namespace CssCrush {
     ));
 
 
-    function property_sorter (Rule $rule) {
+    function property_sorter(Rule $rule) {
 
         $new_set = array();
 
@@ -52,7 +52,7 @@ namespace CssCrush {
     /*
         Callback for sorting.
     */
-    function property_sorter_callback ($a, $b) {
+    function property_sorter_callback($a, $b) {
 
         $map =& property_sorter_get_table();
         $a_prop =& $a->canonicalProperty;
@@ -177,7 +177,7 @@ namespace {
     /*
         Get the current sorting table.
     */
-    function csscrush_get_property_sort_order () {
+    function csscrush_get_property_sort_order() {
         CssCrush\property_sorter_get_table();
         return $GLOBALS['CSSCRUSH_PROPERTY_SORT_ORDER'];
     }
@@ -186,7 +186,7 @@ namespace {
     /*
         Set a custom sorting table.
     */
-    function csscrush_set_property_sort_order (array $new_order) {
+    function csscrush_set_property_sort_order(array $new_order) {
         unset($GLOBALS['CSSCRUSH_PROPERTY_SORT_ORDER_CACHE']);
         $GLOBALS['CSSCRUSH_PROPERTY_SORT_ORDER'] = $new_order;
     }

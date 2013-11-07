@@ -362,12 +362,12 @@ else {
 ##################################################################
 ##  Helpers.
 
-function stderr ($lines, $closing_newline = true) {
+function stderr($lines, $closing_newline = true) {
     $out = implode(PHP_EOL, (array) $lines) . ($closing_newline ? PHP_EOL : '');
     fwrite(STDERR, $out);
 }
 
-function stdout ($lines, $closing_newline = true) {
+function stdout($lines, $closing_newline = true) {
     $out = implode(PHP_EOL, (array) $lines) . ($closing_newline ? PHP_EOL : '');
 
     // On OSX terminal is sometimes truncating 'visual' output to terminal
@@ -375,7 +375,7 @@ function stdout ($lines, $closing_newline = true) {
     echo $out;
 }
 
-function get_stdin_contents () {
+function get_stdin_contents() {
     $stdin = fopen('php://stdin', 'r');
     stream_set_blocking($stdin, false);
     $stdin_contents = stream_get_contents($stdin);
@@ -384,7 +384,7 @@ function get_stdin_contents () {
     return $stdin_contents;
 }
 
-function parse_list (array $option) {
+function parse_list(array $option) {
 
     $out = array();
     foreach ($option as $arg) {
@@ -400,7 +400,7 @@ function parse_list (array $option) {
     return $out;
 }
 
-function format_stats ($stats) {
+function format_stats($stats) {
     $out = array();
     foreach ($stats as $name => $value) {
         if (is_scalar($value)) {
@@ -410,7 +410,7 @@ function format_stats ($stats) {
     return implode(PHP_EOL, $out);
 }
 
-function pick (array &$arr) {
+function pick(array &$arr) {
 
     $args = func_get_args();
     array_shift($args);
@@ -424,7 +424,7 @@ function pick (array &$arr) {
     return null;
 }
 
-function colorize ($str) {
+function colorize($str) {
 
     static $color_support;
     static $tags = array(
@@ -462,7 +462,7 @@ function colorize ($str) {
     return str_replace($find, $replace, $str);
 }
 
-function get_trailing_io_args () {
+function get_trailing_io_args() {
 
     $trailing_input_file = null;
     $trailing_output_file = null;
@@ -513,7 +513,7 @@ function get_trailing_io_args () {
     return array($trailing_input_file, $trailing_output_file);
 }
 
-function manpage () {
+function manpage() {
 
     $manpage = <<<TPL
 

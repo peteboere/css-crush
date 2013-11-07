@@ -10,13 +10,13 @@ class Fragment extends Template
 {
     public $name;
 
-    public function __construct ($str, $options = array())
+    public function __construct($str, $options = array())
     {
         parent::__construct($str, $options);
         $this->name = $options['name'];
     }
 
-    public function apply (array $args = null, $str = null)
+    public function apply(array $args = null, $str = null)
     {
         $str = parent::apply($args);
 

@@ -55,7 +55,7 @@ Plugin::register('legacy-flexbox', array(
 ));
 
 
-function legacy_flexbox (Rule $rule) {
+function legacy_flexbox(Rule $rule) {
 
     static $flex_related_props = array(
         'align-items' => true,
@@ -184,7 +184,7 @@ function legacy_flexbox (Rule $rule) {
 }
 
 
-function flex_direction ($value, &$stack) {
+function flex_direction($value, &$stack) {
 
     // flex-direction: row | row-reverse | column | column-reverse
     // box-orient:     horizontal | vertical | inline-axis | block-axis | inherit
@@ -225,7 +225,7 @@ function flex_direction ($value, &$stack) {
 }
 
 
-function flex_justify_content ($value, &$stack) {
+function flex_justify_content($value, &$stack) {
 
     // justify-content: flex-start | flex-end | center | space-between | space-around
     // box-pack:        start | end | center | justify
@@ -251,7 +251,7 @@ function flex_justify_content ($value, &$stack) {
 }
 
 
-function flex_align_items ($value, &$stack) {
+function flex_align_items($value, &$stack) {
 
     // align-items: flex-start | flex-end | center | baseline | stretch
     // box-align:   start | end | center | baseline | stretch
@@ -277,7 +277,7 @@ function flex_align_items ($value, &$stack) {
 }
 
 
-function flex_order ($value, &$stack) {
+function flex_order($value, &$stack) {
 
     // order:             <integer>
     // box-ordinal-group: <integer>
@@ -303,7 +303,7 @@ function flex_order ($value, &$stack) {
 }
 
 
-function flex_wrap ($value, &$stack) {
+function flex_wrap($value, &$stack) {
 
     // flex-wrap: nowrap | wrap | wrap-reverse
     // box-lines: single | multiple
@@ -328,7 +328,7 @@ function flex_wrap ($value, &$stack) {
 }
 
 
-function flex ($value, &$stack) {
+function flex($value, &$stack) {
 
     // flex:     none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ]
     // box-flex: <number>
@@ -363,7 +363,7 @@ function flex ($value, &$stack) {
 }
 
 
-function flex_grow ($value, &$stack) {
+function flex_grow($value, &$stack) {
 
     // flex-grow: <number>
     // box-flex:  <number>

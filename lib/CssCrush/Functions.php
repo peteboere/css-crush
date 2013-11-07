@@ -32,14 +32,14 @@ class Functions
         'a-adjust' => 'CssCrush\fn__a_adjust',
     );
 
-    public static function setMatchPatt ()
+    public static function setMatchPatt()
     {
         self::$functions = self::$builtinFunctions + self::$customFunctions;
         self::$functionPatt = Regex::makeFunctionPatt(
             array_keys(self::$functions), array('bare_paren' => true));
     }
 
-    public static function executeOnString ($str, $patt = null, $process_callback = null, \stdClass $context = null)
+    public static function executeOnString($str, $patt = null, $process_callback = null, \stdClass $context = null)
     {
         // No bracketed expressions, early return.
         if (strpos($str, '(') === false) {
@@ -117,17 +117,17 @@ class Functions
     #############################
     #  API and helpers.
 
-    public static function register ($name, $callback)
+    public static function register($name, $callback)
     {
         Functions::$customFunctions[ $name] = $callback;
     }
 
-    public static function deRegister ($name)
+    public static function deRegister($name)
     {
         unset(Functions::$customFunctions[$name]);
     }
 
-    public static function parseArgs ($input, $allowSpaceDelim = false)
+    public static function parseArgs($input, $allowSpaceDelim = false)
     {
         return Util::splitDelimList(
             $input, ($allowSpaceDelim ? '\s*[,\s]\s*' : ','));
@@ -135,7 +135,7 @@ class Functions
 
     // Intended as a quick arg-list parse for function that take up-to 2 arguments
     // with the proviso the first argument is an ident.
-    public static function parseArgsSimple ($input)
+    public static function parseArgsSimple($input)
     {
         return preg_split(Regex::$patt->argListSplit, $input, 2);
     }
@@ -145,7 +145,7 @@ class Functions
 #############################
 #  Stock CSS functions.
 
-function fn__math ($input) {
+function fn__math($input) {
 
     // Swap in math constants.
     $input = preg_replace(
@@ -161,7 +161,7 @@ function fn__math ($input) {
     return $result === false ? 0 : round($result, 5);
 }
 
-function fn__percent ($input) {
+function fn__percent($input) {
 
     // Strip non-numeric and non delimiter characters
     $input = preg_replace('~[^\d\.\s,]~S', '', $input);
@@ -203,37 +203,37 @@ function fn__percent ($input) {
     return $result . '%';
 }
 
-function fn__hsla_adjust ($input) {
+function fn__hsla_adjust($input) {
     list($color, $h, $s, $l, $a) = array_pad(Functions::parseArgs($input, true), 5, 0);
     return Color::colorAdjust($color, array($h, $s, $l, $a));
 }
 
-function fn__hsl_adjust ($input) {
+function fn__hsl_adjust($input) {
     list($color, $h, $s, $l) = array_pad(Functions::parseArgs($input, true), 4, 0);
     return Color::colorAdjust($color, array($h, $s, $l, 0));
 }
 
-function fn__h_adjust ($input) {
+function fn__h_adjust($input) {
     list($color, $h) = array_pad(Functions::parseArgs($input, true), 2, 0);
     return Color::colorAdjust($color, array($h, 0, 0, 0));
 }
 
-function fn__s_adjust ($input) {
+function fn__s_adjust($input) {
     list($color, $s) = array_pad(Functions::parseArgs($input, true), 2, 0);
     return Color::colorAdjust($color, array(0, $s, 0, 0));
 }
 
-function fn__l_adjust ($input) {
+function fn__l_adjust($input) {
     list($color, $l) = array_pad(Functions::parseArgs($input, true), 2, 0);
     return Color::colorAdjust($color, array(0, 0, $l, 0));
 }
 
-function fn__a_adjust ($input) {
+function fn__a_adjust($input) {
     list($color, $a) = array_pad(Functions::parseArgs($input, true), 2, 0);
     return Color::colorAdjust($color, array(0, 0, 0, $a));
 }
 
-function fn__this ($input, $context) {
+function fn__this($input, $context) {
 
     $args = Functions::parseArgsSimple($input);
     $property = $args[0];
@@ -260,7 +260,7 @@ function fn__this ($input, $context) {
     return '';
 }
 
-function fn__query ($input, $context) {
+function fn__query($input, $context) {
 
     $args = Functions::parseArgs($input);
 

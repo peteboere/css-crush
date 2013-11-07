@@ -8,29 +8,29 @@ namespace CssCrush;
 
 class Stream
 {
-    public function __construct ($str)
+    public function __construct($str)
     {
         $this->raw = $str;
     }
 
-    public function __toString ()
+    public function __toString()
     {
         return $this->raw;
     }
 
-    public static function endsWith ($haystack, $needle)
+    public static function endsWith($haystack, $needle)
     {
         return substr($haystack, -strlen($needle)) === $needle;
     }
 
-    public function update ($str)
+    public function update($str)
     {
         $this->raw = $str;
 
         return $this;
     }
 
-    public function substr ($start, $length = null)
+    public function substr($start, $length = null)
     {
         if (! isset($length)) {
 
@@ -42,19 +42,19 @@ class Stream
         }
     }
 
-    public function matchAll ($patt, $offset = 0)
+    public function matchAll($patt, $offset = 0)
     {
         return Regex::matchAll($patt, $this->raw, $offset);
     }
 
-    public function replace ($find, $replacement)
+    public function replace($find, $replacement)
     {
         $this->raw = str_replace($find, $replacement, $this->raw);
 
         return $this;
     }
 
-    public function replaceHash ($replacements)
+    public function replaceHash($replacements)
     {
         if ($replacements) {
             $this->raw = str_replace(
@@ -65,7 +65,7 @@ class Stream
         return $this;
     }
 
-    public function replaceTokens ($type, $callback = null)
+    public function replaceTokens($type, $callback = null)
     {
         $tokens =& CssCrush::$process->tokens->store->{ $type };
         $callback = $callback ?: function ($m) use (&$tokens) {
@@ -76,19 +76,19 @@ class Stream
         return $this;
     }
 
-    public function pregReplace ($patt, $replacement)
+    public function pregReplace($patt, $replacement)
     {
         $this->raw = preg_replace($patt, $replacement, $this->raw);
         return $this;
     }
 
-    public function pregReplaceCallback ($patt, $callback)
+    public function pregReplaceCallback($patt, $callback)
     {
         $this->raw = preg_replace_callback($patt, $callback, $this->raw);
         return $this;
     }
 
-    public function pregReplaceHash ($replacements)
+    public function pregReplaceHash($replacements)
     {
         if ($replacements) {
             $this->raw = preg_replace(
@@ -99,37 +99,37 @@ class Stream
         return $this;
     }
 
-    public function append ($append)
+    public function append($append)
     {
         $this->raw .= $append;
         return $this;
     }
 
-    public function prepend ($prepend)
+    public function prepend($prepend)
     {
         $this->raw = $prepend . $this->raw;
         return $this;
     }
 
-    public function splice ($replacement, $offset, $length = null)
+    public function splice($replacement, $offset, $length = null)
     {
         $this->raw = substr_replace($this->raw, $replacement, $offset, $length);
         return $this;
     }
 
-    public function trim ()
+    public function trim()
     {
         $this->raw = trim($this->raw);
         return $this;
     }
 
-    public function rTrim ()
+    public function rTrim()
     {
         $this->raw = rtrim($this->raw);
         return $this;
     }
 
-    public function lTrim ()
+    public function lTrim()
     {
         $this->raw = ltrim($this->raw);
         return $this;

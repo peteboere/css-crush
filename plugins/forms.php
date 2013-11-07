@@ -30,7 +30,7 @@ Plugin::register('forms', array(
 ));
 
 
-function forms () {
+function forms() {
     return array(
         'input' => function ($args) {
             $types = array();

@@ -20,7 +20,7 @@ class CssCrush
     public static $dir;
 
     // Init called once manually post class definition.
-    public static function init ()
+    public static function init()
     {
         self::$dir = dirname(dirname(__DIR__));
 
@@ -77,7 +77,7 @@ class CssCrush
         require_once self::$dir . '/misc/formatters.php';
     }
 
-    static protected function resolveDocRoot ($doc_root = null)
+    static protected function resolveDocRoot($doc_root = null)
     {
         // Get document_root reference
         // $_SERVER['DOCUMENT_ROOT'] is unreliable in certain CGI/Apache/IIS setups
@@ -115,7 +115,7 @@ class CssCrush
         return Util::normalizePath($doc_root);
     }
 
-    public static function loadAssets ()
+    public static function loadAssets()
     {
         static $called;
         if ($called) {
@@ -129,7 +129,7 @@ class CssCrush
         }
     }
 
-    public static function parseAliasesFile ($file)
+    public static function parseAliasesFile($file)
     {
         $tree = @parse_ini_file($file, true);
 
@@ -211,7 +211,7 @@ class CssCrush
      * @param mixed $options  An array of options or null.
      * @return string  The public path to the compiled file or an empty string.
      */
-    public static function file ($file, $options = null)
+    public static function file($file, $options = null)
     {
         self::$process = new Process($options);
 
@@ -258,7 +258,7 @@ class CssCrush
      * @param array $attributes  An array of HTML attributes.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    public static function tag ($file, $options = null, $tag_attributes = array())
+    public static function tag($file, $options = null, $tag_attributes = array())
     {
         $file = self::file($file, $options);
 
@@ -289,7 +289,7 @@ class CssCrush
      * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    public static function inline ($file, $options = null, $tag_attributes = array())
+    public static function inline($file, $options = null, $tag_attributes = array())
     {
         // For inline output set boilerplate to not display by default
         if (! is_array($options)) {
@@ -331,7 +331,7 @@ class CssCrush
      * @param mixed $options  An array of options or null.
      * @return string  CSS text.
      */
-    public static function string ($string, $options = null)
+    public static function string($string, $options = null)
     {
         // For strings set boilerplate to not display by default
         if (! isset($options['boilerplate'])) {
@@ -367,7 +367,7 @@ class CssCrush
     /**
      * Get debug info.
      */
-    public static function stat ()
+    public static function stat()
     {
         $process = CssCrush::$process;
         $stats = $process->stat;
@@ -385,12 +385,12 @@ class CssCrush
     #############################
     #  Global selector aliases.
 
-    public static function addSelectorAlias ($name, $body)
+    public static function addSelectorAlias($name, $body)
     {
         CssCrush::$config->selectorAliases[$name] = is_callable($body) ? $body : new Template($body);
     }
 
-    public static function removeSelectorAlias ($name)
+    public static function removeSelectorAlias($name)
     {
         unset(CssCrush::$config->selectorAliases[$name]);
     }
@@ -399,7 +399,7 @@ class CssCrush
     #############################
     #  Logging and stats.
 
-    public static function printLog ()
+    public static function printLog()
     {
         if (! empty(self::$process->debugLog)) {
 
@@ -416,7 +416,7 @@ class CssCrush
         }
     }
 
-    public static function runStat ()
+    public static function runStat()
     {
         $process = CssCrush::$process;
         $all_rules =& $process->tokens->store->r;

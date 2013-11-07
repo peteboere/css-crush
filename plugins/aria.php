@@ -35,7 +35,7 @@ Plugin::register('aria', array(
 ));
 
 
-function aria () {
+function aria() {
 
     static $aria, $optional_value;
     if (! $aria) {

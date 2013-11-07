@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class Process
 {
-    public function __construct ($options)
+    public function __construct($options)
     {
         $config = CssCrush::$config;
 
@@ -72,7 +72,7 @@ class Process
         Hook::run('process_init');
     }
 
-    public function release ()
+    public function release()
     {
         unset(
             $this->tokens,
@@ -86,7 +86,7 @@ class Process
         );
     }
 
-    public function resolveContext ($input_dir, $input_file = null)
+    public function resolveContext($input_dir, $input_file = null)
     {
         if ($input_file) {
             $this->ioContext = 'file';
@@ -117,7 +117,7 @@ class Process
         return $context_resolved;
     }
 
-    public function io ($method)
+    public function io($method)
     {
         // Get argument list (excluding the method name which comes first).
         $args = func_get_args();
@@ -130,7 +130,7 @@ class Process
     #############################
     #  Boilerplate.
 
-    protected function getBoilerplate ()
+    protected function getBoilerplate()
     {
         $file = false;
         $boilerplate_option = $this->options->boilerplate;
@@ -198,7 +198,7 @@ class Process
     #############################
     #  Selector aliases.
 
-    protected function resolveSelectorAliases ()
+    protected function resolveSelectorAliases()
     {
         $this->stream->pregReplaceCallback(
             Regex::make('~@selector-alias +\:?({{ident}}) +([^;]+) *;~iS'),
@@ -218,7 +218,7 @@ class Process
         }
     }
 
-    public static function applySelectorAliases (&$str)
+    public static function applySelectorAliases(&$str)
     {
         $process = CssCrush::$process;
 
@@ -275,7 +275,7 @@ class Process
     #############################
     #  Aliases.
 
-    protected function filterAliases ()
+    protected function filterAliases()
     {
         // If a vendor target is given, we prune the aliases array.
         $vendors = $this->options->vendor_target;
@@ -375,7 +375,7 @@ class Process
     #############################
     #  Plugins.
 
-    protected function filterPlugins ()
+    protected function filterPlugins()
     {
         $options = $this->options;
         $config = CssCrush::$config;
@@ -414,7 +414,7 @@ class Process
     #############################
     #  Variables.
 
-    protected function captureVars ()
+    protected function captureVars()
     {
         $vars_patt = Regex::make('~
             @define
@@ -450,7 +450,7 @@ class Process
         }
     }
 
-    protected function placeAllVars ()
+    protected function placeAllVars()
     {
         // Place variables in main stream.
         self::placeVars($this->stream->raw);
@@ -471,7 +471,7 @@ class Process
         }
     }
 
-    static protected function placeVars (&$value)
+    static protected function placeVars(&$value)
     {
         // Variables with no default value.
         $value = preg_replace_callback(Regex::$patt->varFunction,
@@ -500,7 +500,7 @@ class Process
         return $vars_placed;
     }
 
-    static protected function cb_placeVars ($m)
+    static protected function cb_placeVars($m)
     {
         $var_name = $m[1];
         if (isset(CssCrush::$process->vars[$var_name])) {
@@ -512,7 +512,7 @@ class Process
     #############################
     #  @ifdefine blocks.
 
-    protected function resolveIfDefines ()
+    protected function resolveIfDefines()
     {
         $matches = $this->stream->matchAll(Regex::$patt->ifDefine);
 
@@ -545,7 +545,7 @@ class Process
     #############################
     #  Mixins.
 
-    protected function captureMixins ()
+    protected function captureMixins()
     {
         $this->stream->pregReplaceCallback(Regex::$patt->mixin, function ($m) {
             CssCrush::$process->mixins[$m['name']] = new Mixin($m['block_content']);
@@ -556,7 +556,7 @@ class Process
     #############################
     #  Fragments.
 
-    protected function resolveFragments ()
+    protected function resolveFragments()
     {
         $fragments =& CssCrush::$process->fragments;
 
@@ -585,7 +585,7 @@ class Process
     #############################
     #  Rules.
 
-    public function captureRules ()
+    public function captureRules()
     {
         $this->stream->pregReplaceCallback(Regex::$patt->rule, function ($m) {
 
@@ -610,7 +610,7 @@ class Process
         });
     }
 
-    protected function processRules ()
+    protected function processRules()
     {
         // Create table of name/selector to rule references.
         $named_references = array();
@@ -658,7 +658,7 @@ class Process
     #############################
     #  @in blocks.
 
-    protected function resolveInBlocks ()
+    protected function resolveInBlocks()
     {
         $matches = $this->stream->matchAll('~@in\s+([^{]+)\{~iS');
         $tokens = CssCrush::$process->tokens;
@@ -736,7 +736,7 @@ class Process
     #############################
     #  @-rule aliasing.
 
-    protected function aliasAtRules ()
+    protected function aliasAtRules()
     {
         if (empty($this->aliases['at-rules'])) {
 
@@ -813,7 +813,7 @@ class Process
     #############################
     #  Compile / collate.
 
-    protected function collate ()
+    protected function collate()
     {
         $options = $this->options;
         $minify = $options->minify;
@@ -922,7 +922,7 @@ class Process
         }
     }
 
-    public function compile ()
+    public function compile()
     {
         // Always store start time.
         $this->stat['compile_start_time'] = microtime(true);
@@ -989,7 +989,7 @@ class Process
     #############################
     #  Source maps.
 
-    public function generateSourceMap ()
+    public function generateSourceMap()
     {
         $this->sourceMap = array(
             'version' => '3',
@@ -1044,7 +1044,7 @@ class Process
         $this->sourceMap['mappings'] = implode(';', $mappings);
     }
 
-    public function generateTracingStub ($m)
+    public function generateTracingStub($m)
     {
         $token = $m[0];
         $tokens =& $this->tokens->store->t;
@@ -1073,7 +1073,7 @@ class Process
     #############################
     #  Decruft.
 
-    protected function decruft ()
+    protected function decruft()
     {
         return $this->stream->pregReplaceHash(array(
 
@@ -1102,7 +1102,7 @@ class Process
     #############################
     #  Advanced minification.
 
-    protected function minifyColors ()
+    protected function minifyColors()
     {
         static $keywords_patt, $functions_patt;
 

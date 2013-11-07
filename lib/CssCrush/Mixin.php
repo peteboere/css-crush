@@ -10,12 +10,12 @@ class Mixin
 {
     public $template;
 
-    public function __construct ($block)
+    public function __construct($block)
     {
         $this->template = new Template($block);
     }
 
-    public static function call ($message, $context = null)
+    public static function call($message, $context = null)
     {
         $process = CssCrush::$process;
         $mixable = null;
@@ -85,7 +85,7 @@ class Mixin
         }
     }
 
-    public static function merge (array $input, $message_list, $options = array())
+    public static function merge(array $input, $message_list, $options = array())
     {
         $context = isset($options['context']) ? $options['context'] : null;
 

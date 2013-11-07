@@ -16,7 +16,7 @@ class Regex
 
     public static $swaps = array();
 
-    public static function init ()
+    public static function init()
     {
         self::$patt = $patt = new \stdClass();
         self::$classes = $classes = new \stdClass();
@@ -120,7 +120,7 @@ class Regex
         $patt->cruftyHex = Regex::make('~\#({{hex}})\1({{hex}})\2({{hex}})\3~S');
     }
 
-    public static function make ($pattern)
+    public static function make($pattern)
     {
         static $cache = array(), $find, $replace;
         if (isset($cache[$pattern])) {
@@ -135,14 +135,14 @@ class Regex
         return $cache[$pattern] = str_replace($find, $replace, $pattern);
     }
 
-    public static function matchAll ($patt, $subject, $offset = 0)
+    public static function matchAll($patt, $subject, $offset = 0)
     {
         $count = preg_match_all($patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset);
 
         return $count ? $matches : array();
     }
 
-    public static function makeFunctionPatt ($list, $options = array())
+    public static function makeFunctionPatt($list, $options = array())
     {
         // Bare parens.
         $question = '';

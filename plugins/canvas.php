@@ -65,7 +65,7 @@ Plugin::register('canvas', array(
 ));
 
 
-function canvas_capture ($process) {
+function canvas_capture($process) {
 
     // Extract definitions.
     $process->stream->pregReplaceCallback(
@@ -80,7 +80,7 @@ function canvas_capture ($process) {
         });
 }
 
-function canvas_generator ($input, $context) {
+function canvas_generator($input, $context) {
 
     $process = CssCrush::$process;
     $logger = CssCrush::$config->logger;
@@ -263,7 +263,7 @@ function canvas_generator ($input, $context) {
 }
 
 
-function canvas_fn_linear_gradient ($input, $context) {
+function canvas_fn_linear_gradient($input, $context) {
 
     $args = Functions::parseArgs($input) + array(
         'white', 'black',
@@ -308,7 +308,7 @@ function canvas_fn_linear_gradient ($input, $context) {
     $context->canvas->fills[$context->currentProperty] = $fill;
 }
 
-function canvas_fn_filter ($input, $context) {
+function canvas_fn_filter($input, $context) {
 
     $args = Functions::parseArgs($input);
 
@@ -316,7 +316,7 @@ function canvas_fn_filter ($input, $context) {
 }
 
 
-function canvas_apply_filters ($canvas, $src) {
+function canvas_apply_filters($canvas, $src) {
 
     foreach ($canvas->filters as $filter) {
         list($name, $args) = $filter;
@@ -381,7 +381,7 @@ function canvas_apply_filters ($canvas, $src) {
     }
 }
 
-function canvas_apply_css_funcs ($canvas) {
+function canvas_apply_css_funcs($canvas) {
 
     // Setup functions for using on values.
     static $map;
@@ -446,7 +446,7 @@ function canvas_apply_css_funcs ($canvas) {
     }
 }
 
-function canvas_preprocess ($canvas) {
+function canvas_preprocess($canvas) {
 
     if (isset($canvas->raw['margin'])) {
 
@@ -485,7 +485,7 @@ function canvas_preprocess ($canvas) {
     $canvas->height = $canvas->raw['height'];
 }
 
-function canvas_fetch_src ($url_token) {
+function canvas_fetch_src($url_token) {
 
     if ($url_token && $url = CssCrush::$process->tokens->get($url_token)) {
 
@@ -531,7 +531,7 @@ function canvas_fetch_src ($url_token) {
     Adapted from GD Gradient Fill by Ozh (http://planetozh.com):
     http://planetozh.com/blog/my-projects/images-php-gd-gradient-fill
 */
-function canvas_gradient ($canvas, $fill) {
+function canvas_gradient($canvas, $fill) {
 
     $image = $canvas->image;
 
@@ -586,7 +586,7 @@ function canvas_gradient ($canvas, $fill) {
     }
 }
 
-function canvas_create ($canvas) {
+function canvas_create($canvas) {
 
     $margin = $canvas->margin;
     $width = $canvas->width + $margin->right + $margin->left;
@@ -596,7 +596,7 @@ function canvas_create ($canvas) {
     $canvas->image = canvas_create_transparent($width, $height);
 }
 
-function canvas_create_transparent ($width, $height) {
+function canvas_create_transparent($width, $height) {
 
     $image = imagecreatetruecolor($width, $height);
 
@@ -608,7 +608,7 @@ function canvas_create_transparent ($width, $height) {
     return $image;
 }
 
-function canvas_fade ($src, $opacity) {
+function canvas_fade($src, $opacity) {
 
     $width = imagesx($src->image);
     $height = imagesy($src->image);
@@ -629,7 +629,7 @@ function canvas_fade ($src, $opacity) {
 }
 
 
-function canvas_fill ($canvas, $property) {
+function canvas_fill($canvas, $property) {
 
     if (! isset($canvas->fills[$property])) {
         return false;
@@ -661,7 +661,7 @@ function canvas_fill ($canvas, $property) {
     }
 }
 
-function canvas_set_fill_dims ($fill, $canvas) {
+function canvas_set_fill_dims($fill, $canvas) {
 
     // Resolve fill dimensions and coordinates.
     $margin = $canvas->margin;
@@ -679,7 +679,7 @@ function canvas_set_fill_dims ($fill, $canvas) {
     }
 }
 
-function canvas_requirements () {
+function canvas_requirements() {
 
     $requirements_met = true;
 
@@ -708,7 +708,7 @@ class Canvas
 {
     public $image, $fills = array(), $filters = array();
 
-    public function __destruct ()
+    public function __destruct()
     {
         if (isset($this->image)) {
             imagedestroy($this->image);
@@ -719,11 +719,11 @@ class Canvas
 /*
     Helpers.
 */
-function canvas_opacity ($float) {
+function canvas_opacity($float) {
     return 127 - max(min(round($float * 127), 127), 0);
 }
 
-function canvas_parselist ($str, $numbers = true) {
+function canvas_parselist($str, $numbers = true) {
     $list = preg_split('~ +~', trim($str));
     return $numbers ? array_map('floatval', $list) : $list;
 }

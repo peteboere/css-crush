@@ -17,7 +17,7 @@ class Declaration
     public $skip;
     public $important;
 
-    public function __construct ($prop, $value, $contextIndex = 0)
+    public function __construct($prop, $value, $contextIndex = 0)
     {
         $regex = Regex::$patt;
 
@@ -70,7 +70,7 @@ class Declaration
         $this->important         = $important;
     }
 
-    public function __toString ()
+    public function __toString()
     {
         if (CssCrush::$process->minifyOutput) {
             $whitespace = '';
@@ -88,7 +88,7 @@ class Declaration
         Capture parens.
         Index functions.
     */
-    public function process ($parent_rule)
+    public function process($parent_rule)
     {
         // Apply custom functions.
         if (! $this->skip) {
@@ -139,7 +139,7 @@ class Declaration
         $this->indexFunctions();
     }
 
-    public function indexFunctions ()
+    public function indexFunctions()
     {
         // Create an index of all regular functions in the value.
         $functions = array();
@@ -151,7 +151,7 @@ class Declaration
         $this->functions = $functions;
     }
 
-    public function getFullValue ()
+    public function getFullValue()
     {
         return CssCrush::$process->tokens->restore($this->value, 'p');
     }

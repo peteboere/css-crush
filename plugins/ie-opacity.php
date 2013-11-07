@@ -23,7 +23,7 @@ Plugin::register('ie-opacity', array(
 ));
 
 
-function ie_opacity (Rule $rule) {
+function ie_opacity(Rule $rule) {
 
     if ($rule->propertyCount('opacity') < 1) {
         return;

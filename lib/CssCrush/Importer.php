@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class Importer
 {
-    public static function hostfile ()
+    public static function hostfile()
     {
         $config = CssCrush::$config;
         $process = CssCrush::$process;
@@ -146,7 +146,7 @@ class Importer
         return $str;
     }
 
-    static protected function rewriteImportedUrls ($import)
+    static protected function rewriteImportedUrls($import)
     {
         $link = Util::getLinkBetweenPaths(
             CssCrush::$process->input->dir, dirname($import->path));
@@ -170,7 +170,7 @@ class Importer
         }
     }
 
-    static protected function prepareForStream (&$str)
+    static protected function prepareForStream(&$str)
     {
         $regex = Regex::$patt;
         $process = CssCrush::$process;
@@ -211,7 +211,7 @@ class Importer
         return true;
     }
 
-    static protected function checkSyntax (&$str)
+    static protected function checkSyntax(&$str)
     {
         // Catch obvious typing errors.
         $errors = false;
@@ -273,7 +273,7 @@ class Importer
         return $errors ? false : true;
     }
 
-    static protected function addMarkers (&$str)
+    static protected function addMarkers(&$str)
     {
         $process = CssCrush::$process;
         $current_file_index = count($process->sources) -1;
@@ -305,7 +305,7 @@ class Importer
         }
     }
 
-    static protected function captureCommentAndString ($str)
+    static protected function captureCommentAndString($str)
     {
         $callback = function ($m) {
 

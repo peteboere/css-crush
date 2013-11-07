@@ -12,7 +12,7 @@ CssCrush::$config->formatters = array(
     'block' => 'CssCrush\fmtr_block',
 );
 
-function fmtr_single ($rule) {
+function fmtr_single($rule) {
 
     $EOL = CssCrush::$process->newline;
 
@@ -21,7 +21,7 @@ function fmtr_single ($rule) {
     return "$selectors { $block; }$EOL";
 }
 
-function fmtr_padded ($rule, $padding = 40) {
+function fmtr_padded($rule, $padding = 40) {
 
     $EOL = CssCrush::$process->newline;
 
@@ -38,7 +38,7 @@ function fmtr_padded ($rule, $padding = 40) {
     }
 }
 
-function fmtr_block ($rule, $indent = '    ') {
+function fmtr_block($rule, $indent = '    ') {
 
     $EOL = CssCrush::$process->newline;
 

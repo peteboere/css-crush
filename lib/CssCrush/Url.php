@@ -20,7 +20,7 @@ class Url
     public $value;
     public $label;
 
-    public function __construct ($raw_value, $options = array())
+    public function __construct($raw_value, $options = array())
     {
         $standalone = ! empty($options['standalone']);
         if (! $standalone) {
@@ -39,7 +39,7 @@ class Url
         $this->evaluate();
     }
 
-    public function __toString ()
+    public function __toString()
     {
         if ($this->convertToData) {
             $this->toData();
@@ -58,14 +58,14 @@ class Url
         return "url($quote$this->value$quote)";
     }
 
-    public function update ($new_value)
+    public function update($new_value)
     {
         $this->value = $new_value;
 
         return $this->evaluate();
     }
 
-    public function evaluate ()
+    public function evaluate()
     {
         // Protocol or protocol-relative (//) based URL.
         if (preg_match('~^(?: (?<protocol>[a-z]+)\: | \/{2} )~ix', $this->value, $m)) {
@@ -102,7 +102,7 @@ class Url
         return $this;
     }
 
-    public function getAbsolutePath ()
+    public function getAbsolutePath()
     {
         $path = false;
         if ($this->protocol) {
@@ -115,7 +115,7 @@ class Url
         return $path;
     }
 
-    public function getOriginalValue ()
+    public function getOriginalValue()
     {
         // If a data URI we assume nothing useful can be achieved
         // by returning the original value so we just return the token label.
@@ -132,7 +132,7 @@ class Url
         return "$function($this->value)";
     }
 
-    public function prepend ($path_fragment)
+    public function prepend($path_fragment)
     {
         if ($this->isRelative) {
             $this->value = $path_fragment . $this->value;
@@ -141,7 +141,7 @@ class Url
         return $this;
     }
 
-    public function toRoot ()
+    public function toRoot()
     {
         if ($this->isRelative) {
             $this->prepend(CssCrush::$process->input->dirUrl . '/');
@@ -151,7 +151,7 @@ class Url
         return $this;
     }
 
-    public function toData ()
+    public function toData()
     {
         // Only make one conversion attempt.
         $this->convertToData = false;
@@ -192,7 +192,7 @@ class Url
         return $this;
     }
 
-    public function setType ($type = 'absolute')
+    public function setType($type = 'absolute')
     {
         $this->isAbsolute = false;
         $this->isRooted = false;
@@ -218,7 +218,7 @@ class Url
         return $this;
     }
 
-    public function simplify ()
+    public function simplify()
     {
         if ($this->isRelative || $this->isRooted) {
             $this->value = Util::simplifyPath($this->value);

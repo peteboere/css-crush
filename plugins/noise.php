@@ -102,7 +102,7 @@ Plugin::register('noise', array(
 ));
 
 
-function noise_generator ($input, $defaults) {
+function noise_generator($input, $defaults) {
 
     $args = array_pad(Functions::parseArgs($input), 4, 'default');
 

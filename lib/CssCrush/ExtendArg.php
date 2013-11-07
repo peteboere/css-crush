@@ -12,7 +12,7 @@ class ExtendArg
     public $name;
     public $pseudo;
 
-    public function __construct ($name)
+    public function __construct($name)
     {
         $this->name = $name;
 

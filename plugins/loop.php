@@ -66,7 +66,7 @@ define('CssCrush\LOOP_PATT',
     Regex::make('~(?<expression> @for \s+ (?<var>{{ident}}) \s+ in \s+ (?<list>[^{]+) ) \s* {{block}}~xiS'));
 
 
-function loop () {
+function loop() {
 
     CssCrush::$process->stream->pregReplaceCallback(LOOP_PATT, function ($m) {
 
@@ -74,7 +74,7 @@ function loop () {
     });
 }
 
-function loop_unroll ($str, $context = array()) {
+function loop_unroll($str, $context = array()) {
 
     $str = loop_apply_scope($str, $context);
 
@@ -98,7 +98,7 @@ function loop_unroll ($str, $context = array()) {
     return $str;
 }
 
-function loop_resolve_list ($list_text) {
+function loop_resolve_list($list_text) {
 
     // Resolve the list of items for iteration.
     // Either a generator function or a plain list.
@@ -128,7 +128,7 @@ function loop_resolve_list ($list_text) {
     return $items;
 }
 
-function loop_apply_scope ($str, $context) {
+function loop_apply_scope($str, $context) {
 
     // Need to temporarily hide child block scopes.
     $child_scopes = array();
@@ -153,7 +153,7 @@ function loop_apply_scope ($str, $context) {
     return str_replace(array_keys($child_scopes), array_values($child_scopes), $str);
 }
 
-function loop_color_range () {
+function loop_color_range() {
 
     $args = func_get_args();
 

@@ -13,7 +13,7 @@ class Watch extends IO
 {
     public static $cacheData = array();
 
-    public static function getOutputFileName ()
+    public static function getOutputFileName()
     {
         $process = CssCrush::$process;
         $options = $process->options;
@@ -32,7 +32,7 @@ class Watch extends IO
         return "$output_basename$suffix.css";
     }
 
-    public static function getCacheData ()
+    public static function getCacheData()
     {
         // Clear results from earlier processes.
         clearstatcache();
@@ -41,7 +41,7 @@ class Watch extends IO
         return self::$cacheData;
     }
 
-    public static function saveCacheData ()
+    public static function saveCacheData()
     {
         self::$cacheData = CssCrush::$process->cacheData;
     }
