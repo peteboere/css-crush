@@ -16,6 +16,7 @@ class Declaration
     public $index;
     public $skip;
     public $important;
+    public $inValid = false;
 
     public function __construct($prop, $value, $contextIndex = 0)
     {

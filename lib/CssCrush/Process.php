@@ -8,14 +8,18 @@ namespace CssCrush;
 
 class Process
 {
-    public function __construct($options)
+    public function __construct($user_options = array(), $dev_options = array())
     {
         $config = CssCrush::$config;
 
         CssCrush::loadAssets();
 
+        $dev_options += array(
+            'io_context' => 'filter'
+        );
+
         // Create options instance for this process.
-        $this->options = new Options($options);
+        $this->options = new Options($user_options);
 
         // Populate option defaults.
         $this->options->merge($config->options);
@@ -48,10 +52,18 @@ class Process
         $this->errors = array();
         $this->stat = array();
 
+        // Copy config values.
         $this->plugins = $config->plugins;
         $this->aliases = $config->aliases;
 
         $this->docRoot = isset($this->options->doc_root) ? $this->options->doc_root : $config->docRoot;
+        $this->ioContext = $dev_options['io_context'];
+
+        // Shortcut commonly used options to avoid overhead with __get calls.
+        $this->minifyOutput = $this->options->minify;
+        $this->addTracingStubs = in_array('stubs', $this->options->trace);
+        $this->generateMap = $this->ioContext === 'file' && $this->options->source_map;
+        $this->ruleFormatter = $this->options->formatter;
 
         // Shortcut the newline option and attach it to the process.
         switch ($this->options->newlines) {
@@ -89,13 +101,11 @@ class Process
     public function resolveContext($input_dir, $input_file = null)
     {
         if ($input_file) {
-            $this->ioContext = 'file';
             $this->input->path = $input_file;
             $this->input->filename = basename($input_file);
             $this->input->mtime = filemtime($input_file);
         }
         else {
-            $this->ioContext = 'filter';
             $this->input->path = null;
             $this->input->filename = null;
         }
@@ -922,11 +932,8 @@ class Process
         }
     }
 
-    public function compile()
+    public function prepare()
     {
-        // Always store start time.
-        $this->stat['compile_start_time'] = microtime(true);
-
         // Ensure relevant ini settings aren't too conservative.
         if (ini_get('pcre.backtrack_limit') < 1000000) {
             ini_set('pcre.backtrack_limit', 1000000);
@@ -935,16 +942,19 @@ class Process
             ini_set('memory_limit', '128M');
         }
 
-        // Shortcut commonly used options during compilation to avoid overhead with __get calls.
-        $this->minifyOutput = $this->options->minify;
-        $this->addTracingStubs = in_array('stubs', $this->options->trace);
-        $this->generateMap = $this->ioContext === 'file' && $this->options->source_map;
-        $this->ruleFormatter = $this->options->formatter;
-
+        Hook::reset();
         $this->filterPlugins();
         $this->filterAliases();
 
         Functions::setMatchPatt();
+    }
+
+    public function compile()
+    {
+        // Always store start time.
+        $this->stat['compile_start_time'] = microtime(true);
+
+        $this->prepare();
 
         // Collate hostfile and imports.
         $this->stream = new Stream(Importer::hostfile($this->input));

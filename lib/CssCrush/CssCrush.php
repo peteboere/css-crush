@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class CssCrush
 {
-    const VERSION = '2.0.0';
+    const VERSION = '2.0.1';
 
     // Global settings.
     public static $config;
@@ -213,7 +213,7 @@ class CssCrush
      */
     public static function file($file, $options = null)
     {
-        self::$process = new Process($options);
+        self::$process = new Process($options, array('io_context' => 'file'));
 
         $config = self::$config;
         $process = self::$process;
@@ -338,7 +338,7 @@ class CssCrush
             $options['boilerplate'] = false;
         }
 
-        self::$process = new Process($options);
+        self::$process = new Process($options, array('io_context' => 'filter'));
 
         $config = self::$config;
         $process = self::$process;

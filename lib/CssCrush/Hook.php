@@ -1,8 +1,8 @@
 <?php
 /**
- * 
+ *
  *  Access to the execution flow.
- * 
+ *
  */
 namespace CssCrush;
 
@@ -37,5 +37,10 @@ class Hook
                 call_user_func($fn_name, $arg_obj);
             }
         }
+    }
+
+    public static function reset()
+    {
+        self::$register = array();
     }
 }

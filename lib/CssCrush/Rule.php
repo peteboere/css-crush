@@ -40,7 +40,6 @@ class Rule implements \IteratorAggregate
 
         if (! empty(Hook::$register['rule_preprocess'])) {
             // Juggling to maintain the old API.
-            // TODO: rework this for 2.x?
             $rule = new \stdClass();
             $rule->selector_raw = $selector_string;
             $rule->declaration_raw = $declarations_string;

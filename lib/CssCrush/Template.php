@@ -31,37 +31,37 @@ class Template
 
         // Parse all arg function calls in the passed string,
         // callback creates default values.
+        $capture_callback = function ($str)
+        {
+            $args = Functions::parseArgsSimple($str);
+
+            $position = array_shift($args);
+
+            // Match the argument index integer.
+            if (! isset($position) || ! ctype_digit($position)) {
+
+                // On failure to match an integer return empty string.
+                return '';
+            }
+
+            // Store the default value.
+            $default_value = isset($args[0]) ? $args[0] : null;
+
+            if (isset($default_value)) {
+                $this->defaults[$position] = $default_value;
+            }
+
+            // Update the argument count.
+            $argNumber = ((int) $position) + 1;
+            $this->argCount = max($this->argCount, $argNumber);
+
+            return "?a$position?";
+        };
+
         $this->string = Functions::executeOnString($str, $arg_patt, array(
-                'arg' => array($this, 'capture'),
-                '#' => array($this, 'capture'),
+                'arg' => $capture_callback,
+                '#' => $capture_callback,
             ));
-    }
-
-    public function capture($str)
-    {
-        $args = Functions::parseArgsSimple($str);
-
-        $position = array_shift($args);
-
-        // Match the argument index integer.
-        if (! isset($position) || ! ctype_digit($position)) {
-
-            // On failure to match an integer return empty string.
-            return '';
-        }
-
-        // Store the default value.
-        $default_value = isset($args[0]) ? $args[0] : null;
-
-        if (isset($default_value)) {
-            $this->defaults[$position] = $default_value;
-        }
-
-        // Update the argument count.
-        $argNumber = ((int) $position) + 1;
-        $this->argCount = max($this->argCount, $argNumber);
-
-        return "?a$position?";
     }
 
     public function getArgValue($index, &$args)
@@ -110,11 +110,6 @@ class Template
         }
 
         return $substitutions;
-    }
-
-    public function reset()
-    {
-        unset($this->substitutions);
     }
 
     public function apply(array $args = null, $str = null)

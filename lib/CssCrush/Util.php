@@ -190,7 +190,7 @@ class Util
         return $link;
     }
 
-    public static function filePutContents($file, $str, $caller = null)
+    public static function filePutContents($file, $str)
     {
         if (@file_put_contents($file, $str, LOCK_EX)) {
 
