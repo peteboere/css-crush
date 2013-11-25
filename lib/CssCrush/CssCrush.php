@@ -361,7 +361,7 @@ class CssCrush
             $process->input->importIgnore = true;
         }
 
-        return $process->compile();
+        return $process->compile()->__toString();
     }
 
     /**
