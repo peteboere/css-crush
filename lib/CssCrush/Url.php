@@ -109,7 +109,7 @@ class Url
             $path = $this->value;
         }
         elseif ($this->isRelative || $this->isRooted) {
-            $path = CssCrush::$config->docRoot .
+            $path = CssCrush::$process->docRoot .
                 ($this->isRelative ? $this->toRoot()->simplify()->value : $this->value);
         }
         return $path;
