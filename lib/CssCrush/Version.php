@@ -8,28 +8,30 @@ namespace CssCrush;
 
 class Version
 {
-    public $major = 0;
-    public $minor = 0;
-    public $revision = 0;
+    public $major;
+    public $minor;
+    public $revision;
     public $extra;
 
     public function __construct($version_string)
     {
-        if (($hyphen_pos = strpos($version_string, '-' )) !== false) {
-            $this->extra = substr($version_string, $hyphen_pos + 1);
-            $version_string = substr($version_string, 0, $hyphen_pos);
-        }
+        // Ideally expecting `git describe --long` (e.g. v2.0.0-5-gb28cdb5)
+        // but also accepting simpler formats.
+        preg_match('~^
+                v?
+                (?<major>\d+)
+                (?:\.(?<minor>\d+))?
+                (?:\.(?<patch>\d+))?
+                (?:-(?<extra>.+))?
+            $~ix',
+            $version_string,
+            $version);
 
-        $parts = explode('.', $version_string);
-
-        if (! is_null($major = array_shift($parts))) {
-            $this->major = (int) $major;
-        }
-        if (! is_null($minor = array_shift($parts))) {
-            $this->minor = (int) $minor;
-        }
-        if (! is_null($revision = array_shift($parts))) {
-            $this->revision = (int) $revision;
+        if ($version) {
+            $this->major = (int) $version['major'];
+            $this->minor = isset($version['minor']) ? (int) $version['minor'] : 0;
+            $this->revision = isset($version['patch']) ? (int) $version['patch'] : 0;
+            $this->extra = isset($version['extra']) ? $version['extra'] : null;
         }
     }
 
@@ -71,5 +73,23 @@ class Version
         }
 
         return $EQUAL;
+    }
+
+    public static function gitDescribe()
+    {
+        static $attempted, $version;
+        if (! $attempted && file_exists(CssCrush::$dir . '/.git')) {
+            $attempted = true;
+            $command = 'cd ' . escapeshellarg(CssCrush::$dir) . ' && git describe --tag --long';
+            @exec($command, $lines);
+            if ($lines) {
+                $version = new Version(trim($lines[0]));
+                if (is_null($version->major)) {
+                    $version = null;
+                }
+            }
+        }
+
+        return $version;
     }
 }

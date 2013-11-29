@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class CssCrush
 {
-    const VERSION = '2.0.1';
+    const VERSION = '2.0.1-beta';
 
     // Global settings.
     public static $config;

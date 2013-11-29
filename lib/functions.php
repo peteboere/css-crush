@@ -26,7 +26,10 @@ function csscrush_stat() {
     return CssCrush::stat();
 }
 
-function csscrush_version() {
+function csscrush_version($use_git = false) {
+    if ($use_git && $version = \CssCrush\Version::gitDescribe()) {
+        return $version;
+    }
     return CssCrush::$config->version;
 }
 
