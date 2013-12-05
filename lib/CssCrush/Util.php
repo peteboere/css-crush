@@ -196,7 +196,7 @@ class Util
 
             return true;
         }
-        CssCrush::$config->logger->warning("[[CssCrush]] - Could not write file '$file'.");
+        warning("[[CssCrush]] - Could not write file '$file'.");
 
         return false;
     }

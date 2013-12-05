@@ -24,7 +24,7 @@ class BalancedMatch
 
         if (substr_count($stream->raw, $opener) !== substr_count($stream->raw, $closer)) {
             $sample = substr($stream->raw, $this->offset, 25);
-            CssCrush::$config->logger->warning("[[CssCrush]] - Unmatched token near '$sample'.");
+            warning("[[CssCrush]] - Unmatched token near '$sample'.");
 
             return;
         }
@@ -40,7 +40,7 @@ class BalancedMatch
             $this->length = $this->matchEnd - $this->offset;
         }
         else {
-            CssCrush::$config->logger->warning("[[CssCrush]] - Could not match '$opener'. Exiting.");
+            warning("[[CssCrush]] - Could not match '$opener'. Exiting.");
         }
     }
 

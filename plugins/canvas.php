@@ -145,7 +145,7 @@ function canvas_generator($input, $context) {
 
     // Apply functions.
     canvas_apply_css_funcs($canvas);
-    // $logger->debug($canvas);
+    // debug($canvas);
 
     // Create fingerprint for this canvas based on canvas object.
     $fingerprint = substr(md5(serialize($canvas)), 0, 7);
@@ -228,7 +228,7 @@ function canvas_generator($input, $context) {
         }
     }
     else {
-        // $logger->debug('file cached');
+        // debug('file cached');
     }
 
 
@@ -685,14 +685,14 @@ function canvas_requirements() {
 
     if (! extension_loaded('gd')) {
         $requirements_met = false;
-        CssCrush::$config->logger->warning('[[CssCrush]] - GD extension not available.');
+        warning('[[CssCrush]] - GD extension not available.');
     }
     else {
         $info = array_change_key_case(gd_info());
         foreach (array('png', 'jpeg') as $key) {
             if (empty($info["$key support"])) {
                 $requirements_met = false;
-                CssCrush::$config->logger->warning("[[CssCrush]] - GD extension has no $key support.");
+                warning("[[CssCrush]] - GD extension has no $key support.");
             }
         }
     }

@@ -108,7 +108,7 @@ class CssCrush
             }
 
             if (! $doc_root) {
-                CssCrush::$config->logger->warning("[[CssCrush]] - Could not get a valid DOCUMENT_ROOT reference.");
+                warning("[[CssCrush]] - Could not get a valid DOCUMENT_ROOT reference.");
             }
         }
 
@@ -134,7 +134,7 @@ class CssCrush
         $tree = @parse_ini_file($file, true);
 
         if ($tree === false) {
-            CssCrush::$config->logger->notice("[[CssCrush]] - Could not parse aliases file '$file'.");
+            notice("[[CssCrush]] - Could not parse aliases file '$file'.");
 
             return false;
         }
@@ -223,7 +223,7 @@ class CssCrush
         $process->input->raw = $file;
 
         if (! ($input_file = Util::resolveUserPath($file))) {
-            $config->logger->warning('[[CssCrush]] - Input file \'' . basename($file) . '\' not found.');
+            warning('[[CssCrush]] - Input file \'' . basename($file) . '\' not found.');
 
             return '';
         }

@@ -241,7 +241,7 @@ class Process
 
         while (preg_match_all($process->selectorAliasesPatt, $str, $m, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
 
-            $selector_alias_call = array_pop($m);
+            $selector_alias_call = end($m);
             $selector_alias_name = strtolower($selector_alias_call[1][0]);
 
             $start = $selector_alias_call[0][1];

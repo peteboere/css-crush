@@ -22,7 +22,6 @@ class Options
     public function __set($name, $value)
     {
         $config = CssCrush::$config;
-        $logger = $config->logger;
 
         switch ($name) {
 
@@ -71,13 +70,12 @@ class Options
             case 'output_dir':
             case 'asset_dir':
                 if (is_string($value)) {
-                    $value = Util::resolveUserPath($value, function ($path) use ($name, $logger) {
+                    $value = Util::resolveUserPath($value, function ($path) use ($name) {
                         if (! @mkdir($path)) {
-                            $logger->notice(
-                                "[[CssCrush]] - Could not create directory $path (setting `$name` option).");
+                            notice("[[CssCrush]] - Could not create directory $path (setting `$name` option).");
                         }
                         else {
-                            $logger->debug("Created directory $path (setting `$name` option).");
+                            debug("Created directory $path (setting `$name` option).");
                         }
                         return $path;
                     });
