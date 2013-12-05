@@ -393,7 +393,6 @@ class Rule implements \IteratorAggregate
         foreach ($this->selectors as $readableValue => $selector) {
 
             $pos = stripos($selector->value, ':any?');
-
             if ($pos !== false) {
 
                 // Contains an :any statement so expand.
@@ -416,7 +415,6 @@ class Rule implements \IteratorAggregate
                         $tmp = array();
                         foreach ($chain as $rowCopy) {
                             foreach ($parts as $part) {
-
                                 // Flatten nested :any() expressions in a hacky kind of way.
                                 if ($has_nesting) {
                                     $part = str_ireplace(':any(', '', $part);

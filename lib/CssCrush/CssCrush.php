@@ -456,4 +456,22 @@ class CssCrush
     }
 }
 
+
+function log($message, $context = array(), $type = 'debug') {
+    CssCrush::$config->logger->{$type}($message, $context);
+}
+
+function debug($message, $context = array()) {
+    CssCrush::$config->logger->debug($message, $context);
+}
+
+function notice($message, $context = array()) {
+    CssCrush::$config->logger->notice($message, $context);
+}
+
+function warning($message, $context = array()) {
+    CssCrush::$config->logger->warning($message, $context);
+}
+
+
 CssCrush::init();

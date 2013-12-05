@@ -43,8 +43,7 @@ function csscrush_set($object_name, $modifier) {
 
     if (in_array($object_name, array('options', 'config'))) {
 
-        $pointer = $object_name === 'options' ?
-            CssCrush::$config->options : CssCrush::$config;
+        $pointer = $object_name === 'options' ? CssCrush::$config->options : CssCrush::$config;
 
         if (is_callable($modifier)) {
             call_user_func($modifier, $pointer);
@@ -67,8 +66,7 @@ function csscrush_get($object_name, $property = null) {
 
     if (in_array($object_name, array('options', 'config'))) {
 
-        $pointer = $object_name === 'options' ?
-            CssCrush::$config->options : CssCrush::$config;
+        $pointer = $object_name === 'options' ? CssCrush::$config->options : CssCrush::$config;
 
         if (! isset($property)) {
 

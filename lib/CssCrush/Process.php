@@ -239,17 +239,10 @@ class Process
 
         $table =& $process->selectorAliases;
 
-        // Find all selector-alias matches.
-        $selector_alias_calls = Regex::matchAll($process->selectorAliasesPatt, $str);
+        while (preg_match_all($process->selectorAliasesPatt, $str, $m, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
 
-        // Step through the matches from last to first.
-        while ($selector_alias_call = array_pop($selector_alias_calls)) {
-
+            $selector_alias_call = array_pop($m);
             $selector_alias_name = strtolower($selector_alias_call[1][0]);
-
-            if (! isset($table[$selector_alias_name])) {
-                continue;
-            }
 
             $start = $selector_alias_call[0][1];
             $length = strlen($selector_alias_call[0][0]);
@@ -259,15 +252,14 @@ class Process
             if (isset($selector_alias_call[2])) {
 
                 // Parse argument list.
-                if (! preg_match(Regex::$patt->parens, $str, $parens, PREG_OFFSET_CAPTURE, $start)) {
-                    continue;
-                }
-                $args = Functions::parseArgs($parens[2][0]);
+                if (preg_match(Regex::$patt->parens, $str, $parens, PREG_OFFSET_CAPTURE, $start)) {
+                    $args = Functions::parseArgs($parens[2][0]);
 
-                // Amend offsets.
-                $paren_start = $parens[0][1];
-                $paren_len = strlen($parens[0][0]);
-                $length = ($paren_start + $paren_len) - $start;
+                    // Amend offsets.
+                    $paren_start = $parens[0][1];
+                    $paren_len = strlen($parens[0][0]);
+                    $length = ($paren_start + $paren_len) - $start;
+                }
             }
 
             // Resolve the selector alias value to a template instance if a callable is given.
