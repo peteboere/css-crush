@@ -219,9 +219,10 @@ class IO
     {
         $process = CssCrush::$process;
         $output = $process->output;
+        $source_map_filename = "$output->filename.map";
 
         if ($process->sourceMap) {
-            $stream->append($process->newline . "/*# sourceMappingURL=$source_map_filename.map */");
+            $stream->append($process->newline . "/*# sourceMappingURL=$source_map_filename */");
         }
 
         if (Util::filePutContents("$output->dir/$output->filename", $stream, __METHOD__)) {

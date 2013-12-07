@@ -727,7 +727,7 @@ class Process
                         }
                     }
                 }
-                $rule->selectors = $new_selector_list;
+                $rule->selectors->store = $new_selector_list;
             }
 
             $curly_match->unWrap();

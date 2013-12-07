@@ -15,7 +15,7 @@ class Rule implements \IteratorAggregate
     public $isAbstract;
     public $isFlat = true;
 
-    public $selectors = array();
+    public $selectors;
     public $extendSelectors = array();
     public $declarations = array();
 
@@ -37,6 +37,7 @@ class Rule implements \IteratorAggregate
         $process = CssCrush::$process;
         $this->label = $process->tokens->createLabel('r');
         $this->marker = $process->addTracingStubs || $process->generateMap ? $trace_token : null;
+        $this->selectors = new SelectorList();
 
         if (! empty(Hook::$register['rule_preprocess'])) {
             // Juggling to maintain the old API.
@@ -59,7 +60,8 @@ class Rule implements \IteratorAggregate
                 $this->isAbstract = true;
             }
             else {
-                $this->addSelector(new Selector($selector));
+                $this->selectors->push(new Selector($selector));
+                // $this->addSelector(new Selector($selector));
             }
         }
 
@@ -113,11 +115,11 @@ class Rule implements \IteratorAggregate
         $process = CssCrush::$process;
 
         // Merge the extend selectors.
-        $this->selectors += $this->extendSelectors;
+        $this->selectors->store += $this->extendSelectors;
 
         // If there are no selectors or declarations associated with the rule
         // return empty string.
-        if (empty($this->selectors) || empty($this->declarations)) {
+        if (empty($this->selectors->store) || empty($this->declarations)) {
 
             // De-reference this instance.
             $process->tokens->release($this->label);
@@ -128,7 +130,7 @@ class Rule implements \IteratorAggregate
 
         // Concat and return.
         if ($process->minifyOutput) {
-            $selectors = implode(',', $this->selectors);
+            $selectors = $this->selectors->join();
             $block = implode(';', $this->declarations);
             return "$stub$selectors{{$block}}";
         }
@@ -360,13 +362,13 @@ class Rule implements \IteratorAggregate
 
             $ancestor = $extend_arg->pointer;
 
-            $extend_selectors = $this->selectors;
+            $extend_selectors = $this->selectors->store;
 
             // If there is a pseudo class extension create a new set accordingly.
             if ($extend_arg->pseudo) {
 
                 $extend_selectors = array();
-                foreach ($this->selectors as $readable => $selector) {
+                foreach ($this->selectors->store as $readable => $selector) {
                     $new_selector = clone $selector;
                     $new_readable = $new_selector->appendPseudo($extend_arg->pseudo);
                     $extend_selectors[$new_readable] = $new_selector;
@@ -390,7 +392,7 @@ class Rule implements \IteratorAggregate
             $reg_comma = '~\s*,\s*~';
         }
 
-        foreach ($this->selectors as $readableValue => $selector) {
+        foreach ($this->selectors->store as $readableValue => $selector) {
 
             $pos = stripos($selector->value, ':any?');
             if ($pos !== false) {
@@ -454,12 +456,12 @@ class Rule implements \IteratorAggregate
 
         } // foreach
 
-        $this->selectors = $new_set;
+        $this->selectors->store = $new_set;
     }
 
     public function addSelector($selector)
     {
-        $this->selectors[$selector->readableValue] = $selector;
+        $this->selectors->store[$selector->readableValue] = $selector;
     }
 
 

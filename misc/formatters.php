@@ -16,7 +16,7 @@ function fmtr_single($rule) {
 
     $EOL = CssCrush::$process->newline;
 
-    $selectors = implode(", ", $rule->selectors);
+    $selectors = $rule->selectors->join(', ');
     $block = implode("; ", $rule->declarations);
     return "$selectors { $block; }$EOL";
 }
@@ -25,7 +25,7 @@ function fmtr_padded($rule, $padding = 40) {
 
     $EOL = CssCrush::$process->newline;
 
-    $selectors = implode(", ", $rule->selectors);
+    $selectors = $rule->selectors->join(', ');
     $block = implode("; ", $rule->declarations);
 
     if (strlen($selectors) > $padding) {
@@ -42,7 +42,7 @@ function fmtr_block($rule, $indent = '    ') {
 
     $EOL = CssCrush::$process->newline;
 
-    $selectors = implode(",$EOL", $rule->selectors);
+    $selectors = $rule->selectors->join(",$EOL");
     $block = implode(";$EOL$indent", $rule->declarations);
     return "$selectors {{$EOL}$indent$block;$EOL$indent}$EOL";
 }
