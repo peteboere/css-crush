@@ -45,7 +45,7 @@ namespace CssCrush {
 
         usort($new_set, 'CssCrush\property_sorter_callback');
 
-        $rule->setDeclarations($new_set);
+        $rule->declarations->reset($new_set);
     }
 
 

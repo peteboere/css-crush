@@ -24,7 +24,7 @@ Plugin::register('ie-inline-block', array(
 
 function ie_inline_block(Rule $rule) {
 
-    if ($rule->propertyCount('display') < 1) {
+    if ($rule->declarations->propertyCount('display') < 1) {
         return;
     }
 
@@ -41,5 +41,5 @@ function ie_inline_block(Rule $rule) {
         $stack[] = new Declaration('*display', 'inline');
         $stack[] = new Declaration('*zoom', 1);
     }
-    $rule->setDeclarations($stack);
+    $rule->declarations->reset($stack);
 }

@@ -66,7 +66,7 @@ function ease(Rule $rule) {
         }
     }
 
-    if (! array_intersect_key($rule->canonicalProperties, $easing_properties)) {
+    if (! array_intersect_key($rule->declarations->canonicalProperties, $easing_properties)) {
         return;
     }
 

@@ -74,7 +74,7 @@ function legacy_flexbox(Rule $rule) {
         //  - flex-basis
     );
 
-    $properties =& $rule->properties;
+    $properties =& $rule->declarations->properties;
     $intersect_props = array_intersect_key($properties, $flex_related_props);
 
     // Checking for flex related properties or 'display:flex'.
@@ -179,7 +179,7 @@ function legacy_flexbox(Rule $rule) {
 
     // Re-assign if any updates have been made.
     if ($rule_updated) {
-        $rule->setDeclarations($stack);
+        $rule->declarations->reset($stack);
     }
 }
 

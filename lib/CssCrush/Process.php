@@ -602,7 +602,7 @@ class Process
             $rule = new Rule($selector, $block, $m['trace_token']);
 
             // Store rules if they have declarations or extend arguments.
-            if (! empty($rule->declarations) || $rule->extendArgs) {
+            if (! empty($rule->declarations->store) || $rule->extendArgs) {
 
                 CssCrush::$process->tokens->add($rule, 'r', $rule->label);
 

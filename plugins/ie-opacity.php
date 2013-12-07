@@ -25,9 +25,10 @@ Plugin::register('ie-opacity', array(
 
 function ie_opacity(Rule $rule) {
 
-    if ($rule->propertyCount('opacity') < 1) {
+    if ($rule->declarations->propertyCount('opacity') < 1) {
         return;
     }
+
     $new_set = array();
     foreach ($rule as $declaration) {
         $new_set[] = $declaration;
@@ -41,7 +42,7 @@ function ie_opacity(Rule $rule) {
         $opacity = (float) $declaration->value;
         $opacity = round($opacity * 100);
 
-        if (! $rule->propertyCount('zoom')) {
+        if (! $rule->declarations->propertyCount('zoom')) {
             // Filters need hasLayout
             $new_set[] = new Declaration('zoom', 1);
         }
@@ -49,5 +50,5 @@ function ie_opacity(Rule $rule) {
         $new_set[] = new Declaration('-ms-filter', "\"$value\"");
         $new_set[] = new Declaration('*filter', $value);
     }
-    $rule->setDeclarations($new_set);
+    $rule->declarations->reset($new_set);
 }

@@ -64,7 +64,7 @@ function rem(Rule $rule) {
     // Determine which properties are touched; all, or just font related.
     $just_font_props = ! isset($vars['rem__all']);
 
-    if ($just_font_props && ! array_intersect_key($rule->canonicalProperties, $font_props)) {
+    if ($just_font_props && ! array_intersect_key($rule->declarations->canonicalProperties, $font_props)) {
         return;
     }
 
@@ -140,6 +140,6 @@ function rem(Rule $rule) {
     }
 
     if ($rule_updated) {
-        $rule->setDeclarations($new_set);
+        $rule->declarations->reset($new_set);
     }
 }

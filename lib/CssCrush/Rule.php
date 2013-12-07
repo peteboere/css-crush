@@ -16,15 +16,11 @@ class Rule implements \IteratorAggregate
     public $isFlat = true;
 
     public $selectors;
-    public $extendSelectors = array();
-    public $declarations = array();
-
-    // Index of properties used in the rule for fast lookup.
-    public $properties = array();
-    public $canonicalProperties = array();
+    public $declarations;
 
     // Arugments passed via @extend.
     public $extendArgs = array();
+    public $extendSelectors = array();
 
     // Declarations hash table for inter-rule this() referencing.
     public $selfData = array();
@@ -38,6 +34,7 @@ class Rule implements \IteratorAggregate
         $this->label = $process->tokens->createLabel('r');
         $this->marker = $process->addTracingStubs || $process->generateMap ? $trace_token : null;
         $this->selectors = new SelectorList();
+        $this->declarations = new DeclarationList();
 
         if (! empty(Hook::$register['rule_preprocess'])) {
             // Juggling to maintain the old API.
@@ -60,8 +57,7 @@ class Rule implements \IteratorAggregate
                 $this->isAbstract = true;
             }
             else {
-                $this->selectors->push(new Selector($selector));
-                // $this->addSelector(new Selector($selector));
+                $this->selectors->add(new Selector($selector));
             }
         }
 
@@ -96,7 +92,7 @@ class Rule implements \IteratorAggregate
 
                 if ($prop === 'mixin') {
                     $this->isFlat = false;
-                    $this->declarations[] = $pair;
+                    $this->declarations->store[] = $pair;
                 }
                 else {
                     // Only store to $this->selfData if the value does not itself make a
@@ -104,7 +100,7 @@ class Rule implements \IteratorAggregate
                     if (! preg_match(Regex::$patt->thisFunction, $value)) {
                         $this->selfData[strtolower($prop)] = $value;
                     }
-                    $this->addDeclaration($prop, $value, $index);
+                    $this->declarations->add($prop, $value, $index);
                 }
             }
         }
@@ -119,7 +115,7 @@ class Rule implements \IteratorAggregate
 
         // If there are no selectors or declarations associated with the rule
         // return empty string.
-        if (empty($this->selectors->store) || empty($this->declarations)) {
+        if (empty($this->selectors->store) || empty($this->declarations->store)) {
 
             // De-reference this instance.
             $process->tokens->release($this->label);
@@ -130,17 +126,19 @@ class Rule implements \IteratorAggregate
 
         // Concat and return.
         if ($process->minifyOutput) {
-            $selectors = $this->selectors->join();
-            $block = implode(';', $this->declarations);
-            return "$stub$selectors{{$block}}";
+            return "$stub{$this->selectors->join()}{{$this->declarations->join()}}";
         }
         else {
-
-            $formatter = $process->ruleFormatter ?
-                $process->ruleFormatter : 'CssCrush\fmtr_block';
+            $formatter = $process->ruleFormatter ? $process->ruleFormatter : 'CssCrush\fmtr_block';
 
             return "$stub{$formatter($this)}";
         }
+    }
+
+    public function __clone()
+    {
+        $this->selectors = clone $this->selectors;
+        $this->declarations = clone $this->declarations;
     }
 
     public $declarationsProcessed = false;
@@ -150,14 +148,14 @@ class Rule implements \IteratorAggregate
             return;
         }
 
-        foreach ($this->declarations as $index => $declaration) {
+        foreach ($this->declarations->store as $index => $declaration) {
 
             // Execute functions, store as data etc.
             $declaration->process($this);
 
             // Drop declaration if value is now empty.
             if (! empty($declaration->inValid)) {
-                unset($this->declarations[$index]);
+                unset($this->declarations->store[$index]);
             }
         }
 
@@ -175,7 +173,7 @@ class Rule implements \IteratorAggregate
 
         // Flatten mixins.
         $new_set = array();
-        foreach ($this->declarations as $declaration) {
+        foreach ($this->declarations->store as $declaration) {
             if (is_array($declaration) && $declaration[0] === 'mixin') {
                 foreach (Mixin::merge(array(), $declaration[1], array('context' => $this)) as $pair) {
                     $new_set[] = new Declaration($pair[0], $pair[1], count($new_set));
@@ -187,7 +185,7 @@ class Rule implements \IteratorAggregate
             }
         }
 
-        $this->setDeclarations($new_set);
+        $this->declarations->reset($new_set);
         $this->isFlat = true;
     }
 
@@ -473,7 +471,7 @@ class Rule implements \IteratorAggregate
         $aliased_properties =& CssCrush::$process->aliases['properties'];
 
         // Bail early if nothing doing.
-        if (! array_intersect_key($aliased_properties, $this->properties)) {
+        if (! array_intersect_key($aliased_properties, $this->declarations->properties)) {
             return;
         }
 
@@ -482,7 +480,7 @@ class Rule implements \IteratorAggregate
         $vendor_context = $this->vendorContext;
         $regex = Regex::$patt;
 
-        foreach ($this->declarations as $declaration) {
+        foreach ($this->declarations->store as $declaration) {
 
             // Check declaration against vendor context.
             if ($vendor_context && $declaration->vendor && $declaration->vendor !== $vendor_context) {
@@ -500,7 +498,7 @@ class Rule implements \IteratorAggregate
                 foreach ($aliased_properties[$declaration->property] as $prop_alias) {
 
                     // If an aliased version already exists do not create one.
-                    if ($this->propertyCount($prop_alias)) {
+                    if ($this->declarations->propertyCount($prop_alias)) {
                         continue;
                     }
 
@@ -533,7 +531,7 @@ class Rule implements \IteratorAggregate
 
         // Re-assign if any updates have been made.
         if ($rule_updated) {
-            $this->setDeclarations($stack);
+            $this->declarations->reset($stack);
         }
     }
 
@@ -548,7 +546,7 @@ class Rule implements \IteratorAggregate
         $rule_updated = false;
 
         // Shim in aliased functions.
-        foreach ($this->declarations as $declaration) {
+        foreach ($this->declarations->store as $declaration) {
 
             // No functions, bail.
             if (! $declaration->functions || $declaration->skip) {
@@ -655,7 +653,7 @@ class Rule implements \IteratorAggregate
 
         // Re-assign if any updates have been made.
         if ($rule_updated) {
-            $this->setDeclarations($new_set);
+            $this->declarations->reset($new_set);
         }
     }
 
@@ -664,19 +662,16 @@ class Rule implements \IteratorAggregate
         $declaration_aliases =& CssCrush::$process->aliases['declarations'];
 
         // First test for the existence of any aliased properties.
-        if (! ($intersect = array_intersect_key($declaration_aliases, $this->properties))) {
-
+        if (! ($intersect = array_intersect_key($declaration_aliases, $this->declarations->properties))) {
             return;
         }
 
-        // Table lookups are faster.
         $intersect = array_flip(array_keys($intersect));
-
         $vendor_context = $this->vendorContext;
         $new_set = array();
         $rule_updated = false;
 
-        foreach ($this->declarations as $declaration) {
+        foreach ($this->declarations->store as $declaration) {
 
             // Check the current declaration property is actually aliased.
             if (isset($intersect[$declaration->property]) && ! $declaration->skip) {
@@ -711,7 +706,7 @@ class Rule implements \IteratorAggregate
 
         // Re-assign if any updates have been made.
         if ($rule_updated) {
-            $this->setDeclarations($new_set);
+            $this->declarations->reset($new_set);
         }
     }
 
@@ -721,68 +716,9 @@ class Rule implements \IteratorAggregate
 
     public function getIterator()
     {
-        return new \ArrayIterator($this->declarations);
+        return new \ArrayIterator($this->declarations->store);
     }
 
-
-    #############################
-    #  Property indexing.
-
-    public function indexProperty($declaration)
-    {
-        $prop = $declaration->property;
-
-        if (isset($this->properties[$prop])) {
-            $this->properties[$prop]++;
-        }
-        else {
-            $this->properties[$prop] = 1;
-        }
-        $this->canonicalProperties[$declaration->canonicalProperty] = true;
-    }
-
-    public function updatePropertyIndex()
-    {
-        // Reset tables.
-        $this->properties = array();
-        $this->canonicalProperties = array();
-
-        foreach ($this->declarations as $declaration) {
-            $this->indexProperty($declaration);
-        }
-    }
-
-
-    #############################
-    #  Rule API.
-
-    public function propertyCount($prop)
-    {
-        return isset($this->properties[$prop]) ? $this->properties[$prop] : 0;
-    }
-
-    public function addDeclaration($prop, $value, $contextIndex = 0)
-    {
-        // Create declaration, add to the stack if it's valid
-        $declaration = new Declaration($prop, $value, $contextIndex);
-
-        if (empty($declaration->inValid)) {
-
-            $this->indexProperty($declaration);
-            $this->declarations[] = $declaration;
-            return $declaration;
-        }
-
-        return false;
-    }
-
-    public function setDeclarations(array $declaration_stack)
-    {
-        $this->declarations = $declaration_stack;
-
-        // Update the property index.
-        $this->updatePropertyIndex();
-    }
 
     public static function parseBlock($str, $options = array())
     {
