@@ -36,16 +36,6 @@ class Rule implements \IteratorAggregate
         $this->selectors = new SelectorList();
         $this->declarations = new DeclarationList();
 
-        if (! empty(Hook::$register['rule_preprocess'])) {
-            // Juggling to maintain the old API.
-            $rule = new \stdClass();
-            $rule->selector_raw = $selector_string;
-            $rule->declaration_raw = $declarations_string;
-            Hook::run('rule_preprocess', $rule);
-            $selector_string = $rule->selector_raw;
-            $declarations_string = $rule->declaration_raw;
-        }
-
         // Parse selectors.
         // Strip any other comments then create selector instances.
         $selector_string = trim(Util::stripCommentTokens($selector_string));
