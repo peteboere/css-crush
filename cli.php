@@ -130,7 +130,7 @@ if (! $args->output_file && $trailing_output_file) {
 
 if ($args->version) {
 
-    stdout('v' . csscrush_version());
+    stdout('v' . csscrush_version(true));
 
     exit(STATUS_OK);
 }
