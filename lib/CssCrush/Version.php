@@ -10,7 +10,7 @@ class Version
 {
     public $major;
     public $minor;
-    public $revision;
+    public $patch;
     public $extra;
 
     public function __construct($version_string)
@@ -30,7 +30,7 @@ class Version
         if ($version) {
             $this->major = (int) $version['major'];
             $this->minor = isset($version['minor']) ? (int) $version['minor'] : 0;
-            $this->revision = isset($version['patch']) ? (int) $version['patch'] : 0;
+            $this->patch = isset($version['patch']) ? (int) $version['patch'] : 0;
             $this->extra = isset($version['extra']) ? $version['extra'] : null;
         }
     }
@@ -42,8 +42,8 @@ class Version
         if (isset($this->minor)) {
             $out .= ".$this->minor";
         }
-        if (isset($this->revision)) {
-            $out .= ".$this->revision";
+        if (isset($this->patch)) {
+            $out .= ".$this->patch";
         }
         if (isset($this->extra)) {
             $out .= "-$this->extra";
@@ -60,7 +60,7 @@ class Version
 
         $test = new Version($version_string);
 
-        foreach (array('major', 'minor', 'revision') as $level) {
+        foreach (array('major', 'minor', 'patch') as $level) {
 
             if ($this->{$level} < $test->{$level}) {
 
