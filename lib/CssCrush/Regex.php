@@ -14,8 +14,6 @@ class Regex
     // Character classes.
     public static $classes;
 
-    public static $swaps = array();
-
     public static function init()
     {
         self::$patt = $patt = new \stdClass();
@@ -55,7 +53,6 @@ class Regex
 
         // Create standalone class patterns, add classes as class swaps.
         foreach ($classes as $name => $class) {
-            self::$swaps['{{' . str_replace('_', '-', $name) . '}}'] = $class;
             $patt->{$name} = '~' . $class . '~S';
         }
 
@@ -122,17 +119,23 @@ class Regex
 
     public static function make($pattern)
     {
-        static $cache = array(), $find, $replace;
-        if (isset($cache[$pattern])) {
+        static $cache = array(), $pattern_map;
 
+        if (isset($cache[$pattern])) {
             return $cache[$pattern];
         }
-        elseif (! $find) {
-            $find = array_keys(self::$swaps);
-            $replace = array_values(self::$swaps);
+
+        if (! $pattern_map) {
+            $pattern_map = array();
+            foreach (self::$classes as $name => $regex_class) {
+                $pattern_map[str_replace('_', '-', $name)] = $regex_class;
+            }
         }
 
-        return $cache[$pattern] = str_replace($find, $replace, $pattern);
+        return $cache[$pattern] = preg_replace_callback(
+            '~\{\{ *(?<name>[\w-]+) *\}\}~S', function ($m) use ($pattern_map) {
+                return $pattern_map[$m['name']];
+            }, $pattern);
     }
 
     public static function matchAll($patt, $subject, $offset = 0)
