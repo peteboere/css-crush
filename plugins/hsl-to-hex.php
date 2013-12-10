@@ -4,7 +4,7 @@
  *
  * @before
  *     color: hsl( 100, 50%, 50%)
- * 
+ *
  * @after
  *    color: #6abf40
  */
@@ -24,7 +24,7 @@ function hsl_to_hex(Rule $rule) {
 
     $hsl_patt = Regex::make('~{{LB}}hsl({{p-token}})~i');
 
-    foreach ($rule as &$declaration) {
+    foreach ($rule->declarations as $declaration) {
 
         if (! $declaration->skip && isset($declaration->functions['hsl'])) {
             while (preg_match($hsl_patt, $declaration->value, $m)) {

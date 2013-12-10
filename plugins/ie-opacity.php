@@ -30,7 +30,7 @@ function ie_opacity(Rule $rule) {
     }
 
     $new_set = array();
-    foreach ($rule as $declaration) {
+    foreach ($rule->declarations as $declaration) {
         $new_set[] = $declaration;
         if (
             $declaration->skip ||

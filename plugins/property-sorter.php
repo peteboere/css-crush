@@ -39,7 +39,7 @@ namespace CssCrush {
         $new_set = array();
 
         // Create plain array of rule declarations.
-        foreach ($rule as $declaration) {
+        foreach ($rule->declarations as $declaration) {
             $new_set[] = $declaration;
         }
 

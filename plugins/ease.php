@@ -70,7 +70,7 @@ function ease(Rule $rule) {
         return;
     }
 
-    foreach ($rule as $declaration) {
+    foreach ($rule->declarations as $declaration) {
         if (
             ! $declaration->skip &&
             isset($easing_properties[$declaration->canonicalProperty])

@@ -6,7 +6,7 @@
  */
 namespace CssCrush;
 
-class Rule implements \IteratorAggregate
+class Rule
 {
     public $vendorContext;
     public $label;
@@ -66,7 +66,7 @@ class Rule implements \IteratorAggregate
             }
         }
 
-        // Bind declaration objects on the rule.
+        // Build declaration list.
         foreach ($pairs as $index => &$pair) {
 
             list($prop, $value) = $pair;
@@ -205,14 +205,5 @@ class Rule implements \IteratorAggregate
             }
             $ancestor->extendSelectors += $extend_selectors;
         }
-    }
-
-
-    #############################
-    #  IteratorAggregate interface.
-
-    public function getIterator()
-    {
-        return new \ArrayIterator($this->declarations->store);
     }
 }

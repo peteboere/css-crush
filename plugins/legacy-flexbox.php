@@ -44,7 +44,7 @@
  *     of flexbox: https://developer.mozilla.org/en-US/docs/Firefox_20_for_developers
  */
 namespace CssCrush;
- 
+
 Plugin::register('legacy-flexbox', array(
     'enable' => function () {
         Hook::add('rule_prealias', 'CssCrush\legacy_flexbox');
@@ -100,7 +100,7 @@ function legacy_flexbox(Rule $rule) {
     $stack = array();
     $rule_updated = false;
 
-    foreach ($rule as $declaration) {
+    foreach ($rule->declarations as $declaration) {
 
         $prop = $declaration->property;
         $value = $declaration->value;

@@ -69,7 +69,7 @@ class Mixin
         elseif ($mixable instanceof Rule) {
 
             $result = array();
-            foreach ($mixable as $declaration) {
+            foreach ($mixable->declarations as $declaration) {
                 if ($declaration instanceof Declaration) {
                     $result[] = array(
                         $declaration->property,

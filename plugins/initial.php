@@ -37,7 +37,7 @@ function initial(Rule $rule) {
         }
     }
 
-    foreach ($rule as &$declaration) {
+    foreach ($rule->declarations as $declaration) {
         if (! $declaration->skip && 'initial' === $declaration->value) {
             if (isset($initial_values[$declaration->property])) {
                 $declaration->value = $initial_values[ $declaration->property ];

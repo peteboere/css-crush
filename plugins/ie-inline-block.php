@@ -29,7 +29,7 @@ function ie_inline_block(Rule $rule) {
     }
 
     $stack = array();
-    foreach ($rule as $declaration) {
+    foreach ($rule->declarations as $declaration) {
         $stack[] = $declaration;
         $is_display = $declaration->property === 'display';
         if (
