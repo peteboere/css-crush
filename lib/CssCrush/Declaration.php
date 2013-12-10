@@ -16,22 +16,14 @@ class Declaration
     public $index;
     public $skip;
     public $important;
-    public $inValid = false;
+    public $valid = true;
 
     public function __construct($prop, $value, $contextIndex = 0)
     {
         $regex = Regex::$patt;
 
         // Normalize input. Lowercase the property name.
-        $prop = strtolower(trim($prop));
-        $value = trim($value);
-
-        // Check the input.
-        if ($prop === '' || $value === '' || $value === null) {
-            $this->inValid = true;
-
-            return;
-        }
+        $prop = strtolower($prop);
 
         // Test for escape tilde.
         if ($skip = strpos($prop, '~') === 0) {
@@ -57,7 +49,7 @@ class Declaration
 
         // Reject declarations with empty CSS values.
         if ($value === false || $value === '') {
-            $this->inValid = true;
+            $this->valid = false;
 
             return;
         }
@@ -107,8 +99,7 @@ class Declaration
                 ),
                 $context);
 
-            // Add result to $rule->selfData.
-            $parent_rule->selfData += array($this->property => $this->value);
+            $parent_rule->declarations->data += array($this->property => $this->value);
 
             $context = (object) array(
                 'rule' => $parent_rule,
@@ -127,12 +118,12 @@ class Declaration
         // After functions have applied value may be empty.
         if ($this->value === '') {
 
-            $this->inValid = true;
+            $this->valid = false;
             return;
         }
 
         // Store raw value as data on the parent rule.
-        $parent_rule->queryData[$this->property] = $this->value;
+        $parent_rule->declarations->queryData[$this->property] = $this->value;
 
         // Capture top-level paren pairs.
         $this->value = CssCrush::$process->tokens->captureParens($this->value);

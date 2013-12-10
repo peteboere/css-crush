@@ -61,7 +61,7 @@ class Mixin
                 $args = Util::splitDelimList($raw_args);
             }
 
-            return Rule::parseBlock($mixable->template->apply($args), array(
+            return DeclarationList::parse($mixable->template->apply($args), array(
                 'flatten' => true,
                 'context' => $mixable,
             ));

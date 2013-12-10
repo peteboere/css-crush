@@ -431,7 +431,7 @@ class Process
                 CssCrush::$process->vars[$m['name']] = $m['value'];
             }
             else {
-                CssCrush::$process->vars = Rule::parseBlock($m['block_content'], array(
+                CssCrush::$process->vars = DeclarationList::parse($m['block_content'], array(
                                                 'keyed' => true,
                                                 'ignore_directives' => true,
                                             )) + CssCrush::$process->vars;
@@ -630,26 +630,18 @@ class Process
 
         foreach ($this->tokens->store->r as $rule) {
 
-            $rule->flatten();
-
-            $rule->processDeclarations();
+            $rule->declarations->flatten($rule);
+            $rule->declarations->process($rule);
 
             Hook::run('rule_prealias', $rule);
 
-            if ($this->aliases['properties']) {
-                $rule->addPropertyAliases();
-            }
-            if ($this->aliases['functions']) {
-                $rule->addFunctionAliases();
-            }
-            if ($this->aliases['declarations']) {
-                $rule->addDeclarationAliases();
-            }
+            $rule->declarations->aliasProperties($rule->vendorContext);
+            $rule->declarations->aliasFunctions($rule->vendorContext);
+            $rule->declarations->aliasDeclarations($rule->vendorContext);
+
             Hook::run('rule_postalias', $rule);
 
-            $rule->expandSelectors();
-
-            // Find previous selectors and apply them.
+            $rule->selectors->expand();
             $rule->applyExtendables();
 
             Hook::run('rule_postprocess', $rule);
