@@ -27,78 +27,71 @@ class SelectorList extends Iterator
 
     public function expand()
     {
-        $new_set = array();
+        static $grouping_patt, $expand, $expandSelector;
+        if (! $grouping_patt) {
 
-        static $any_patt, $reg_comma;
-        if (! $any_patt) {
-            $any_patt = Regex::make('~:any({{p-token}})~i');
-            $reg_comma = '~\s*,\s*~';
-        }
+            $grouping_patt = Regex::make('~\:any{{ parens }}~iS');
 
-        foreach ($this->store as $readableValue => $selector) {
+            $expand = function ($selector_string) use ($grouping_patt)
+            {
+                if (preg_match($grouping_patt, $selector_string, $m, PREG_OFFSET_CAPTURE)) {
 
-            $pos = stripos($selector->value, ':any?');
-            if ($pos !== false) {
+                    list($full_match, $full_match_offset) = $m[0];
+                    $before = substr($selector_string, 0, $full_match_offset);
+                    $after = substr($selector_string, strlen($full_match) + $full_match_offset);
 
-                // Contains an :any statement so expand.
-                $chain = array('');
-                do {
-                    if ($pos === 0) {
-                        preg_match($any_patt, $selector->value, $m);
+                    $selectors = array();
+                    foreach (Util::splitDelimList($m['parens_content'][0]) as $segment) {
+                        $selectors["$before$segment$after"] = true;
+                    }
 
-                        // Parse the arguments
-                        $expression = CssCrush::$process->tokens->get($m[1]);
+                    return $selectors;
+                }
 
-                        // Remove outer parens.
-                        $expression = substr($expression, 1, strlen($expression) - 2);
+                return false;
+            };
 
-                        // Test for nested :any() expressions.
-                        $has_nesting = stripos($expression, ':any(') !== false;
+            $expandSelector = function ($selector_string) use ($expand)
+            {
+                if ($running_stack = $expand($selector_string))  {
 
-                        $parts = preg_split($reg_comma, $expression, null, PREG_SPLIT_NO_EMPTY);
-
-                        $tmp = array();
-                        foreach ($chain as $rowCopy) {
-                            foreach ($parts as $part) {
-                                // Flatten nested :any() expressions in a hacky kind of way.
-                                if ($has_nesting) {
-                                    $part = str_ireplace(':any(', '', $part);
-
-                                    // If $part has unbalanced parens trim closing parens to match.
-                                    $diff = substr_count($part, ')') - substr_count($part, '(');
-                                    if ($diff > 0) {
-                                        $part = preg_replace('~\){1,'. $diff .'}$~', '', $part);
-                                    }
-                                }
-                                $tmp[] = $rowCopy . $part;
+                    $flattened_stack = array();
+                    do {
+                        $loop_stack = array();
+                        foreach ($running_stack as $selector => $bool) {
+                            $selectors = $expand($selector);
+                            if (! $selectors) {
+                                $flattened_stack += array($selector => true);
+                            }
+                            else {
+                                $loop_stack += $selectors;
                             }
                         }
-                        $chain = $tmp;
-                        $selector->value = substr($selector->value, strlen($m[0]));
-                    }
-                    else {
-                        foreach ($chain as &$row) {
-                            $row .= substr($selector->value, 0, $pos);
-                        }
-                        $selector->value = substr($selector->value, $pos);
-                    }
-                } while (($pos = stripos($selector->value, ':any?')) !== false);
+                        $running_stack = $loop_stack;
 
-                // Finish off.
-                foreach ($chain as &$row) {
+                    } while ($loop_stack);
 
-                    $new = new Selector($row . $selector->value);
-                    $new_set[$new->readableValue] = $new;
+                    return $flattened_stack;
+                }
+
+                return array($input => true);
+            };
+        }
+
+        $expanded_set = array();
+
+        foreach ($this->store as $readable_value => $original_selector) {
+            if (stripos($original_selector->value, ':any(') !== false) {
+                foreach ($expandSelector($original_selector->value) as $selector_string => $bool) {
+                    $new = new Selector($selector_string);
+                    $expanded_set[$new->readableValue] = $new;
                 }
             }
             else {
-
-                // Nothing to expand.
-                $new_set[$readableValue] = $selector;
+                $expanded_set[$original_selector->readableValue] = $original_selector;
             }
+        }
 
-        } // foreach
-
-        $this->store = $new_set;
+        $this->store = $expanded_set;
     }
 }

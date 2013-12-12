@@ -228,13 +228,12 @@ class Process
         }
     }
 
-    public static function applySelectorAliases(&$str)
+    public static function applySelectorAliases($str)
     {
         $process = CssCrush::$process;
 
-        // Early bail conditions.
         if (! $process->selectorAliases || ! preg_match($process->selectorAliasesPatt, $str)) {
-            return;
+            return $str;
         }
 
         $table =& $process->selectorAliases;
@@ -268,9 +267,10 @@ class Process
                 $template = new Template($template($args));
             }
 
-            // Splice in the result.
             $str = substr_replace($str, $template->apply($args), $start, $length);
         }
+
+        return $str;
     }
 
 
@@ -663,15 +663,11 @@ class Process
             $match_start_pos = $match[0][1];
             $raw_argument = trim($match[1][0]);
 
-            Process::applySelectorAliases($raw_argument);
-
-            $raw_argument = $tokens->captureParens($raw_argument);
-            $arguments = Util::splitDelimList($raw_argument);
+            $arguments = Util::splitDelimList(Process::applySelectorAliases($raw_argument));
 
             $curly_match = new BalancedMatch($this->stream, $match_start_pos);
 
             if (! $curly_match->match || empty($raw_argument)) {
-                // Couldn't match the block.
                 continue;
             }
 

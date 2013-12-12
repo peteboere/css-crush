@@ -23,10 +23,7 @@ class Selector
         // Take readable value from original un-altered state.
         $this->readableValue = Selector::makeReadable($raw_selector);
 
-        Process::applySelectorAliases($raw_selector);
-
-        // Capture top-level paren groups.
-        $this->value = CssCrush::$process->tokens->captureParens($raw_selector);
+        $this->value = Process::applySelectorAliases($raw_selector);
     }
 
     public function __toString()
@@ -51,17 +48,11 @@ class Selector
     public static function normalizeWhiteSpace($str)
     {
         // Create space around combinators, then normalize whitespace.
-        $str = preg_replace('~([>+]|\~(?!=))~S', ' $1 ', $str);
-        return Util::normalizeWhiteSpace($str);
+        return Util::normalizeWhiteSpace(preg_replace('~([>+]|\~(?!=))~S', ' $1 ', $str));
     }
 
     static function makeReadable($str)
     {
-        // Quick test for paren tokens.
-        if (strpos($str, '?p') !== false) {
-            $str = CssCrush::$process->tokens->restore($str, 'p');
-        }
-
         $str = Selector::normalizeWhiteSpace($str);
 
         // Quick test for string tokens.
