@@ -22,11 +22,10 @@ Plugin::register('hsl-to-hex', array(
 
 function hsl_to_hex(Rule $rule) {
 
-    $hsl_patt = Regex::make('~{{LB}}hsl({{p-token}})~i');
+    $hsl_patt = Regex::make('~{{ LB }}hsl({{ p-token }})~i');
 
-    foreach ($rule->declarations as $declaration) {
-
-        if (! $declaration->skip && isset($declaration->functions['hsl'])) {
+    foreach ($rule->declarations->filter(array('skip' => false)) as $declaration) {
+        if (isset($declaration->functions['hsl'])) {
             while (preg_match($hsl_patt, $declaration->value, $m)) {
                 $token = $m[1];
                 $color = new Color('hsl' . CssCrush::$process->tokens->pop($token));

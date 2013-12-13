@@ -14,15 +14,15 @@ class Declaration
     public $functions;
     public $value;
     public $index;
-    public $skip;
-    public $important;
+    public $skip = false;
+    public $important = false;
     public $valid = true;
 
     public function __construct($prop, $value, $contextIndex = 0)
     {
         $regex = Regex::$patt;
 
-        // Normalize input. Lowercase the property name.
+        // Normalize the property name.
         $prop = strtolower($prop);
 
         // Test for escape tilde.
@@ -54,13 +54,13 @@ class Declaration
             return;
         }
 
-        $this->property          = $prop;
+        $this->property = $prop;
         $this->canonicalProperty = $canonical_property;
-        $this->vendor            = $vendor;
-        $this->index             = $contextIndex;
-        $this->value             = $value;
-        $this->skip              = $skip;
-        $this->important         = $important;
+        $this->vendor = $vendor;
+        $this->index = $contextIndex;
+        $this->value = $value;
+        $this->skip = $skip;
+        $this->important = $important;
     }
 
     public function __toString()

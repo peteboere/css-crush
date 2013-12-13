@@ -8,8 +8,6 @@ namespace CssCrush;
 
 class SelectorList extends Iterator
 {
-    public $store;
-
     public function __construct()
     {
         parent::__construct();

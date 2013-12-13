@@ -37,15 +37,12 @@ function initial(Rule $rule) {
         }
     }
 
-    foreach ($rule->declarations as $declaration) {
-        if (! $declaration->skip && 'initial' === $declaration->value) {
-            if (isset($initial_values[$declaration->property])) {
-                $declaration->value = $initial_values[ $declaration->property ];
-            }
-            else {
-                // Fallback to 'inherit'.
-                $declaration->value = 'inherit';
-            }
+    foreach ($rule->declarations->filter(array('skip' => false, 'value|lower' => 'initial')) as $declaration) {
+        if (isset($initial_values[$declaration->property])) {
+            $declaration->value = $initial_values[ $declaration->property ];
+        }
+        else {
+            $declaration->value = 'inherit';
         }
     }
 }

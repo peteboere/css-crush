@@ -6,7 +6,7 @@
  */
 namespace CssCrush;
 
-class Iterator implements \IteratorAggregate, \ArrayAccess, \Countable
+class Iterator implements \IteratorAggregate, \ArrayAccess, \Countable, CollectionInterface
 {
     public $store;
 
@@ -57,5 +57,14 @@ class Iterator implements \IteratorAggregate, \ArrayAccess, \Countable
     public function count()
     {
         return count($this->store);
+    }
+
+    /*
+        Collection interface.
+    */
+    public function filter()
+    {
+        $collection = new Collection($this->store);
+        return call_user_func_array(array($collection, __FUNCTION__), func_get_args());
     }
 }
