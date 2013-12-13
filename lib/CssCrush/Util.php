@@ -201,6 +201,16 @@ class Util
         return false;
     }
 
+    public static function loadIni($library_relative_path, $sections = false)
+    {
+        if (! ($ini_array = @parse_ini_file(CssCrush::$dir . '/' . $library_relative_path, $sections))) {
+            notice("[[CssCrush]] - Ini file '$library_relative_path' could not be parsed.");
+
+            return false;
+        }
+        return $ini_array;
+    }
+
     /*
      * Encode integer to Base64 VLQ.
      */

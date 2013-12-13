@@ -16,9 +16,7 @@ class Color
     {
         if (! isset(self::$keywords)) {
 
-            $table = array();
-            $path = CssCrush::$dir . '/misc/color-keywords.ini';
-            if ($keywords = parse_ini_file($path)) {
+            if ($keywords = Util::loadIni('misc/color-keywords.ini')) {
                 foreach ($keywords as $word => $rgb) {
                     $rgb = array_map('intval', explode(',', $rgb));
                     self::$keywords[ $word ] = $rgb;

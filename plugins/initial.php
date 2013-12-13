@@ -30,9 +30,7 @@ function initial(Rule $rule) {
 
     static $initial_values;
     if (! $initial_values) {
-        if (! ($initial_values = @parse_ini_file(CssCrush::$dir . '/misc/initial-values.ini'))) {
-            notice("[[CssCrush]] - Initial keywords file could not be parsed.");
-
+        if (! ($initial_values = Util::loadIni('misc/initial-values.ini'))) {
             return;
         }
     }
