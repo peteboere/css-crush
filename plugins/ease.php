@@ -60,7 +60,7 @@ function ease(Rule $rule) {
         );
 
         foreach ($easings as $property => $value) {
-            $patt = Regex::make('~{{LB}}' . $property . '{{RB}}~i');
+            $patt = Regex::make("~{{ LB }}$property{{ RB }}~i");
             $find[] = $patt;
             $replace[] = $value;
         }
@@ -70,11 +70,8 @@ function ease(Rule $rule) {
         return;
     }
 
-    foreach ($rule->declarations as $declaration) {
-        if (
-            ! $declaration->skip &&
-            isset($easing_properties[$declaration->canonicalProperty])
-        ) {
+    foreach ($rule->declarations->filter(array('skip' => false)) as $declaration) {
+        if (isset($easing_properties[$declaration->canonicalProperty])) {
             $declaration->value = preg_replace($find, $replace, $declaration->value);
         }
     }

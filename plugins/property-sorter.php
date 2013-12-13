@@ -36,16 +36,7 @@ namespace CssCrush {
 
     function property_sorter(Rule $rule) {
 
-        $new_set = array();
-
-        // Create plain array of rule declarations.
-        foreach ($rule->declarations as $declaration) {
-            $new_set[] = $declaration;
-        }
-
-        usort($new_set, 'CssCrush\property_sorter_callback');
-
-        $rule->declarations->reset($new_set);
+        usort($rule->declarations->store, 'CssCrush\property_sorter_callback');
     }
 
 
