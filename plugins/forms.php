@@ -35,7 +35,7 @@ function forms() {
         'input' => function ($args) {
             $types = array();
             foreach ($args as $type) {
-                $types[] = "[type=\"$type\"]";
+                $types[] = "[type=$type]";
             }
 
             $result = $types ? 'input:any(' .  implode(',', $types) . ')' : 'input[type="text"]';

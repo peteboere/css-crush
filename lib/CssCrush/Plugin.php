@@ -1,14 +1,14 @@
 <?php
 /**
- * 
+ *
  *  Plugin API
- * 
+ *
  */
 namespace CssCrush;
 
 class Plugin
 {
-    static protected $plugins = array();
+    public static $plugins = array();
 
     public static function info()
     {
