@@ -853,13 +853,7 @@ class Process
 
         $this->decruft();
 
-        if ($minify) {
-
-            // Trim whitespace around selector combinators.
-            $this->stream->pregReplace('~ ?([>\~+]) ?~S', '$1');
-        }
-        else {
-
+        if (! $minify) {
             // Add newlines after comments.
             foreach ($this->tokens->store->c as $token => &$comment) {
                 $comment .= $EOL;

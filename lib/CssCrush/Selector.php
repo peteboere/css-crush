@@ -28,7 +28,11 @@ class Selector
 
     public function __toString()
     {
-        if (! CssCrush::$process->minifyOutput) {
+        if (CssCrush::$process->minifyOutput) {
+            // Trim whitespace around selector combinators.
+            $this->value = preg_replace('~ ?([>\~+]) ?~S', '$1', $this->value);
+        }
+        else {
             $this->value = Selector::normalizeWhiteSpace($this->value);
         }
         return $this->value;
