@@ -41,8 +41,11 @@
  */
 namespace CssCrush;
 
+$GLOBALS['CSSCRUSH_SVG_GRADIENT_UID'] = 0;
+
 Plugin::register('svg-gradients', array(
     'enable' => function () {
+        $GLOBALS['CSSCRUSH_SVG_GRADIENT_UID'] = 0;
         Functions::register('svg-linear-gradient', 'CssCrush\fn__svg_linear_gradient');
         Functions::register('svg-radial-gradient', 'CssCrush\fn__svg_radial_gradient');
     },
@@ -59,7 +62,6 @@ function fn__svg_linear_gradient($input) {
     $gradient_markup = reset($gradient);
     $gradient_id = key($gradient);
 
-    // Creating the svg.
     $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">';
     $svg .= '<defs>';
     $svg .= $gradient_markup;
@@ -67,7 +69,6 @@ function fn__svg_linear_gradient($input) {
     $svg .= "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"url(#$gradient_id)\"/>";
     $svg .= '</svg>';
 
-    // Create data-uri url and return token label.
     $url = new Url('data:image/svg+xml;base64,' . base64_encode($svg));
 
     return $url->label;
@@ -80,7 +81,6 @@ function fn__svg_radial_gradient($input) {
     $gradient_markup = reset($gradient);
     $gradient_id = key($gradient);
 
-    // Creating the svg.
     $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">';
     $svg .= '<defs>';
     $svg .= $gradient_markup;
@@ -88,7 +88,6 @@ function fn__svg_radial_gradient($input) {
     $svg .= "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"url(#$gradient_id)\"/>";
     $svg .= '</svg>';
 
-    // Create data-uri url and return token label.
     $url = new Url('data:image/svg+xml;base64,' . base64_encode($svg));
 
     return $url->label;
@@ -213,8 +212,7 @@ function create_svg_linear_gradient($input) {
     $color_stops = parse_gradient_color_stops($args);
 
     // Create the gradient markup with a unique id.
-    static $uid = 0;
-    $uid++;
+    $uid = ++$GLOBALS['CSSCRUSH_SVG_GRADIENT_UID'];
     $gradient_id = "lg$uid";
     $gradient = "<linearGradient id=\"$gradient_id\" gradientUnits=\"userSpaceOnUse\"";
     $gradient .= " x1=\"{$coords[0][0]}%\" x2=\"{$coords[1][0]}%\" y1=\"{$coords[0][1]}%\" y2=\"{$coords[1][1]}%\">";
@@ -280,8 +278,7 @@ function create_svg_radial_gradient($input) {
     $color_stops = parse_gradient_color_stops($args);
 
     // Create the gradient markup with a unique id.
-    static $uid = 0;
-    $uid++;
+    $uid = ++$GLOBALS['CSSCRUSH_SVG_GRADIENT_UID'];
     $gradient_id = "rg$uid";
     $gradient = "<radialGradient id=\"$gradient_id\" gradientUnits=\"userSpaceOnUse\"";
     $gradient .= " cx=\"{$position[0]}\" cy=\"{$position[1]}\" r=\"100%\">";
