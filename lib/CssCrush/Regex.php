@@ -70,8 +70,8 @@ class Regex
         $patt->abstract = Regex::make('~^@abstract \s+ (?<name>{{ident}})~ixS');
 
         // Functions.
-        $patt->function = Regex::make('~{{LB}} ({{ident}}) ({{p-token}})~xS');
-        $patt->varFunction = Regex::make('~\$\( \s* ({{ident}}) \s* \)~xS');
+        $patt->functionTest = Regex::make('~{{ LB }} (?<func_name>{{ ident }}) \(~xS');
+        $patt->varFunction = Regex::make('~\$\( \s* ({{ ident }}) \s* \)~xS');
         $patt->thisFunction = Regex::makeFunctionPatt(array('this'));
 
         // Strings and comments.
@@ -163,7 +163,7 @@ class Regex
 
         $flat_list = implode('|', array_map('preg_quote', $list));
 
-        return Regex::make("~($template{{LB}}(?:$flat_list)$question)\(~iS");
+        return Regex::make("~($template{{ LB }}(?:$flat_list)$question)\(~iS");
     }
 }
 

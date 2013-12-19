@@ -3,7 +3,7 @@
  * Polyfill for hsl() color values
  *
  * @before
- *     color: hsl( 100, 50%, 50%)
+ *     color: hsl(100, 50%, 50%)
  *
  * @after
  *    color: #6abf40
@@ -22,15 +22,14 @@ Plugin::register('hsl-to-hex', array(
 
 function hsl_to_hex(Rule $rule) {
 
-    $hsl_patt = Regex::make('~{{ LB }}hsl({{ p-token }})~i');
+    $hsl_patt = Regex::make('~{{ LB }}hsl({{ parens }})~i');
 
     foreach ($rule->declarations->filter(array('skip' => false)) as $declaration) {
         if (isset($declaration->functions['hsl'])) {
-            while (preg_match($hsl_patt, $declaration->value, $m)) {
-                $token = $m[1];
-                $color = new Color('hsl' . CssCrush::$process->tokens->pop($token));
-                $declaration->value = str_replace($m[0], $color->getHex(), $declaration->value);
-            }
+            $declaration->value = preg_replace_callback($hsl_patt, function ($m) {
+                $color = new Color($m[0]);
+                return $color->getHex();
+            }, $declaration->value);
         }
     }
 }

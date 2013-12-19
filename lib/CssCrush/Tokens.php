@@ -66,8 +66,7 @@ class Tokens
     {
         switch ($type) {
             case 'u':
-                // Currently this always releases URLs
-                // may need to refactor later.
+                // Currently this always releases URLs.
                 $str = preg_replace_callback(Regex::$patt->u_token, function ($m) {
                     $url = CssCrush::$process->tokens->pop($m[0]);
                     return $url ? $url->getOriginalValue() : '';

@@ -122,11 +122,8 @@ class Declaration
             return;
         }
 
-        // Store raw value as data on the parent rule.
+        // Store value as data on the parent rule.
         $parent_rule->declarations->queryData[$this->property] = $this->value;
-
-        // Capture top-level paren pairs.
-        $this->value = CssCrush::$process->tokens->captureParens($this->value);
 
         $this->indexFunctions();
     }
@@ -135,16 +132,11 @@ class Declaration
     {
         // Create an index of all regular functions in the value.
         $functions = array();
-        if (preg_match_all(Regex::$patt->function, $this->value, $m)) {
-            foreach ($m[1] as $index => $fn_name) {
+        if (preg_match_all(Regex::$patt->functionTest, $this->value, $m)) {
+            foreach ($m['func_name'] as $index => $fn_name) {
                 $functions[strtolower($fn_name)] = true;
             }
         }
         $this->functions = $functions;
-    }
-
-    public function getFullValue()
-    {
-        return CssCrush::$process->tokens->restore($this->value, 'p');
     }
 }

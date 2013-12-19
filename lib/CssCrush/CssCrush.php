@@ -187,8 +187,7 @@ class CssCrush
                         if (preg_match($regex->vendorPrefix, $alias_func, $m)) {
 
                             // We'll cache the function matching regex here.
-                            $vendor_grouped_aliases[$m[1]]['find'][] =
-                                Regex::make('~{{LB}}' . $func_name . '{{RTB}}~i');
+                            $vendor_grouped_aliases[$m[1]]['find'][] = Regex::make("~{{ LB }}$func_name(?=\()~i");
                             $vendor_grouped_aliases[$m[1]]['replace'][] = $alias_func;
                         }
                     }
