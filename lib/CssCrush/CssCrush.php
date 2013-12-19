@@ -349,7 +349,7 @@ class CssCrush
             $process->resolveContext($options->context);
         }
         else {
-            $process->resolveContext($process->docRoot);
+            $process->resolveContext();
         }
 
         // Set the string on the input object.

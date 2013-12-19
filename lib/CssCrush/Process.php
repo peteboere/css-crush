@@ -98,7 +98,7 @@ class Process
         );
     }
 
-    public function resolveContext($input_dir, $input_file = null)
+    public function resolveContext($input_dir = null, $input_file = null)
     {
         if ($input_file) {
             $this->input->path = $input_file;
@@ -110,7 +110,7 @@ class Process
             $this->input->filename = null;
         }
 
-        $this->input->dir = $input_dir;
+        $this->input->dir = $input_dir ?: $this->docRoot;
         $this->input->dirUrl = substr($input_dir, strlen($this->docRoot));
 
         $this->output->dir = $this->io('getOutputDir');
@@ -516,15 +516,15 @@ class Process
 
     protected function resolveIfDefines()
     {
-        $matches = $this->stream->matchAll(Regex::$patt->ifDefine);
+        $ifdefine_patt = Regex::make('~@ifdefine \s+ (not \s+)? ({{ ident }}) \s* \{~ixS');
 
-        // Move through the matches last to first.
+        $matches = $this->stream->matchAll($ifdefine_patt);
+
         while ($match = array_pop($matches)) {
 
             $curly_match = new BalancedMatch($this->stream, $match[0][1]);
 
             if (! $curly_match->match) {
-                // Couldn't match the block.
                 continue;
             }
 

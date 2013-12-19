@@ -63,9 +63,4 @@ class BalancedMatch
     {
         $this->stream->splice($this->inside(), $this->offset, $this->length);
     }
-
-    public function nextIndexOf($needle)
-    {
-        return strpos($this->stream->raw, $needle, $this->offset);
-    }
 }

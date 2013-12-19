@@ -12,7 +12,7 @@ class Selector
     public $readableValue;
     public $allowPrefix = true;
 
-    public function __construct($raw_selector, $associated_rule = null)
+    public function __construct($raw_selector)
     {
         // Look for rooting prefix.
         if (strpos($raw_selector, '^') === 0) {
@@ -55,7 +55,7 @@ class Selector
         return Util::normalizeWhiteSpace(preg_replace('~([>+]|\~(?!=))~S', ' $1 ', $str));
     }
 
-    static function makeReadable($str)
+    public static function makeReadable($str)
     {
         $str = Selector::normalizeWhiteSpace($str);
 
