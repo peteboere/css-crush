@@ -508,7 +508,7 @@ function svg_text($element) {
         'text' => '',
     );
 
-    $text = CssCrush::$process->tokens->restore($element->data['text'], 's');
+    $text = CssCrush::$process->tokens->restore($element->data['text'], 's', true);
 
     // Remove open and close quotes.
     $text = substr($text, 1, strlen($text) - 2);
@@ -737,8 +737,7 @@ function svg_render($element) {
             $styles .= $selector . '{' . implode(';', $out) . '}';
         }
     }
-    $styles = CssCrush::$process->tokens->restore($styles, 'u', true);
-    $styles = CssCrush::$process->tokens->restore($styles, 's');
+    $styles = CssCrush::$process->tokens->restore($styles, array('u', 's'), true);
 
     // Add element styles as attributes which tend to work better with svg2png converters.
     $attrs = Util::htmlAttributes($element->attrs + $element->styles);

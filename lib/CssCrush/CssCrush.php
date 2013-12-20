@@ -428,11 +428,9 @@ class CssCrush
                     break;
 
                 case 'vars':
-                    $process->stat['vars'] = $process->vars;
-                    break;
-
-                case 'computed_vars':
-                    $process->stat['computed_vars'] = array_map('CssCrush\Functions::executeOnString', $process->vars);
+                    $process->stat['vars'] = array_map(function ($item) use ($process) {
+                        return $process->tokens->restore(Functions::executeOnString($item), array('s', 'u', 'p'));
+                    }, $process->vars);
                     break;
 
                 case 'compile_time':

@@ -62,33 +62,15 @@ class Tokens
         return "?$type$counter?";
     }
 
-    public function restore($str, $type, $release = false)
+    public function restore($str, $types, $release = false)
     {
-        switch ($type) {
-            case 'u':
-                // Currently this always releases URLs.
-                $str = preg_replace_callback(Regex::$patt->u_token, function ($m) {
-                    $url = CssCrush::$process->tokens->pop($m[0]);
-                    return $url ? $url->getOriginalValue() : '';
-                }, $str);
-                break;
-            default:
-                $token_table =& $this->store->{$type};
+        $types = implode('', (array) $types);
+        $patt = Regex::make("~\?[$types]{{ token-id }}\?~S");
+        $tokens = $this;
 
-                // Find matching tokens.
-                foreach (Regex::matchAll(Regex::$patt->{"{$type}_token"}, $str) as $m) {
-                    $label = $m[0][0];
-                    if (isset($token_table[$label])) {
-                        $str = str_replace($label, $token_table[$label], $str);
-                        if ($release) {
-                            unset($token_table[$label]);
-                        }
-                    }
-                }
-                break;
-        }
-
-        return $str;
+        return preg_replace_callback($patt, function ($m) use ($tokens, $release) {
+            return $release ? $tokens->pop($m[0]) : $tokens->get($m[0]);
+        }, $str);
     }
 
     public function capture($str, $type)
@@ -98,26 +80,14 @@ class Tokens
                 return $this->captureUrls($str);
                 break;
             case 's':
-                return $this->captureStrings($str);
-                break;
+                return preg_replace_callback(Regex::$patt->string, function ($m) {
+                    return CssCrush::$process->tokens->add($m[0], 's');
+                }, $str);
             case 'p':
-                return $this->captureParens($str);
-                break;
+                return preg_replace_callback(Regex::$patt->parens, function ($m) {
+                    return CssCrush::$process->tokens->add($m[0], 'p');
+                }, $str);
         }
-    }
-
-    public function captureParens($str)
-    {
-        return preg_replace_callback(Regex::$patt->parens, function ($m) {
-            return CssCrush::$process->tokens->add($m[0], 'p');
-        }, $str);
-    }
-
-    public function captureStrings($str, $add_padding = false)
-    {
-        return preg_replace_callback(Regex::$patt->string, function ($m) {
-            return CssCrush::$process->tokens->add($m[0], 's');
-        }, $str);
     }
 
     public function captureUrls($str, $add_padding = false)

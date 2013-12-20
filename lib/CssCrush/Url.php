@@ -115,23 +115,6 @@ class Url
         return $path;
     }
 
-    public function getOriginalValue()
-    {
-        // If a data URI we assume nothing useful can be achieved
-        // by returning the original value so we just return the token label.
-        if ($this->isData) {
-
-            return $this->label;
-        }
-
-        $function = 'url';
-        if ($this->convertToData) {
-            $function = 'data-uri';
-        }
-
-        return "$function($this->value)";
-    }
-
     public function prepend($path_fragment)
     {
         if ($this->isRelative) {

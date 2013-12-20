@@ -39,7 +39,7 @@ function forms() {
             }
 
             $result = $types ? 'input:any(' .  implode(',', $types) . ')' : 'input[type="text"]';
-            return CssCrush::$process->tokens->captureStrings($result);
+            return CssCrush::$process->tokens->capture($result, 's');
         },
 
         'checkbox' => 'input[type="checkbox"]',

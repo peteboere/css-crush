@@ -145,8 +145,7 @@ class Template
 
     public static function unTokenize($str)
     {
-        $str = CssCrush::$process->tokens->restore($str, 'u', true);
-        $str = CssCrush::$process->tokens->restore($str, 's', true);
+        $str = CssCrush::$process->tokens->restore($str, array('u', 's'), true);
 
         return $str;
     }
