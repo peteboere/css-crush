@@ -756,7 +756,7 @@ class Process
                             $clone_rule->vendorContext = $vendor;
 
                             // Store the clone.
-                            $replacements[] = $this->tokens->add($clone_rule, 'r');
+                            $replacements[] = $this->tokens->add($clone_rule);
                         }
 
                         // Finally replace the original labels with the cloned rule labels.

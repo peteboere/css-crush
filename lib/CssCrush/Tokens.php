@@ -49,8 +49,14 @@ class Tokens
         unset($this->store->{$label[1]}[$label]);
     }
 
-    public function add($value, $type, $existing_label = null)
+    public function add($value, $type = null, $existing_label = null)
     {
+        if ($value instanceof Url) {
+            $type = 'u';
+        }
+        elseif ($value instanceof Rule) {
+            $type = 'r';
+        }
         $label = $existing_label ? $existing_label : $this->createLabel($type);
         $this->store->{$type}[$label] = $value;
         return $label;
@@ -106,18 +112,17 @@ class Tokens
             // @import directive.
             if ($import_offset !== -1) {
 
-                $label = $this->add(new Url(trim($import_text)), 'u');
+                $label = $this->add(new Url(trim($import_text)));
                 $str = str_replace($import_text, $add_padding ? str_pad($label, strlen($import_text)) : $label, $str);
             }
 
             // A URL function.
             else {
-
                 $func_name = strtolower($m['func'][$count][0]);
 
                 $url = new Url(trim($m['parens_content'][$count][0]));
                 $url->convertToData = 'data-uri' === $func_name;
-                $label = $this->add($url, 'u');
+                $label = $this->add($url);
                 $str = substr_replace(
                         $str,
                         $add_padding ? Tokens::pad($label, $full_text) : $label,
@@ -132,12 +137,9 @@ class Tokens
     public static function pad($label, $replaced_text)
     {
         // Padding token labels to maintain whitespace and newlines.
-
-        // Match contains newlines.
         if (($last_newline_pos = strrpos($replaced_text, "\n")) !== false) {
             $label .= str_repeat("\n", substr_count($replaced_text, "\n")) . str_repeat(' ', strlen(substr($replaced_text, $last_newline_pos))-1);
         }
-        // Match contains no newlines.
         else {
             $label = str_pad($label, strlen($replaced_text));
         }

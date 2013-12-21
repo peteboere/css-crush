@@ -298,7 +298,7 @@ function svg_generator($input, $fn_name) {
     }
 
     // Cache the output URL.
-    $label = $process->tokens->add($url, 'u');
+    $label = $process->tokens->add($url);
     $process->misc->svg_cache[$cache_key] = $label;
 
     return $label;
