@@ -150,7 +150,7 @@ class Process
             $tags = array(
                 'datetime' => @date('Y-m-d H:i:s O'),
                 'year' => @date('Y'),
-                'version' => 'v' . csscrush_version(),
+                'version' => csscrush_version(),
                 'command' => $command_args,
                 'plugins' => implode(',', array_keys($this->plugins)),
                 'compile_time' => function () {

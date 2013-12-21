@@ -49,7 +49,7 @@ class Version
             $out .= "-$this->extra";
         }
 
-        return $out;
+        return "v$out";
     }
 
     public function compare($version_string)
