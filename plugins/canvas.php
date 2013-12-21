@@ -256,10 +256,12 @@ function canvas_generator($input, $context) {
         $url = new Url('data:image/png;base64,' . base64_encode($data));
     }
 
-    // Cache the output URL.
-    $process->misc->canvas_cache[$cache_key] = $url->label;
+    $label = $process->tokens->add($url, 'u');
 
-    return $url->label;
+    // Cache the output URL.
+    $process->misc->canvas_cache[$cache_key] = $label;
+
+    return $label;
 }
 
 

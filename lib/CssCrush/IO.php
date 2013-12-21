@@ -6,17 +6,19 @@
  */
 namespace CssCrush;
 
+use CssCrush\CssCrush as Crush;
+
 class IO
 {
     public static function init()
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $process->cacheFile = "{$process->output->dir}/.csscrush";
     }
 
     public static function getOutputDir()
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $output_dir = $process->options->output_dir;
 
         return $output_dir ? $output_dir : $process->input->dir;
@@ -24,7 +26,7 @@ class IO
 
     public static function testOutputDir()
     {
-        $dir = CssCrush::$process->output->dir;
+        $dir = Crush::$process->output->dir;
         $pathtest = true;
 
         if (! file_exists($dir)) {
@@ -49,7 +51,7 @@ class IO
 
     public static function getOutputFileName()
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $options = $process->options;
 
         $output_basename = basename($process->input->filename, '.css');
@@ -63,16 +65,16 @@ class IO
 
     public static function getOutputUrl()
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $options = $process->options;
         $filename = $process->output->filename;
 
         $url = $process->output->dirUrl . '/' . $filename;
 
         // Make URL relative if the input path was relative.
-        $input_path = new Url($process->input->raw, array('standalone' => true));
+        $input_path = new Url($process->input->raw);
         if ($input_path->isRelative) {
-            $url = Util::getLinkBetweenPaths(CssCrush::$config->scriptDir, $process->output->dir) . $filename;
+            $url = Util::getLinkBetweenPaths(Crush::$config->scriptDir, $process->output->dir) . $filename;
         }
 
         // Optional query-string timestamp.
@@ -91,8 +93,8 @@ class IO
 
     public static function validateCache()
     {
-        $process = CssCrush::$process;
-        $config = CssCrush::$config;
+        $process = Crush::$process;
+        $config = Crush::$config;
         $options = $process->options;
         $input = $process->input;
         $output = $process->output;
@@ -164,9 +166,9 @@ class IO
 
     public static function getCacheData()
     {
-        $config = CssCrush::$config;
+        $config = Crush::$config;
         $logger = $config->logger;
-        $process = CssCrush::$process;
+        $process = Crush::$process;
 
         if (
             file_exists($process->cacheFile) &&
@@ -206,8 +208,8 @@ class IO
 
     public static function saveCacheData()
     {
-        $process = CssCrush::$process;
-        $logger = CssCrush::$config->logger;
+        $process = Crush::$process;
+        $logger = Crush::$config->logger;
 
         debug('Saving config.');
 
@@ -217,7 +219,7 @@ class IO
 
     public static function write(Stream $stream)
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $output = $process->output;
         $source_map_filename = "$output->filename.map";
 

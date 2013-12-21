@@ -269,7 +269,7 @@ class CssCrush
      */
     public static function inline($file, $options = null, $tag_attributes = array())
     {
-        // For inline output set boilerplate to not display by default
+        // For inline output set boilerplate to not display by default.
         if (! is_array($options)) {
             $options = array();
         }
@@ -281,7 +281,7 @@ class CssCrush
 
         if (! empty($file)) {
 
-            // On success fetch the CSS text
+            // On success fetch the CSS text.
             $content = file_get_contents(self::$process->output->dir . '/' . self::$process->output->filename);
             $tag_open = '';
             $tag_close = '';
@@ -295,7 +295,7 @@ class CssCrush
         }
         else {
 
-            // Return an HTML comment with message on failure
+            // Return an HTML comment with message on failure.
             $class = __CLASS__;
             $errors = implode("\n", self::$process->errors);
             return "<!-- $class: $errors -->\n";

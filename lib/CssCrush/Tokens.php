@@ -106,10 +106,8 @@ class Tokens
             // @import directive.
             if ($import_offset !== -1) {
 
-                $url = new Url(trim($import_text));
-                $str = str_replace(
-                        $import_text,
-                        $add_padding ? str_pad($url->label, strlen($import_text)) : $url->label, $str);
+                $label = $this->add(new Url(trim($import_text)), 'u');
+                $str = str_replace($import_text, $add_padding ? str_pad($label, strlen($import_text)) : $label, $str);
             }
 
             // A URL function.
@@ -119,9 +117,10 @@ class Tokens
 
                 $url = new Url(trim($m['parens_content'][$count][0]));
                 $url->convertToData = 'data-uri' === $func_name;
+                $label = $this->add($url, 'u');
                 $str = substr_replace(
                         $str,
-                        $add_padding ? Tokens::pad($url->label, $full_text) : $url->label,
+                        $add_padding ? Tokens::pad($label, $full_text) : $label,
                         $full_offset,
                         strlen($full_text));
             }
