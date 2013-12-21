@@ -84,7 +84,7 @@ class DeclarationList extends Iterator
     */
     public function aliasProperties($vendor_context = null)
     {
-        $aliased_properties =& CssCrush::$process->aliases['properties'];
+        $aliased_properties =& Crush::$process->aliases['properties'];
 
         // Bail early if nothing doing.
         if (! array_intersect_key($aliased_properties, $this->properties)) {
@@ -152,8 +152,8 @@ class DeclarationList extends Iterator
 
     public function aliasFunctions($vendor_context = null)
     {
-        $function_aliases =& CssCrush::$process->aliases['functions'];
-        $function_alias_groups =& CssCrush::$process->aliases['function_groups'];
+        $function_aliases =& Crush::$process->aliases['functions'];
+        $function_alias_groups =& Crush::$process->aliases['function_groups'];
 
         // The new modified set of declarations.
         $new_set = array();
@@ -273,7 +273,7 @@ class DeclarationList extends Iterator
 
     public function aliasDeclarations($vendor_context = null)
     {
-        $declaration_aliases =& CssCrush::$process->aliases['declarations'];
+        $declaration_aliases =& Crush::$process->aliases['declarations'];
 
         // First test for the existence of any aliased properties.
         if (! ($intersect = array_intersect_key($declaration_aliases, $this->properties))) {

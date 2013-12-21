@@ -68,7 +68,7 @@ define('CssCrush\LOOP_PATT',
 
 function loop() {
 
-    CssCrush::$process->stream->pregReplaceCallback(LOOP_PATT, function ($m) {
+    Crush::$process->stream->pregReplaceCallback(LOOP_PATT, function ($m) {
 
         return Template::tokenize(loop_unroll(Template::unTokenize($m[0])));
     });

@@ -65,7 +65,7 @@ class Declaration
 
     public function __toString()
     {
-        if (CssCrush::$process->minifyOutput) {
+        if (Crush::$process->minifyOutput) {
             $whitespace = '';
         }
         else {

@@ -6,7 +6,7 @@
   */
 namespace CssCrush;
 
-CssCrush::$config->formatters = array(
+Crush::$config->formatters = array(
     'single-line' => 'CssCrush\fmtr_single',
     'padded' => 'CssCrush\fmtr_padded',
     'block' => 'CssCrush\fmtr_block',
@@ -14,7 +14,7 @@ CssCrush::$config->formatters = array(
 
 function fmtr_single($rule) {
 
-    $EOL = CssCrush::$process->newline;
+    $EOL = Crush::$process->newline;
 
     $selectors = $rule->selectors->join(', ');
     $block = $rule->declarations->join('; ');
@@ -23,7 +23,7 @@ function fmtr_single($rule) {
 
 function fmtr_padded($rule, $padding = 40) {
 
-    $EOL = CssCrush::$process->newline;
+    $EOL = Crush::$process->newline;
 
     $selectors = $rule->selectors->join(', ');
     $block = $rule->declarations->join('; ');
@@ -40,7 +40,7 @@ function fmtr_padded($rule, $padding = 40) {
 
 function fmtr_block($rule, $indent = '    ') {
 
-    $EOL = CssCrush::$process->newline;
+    $EOL = Crush::$process->newline;
 
     $selectors = $rule->selectors->join(",$EOL");
     $block = $rule->declarations->join(";$EOL$indent");

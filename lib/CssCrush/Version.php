@@ -78,9 +78,9 @@ class Version
     public static function gitDescribe()
     {
         static $attempted, $version;
-        if (! $attempted && file_exists(CssCrush::$dir . '/.git')) {
+        if (! $attempted && file_exists(Crush::$dir . '/.git')) {
             $attempted = true;
-            $command = 'cd ' . escapeshellarg(CssCrush::$dir) . ' && git describe --tag --long';
+            $command = 'cd ' . escapeshellarg(Crush::$dir) . ' && git describe --tag --long';
             @exec($command, $lines);
             if ($lines) {
                 $version = new Version(trim($lines[0]));

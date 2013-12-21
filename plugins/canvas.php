@@ -74,7 +74,7 @@ function canvas_capture($process) {
             $name = strtolower($m['name']);
             $block = $m['block_content'];
             if (! empty($block)) {
-                CssCrush::$process->misc->canvas_defs[$name] = new Template($block);
+                Crush::$process->misc->canvas_defs[$name] = new Template($block);
             }
             return '';
         });
@@ -82,8 +82,8 @@ function canvas_capture($process) {
 
 function canvas_generator($input, $context) {
 
-    $process = CssCrush::$process;
-    $logger = CssCrush::$config->logger;
+    $process = Crush::$process;
+    $logger = Crush::$config->logger;
 
     // Check GD requirements are met.
     static $requirements;
@@ -489,7 +489,7 @@ function canvas_preprocess($canvas) {
 
 function canvas_fetch_src($url_token) {
 
-    if ($url_token && $url = CssCrush::$process->tokens->get($url_token)) {
+    if ($url_token && $url = Crush::$process->tokens->get($url_token)) {
 
         $file = $url->getAbsolutePath();
 

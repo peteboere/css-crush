@@ -67,7 +67,7 @@ class Stream
 
     public function replaceTokens($type, $callback = null)
     {
-        $tokens =& CssCrush::$process->tokens->store->{ $type };
+        $tokens =& Crush::$process->tokens->store->{ $type };
         $callback = $callback ?: function ($m) use (&$tokens) {
             return isset($tokens[$m[0]]) ? $tokens[$m[0]] : '';
         };

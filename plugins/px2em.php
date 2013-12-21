@@ -32,8 +32,8 @@ function fn__px2em($input) {
     $base = 16;
 
     // Override default base if variable is set.
-    if (isset(CssCrush::$process->vars['px2em__base'])) {
-        $base = CssCrush::$process->vars['px2em__base'];
+    if (isset(Crush::$process->vars['px2em__base'])) {
+        $base = Crush::$process->vars['px2em__base'];
     }
 
     return px2em($input, 'em', $base);
@@ -44,8 +44,8 @@ function fn__px2rem($input) {
     $base = 16;
 
     // Override default base if variable is set.
-    if (isset(CssCrush::$process->vars['px2rem__base'])) {
-        $base = CssCrush::$process->vars['px2rem__base'];
+    if (isset(Crush::$process->vars['px2rem__base'])) {
+        $base = Crush::$process->vars['px2rem__base'];
     }
 
     return px2em($input, 'rem', $base);

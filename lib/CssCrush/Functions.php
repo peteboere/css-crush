@@ -270,7 +270,7 @@ function fn__query($input, $context) {
     }
 
     $call_property = $context->property;
-    $references =& CssCrush::$process->references;
+    $references =& Crush::$process->references;
 
     // Resolve arguments.
     $name = array_shift($args);

@@ -219,5 +219,5 @@ function noise_generator($input, $defaults) {
     $svg .= "<rect x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" fill=\"$fill_color\" filter=\"url(#f)\"/>";
     $svg .= '</svg>';
 
-    return CssCrush::$process->tokens->add(new Url('data:image/svg+xml;base64,' . base64_encode($svg)));
+    return Crush::$process->tokens->add(new Url('data:image/svg+xml;base64,' . base64_encode($svg)));
 }

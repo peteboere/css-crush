@@ -10,8 +10,8 @@ class Importer
 {
     public static function hostfile()
     {
-        $config = CssCrush::$config;
-        $process = CssCrush::$process;
+        $config = Crush::$config;
+        $process = Crush::$process;
         $options = $process->options;
         $regex = Regex::$patt;
         $input = $process->input;
@@ -148,7 +148,7 @@ class Importer
     static protected function rewriteImportedUrls($import)
     {
         $link = Util::getLinkBetweenPaths(
-            CssCrush::$process->input->dir, dirname($import->path));
+            Crush::$process->input->dir, dirname($import->path));
 
         if (empty($link)) {
 
@@ -160,7 +160,7 @@ class Importer
 
         foreach ($matches[0] as $token) {
 
-            $url = CssCrush::$process->tokens->get($token);
+            $url = Crush::$process->tokens->get($token);
 
             if ($url->isRelative) {
                 // Prepend the relative url prefix.
@@ -172,7 +172,7 @@ class Importer
     static protected function prepareForStream(&$str)
     {
         $regex = Regex::$patt;
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $tokens = $process->tokens;
 
         // Convert all end-of-lines to unix style.
@@ -214,7 +214,7 @@ class Importer
     {
         // Catch obvious typing errors.
         $errors = false;
-        $current_file = 'file://' . end(CssCrush::$process->sources);
+        $current_file = 'file://' . end(Crush::$process->sources);
         $balanced_parens = substr_count($str, "(") === substr_count($str, ")");
         $balanced_curlies = substr_count($str, "{") === substr_count($str, "}");
 
@@ -272,7 +272,7 @@ class Importer
 
     static protected function addMarkers(&$str)
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $current_file_index = count($process->sources) -1;
 
         $count = preg_match_all(Regex::$patt->ruleFirstPass, $str, $matches, PREG_OFFSET_CAPTURE);
@@ -307,7 +307,7 @@ class Importer
         $callback = function ($m) {
 
             $full_match = $m[0];
-            $process = CssCrush::$process;
+            $process = Crush::$process;
 
             if (strpos($full_match, '/*') === 0) {
 

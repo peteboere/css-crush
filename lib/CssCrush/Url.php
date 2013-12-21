@@ -22,7 +22,7 @@ class Url
 
     public function __construct($raw_value)
     {
-        $tokens = CssCrush::$process->tokens;
+        $tokens = Crush::$process->tokens;
 
         if (preg_match(Regex::$patt->s_token, $raw_value)) {
             $this->value = trim($tokens->get($raw_value), '\'"');
@@ -105,7 +105,7 @@ class Url
             $path = $this->value;
         }
         elseif ($this->isRelative || $this->isRooted) {
-            $path = CssCrush::$process->docRoot .
+            $path = Crush::$process->docRoot .
                 ($this->isRelative ? $this->toRoot()->simplify()->value : $this->value);
         }
         return $path;
@@ -123,7 +123,7 @@ class Url
     public function toRoot()
     {
         if ($this->isRelative) {
-            $this->prepend(CssCrush::$process->input->dirUrl . '/');
+            $this->prepend(Crush::$process->input->dirUrl . '/');
             $this->setType('rooted');
         }
 
@@ -135,7 +135,7 @@ class Url
         // Only make one conversion attempt.
         $this->convertToData = false;
 
-        $file = CssCrush::$process->docRoot . $this->toRoot()->value;
+        $file = Crush::$process->docRoot . $this->toRoot()->value;
 
         // File not found.
         if (! file_exists($file)) {

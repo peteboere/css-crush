@@ -6,7 +6,7 @@
  */
 namespace CssCrush;
 
-class CssCrush
+class Crush
 {
     const VERSION = '2.1.0-beta';
 
@@ -211,7 +211,7 @@ class CssCrush
             return '';
         }
 
-        CssCrush::runStat('hostfile');
+        Crush::runStat('hostfile');
 
         if ($options->cache) {
             $process->cacheData = $process->io('getCacheData');
@@ -347,7 +347,7 @@ class CssCrush
      */
     public static function stat()
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $stats = $process->stat;
 
         // Get logged errors as late as possible.
@@ -365,12 +365,12 @@ class CssCrush
 
     public static function addSelectorAlias($name, $body)
     {
-        CssCrush::$config->selectorAliases[$name] = is_callable($body) ? $body : new Template($body);
+        Crush::$config->selectorAliases[$name] = is_callable($body) ? $body : new Template($body);
     }
 
     public static function removeSelectorAlias($name)
     {
-        unset(CssCrush::$config->selectorAliases[$name]);
+        unset(Crush::$config->selectorAliases[$name]);
     }
 
 
@@ -396,7 +396,7 @@ class CssCrush
 
     public static function runStat()
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $all_rules =& $process->tokens->store->r;
 
         foreach (func_get_args() as $stat_name) {
@@ -434,20 +434,20 @@ class CssCrush
 
 
 function log($message, $context = array(), $type = 'debug') {
-    CssCrush::$config->logger->{$type}($message, $context);
+    Crush::$config->logger->{$type}($message, $context);
 }
 
 function debug($message, $context = array()) {
-    CssCrush::$config->logger->debug($message, $context);
+    Crush::$config->logger->debug($message, $context);
 }
 
 function notice($message, $context = array()) {
-    CssCrush::$config->logger->notice($message, $context);
+    Crush::$config->logger->notice($message, $context);
 }
 
 function warning($message, $context = array()) {
-    CssCrush::$config->logger->warning($message, $context);
+    Crush::$config->logger->warning($message, $context);
 }
 
 
-CssCrush::init();
+Crush::init();

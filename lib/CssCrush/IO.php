@@ -6,8 +6,6 @@
  */
 namespace CssCrush;
 
-use CssCrush\CssCrush as Crush;
-
 class IO
 {
     public static function init()

@@ -59,7 +59,7 @@ class Logger
      */
     public function error($message, array $context = array())
     {
-        CssCrush::$process->errors[] = $message;
+        Crush::$process->errors[] = $message;
         trigger_error($message, E_USER_ERROR);
     }
 
@@ -75,7 +75,7 @@ class Logger
      */
     public function warning($message, array $context = array())
     {
-        CssCrush::$process->errors[] = $message;
+        Crush::$process->errors[] = $message;
         trigger_error($message, E_USER_WARNING);
     }
 
@@ -88,7 +88,7 @@ class Logger
      */
     public function notice($message, array $context = array())
     {
-        CssCrush::$process->errors[] = $message;
+        Crush::$process->errors[] = $message;
         trigger_error($message, E_USER_NOTICE);
     }
 
@@ -123,12 +123,12 @@ class Logger
         }
 
         if (is_string($message)) {
-            CssCrush::$process->debugLog[] = "$label$message";
+            Crush::$process->debugLog[] = "$label$message";
         }
         else {
             ob_start();
             ! empty($context['var_dump']) ? var_dump($message) : print_r($message);
-            CssCrush::$process->debugLog[] = $label . ob_get_clean();
+            Crush::$process->debugLog[] = $label . ob_get_clean();
         }
     }
 

@@ -19,12 +19,12 @@ namespace CssCrush;
 Plugin::register('forms', array(
     'enable' => function () {
         foreach (forms() as $name => $value) {
-            CssCrush::addSelectorAlias($name, $value);
+            Crush::addSelectorAlias($name, $value);
         }
     },
     'disable' => function () {
         foreach (forms() as $name => $value) {
-            CssCrush::removeSelectorAlias($name);
+            Crush::removeSelectorAlias($name);
         }
     },
 ));
@@ -39,7 +39,7 @@ function forms() {
             }
 
             $result = $types ? 'input:any(' .  implode(',', $types) . ')' : 'input[type="text"]';
-            return CssCrush::$process->tokens->capture($result, 's');
+            return Crush::$process->tokens->capture($result, 's');
         },
 
         'checkbox' => 'input[type="checkbox"]',

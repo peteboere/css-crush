@@ -24,7 +24,7 @@ class Rule
 
     public function __construct($selector_string, $declarations_string, $trace_token = null)
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $this->label = $process->tokens->createLabel('r');
         $this->marker = $process->addTracingStubs || $process->generateMap ? $trace_token : null;
         $this->selectors = new SelectorList();
@@ -91,7 +91,7 @@ class Rule
 
     public function __toString()
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
 
         // Merge the extend selectors.
         $this->selectors->store += $this->extendSelectors;
@@ -144,7 +144,7 @@ class Rule
         }
         elseif (! $this->resolvedExtendables) {
 
-            $references =& CssCrush::$process->references;
+            $references =& Crush::$process->references;
 
             // Filter the extendArgs list to usable references.
             $filtered = array();

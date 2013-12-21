@@ -28,7 +28,7 @@ class Selector
 
     public function __toString()
     {
-        if (CssCrush::$process->minifyOutput) {
+        if (Crush::$process->minifyOutput) {
             // Trim whitespace around selector combinators.
             $this->value = preg_replace('~ ?([>\~+]) ?~S', '$1', $this->value);
         }
@@ -61,7 +61,7 @@ class Selector
 
         // Quick test for string tokens.
         if (strpos($str, '?s') !== false) {
-            $str = CssCrush::$process->tokens->restore($str, 's');
+            $str = Crush::$process->tokens->restore($str, 's');
         }
 
         return $str;

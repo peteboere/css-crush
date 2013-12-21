@@ -24,12 +24,12 @@ namespace CssCrush;
 Plugin::register('aria', array(
     'enable' => function () {
         foreach (aria() as $name => $value) {
-            CssCrush::addSelectorAlias($name, $value);
+            Crush::addSelectorAlias($name, $value);
         }
     },
     'disable' => function () {
         foreach (aria() as $name => $value) {
-            CssCrush::removeSelectorAlias($name);
+            Crush::removeSelectorAlias($name);
         }
     },
 ));

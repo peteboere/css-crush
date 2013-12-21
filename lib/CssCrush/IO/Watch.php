@@ -6,7 +6,7 @@
  */
 namespace CssCrush\IO;
 
-use CssCrush\CssCrush;
+use CssCrush\Crush;
 use CssCrush\IO;
 
 class Watch extends IO
@@ -15,7 +15,7 @@ class Watch extends IO
 
     public static function getOutputFileName()
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $options = $process->options;
 
         $output_basename = basename($process->input->filename, '.css');
@@ -36,13 +36,13 @@ class Watch extends IO
     {
         // Clear results from earlier processes.
         clearstatcache();
-        CssCrush::$process->cacheData = array();
+        Crush::$process->cacheData = array();
 
         return self::$cacheData;
     }
 
     public static function saveCacheData()
     {
-        self::$cacheData = CssCrush::$process->cacheData;
+        self::$cacheData = Crush::$process->cacheData;
     }
 }

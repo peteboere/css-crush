@@ -17,7 +17,7 @@ class Mixin
 
     public static function call($message, $context = null)
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
         $mixable = null;
         $message = trim($message);
 

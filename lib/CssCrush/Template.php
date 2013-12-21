@@ -137,15 +137,15 @@ class Template
 
     public static function tokenize($str)
     {
-        $str = CssCrush::$process->tokens->capture($str, 's');
-        $str = CssCrush::$process->tokens->capture($str, 'u');
+        $str = Crush::$process->tokens->capture($str, 's');
+        $str = Crush::$process->tokens->capture($str, 'u');
 
         return $str;
     }
 
     public static function unTokenize($str)
     {
-        $str = CssCrush::$process->tokens->restore($str, array('u', 's'), true);
+        $str = Crush::$process->tokens->restore($str, array('u', 's'), true);
 
         return $str;
     }

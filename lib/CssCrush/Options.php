@@ -6,8 +6,6 @@
  */
 namespace CssCrush;
 
-use CssCrush\CssCrush as Crush;
-
 class Options
 {
     protected $computedOptions = array();

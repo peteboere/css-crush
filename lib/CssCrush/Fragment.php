@@ -24,7 +24,7 @@ class Fragment extends Template
         while (preg_match(Regex::$patt->fragmentInvoke, $str, $m, PREG_OFFSET_CAPTURE)) {
 
             $name = strtolower($m['name'][0]);
-            $fragment = isset(CssCrush::$process->fragments[$name]) ? CssCrush::$process->fragments[$name] : null;
+            $fragment = isset(Crush::$process->fragments[$name]) ? Crush::$process->fragments[$name] : null;
 
             $replacement = '';
             $start = $m[0][1];

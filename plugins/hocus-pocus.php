@@ -15,11 +15,11 @@ namespace CssCrush;
 
 Plugin::register('hocus-pocus', array(
     'enable' => function () {
-        CssCrush::addSelectorAlias('hocus', ':any(:hover,:focus)');
-        CssCrush::addSelectorAlias('pocus', ':any(:hover,:focus,:active)');
+        Crush::addSelectorAlias('hocus', ':any(:hover,:focus)');
+        Crush::addSelectorAlias('pocus', ':any(:hover,:focus,:active)');
     },
     'disable' => function () {
-        CssCrush::removeSelectorAlias('hocus');
-        CssCrush::removeSelectorAlias('pocus');
+        Crush::removeSelectorAlias('hocus');
+        Crush::removeSelectorAlias('pocus');
     },
 ));

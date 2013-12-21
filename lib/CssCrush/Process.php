@@ -6,8 +6,6 @@
  */
 namespace CssCrush;
 
-use CssCrush\CssCrush as Crush;
-
 class Process
 {
     public function __construct($user_options = array(), $dev_options = array())

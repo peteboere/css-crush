@@ -92,7 +92,7 @@ function svg_capture($process) {
             $name = strtolower($m['name']);
             $block = $m['block_content'];
             if (! empty($block)) {
-                CssCrush::$process->misc->svg_defs[$name] = new Template($block);
+                Crush::$process->misc->svg_defs[$name] = new Template($block);
             }
             return '';
         });
@@ -100,7 +100,7 @@ function svg_capture($process) {
 
 function svg_generator($input, $fn_name) {
 
-    $process = CssCrush::$process;
+    $process = Crush::$process;
 
     $cache_key = $fn_name . $input;
     if (isset($process->misc->svg_cache[$cache_key])) {
@@ -509,7 +509,7 @@ function svg_text($element) {
         'text' => '',
     );
 
-    $text = CssCrush::$process->tokens->restore($element->data['text'], 's', true);
+    $text = Crush::$process->tokens->restore($element->data['text'], 's', true);
 
     // Remove open and close quotes.
     $text = substr($text, 1, strlen($text) - 2);
@@ -653,7 +653,7 @@ function svg_preprocess($element) {
 
             if (Tokens::is($value, 's')) {
                 $element->attrs[$point_data_attr] =
-                    trim(CssCrush::$process->tokens->get($value), '"\'');;
+                    trim(Crush::$process->tokens->get($value), '"\'');;
             }
         }
     }
@@ -738,7 +738,7 @@ function svg_render($element) {
             $styles .= $selector . '{' . implode(';', $out) . '}';
         }
     }
-    $styles = CssCrush::$process->tokens->restore($styles, array('u', 's'), true);
+    $styles = Crush::$process->tokens->restore($styles, array('u', 's'), true);
 
     // Add element styles as attributes which tend to work better with svg2png converters.
     $attrs = Util::htmlAttributes($element->attrs + $element->styles);
@@ -827,7 +827,7 @@ function svg_fn_pattern($input, $element) {
         Functions::parseArgs($input) +
         array('', '', 0, 0, 0, 0);
 
-    $url = CssCrush::$process->tokens->get($url);
+    $url = Crush::$process->tokens->get($url);
     if (! $url) {
         return '';
     }
