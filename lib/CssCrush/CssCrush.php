@@ -50,28 +50,7 @@ class CssCrush
         );
         self::$config->selectorAliases = array();
         self::$config->plugins = array();
-
-        // Set option defaults, see wiki for details.
-        self::$config->options = new Options(array(
-            'minify' => true,
-            'formatter' => null,
-            'versioning' => true,
-            'boilerplate' => true,
-            'vars' => array(),
-            'cache' => true,
-            'output_file' => null,
-            'output_dir' => null,
-            'asset_dir' => null,
-            'doc_root' => null,
-            'vendor_target' => 'all',
-            'rewrite_import_urls' => true,
-            'enable' => null,
-            'disable' => null,
-            'stat_dump' => false,
-            'trace' => array(),
-            'source_map' => false,
-            'newlines' => 'use-platform',
-        ));
+        self::$config->options = new Options();
 
         // Register stock formatters.
         require_once self::$dir . '/misc/formatters.php';

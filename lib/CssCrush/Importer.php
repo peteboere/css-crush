@@ -134,12 +134,11 @@ class Importer
         if ($input->path && $options->cache) {
 
             $process->cacheData[$process->output->filename] = array(
-                'imports'   => $filenames,
+                'imports' => $filenames,
                 'datem_sum' => array_sum($mtimes) + $input->mtime,
-                'options'   => $options->get(),
+                'options' => $options->get(),
             );
 
-            // Save config changes.
             $process->io('saveCacheData');
         }
 

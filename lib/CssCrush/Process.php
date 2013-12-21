@@ -6,31 +6,18 @@
  */
 namespace CssCrush;
 
+use CssCrush\CssCrush as Crush;
+
 class Process
 {
     public function __construct($user_options = array(), $dev_options = array())
     {
-        $config = CssCrush::$config;
+        $config = Crush::$config;
 
-        CssCrush::loadAssets();
+        Crush::loadAssets();
 
-        $dev_options += array(
-            'io_context' => 'filter'
-        );
-
-        // Create options instance for this process.
-        $this->options = new Options($user_options);
-
-        // Populate option defaults.
-        $this->options->merge($config->options);
-
-        // Override the minify option if a formatter is specified.
-        if ($this->options->formatter) {
-            $this->options->minify = false;
-        }
-
-        // Keep track of global vars to maintain cache integrity.
-        $this->options->global_vars = $config->vars;
+        $dev_options += array('io_context' => 'filter');
+        $this->ioContext = $dev_options['io_context'];
 
         // Initialize properties.
         $this->cacheData = array();
@@ -56,30 +43,20 @@ class Process
         $this->plugins = $config->plugins;
         $this->aliases = $config->aliases;
 
+        // Options.
+        $this->options = new Options($user_options, $config->options);
+
+        // Keep track of global vars to maintain cache integrity.
+        $this->options->global_vars = $config->vars;
+
         $this->docRoot = isset($this->options->doc_root) ? $this->options->doc_root : $config->docRoot;
-        $this->ioContext = $dev_options['io_context'];
 
-        // Shortcut commonly used options to avoid overhead with __get calls.
-        $this->minifyOutput = $this->options->minify;
-        $this->addTracingStubs = in_array('stubs', $this->options->trace);
-        $this->generateMap = $this->ioContext === 'file' && $this->options->source_map;
-        $this->ruleFormatter = $this->options->formatter;
-
-        // Shortcut the newline option and attach it to the process.
-        switch ($this->options->newlines) {
-            case 'windows':
-            case 'win':
-                $this->newline = "\r\n";
-                break;
-            case 'unix':
-                $this->newline = "\n";
-                break;
-            case 'use-platform':
-            default:
-                // Fall through and use default (platform) newline.
-                $this->newline = PHP_EOL;
-                break;
-        }
+        // Shortcut commonly used options to avoid __get() overhead.
+        $this->addTracingStubs = in_array('stubs', $this->options->__get('trace'));
+        $this->generateMap = $this->ioContext === 'file' && $this->options->__get('source_map');
+        $this->ruleFormatter = $this->options->__get('formatter');
+        $this->minifyOutput = $this->options->__get('minify');
+        $this->newline = $this->options->__get('newlines');
 
         Hook::run('process_init');
     }
@@ -133,7 +110,7 @@ class Process
         $args = func_get_args();
         array_shift($args);
 
-        return call_user_func_array(array(CssCrush::$config->io, $method), $args);
+        return call_user_func_array(array(Crush::$config->io, $method), $args);
     }
 
 
@@ -146,7 +123,7 @@ class Process
         $boilerplate_option = $this->options->boilerplate;
 
         if ($boilerplate_option === true) {
-            $file = CssCrush::$dir . '/boilerplate.txt';
+            $file = Crush::$dir . '/boilerplate.txt';
         }
         elseif (is_string($boilerplate_option)) {
             if (file_exists($boilerplate_option)) {
@@ -179,7 +156,7 @@ class Process
                 'command' => $command_args,
                 'plugins' => implode(',', array_keys($this->plugins)),
                 'compile_time' => function () {
-                    $now = microtime(true) - CssCrush::$process->stat['compile_start_time'];
+                    $now = microtime(true) - Crush::$process->stat['compile_start_time'];
                     return round($now, 4) . ' seconds';
                 },
             );
@@ -214,11 +191,11 @@ class Process
             Regex::make('~@selector-alias +\:?({{ident}}) +([^;]+) *;~iS'),
             function ($m) {
                 $name = strtolower($m[1]);
-                CssCrush::$process->selectorAliases[$name] = new Template(Util::stripCommentTokens($m[2]));
+                Crush::$process->selectorAliases[$name] = new Template(Util::stripCommentTokens($m[2]));
             });
 
         // Merge with global selector aliases.
-        $this->selectorAliases += CssCrush::$config->selectorAliases;
+        $this->selectorAliases += Crush::$config->selectorAliases;
 
         // Create the selector aliases pattern and store it.
         if ($this->selectorAliases) {
@@ -230,7 +207,7 @@ class Process
 
     public static function applySelectorAliases($str)
     {
-        $process = CssCrush::$process;
+        $process = Crush::$process;
 
         if (! $process->selectorAliases || ! preg_match($process->selectorAliasesPatt, $str)) {
             return $str;
@@ -290,7 +267,7 @@ class Process
 
         // For expicit 'none' argument turn off aliases.
         if ('none' === $vendors) {
-            $this->aliases = CssCrush::$config->bareAliases;
+            $this->aliases = Crush::$config->bareAliases;
 
             return;
         }
@@ -380,7 +357,7 @@ class Process
     protected function filterPlugins()
     {
         $options = $this->options;
-        $config = CssCrush::$config;
+        $config = Crush::$config;
 
         // Checking for table keys is more convenient than array searching.
         $disable = array_flip($options->disable);
@@ -428,18 +405,18 @@ class Process
 
         $this->stream->pregReplaceCallback($vars_patt, function ($m) {
             if (isset($m['name'])) {
-                CssCrush::$process->vars[$m['name']] = $m['value'];
+                Crush::$process->vars[$m['name']] = $m['value'];
             }
             else {
-                CssCrush::$process->vars = DeclarationList::parse($m['block_content'], array(
+                Crush::$process->vars = DeclarationList::parse($m['block_content'], array(
                                                 'keyed' => true,
                                                 'ignore_directives' => true,
-                                            )) + CssCrush::$process->vars;
+                                            )) + Crush::$process->vars;
             }
         });
 
         // In-file variables override global variables.
-        $this->vars += CssCrush::$config->vars;
+        $this->vars += Crush::$config->vars;
 
         // Runtime variables override in-file variables.
         if (! empty($this->options->vars)) {
@@ -489,8 +466,8 @@ class Process
             $value = Functions::executeOnString($value, '~(\$)\(~',
                 array('$' => function ($raw_args) {
                     list($name, $default_value) = Functions::parseArgsSimple($raw_args);
-                    if (isset(CssCrush::$process->vars[$name])) {
-                        return CssCrush::$process->vars[$name];
+                    if (isset(Crush::$process->vars[$name])) {
+                        return Crush::$process->vars[$name];
                     }
                     else {
                         return $default_value;
@@ -505,8 +482,8 @@ class Process
     static protected function cb_placeVars($m)
     {
         $var_name = $m[1];
-        if (isset(CssCrush::$process->vars[$var_name])) {
-            return CssCrush::$process->vars[$var_name];
+        if (isset(Crush::$process->vars[$var_name])) {
+            return Crush::$process->vars[$var_name];
         }
     }
 
@@ -550,7 +527,7 @@ class Process
     protected function captureMixins()
     {
         $this->stream->pregReplaceCallback(Regex::$patt->mixin, function ($m) {
-            CssCrush::$process->mixins[$m['name']] = new Mixin($m['block_content']);
+            Crush::$process->mixins[$m['name']] = new Mixin($m['block_content']);
         });
     }
 
@@ -560,7 +537,7 @@ class Process
 
     protected function resolveFragments()
     {
-        $fragments =& CssCrush::$process->fragments;
+        $fragments =& Crush::$process->fragments;
 
         $this->stream->pregReplaceCallback(Regex::$patt->fragmentCapture, function ($m) use (&$fragments) {
             $fragments[$m['name']] = new Fragment(
@@ -604,7 +581,7 @@ class Process
             // Store rules if they have declarations or extend arguments.
             if (! empty($rule->declarations->store) || $rule->extendArgs) {
 
-                CssCrush::$process->tokens->add($rule, 'r', $rule->label);
+                Crush::$process->tokens->add($rule, 'r', $rule->label);
 
                 // If only using extend still return a label.
                 return $rule->label;
@@ -655,7 +632,7 @@ class Process
     protected function resolveInBlocks()
     {
         $matches = $this->stream->matchAll('~@in\s+([^{]+)\{~iS');
-        $tokens = CssCrush::$process->tokens;
+        $tokens = Crush::$process->tokens;
 
         // Move through the matches in reverse order.
         while ($match = array_pop($matches)) {
@@ -839,7 +816,7 @@ class Process
         $this->stream->replaceTokens('r');
 
         // Record stats then drop rule objects to reclaim memory.
-        CssCrush::runStat('selector_count', 'rule_count', 'vars', 'computed_vars');
+        Crush::runStat('selector_count', 'rule_count', 'vars', 'computed_vars');
         $this->tokens->store->r = array();
 
         $this->stream->replaceTokens('p');
@@ -964,7 +941,7 @@ class Process
 
         $this->release();
 
-        CssCrush::runStat('compile_time');
+        Crush::runStat('compile_time');
 
         return $this->stream;
     }

@@ -107,13 +107,11 @@ class Rule
 
         $stub = $this->marker;
 
-        // Concat and return.
         if ($process->minifyOutput) {
             return "$stub{$this->selectors->join()}{{$this->declarations->join()}}";
         }
         else {
-            $formatter = $process->ruleFormatter ? $process->ruleFormatter : 'CssCrush\fmtr_block';
-
+            $formatter = $process->ruleFormatter;
             return "$stub{$formatter($this)}";
         }
     }
