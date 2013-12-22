@@ -18,15 +18,11 @@ class Url
     public $noRewrite;
     public $convertToData;
     public $value;
-    public $label;
 
     public function __construct($raw_value)
     {
-        $tokens = Crush::$process->tokens;
-
         if (preg_match(Regex::$patt->s_token, $raw_value)) {
-            $this->value = trim($tokens->get($raw_value), '\'"');
-            $tokens->release($raw_value);
+            $this->value = trim(Crush::$process->tokens->pop($raw_value), '\'"');
         }
         else {
             $this->value = $raw_value;

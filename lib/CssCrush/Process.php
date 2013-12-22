@@ -579,10 +579,7 @@ class Process
             // Store rules if they have declarations or extend arguments.
             if (! empty($rule->declarations->store) || $rule->extendArgs) {
 
-                Crush::$process->tokens->add($rule, 'r', $rule->label);
-
-                // If only using extend still return a label.
-                return $rule->label;
+                return Crush::$process->tokens->add($rule, 'r', $rule->label);
             }
         });
     }
@@ -811,7 +808,7 @@ class Process
         // Apply all formatting replacements.
         $this->stream->pregReplaceHash($regex_replacements)->lTrim();
 
-        $this->stream->replaceTokens('r');
+        $this->stream->restore('r');
 
         // Record stats then drop rule objects to reclaim memory.
         Crush::runStat('selector_count', 'rule_count', 'vars');
@@ -834,7 +831,7 @@ class Process
 
             // Insert comments and do final whitespace cleanup.
             $this->stream
-                ->replaceTokens('c')
+                ->restore('c')
                 ->trim()
                 ->append($EOL);
         }
@@ -868,11 +865,10 @@ class Process
             $this->stream->prepend("@charset \"$this->charset\";$EOL");
         }
 
-        $this->stream->replaceTokens('u');
-        $this->stream->replaceTokens('s');
+        $this->stream->restore(array('u', 's'));
 
         if ($this->addTracingStubs) {
-            $this->stream->replaceTokens('t', array($this, 'generateTracingStub'));
+            $this->stream->restore('t', false, array($this, 'generateTracingStub'));
         }
         if ($this->generateMap) {
             $this->generateSourceMap();
@@ -1003,12 +999,11 @@ class Process
 
     public function generateTracingStub($m)
     {
-        $token = $m[0];
-        $tokens =& $this->tokens->store->t;
-        if (! isset($tokens[$token])) {
+        if (! ($value = $this->tokens->get($m[0]))) {
             return '';
         }
-        list($source_index, $line) = explode(',', $tokens[$token]);
+
+        list($source_index, $line) = explode(',', $value);
         $line += 1;
 
         // Get the currently processed file path, and escape it.

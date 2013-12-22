@@ -96,12 +96,10 @@ class Rule
         // Merge the extend selectors.
         $this->selectors->store += $this->extendSelectors;
 
-        // If there are no selectors or declarations associated with the rule
-        // return empty string.
+        // Dereference and return empty string if there are no selectors or declarations.
         if (empty($this->selectors->store) || empty($this->declarations->store)) {
+            $process->tokens->pop($this->label);
 
-            // De-reference this instance.
-            $process->tokens->release($this->label);
             return '';
         }
 

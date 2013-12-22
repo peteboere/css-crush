@@ -14,38 +14,37 @@ class Tokens
     public function __construct(array $types = null)
     {
         $types = $types ?: array(
-            's', // Strings
-            'c', // Comments
-            'r', // Rules
-            'u', // URLs
-            't', // Traces
+            's', // strings.
+            'c', // comments.
+            'r', // rules.
+            'u', // URLs.
+            't', // traces.
         );
 
         $this->store = new \stdClass;
         $this->ids = new \stdClass;
 
         foreach ($types as $type) {
-            $this->store->{$type} = array();
-            $this->ids->{$type} = 0;
+            $this->store->$type = array();
+            $this->ids->$type = 0;
         }
     }
 
     public function get($label)
     {
         $path =& $this->store->{$label[1]};
+
         return isset($path[$label]) ? $path[$label] : null;
     }
 
     public function pop($label)
     {
         $value = $this->get($label);
-        $this->release($label);
-        return $value;
-    }
+        if (isset($value)) {
+            unset($this->store->{$label[1]}[$label]);
+        }
 
-    public function release($label)
-    {
-        unset($this->store->{$label[1]}[$label]);
+        return $value;
     }
 
     public function add($value, $type = null, $existing_label = null)
@@ -58,24 +57,27 @@ class Tokens
         }
         $label = $existing_label ? $existing_label : $this->createLabel($type);
         $this->store->{$type}[$label] = $value;
+
         return $label;
     }
 
     public function createLabel($type)
     {
-        $counter = base_convert(++$this->ids->{$type}, 10, 36);
+        $counter = base_convert(++$this->ids->$type, 10, 36);
+
         return "?$type$counter?";
     }
 
-    public function restore($str, $types, $release = false)
+    public function restore($str, $types, $release = false, $callback = null)
     {
         $types = implode('', (array) $types);
         $patt = Regex::make("~\?[$types]{{ token-id }}\?~S");
         $tokens = $this;
-
-        return preg_replace_callback($patt, function ($m) use ($tokens, $release) {
+        $callback = $callback ?: function ($m) use ($tokens, $release) {
             return $release ? $tokens->pop($m[0]) : $tokens->get($m[0]);
-        }, $str);
+        };
+
+        return preg_replace_callback($patt, $callback, $str);
     }
 
     public function capture($str, $type)

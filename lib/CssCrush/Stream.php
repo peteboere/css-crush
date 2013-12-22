@@ -47,9 +47,9 @@ class Stream
         return Regex::matchAll($patt, $this->raw, $offset);
     }
 
-    public function replace($find, $replacement)
+    public function restore($types, $release = false, $callback = null)
     {
-        $this->raw = str_replace($find, $replacement, $this->raw);
+        $this->raw = Crush::$process->tokens->restore($this->raw, $types, $release, $callback);
 
         return $this;
     }
@@ -65,29 +65,6 @@ class Stream
         return $this;
     }
 
-    public function replaceTokens($type, $callback = null)
-    {
-        $tokens =& Crush::$process->tokens->store->{ $type };
-        $callback = $callback ?: function ($m) use (&$tokens) {
-            return isset($tokens[$m[0]]) ? $tokens[$m[0]] : '';
-        };
-
-        $this->raw = preg_replace_callback(Regex::make("~\? $type {{token-id}} \?~xS"), $callback, $this->raw);
-        return $this;
-    }
-
-    public function pregReplace($patt, $replacement)
-    {
-        $this->raw = preg_replace($patt, $replacement, $this->raw);
-        return $this;
-    }
-
-    public function pregReplaceCallback($patt, $callback)
-    {
-        $this->raw = preg_replace_callback($patt, $callback, $this->raw);
-        return $this;
-    }
-
     public function pregReplaceHash($replacements)
     {
         if ($replacements) {
@@ -96,6 +73,12 @@ class Stream
                 array_values($replacements),
                 $this->raw);
         }
+        return $this;
+    }
+
+    public function pregReplaceCallback($patt, $callback)
+    {
+        $this->raw = preg_replace_callback($patt, $callback, $this->raw);
         return $this;
     }
 
