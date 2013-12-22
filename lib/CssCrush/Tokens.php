@@ -17,7 +17,6 @@ class Tokens
             's', // Strings
             'c', // Comments
             'r', // Rules
-            'p', // Parens
             'u', // URLs
             't', // Traces
         );
@@ -88,10 +87,6 @@ class Tokens
             case 's':
                 return preg_replace_callback(Regex::$patt->string, function ($m) {
                     return Crush::$process->tokens->add($m[0], 's');
-                }, $str);
-            case 'p':
-                return preg_replace_callback(Regex::$patt->parens, function ($m) {
-                    return Crush::$process->tokens->add($m[0], 'p');
                 }, $str);
         }
     }

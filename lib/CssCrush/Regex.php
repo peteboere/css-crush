@@ -32,7 +32,6 @@ class Regex
         $classes->c_token = '\?c' . $classes->token_id . '\?'; // Comments.
         $classes->s_token = '\?s' . $classes->token_id . '\?'; // Strings.
         $classes->r_token = '\?r' . $classes->token_id . '\?'; // Rules.
-        $classes->p_token = '\?p' . $classes->token_id . '\?'; // Parens.
         $classes->u_token = '\?u' . $classes->token_id . '\?'; // URLs.
         $classes->t_token = '\?t' . $classes->token_id . '\?'; // Traces.
         $classes->a_token = '\?a(' . $classes->token_id . ')\?'; // Args.

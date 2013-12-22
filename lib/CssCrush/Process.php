@@ -814,10 +814,8 @@ class Process
         $this->stream->replaceTokens('r');
 
         // Record stats then drop rule objects to reclaim memory.
-        Crush::runStat('selector_count', 'rule_count', 'vars', 'computed_vars');
+        Crush::runStat('selector_count', 'rule_count', 'vars');
         $this->tokens->store->r = array();
-
-        $this->stream->replaceTokens('p');
 
         // If specified, apply advanced minification.
         if (is_array($minify)) {
