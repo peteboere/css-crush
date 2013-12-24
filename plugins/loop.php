@@ -66,9 +66,9 @@ define('CssCrush\LOOP_PATT',
     Regex::make('~(?<expression> @for \s+ (?<var>{{ident}}) \s+ in \s+ (?<list>[^{]+) ) \s* {{block}}~xiS'));
 
 
-function loop() {
+function loop($process) {
 
-    Crush::$process->stream->pregReplaceCallback(LOOP_PATT, function ($m) {
+    $process->stream->pregReplaceCallback(LOOP_PATT, function ($m) {
 
         return Template::tokenize(loop_unroll(Template::unTokenize($m[0])));
     });

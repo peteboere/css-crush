@@ -327,13 +327,20 @@ class DeclarationList extends Iterator
     {
         $str = Util::stripCommentTokens($str);
         $lines = preg_split('~\s*;\s*~', $str, null, PREG_SPLIT_NO_EMPTY);
-        $keyed = ! empty($options['keyed']);
-        $directives = empty($options['ignore_directives']);
-        $out = array();
+
+        $options += array(
+            'keyed' => false,
+            'ignore_directives' => false,
+            'context' => null,
+            'flatten' => false,
+            'apply_hooks' => false,
+        );
+
+        $pairs = array();
 
         foreach ($lines as $line) {
 
-            if ($directives && preg_match(Regex::$patt->ruleDirective, $line, $m)) {
+            if (! $options['ignore_directives'] && preg_match(Regex::$patt->ruleDirective, $line, $m)) {
 
                 if (! empty($m[1])) {
                     $property = 'mixin';
@@ -350,30 +357,34 @@ class DeclarationList extends Iterator
 
                 $property = trim(substr($line, 0, $colon_pos));
                 $value = trim(substr($line, $colon_pos + 1));
+
+                if ($options['apply_hooks']) {
+                    Hook::run('declaration_preprocess', array('property' => &$property, 'value' => &$value));
+                }
             }
             else {
                 continue;
             }
 
-            if (! isset($property[0]) || ! isset($value[0])) {
+            if ($property === '' || $value === '') {
                 continue;
             }
 
-            if ($property === 'mixin' && ! empty($options['flatten'])) {
-                $out = Mixin::merge($out, $value, array(
-                    'keyed' => $keyed,
-                    'context' => isset($options['context']) ? $options['context'] : null,
+            if ($property === 'mixin' && $options['flatten']) {
+                $pairs = Mixin::merge($pairs, $value, array(
+                    'keyed' => $options['keyed'],
+                    'context' => $options['context'],
                 ));
             }
-            elseif ($keyed) {
-                $out[$property] = $value;
+            elseif ($options['keyed']) {
+                $pairs[$property] = $value;
             }
             else {
-                $out[] = array($property, $value);
+                $pairs[] = array($property, $value);
             }
         }
 
-        return $out;
+        return $pairs;
     }
 
     public function flatten($rule_context)

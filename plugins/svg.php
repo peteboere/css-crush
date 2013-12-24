@@ -199,6 +199,7 @@ function svg_generator($input, $fn_name) {
     $raw_data = array_change_key_case(DeclarationList::parse($block, array(
         'keyed' => true,
         'flatten' => true,
+        'apply_hooks' => true,
     )));
 
     // Resolve the type.

@@ -40,6 +40,7 @@ class Process
         // Copy config values.
         $this->plugins = $config->plugins;
         $this->aliases = $config->aliases;
+        $this->colorKeywords = $config->colorKeywords;
 
         // Options.
         $this->options = new Options($user_options, $config->options);

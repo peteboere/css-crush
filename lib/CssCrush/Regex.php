@@ -39,7 +39,6 @@ class Regex
         // Boundries.
         $classes->LB = '(?<![\w-])'; // Left ident boundry.
         $classes->RB = '(?![\w-])'; // Right ident boundry.
-        $classes->RTB = '(?=\?[a-z])'; // Right token boundry.
 
         // Recursive block matching.
         $classes->block = '(?<block>\{\s*(?<block_content>(?:(?>[^{}]+)|(?&block))*)\})';

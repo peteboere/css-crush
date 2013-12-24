@@ -47,7 +47,7 @@ function csscrush_set($object_name, $modifier) {
         $pointer = $object_name === 'options' ? Crush::$config->options : Crush::$config;
 
         if (is_callable($modifier)) {
-            call_user_func($modifier, $pointer);
+            $modifier($pointer);
         }
         elseif (is_array($modifier)) {
             foreach ($modifier as $key => $value) {

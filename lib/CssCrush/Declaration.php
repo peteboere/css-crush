@@ -18,27 +18,25 @@ class Declaration
     public $important = false;
     public $valid = true;
 
-    public function __construct($prop, $value, $contextIndex = 0)
+    public function __construct($property, $value, $contextIndex = 0)
     {
-        $regex = Regex::$patt;
-
         // Normalize the property name.
-        $prop = strtolower($prop);
+        $property = strtolower($property);
 
         // Test for escape tilde.
-        if ($skip = strpos($prop, '~') === 0) {
-            $prop = substr($prop, 1);
+        if ($skip = strpos($property, '~') === 0) {
+            $property = substr($property, 1);
         }
 
         // Store the canonical property name.
         // Store the vendor mark if one is present.
-        if (preg_match($regex->vendorPrefix, $prop, $vendor)) {
+        if (preg_match(Regex::$patt->vendorPrefix, $property, $vendor)) {
             $canonical_property = $vendor[2];
             $vendor = $vendor[1];
         }
         else {
             $vendor = null;
-            $canonical_property = $prop;
+            $canonical_property = $property;
         }
 
         // Check for !important.
@@ -47,14 +45,14 @@ class Declaration
             $important = true;
         }
 
+        Hook::run('declaration_preprocess', array('property' => &$property, 'value' => &$value));
+
         // Reject declarations with empty CSS values.
         if ($value === false || $value === '') {
             $this->valid = false;
-
-            return;
         }
 
-        $this->property = $prop;
+        $this->property = $property;
         $this->canonicalProperty = $canonical_property;
         $this->vendor = $vendor;
         $this->index = $contextIndex;

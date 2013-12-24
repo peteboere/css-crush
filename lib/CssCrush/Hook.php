@@ -16,7 +16,6 @@ class Hook
         // Bail early is the named hook and callback combination is already loaded.
         if (! isset(self::$register[$hook][$fn_name])) {
 
-            // Register the hook and callback.
             // Store in associative array so no duplicates.
             if (function_exists($fn_name)) {
                 self::$register[$hook][$fn_name] = true;
@@ -31,10 +30,9 @@ class Hook
 
     public static function run($hook, $arg_obj = null)
     {
-        // Run all callbacks attached to the hook.
         if (isset(self::$register[$hook])) {
-            foreach (array_keys(self::$register[$hook]) as $fn_name) {
-                call_user_func($fn_name, $arg_obj);
+            foreach (self::$register[$hook] as $fn_name => $flag) {
+                $fn_name($arg_obj);
             }
         }
     }

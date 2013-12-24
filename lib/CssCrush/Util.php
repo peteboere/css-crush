@@ -97,7 +97,7 @@ class Util
             }
 
             if (! file_exists($path) && is_callable($recovery)) {
-                $path = call_user_func($recovery, $path);
+                $path = $recovery($path);
             }
             $path = realpath($path);
         }

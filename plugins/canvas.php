@@ -67,7 +67,6 @@ Plugin::register('canvas', array(
 
 function canvas_capture($process) {
 
-    // Extract definitions.
     $process->stream->pregReplaceCallback(
         Regex::make('~@canvas \s+ (?<name>{{ident}}) \s* {{block}}~ixS'),
         function ($m) {
@@ -121,6 +120,7 @@ function canvas_generator($input, $context) {
     $raw = array_change_key_case(DeclarationList::parse($block, array(
         'keyed' => true,
         'flatten' => true,
+        'apply_hooks' => true,
     )));
 
     // Create canvas object.
