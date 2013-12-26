@@ -8,8 +8,7 @@ namespace CssCrush;
 
 class Color
 {
-    public static $keywords;
-    public static $minifyableKeywords;
+    protected static $keywords, $minifyableKeywords;
 
     public static function getKeywords()
     {
@@ -24,7 +23,7 @@ class Color
         return isset(Crush::$process->colorKeywords) ? Crush::$process->colorKeywords : self::$keywords;
     }
 
-    public static function getMinifyableKeywords ()
+    public static function getMinifyableKeywords()
     {
         if (! isset(self::$minifyableKeywords)) {
 

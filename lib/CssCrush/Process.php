@@ -1058,14 +1058,15 @@ class Process
     {
         static $keywords_patt, $functions_patt;
 
+        $minified_keywords = Color::getMinifyableKeywords();
+
         if (! $keywords_patt) {
-            $keywords = Color::getMinifyableKeywords();
-            $keywords_patt = '~(?<![\w-\.#])(' . implode('|', array_keys($keywords)) . ')(?![\w-\.#\]])~iS';
-            $functions_patt = Regex::make('~{{LB}}(rgb|hsl)\(([^\)]{5,})\)~iS');
+            $keywords_patt = '~(?<![\w-\.#])(' . implode('|', array_keys($minified_keywords)) . ')(?![\w-\.#\]])~iS';
+            $functions_patt = Regex::make('~{{ LB }}(rgb|hsl)\(([^\)]{5,})\)~iS');
         }
 
-        $this->stream->pregReplaceCallback($keywords_patt, function ($m) {
-            return Color::$minifyableKeywords[strtolower($m[0])];
+        $this->stream->pregReplaceCallback($keywords_patt, function ($m) use ($minified_keywords) {
+            return $minified_keywords[strtolower($m[0])];
         });
 
         $this->stream->pregReplaceCallback($functions_patt, function ($m) {

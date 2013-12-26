@@ -98,12 +98,13 @@ class Functions
             // First look for function as directly passed.
             if (isset($process_callback[$fn_name])) {
 
-                $func_returns = call_user_func($process_callback[$fn_name], $raw_args, $context);
+                $func_returns = $process_callback[$fn_name]($raw_args, $context);
             }
             // Secondly look for built-in function.
             elseif (isset(self::$functions[$fn_name])) {
 
-                $func_returns = call_user_func(self::$functions[$fn_name], $raw_args, $context);
+                $func = self::$functions[$fn_name];
+                $func_returns = $func($raw_args, $context);
             }
 
             // Splice in the function result.

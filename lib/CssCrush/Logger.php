@@ -146,7 +146,7 @@ class Logger
         unset($log_levels['log']);
 
         if (isset($log_levels[$level])) {
-            return call_user_func(array($this, $level), $message, $context);
+            return $this->$level($message, $context);
         }
     }
 }

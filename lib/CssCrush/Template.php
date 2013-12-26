@@ -31,7 +31,8 @@ class Template
 
         // Parse all arg function calls in the passed string,
         // callback creates default values.
-        $capture_callback = function ($str)
+        $self = $this;
+        $capture_callback = function ($str) use (&$self)
         {
             $args = Functions::parseArgsSimple($str);
 
@@ -48,12 +49,12 @@ class Template
             $default_value = isset($args[0]) ? $args[0] : null;
 
             if (isset($default_value)) {
-                $this->defaults[$position] = $default_value;
+                $self->defaults[$position] = $default_value;
             }
 
             // Update the argument count.
             $argNumber = ((int) $position) + 1;
-            $this->argCount = max($this->argCount, $argNumber);
+            $self->argCount = max($self->argCount, $argNumber);
 
             return "?a$position?";
         };
