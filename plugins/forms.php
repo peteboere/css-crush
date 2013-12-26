@@ -1,6 +1,6 @@
 <?php
 /**
- * Pseudo classes for working with forms.
+ * Pseudo classes for working with forms
  *
  * @before
  *      :input(date, search, email) {...}
