@@ -184,7 +184,7 @@ class DeclarationList extends Iterator
                 $prefixed_copies = array();
 
                 // Grouped function aliases.
-                if ($function_aliases[$fn_name][0] === ':') {
+                if ($function_aliases[$fn_name][0] === '.') {
 
                     $group_id = $function_aliases[$fn_name];
 

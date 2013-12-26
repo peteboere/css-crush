@@ -124,7 +124,6 @@ class Color
 
         // Secondly try to match a color keyword.
         else {
-
             if (isset(Crush::$process->colorKeywords[$str])) {
                 $color_test['type'] = 'keyword';
             }
@@ -154,8 +153,8 @@ class Color
         $b /= 255;
         $max = max($r, $g, $b);
         $min = min($r, $g, $b);
-        $h;
-        $s;
+        $h = 0;
+        $s = 0;
         $l = ($max + $min) / 2;
 
         if ($max == $min) {
@@ -198,9 +197,9 @@ class Color
         }
 
         list($h, $s, $l, $a) = $hsla;
-        $r;
-        $g;
-        $b;
+        $r = 0;
+        $g = 0;
+        $b = 0;
         if ($s == 0) {
             $r = $g = $b = $l;
         }

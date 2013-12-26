@@ -325,7 +325,7 @@ class Process
                 foreach ($group_array as $alias_keyword => $prefix_array) {
 
                     // Skip over pointers to function groups.
-                    if ($prefix_array[0] === ':') {
+                    if ($prefix_array[0] === '.') {
                         continue;
                     }
 

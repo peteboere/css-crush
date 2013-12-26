@@ -9,7 +9,7 @@ namespace CssCrush;
 class PostAliasFix
 {
     public static $functions = array(
-        ':gradients' => 'CssCrush\postalias_fix_gradients',
+        '.gradients' => 'CssCrush\postalias_fix_gradients',
     );
 
     public static function add($alias_type, $key, $callback)

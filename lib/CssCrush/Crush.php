@@ -136,7 +136,7 @@ class Crush
                 $store = array();
                 foreach ($items as $prop_val => $aliases) {
 
-                    list($prop, $value) = array_map('trim', explode(':', $prop_val));
+                    list($prop, $value) = array_map('trim', explode('.', $prop_val));
 
                     foreach ($aliases as &$alias) {
 
@@ -158,7 +158,7 @@ class Crush
             }
 
             // Function groups.
-            elseif (strpos($section, 'functions:') === 0) {
+            elseif (strpos($section, 'functions.') === 0) {
 
                 $group = substr($section, strlen('functions'));
 
@@ -405,7 +405,6 @@ class Crush
     public static function runStat()
     {
         $process = Crush::$process;
-        $all_rules =& $process->tokens->store->r;
 
         foreach (func_get_args() as $stat_name) {
 
@@ -427,13 +426,13 @@ class Crush
 
                 case 'selector_count':
                     $process->stat['selector_count'] = 0;
-                    foreach ($all_rules as $rule) {
+                    foreach ($process->tokens->store->r as $rule) {
                         $process->stat['selector_count'] += count($rule->selectors);
                     }
                     break;
 
                 case 'rule_count':
-                    $process->stat['rule_count'] = count($all_rules);
+                    $process->stat['rule_count'] = count($process->tokens->store->r);
                     break;
             }
         }
