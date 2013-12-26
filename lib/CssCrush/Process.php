@@ -40,7 +40,6 @@ class Process
         // Copy config values.
         $this->plugins = $config->plugins;
         $this->aliases = $config->aliases;
-        $this->colorKeywords = $config->colorKeywords;
 
         // Options.
         $this->options = new Options($user_options, $config->options);
@@ -1060,7 +1059,7 @@ class Process
         static $keywords_patt, $functions_patt;
 
         if (! $keywords_patt) {
-            $keywords =& Color::loadMinifyableKeywords();
+            $keywords = Color::getMinifyableKeywords();
             $keywords_patt = '~(?<![\w-\.#])(' . implode('|', array_keys($keywords)) . ')(?![\w-\.#\]])~iS';
             $functions_patt = Regex::make('~{{LB}}(rgb|hsl)\(([^\)]{5,})\)~iS');
         }

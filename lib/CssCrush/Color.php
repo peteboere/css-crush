@@ -8,16 +8,30 @@ namespace CssCrush;
 
 class Color
 {
+    public static $keywords;
     public static $minifyableKeywords;
 
-    public static function &loadMinifyableKeywords ()
+    public static function getKeywords()
+    {
+        if (! isset(self::$keywords)) {
+            if ($keywords = Util::loadIni('misc/color-keywords.ini')) {
+                foreach ($keywords as $keyword => $rgb) {
+                    self::$keywords[$keyword] = array_map('floatval', explode(',', $rgb)) + array(0,0,0,1);
+                }
+            }
+        }
+
+        return isset(Crush::$process->colorKeywords) ? Crush::$process->colorKeywords : self::$keywords;
+    }
+
+    public static function getMinifyableKeywords ()
     {
         if (! isset(self::$minifyableKeywords)) {
 
             // If color name is longer than 4 and less than 8 test to see if its hex
             // representation could be shortened.
             $table = array();
-            $keywords = Crush::$config->colorKeywords;
+            $keywords = self::getKeywords();
 
             foreach ($keywords as $name => $rgba) {
                 $name_len = strlen($name);
@@ -81,7 +95,8 @@ class Color
                 break;
 
             case 'keyword':
-                $rgba = Crush::$process->colorKeywords[$color];
+                $keywords = self::getKeywords();
+                $rgba = $keywords[$color];
                 break;
         }
 
@@ -124,7 +139,8 @@ class Color
 
         // Secondly try to match a color keyword.
         else {
-            if (isset(Crush::$process->colorKeywords[$str])) {
+            $keywords = self::getKeywords();
+            if (isset($keywords[$str])) {
                 $color_test['type'] = 'keyword';
             }
         }

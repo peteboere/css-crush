@@ -106,14 +106,6 @@ class Crush
             $aliases = self::parseAliasesFile(self::$config->aliasesFile);
             self::$config->aliases = $aliases ?: self::$config->bareAliases;
         }
-
-        if (! isset(self::$config->colorKeywords)) {
-            if ($keywords = Util::loadIni('misc/color-keywords.ini')) {
-                foreach ($keywords as $keyword => $rgb) {
-                    self::$config->colorKeywords[$keyword] = array_map('floatval', explode(',', $rgb)) + array(0,0,0,1);
-                }
-            }
-        }
     }
 
     public static function parseAliasesFile($file)
