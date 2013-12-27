@@ -10,17 +10,17 @@
  */
 namespace CssCrush;
 
-Plugin::register('hsl-to-hex', array(
+Plugin::register('hsl2hex', array(
     'enable' => function () {
-        Hook::add('rule_postalias', 'CssCrush\hsl_to_hex');
+        Hook::add('rule_postalias', 'CssCrush\hsl2hex');
     },
     'disable' => function () {
-        Hook::remove('rule_postalias', 'CssCrush\hsl_to_hex');
+        Hook::remove('rule_postalias', 'CssCrush\hsl2hex');
     },
 ));
 
 
-function hsl_to_hex(Rule $rule) {
+function hsl2hex(Rule $rule) {
 
     $hsl_patt = Regex::make('~{{ LB }}hsl({{ parens }})~i');
 

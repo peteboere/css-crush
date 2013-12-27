@@ -120,7 +120,7 @@ class Functions
 
     public static function register($name, $callback)
     {
-        Functions::$customFunctions[ $name] = $callback;
+        Functions::$customFunctions[$name] = $callback;
     }
 
     public static function deRegister($name)

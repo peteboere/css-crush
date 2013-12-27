@@ -54,18 +54,6 @@ class HookTest extends \PHPUnit_Framework_TestCase
 
         return Hook::$register;
     }
-
-    /**
-     * @depends testRun
-     */
-    public function testReset($register)
-    {
-        Hook::$register = $register;
-
-        Hook::reset();
-
-        $this->assertEquals(array(), Hook::$register);
-    }
 }
 
 function dummy_hook(HookTest $test)

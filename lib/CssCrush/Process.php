@@ -47,9 +47,8 @@ class Process
         // Keep track of global vars to maintain cache integrity.
         $this->options->global_vars = $config->vars;
 
-        $this->docRoot = isset($this->options->doc_root) ? $this->options->doc_root : $config->docRoot;
-
         // Shortcut commonly used options to avoid __get() overhead.
+        $this->docRoot = isset($this->options->doc_root) ? $this->options->doc_root : $config->docRoot;
         $this->addTracingStubs = in_array('stubs', $this->options->__get('trace'));
         $this->generateMap = $this->ioContext === 'file' && $this->options->__get('source_map');
         $this->ruleFormatter = $this->options->__get('formatter');
@@ -361,7 +360,6 @@ class Process
         $disable = array_flip($options->disable);
         $enable = array_flip($options->enable);
 
-        // Disable has the special 'all' option.
         if (isset($disable['all'])) {
             $disable = $config->plugins;
         }
@@ -381,7 +379,6 @@ class Process
             }
         }
 
-        // Enable all plugins in the remaining list.
         foreach ($this->plugins as $plugin_name => $bool) {
             Plugin::enable($plugin_name);
         }
@@ -393,13 +390,7 @@ class Process
 
     protected function captureVars()
     {
-        $vars_patt = Regex::make('~
-            @define
-            (?:
-                \s* {{block}} |
-                \s+ (?<name>{{ident}}) \s+ (?<value>[^;]+) \s* ;
-            )
-        ~ixS');
+        $vars_patt = Regex::make('~@define(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
 
         $this->stream->pregReplaceCallback($vars_patt, function ($m) {
             if (isset($m['name'])) {
@@ -407,9 +398,9 @@ class Process
             }
             else {
                 Crush::$process->vars = DeclarationList::parse($m['block_content'], array(
-                                                'keyed' => true,
-                                                'ignore_directives' => true,
-                                            )) + Crush::$process->vars;
+                        'keyed' => true,
+                        'ignore_directives' => true,
+                    )) + Crush::$process->vars;
             }
         });
 
@@ -875,7 +866,7 @@ class Process
         }
     }
 
-    public function prepare()
+    public function preCompile()
     {
         // Ensure relevant ini settings aren't too conservative.
         if (ini_get('pcre.backtrack_limit') < 1000000) {
@@ -885,19 +876,28 @@ class Process
             ini_set('memory_limit', '128M');
         }
 
-        Hook::reset();
         $this->filterPlugins();
         $this->filterAliases();
 
         Functions::setMatchPatt();
+
+        $this->stat['compile_start_time'] = microtime(true);
+    }
+
+    public function postCompile()
+    {
+        foreach ($this->plugins as $plugin_name => $bool) {
+            Plugin::disable($plugin_name);
+        }
+
+        $this->release();
+
+        Crush::runStat('compile_time');
     }
 
     public function compile()
     {
-        // Always store start time.
-        $this->stat['compile_start_time'] = microtime(true);
-
-        $this->prepare();
+        $this->preCompile();
 
         // Collate hostfile and imports.
         $this->stream = new Stream(Importer::hostfile($this->input));
@@ -931,9 +931,7 @@ class Process
 
         $this->collate();
 
-        $this->release();
-
-        Crush::runStat('compile_time');
+        $this->postCompile();
 
         return $this->stream;
     }
