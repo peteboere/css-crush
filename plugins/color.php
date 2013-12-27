@@ -6,6 +6,7 @@ namespace CssCrush;
 
 Plugin::register('color', array(
     'enable' => function () {
+        $GLOBALS['CSSCRUSH_COLOR_PATT'] = null;
         Hook::add('capture_phase1', 'CssCrush\color_capture');
         Hook::add('declaration_preprocess', 'CssCrush\color');
     },
@@ -17,8 +18,8 @@ Plugin::register('color', array(
 
 
 function color(&$declaration) {
-    if (defined('CSSCRUSH_COLOR_PATT')) {
-        $declaration['value'] = preg_replace_callback(CSSCRUSH_COLOR_PATT, function ($m) {
+    if (isset($GLOBALS['CSSCRUSH_COLOR_PATT'])) {
+        $declaration['value'] = preg_replace_callback($GLOBALS['CSSCRUSH_COLOR_PATT'], function ($m) {
             return new Color(Crush::$process->colorKeywords[$m['color_keyword']]);
         }, $declaration['value']);
     }
@@ -63,8 +64,8 @@ function color_capture($process) {
         }
 
         if ($custom_keywords) {
-            define('CSSCRUSH_COLOR_PATT', Regex::make('~{{ LB }}(?<color_keyword>' .
-                implode('|', array_keys($custom_keywords)) . '){{ RB }}~iS'));
+            $GLOBALS['CSSCRUSH_COLOR_PATT'] = Regex::make('~{{ LB }}(?<color_keyword>' .
+                implode('|', array_keys($custom_keywords)) . '){{ RB }}~iS');
         }
     }
 }

@@ -1,0 +1,6 @@
+_*
+.tm_properties
+phpunit.xml
+composer.lock
+vendor
+tests
