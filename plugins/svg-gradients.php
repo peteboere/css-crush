@@ -41,9 +41,10 @@
  */
 namespace CssCrush;
 
-$GLOBALS['CSSCRUSH_SVG_GRADIENT_UID'] = 0;
-
 Plugin::register('svg-gradients', array(
+    'load' => function () {
+        $GLOBALS['CSSCRUSH_SVG_GRADIENT_UID'] = 0;
+    },
     'enable' => function () {
         $GLOBALS['CSSCRUSH_SVG_GRADIENT_UID'] = 0;
         Functions::register('svg-linear-gradient', 'CssCrush\fn__svg_linear_gradient');

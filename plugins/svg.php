@@ -60,7 +60,11 @@
 namespace CssCrush;
 
 Plugin::register('svg', array(
+    'load' => function () {
+        $GLOBALS['CSSCRUSH_SVG_UID'] = 0;
+    },
     'enable' => function () {
+        $GLOBALS['CSSCRUSH_SVG_UID'] = 0;
         Hook::add('capture_phase2', 'CssCrush\svg_capture');
         Functions::register('svg', 'CssCrush\fn__svg');
         Functions::register('svg-data', 'CssCrush\fn__svg_data');
@@ -820,8 +824,7 @@ function svg_fn_radial_gradient($input, $element) {
 
 function svg_fn_pattern($input, $element) {
 
-    static $uid = 0;
-    $pid = 'p' . (++$uid);
+    $pid = 'p' . (++$GLOBALS['CSSCRUSH_SVG_UID']);
 
     // Get args in order with defaults.
     list($url, $transform_list, $width, $height, $x, $y) =

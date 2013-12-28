@@ -57,7 +57,7 @@ function color_capture($process) {
         foreach ($captured_keywords as $key => $value) {
             $value = Functions::executeOnString($value);
             if (! isset($native_keywords[$key]) && $rgba = Color::parse($value)) {
-                $custom_keywords[$key] = $rgba;
+                $custom_keywords[] = $key;
                 Crush::$process->stat['colors'][$key] = new Color($rgba);
                 Crush::$process->colorKeywords[$key] = $rgba;
             }
@@ -65,7 +65,7 @@ function color_capture($process) {
 
         if ($custom_keywords) {
             $GLOBALS['CSSCRUSH_COLOR_PATT'] = Regex::make('~{{ LB }}(?<color_keyword>' .
-                implode('|', array_keys($custom_keywords)) . '){{ RB }}~iS');
+                implode('|', $custom_keywords) . '){{ RB }}~iS');
         }
     }
 }

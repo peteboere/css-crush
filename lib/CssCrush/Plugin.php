@@ -70,6 +70,10 @@ class Plugin
             if (! $found) {
                 notice("[[CssCrush]] - Plugin '$plugin_name' not found.");
             }
+            elseif (isset(self::$plugins[$plugin_name]['load'])) {
+                $plugin_load = self::$plugins[$plugin_name]['load'];
+                $plugin_load();
+            }
         }
 
         return isset(self::$plugins[$plugin_name]) ? self::$plugins[$plugin_name] : null;
