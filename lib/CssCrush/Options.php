@@ -26,6 +26,7 @@ class Options
         'rewrite_import_urls' => true,
         'enable' => null,
         'disable' => null,
+        'settings' => array(),
         'stat_dump' => false,
         'trace' => array(),
         'source_map' => false,

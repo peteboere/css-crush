@@ -25,6 +25,7 @@ class Process
         $this->charset = null;
         $this->sources = array();
         $this->vars = array();
+        $this->settings = array();
         $this->misc = new \stdClass();
         $this->input = new \stdClass();
         $this->output = new \stdClass();
@@ -54,8 +55,6 @@ class Process
         $this->ruleFormatter = $this->options->__get('formatter');
         $this->minifyOutput = $this->options->__get('minify');
         $this->newline = $this->options->__get('newlines');
-
-        Hook::run('process_init');
     }
 
     public function release()
@@ -390,9 +389,9 @@ class Process
 
     protected function captureVars()
     {
-        $vars_patt = Regex::make('~@define(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
+        $patt = Regex::make('~@define(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
 
-        $this->stream->pregReplaceCallback($vars_patt, function ($m) {
+        $this->stream->pregReplaceCallback($patt, function ($m) {
             if (isset($m['name'])) {
                 Crush::$process->vars[$m['name']] = $m['value'];
             }
@@ -474,6 +473,34 @@ class Process
         if (isset(Crush::$process->vars[$var_name])) {
             return Crush::$process->vars[$var_name];
         }
+    }
+
+
+    #############################
+    #  @settings blocks.
+
+    protected function resolveSettings()
+    {
+        $patt = Regex::make('~@settings(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
+        $captured_settings = array();
+
+        $this->stream->pregReplaceCallback($patt, function ($m) use (&$captured_settings) {
+            if (isset($m['name'])) {
+                $captured_settings[strtolower($m['name'])] = $m['value'];
+            }
+            else {
+                $captured_settings = DeclarationList::parse($m['block_content'], array(
+                    'keyed' => true,
+                    'ignore_directives' => true,
+                    'lowercase_keys' => true,
+                )) + $captured_settings;
+            }
+
+            return '';
+        });
+
+        // Like variables, settings passed via options override settings defined in CSS.
+        $this->settings = new Settings($this->options->settings + $captured_settings);
     }
 
 
@@ -902,14 +929,15 @@ class Process
         // Collate hostfile and imports.
         $this->stream = new Stream(Importer::hostfile($this->input));
 
-        // Extract and calculate variables.
         $this->captureVars();
 
         $this->placeAllVars();
 
         $this->resolveIfDefines();
 
-        // Capture phase 1 hook: After all vars have resolved.
+        $this->resolveSettings();
+
+        // Capture phase 1 hook: After all variables and settings have resolved.
         Hook::run('capture_phase1', $this);
 
         $this->resolveSelectorAliases();

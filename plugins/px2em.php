@@ -29,34 +29,17 @@ Plugin::register('px2em', array(
 
 function fn__px2em($input) {
 
-    $base = 16;
-
-    // Override default base if variable is set.
-    if (isset(Crush::$process->vars['px2em__base'])) {
-        $base = Crush::$process->vars['px2em__base'];
-    }
-
-    return px2em($input, 'em', $base);
+    return px2em($input, 'em', Crush::$process->settings->get('px2em-base', 16));
 }
 
 function fn__px2rem($input) {
 
-    $base = 16;
-
-    // Override default base if variable is set.
-    if (isset(Crush::$process->vars['px2rem__base'])) {
-        $base = Crush::$process->vars['px2rem__base'];
-    }
-
-    return px2em($input, 'rem', $base);
+    return px2em($input, 'rem', Crush::$process->settings->get('px2rem-base', 16));
 }
 
 function px2em($input, $unit, $default_base) {
 
-    list($px, $base) = Functions::parseArgsSimple($input) + array(
-        16,
-        $default_base,
-    );
+    list($px, $base) = Functions::parseArgsSimple($input) + array(16, $default_base);
 
     return round($px / $base, 5) . $unit;
 }

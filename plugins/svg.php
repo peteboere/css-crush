@@ -199,12 +199,12 @@ function svg_generator($input, $fn_name) {
     // Apply args to template.
     $block = $svg_defs[$name]->apply($args);
 
-    // Parse the block into a keyed assoc array.
-    $raw_data = array_change_key_case(DeclarationList::parse($block, array(
+    $raw_data = DeclarationList::parse($block, array(
         'keyed' => true,
+        'lowercase_keys' => true,
         'flatten' => true,
         'apply_hooks' => true,
-    )));
+    ));
 
     // Resolve the type.
     // Bail if type not recognised.

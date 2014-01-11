@@ -116,12 +116,12 @@ function canvas_generator($input, $context) {
     // Apply args to template.
     $block = $canvas_defs[$name]->apply($args);
 
-    // Parse the block into a keyed array.
-    $raw = array_change_key_case(DeclarationList::parse($block, array(
+    $raw = DeclarationList::parse($block, array(
         'keyed' => true,
+        'lowercase_keys' => true,
         'flatten' => true,
         'apply_hooks' => true,
-    )));
+    ));
 
     // Create canvas object.
     $canvas = new Canvas();

@@ -27,22 +27,20 @@ function color(&$declaration) {
 
 function color_capture($process) {
 
-    $color_directive_patt = Regex::make('~@color(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
+    $patt = Regex::make('~@color(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
     $captured_keywords = array();
 
-    $process->stream->pregReplaceCallback($color_directive_patt, function ($m) use (&$captured_keywords) {
-
-        if (! isset($m['name'])) {
-            $pairs = array_change_key_case(DeclarationList::parse($m['block_content'], array(
-                'keyed' => true,
-                'flatten' => true,
-            )));
+    $process->stream->pregReplaceCallback($patt, function ($m) use (&$captured_keywords) {
+        if (isset($m['name'])) {
+            $captured_keywords[strtolower($m['name'])] = $m['value'];
         }
         else {
-            $pairs = array(strtolower($m['name']) => $m['value']);
+            $captured_keywords = DeclarationList::parse($m['block_content'], array(
+                'keyed' => true,
+                'lowercase_keys' => true,
+                'flatten' => true,
+            )) + $captured_keywords;
         }
-
-        $captured_keywords = $pairs + $captured_keywords;
 
         return '';
     });

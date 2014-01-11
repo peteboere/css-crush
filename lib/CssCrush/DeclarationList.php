@@ -331,6 +331,7 @@ class DeclarationList extends Iterator
         $options += array(
             'keyed' => false,
             'ignore_directives' => false,
+            'lowercase_keys' => false,
             'context' => null,
             'flatten' => false,
             'apply_hooks' => false,
@@ -357,6 +358,10 @@ class DeclarationList extends Iterator
 
                 $property = trim(substr($line, 0, $colon_pos));
                 $value = trim(substr($line, $colon_pos + 1));
+
+                if ($options['lowercase_keys']) {
+                    $property = strtolower($property);
+                }
 
                 if ($options['apply_hooks']) {
                     Hook::run('declaration_preprocess', array('property' => &$property, 'value' => &$value));
