@@ -19,7 +19,7 @@ class Settings
 
     public function set($name, $value)
     {
-        $this->store[$name] = $value;
+        $this->store[strtolower($name)] = strtolower($value);
     }
 
     public function get($name, $fallback = null)

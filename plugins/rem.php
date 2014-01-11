@@ -27,11 +27,11 @@
  *
  *     font-size: 1rem;
  *
- * `rem-fallback` is the default mode. To change the conversion mode set a
- * variable named `rem__mode` with the mode name you want as its value.
+ * `rem-fallback` is the default mode. To change the conversion mode
+ * declare the setting `rem-mode` with the mode name you want as its value.
  *
  * To convert all values, not just values of the font related properties,
- * set a variable named `rem__all` with a value of `yes`.
+ * declare the setting `rem-all` with the value 'true'.
  */
 namespace CssCrush;
 
