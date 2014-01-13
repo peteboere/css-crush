@@ -14,10 +14,10 @@ namespace CssCrush;
 
 Plugin::register('ie-inline-block', array(
     'enable' => function () {
-        Hook::add('rule_postalias', 'CssCrush\ie_inline_block');
+        Crush::$process->hooks->add('rule_postalias', 'CssCrush\ie_inline_block');
     },
     'disable' => function () {
-        Hook::remove('rule_postalias', 'CssCrush\ie_inline_block');
+        Crush::$process->hooks->remove('rule_postalias', 'CssCrush\ie_inline_block');
     },
 ));
 

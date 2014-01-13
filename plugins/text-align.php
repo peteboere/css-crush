@@ -2,7 +2,7 @@
 /**
  * Polyfill for direction sensitive text-align values, start and end
  *
- * If the 'dir' setting is 'rtl' 'start' translates to 'right' and 'end' translates to 'left'.
+ * If the 'dir' setting is 'rtl', 'start' translates to 'right' and 'end' translates to 'left'.
  *
  * @before
  *     text-align: start;
@@ -15,10 +15,10 @@ namespace CssCrush;
 
 Plugin::register('text-align', array(
     'enable' => function () {
-        Hook::add('rule_prealias', 'CssCrush\text_align');
+        Crush::$process->hooks->add('rule_prealias', 'CssCrush\text_align');
     },
     'disable' => function () {
-        Hook::remove('rule_prealias', 'CssCrush\text_align');
+        Crush::$process->hooks->remove('rule_prealias', 'CssCrush\text_align');
     },
 ));
 

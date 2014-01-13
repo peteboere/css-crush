@@ -52,10 +52,10 @@ namespace CssCrush;
 
 Plugin::register('loop', array(
     'enable' => function () {
-        Hook::add('capture_phase1', 'CssCrush\loop');
+        Crush::$process->hooks->add('capture_phase1', 'CssCrush\loop');
     },
     'disable' => function () {
-        Hook::remove('capture_phase1', 'CssCrush\loop');
+        Crush::$process->hooks->remove('capture_phase1', 'CssCrush\loop');
     },
 ));
 

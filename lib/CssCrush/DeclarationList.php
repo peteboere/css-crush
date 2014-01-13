@@ -364,7 +364,7 @@ class DeclarationList extends Iterator
                 }
 
                 if ($options['apply_hooks']) {
-                    Hook::run('declaration_preprocess', array('property' => &$property, 'value' => &$value));
+                    Crush::$process->hooks->run('declaration_preprocess', array('property' => &$property, 'value' => &$value));
                 }
             }
             else {

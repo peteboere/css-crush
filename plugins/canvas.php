@@ -53,12 +53,12 @@ use stdClass;
 
 Plugin::register('canvas', array(
     'enable' => function () {
-        Hook::add('capture_phase2', 'CssCrush\canvas_capture');
+        Crush::$process->hooks->add('capture_phase2', 'CssCrush\canvas_capture');
         Functions::register('canvas', 'CssCrush\canvas_generator');
         Functions::register('canvas-data', 'CssCrush\canvas_generator');
     },
     'disable' => function () {
-        Hook::remove('capture_phase2', 'CssCrush\canvas_capture');
+        Crush::$process->hooks->remove('capture_phase2', 'CssCrush\canvas_capture');
         Functions::deRegister('canvas');
         Functions::deRegister('canvas-data');
     },

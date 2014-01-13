@@ -7,12 +7,12 @@ namespace CssCrush;
 Plugin::register('color', array(
     'enable' => function () {
         $GLOBALS['CSSCRUSH_COLOR_PATT'] = null;
-        Hook::add('capture_phase1', 'CssCrush\color_capture');
-        Hook::add('declaration_preprocess', 'CssCrush\color');
+        Crush::$process->hooks->add('capture_phase1', 'CssCrush\color_capture');
+        Crush::$process->hooks->add('declaration_preprocess', 'CssCrush\color');
     },
     'disable' => function () {
-        Hook::remove('capture_phase1', 'CssCrush\color_capture');
-        Hook::remove('declaration_preprocess', 'CssCrush\color');
+        Crush::$process->hooks->remove('capture_phase1', 'CssCrush\color_capture');
+        Crush::$process->hooks->remove('declaration_preprocess', 'CssCrush\color');
     },
 ));
 

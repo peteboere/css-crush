@@ -65,12 +65,12 @@ Plugin::register('svg', array(
     },
     'enable' => function () {
         $GLOBALS['CSSCRUSH_SVG_UID'] = 0;
-        Hook::add('capture_phase2', 'CssCrush\svg_capture');
+        Crush::$process->hooks->add('capture_phase2', 'CssCrush\svg_capture');
         Functions::register('svg', 'CssCrush\fn__svg');
         Functions::register('svg-data', 'CssCrush\fn__svg_data');
     },
     'disable' => function () {
-        Hook::remove('capture_phase2', 'CssCrush\svg_capture');
+        Crush::$process->hooks->remove('capture_phase2', 'CssCrush\svg_capture');
         Functions::deRegister('svg');
         Functions::deRegister('svg-data');
     },

@@ -45,7 +45,7 @@ class Declaration
             $important = true;
         }
 
-        Hook::run('declaration_preprocess', array('property' => &$property, 'value' => &$value));
+        Crush::$process->hooks->run('declaration_preprocess', array('property' => &$property, 'value' => &$value));
 
         // Reject declarations with empty CSS values.
         if ($value === false || $value === '') {

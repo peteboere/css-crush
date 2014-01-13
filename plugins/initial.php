@@ -19,10 +19,10 @@ namespace CssCrush;
 
 Plugin::register('initial', array(
     'enable' => function () {
-        Hook::add('rule_prealias', 'CssCrush\initial');
+        Crush::$process->hooks->add('rule_prealias', 'CssCrush\initial');
     },
     'disable' => function () {
-        Hook::remove('rule_prealias', 'CssCrush\initial');
+        Crush::$process->hooks->remove('rule_prealias', 'CssCrush\initial');
     },
 ));
 

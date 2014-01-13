@@ -47,10 +47,10 @@ namespace CssCrush;
 
 Plugin::register('legacy-flexbox', array(
     'enable' => function () {
-        Hook::add('rule_prealias', 'CssCrush\legacy_flexbox');
+        Crush::$process->hooks->add('rule_prealias', 'CssCrush\legacy_flexbox');
     },
     'disable' => function () {
-        Hook::remove('rule_prealias', 'CssCrush\legacy_flexbox');
+        Crush::$process->hooks->remove('rule_prealias', 'CssCrush\legacy_flexbox');
     },
 ));
 

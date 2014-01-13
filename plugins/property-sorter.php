@@ -26,10 +26,10 @@ namespace CssCrush {
 
     Plugin::register('property-sorter', array(
         'enable' => function () {
-            Hook::add('rule_prealias', 'CssCrush\property_sorter');
+            Crush::$process->hooks->add('rule_prealias', 'CssCrush\property_sorter');
         },
         'disable' => function () {
-            Hook::remove('rule_prealias', 'CssCrush\property_sorter');
+            Crush::$process->hooks->remove('rule_prealias', 'CssCrush\property_sorter');
         },
     ));
 

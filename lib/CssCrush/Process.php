@@ -30,6 +30,7 @@ class Process
         $this->input = new \stdClass();
         $this->output = new \stdClass();
         $this->tokens = new Tokens();
+        $this->hooks = new Hooks();
         $this->sourceMap = null;
         $this->selectorAliases = array();
         $this->selectorAliasesPatt = null;
@@ -623,18 +624,18 @@ class Process
             $rule->declarations->flatten($rule);
             $rule->declarations->process($rule);
 
-            Hook::run('rule_prealias', $rule);
+            $this->hooks->run('rule_prealias', $rule);
 
             $rule->declarations->aliasProperties($rule->vendorContext);
             $rule->declarations->aliasFunctions($rule->vendorContext);
             $rule->declarations->aliasDeclarations($rule->vendorContext);
 
-            Hook::run('rule_postalias', $rule);
+            $this->hooks->run('rule_postalias', $rule);
 
             $rule->selectors->expand();
             $rule->applyExtendables();
 
-            Hook::run('rule_postprocess', $rule);
+            $this->hooks->run('rule_postprocess', $rule);
         }
     }
 
@@ -938,7 +939,7 @@ class Process
         $this->resolveSettings();
 
         // Capture phase 1 hook: After all variables and settings have resolved.
-        Hook::run('capture_phase1', $this);
+        $this->hooks->run('capture_phase1', $this);
 
         $this->resolveSelectorAliases();
 
@@ -947,7 +948,7 @@ class Process
         $this->resolveFragments();
 
         // Capture phase 2 hook: After most built-in directives have resolved.
-        Hook::run('capture_phase2', $this);
+        $this->hooks->run('capture_phase2', $this);
 
         $this->captureRules();
 

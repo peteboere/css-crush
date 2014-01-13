@@ -12,10 +12,10 @@ namespace CssCrush;
 
 Plugin::register('hsl2hex', array(
     'enable' => function () {
-        Hook::add('rule_postalias', 'CssCrush\hsl2hex');
+        Crush::$process->hooks->add('rule_postalias', 'CssCrush\hsl2hex');
     },
     'disable' => function () {
-        Hook::remove('rule_postalias', 'CssCrush\hsl2hex');
+        Crush::$process->hooks->remove('rule_postalias', 'CssCrush\hsl2hex');
     },
 ));
 
