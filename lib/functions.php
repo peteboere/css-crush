@@ -7,19 +7,19 @@
 use CssCrush\Crush;
 class_alias('CssCrush\Crush', 'CssCrush\CssCrush');
 
-function csscrush_file($file, $options = null) {
+function csscrush_file($file, $options = array()) {
     return Crush::file($file, $options);
 }
 
-function csscrush_tag($file, $options = null, $attributes = array()) {
+function csscrush_tag($file, $options = array(), $attributes = array()) {
     return Crush::tag($file, $options, $attributes);
 }
 
-function csscrush_inline($file, $options = null, $attributes = array()) {
+function csscrush_inline($file, $options = array(), $attributes = array()) {
     return Crush::inline($file, $options, $attributes);
 }
 
-function csscrush_string($string, $options = null) {
+function csscrush_string($string, $options = array()) {
     return Crush::string($string, $options);
 }
 

@@ -33,9 +33,8 @@ class Options
         'newlines' => 'use-platform',
     );
 
-    public function __construct(array $options = null, Options $defaults = null)
+    public function __construct(array $options = array(), Options $defaults = null)
     {
-        $options = is_array($options) ? $options : self::$initialOptions;
         foreach ($options as $key => $value) {
             $this->__set($key, $value);
         }
@@ -44,6 +43,11 @@ class Options
                 if (! array_key_exists($key, $this->inputOptions)) {
                     $this->__set($key, $value);
                 }
+            }
+        }
+        foreach (self::$initialOptions as $key => $value) {
+            if (! array_key_exists($key, $this->inputOptions)) {
+                $this->__set($key, $value);
             }
         }
     }

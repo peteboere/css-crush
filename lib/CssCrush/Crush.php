@@ -189,7 +189,7 @@ class Crush
      * @param mixed $options  An array of options or null.
      * @return string  The public path to the compiled file or an empty string.
      */
-    public static function file($file, $options = null)
+    public static function file($file, $options = array())
     {
         self::$process = new Process($options, array('io_context' => 'file'));
 
@@ -236,7 +236,7 @@ class Crush
      * @param array $attributes  An array of HTML attributes.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    public static function tag($file, $options = null, $tag_attributes = array())
+    public static function tag($file, $options = array(), $tag_attributes = array())
     {
         $file = self::file($file, $options);
 
@@ -267,7 +267,7 @@ class Crush
      * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag.
      * @return string  HTML link tag or error message inside HTML comment.
      */
-    public static function inline($file, $options = null, $tag_attributes = array())
+    public static function inline($file, $options = array(), $tag_attributes = array())
     {
         // For inline output set boilerplate to not display by default.
         if (! is_array($options)) {
@@ -309,7 +309,7 @@ class Crush
      * @param mixed $options  An array of options or null.
      * @return string  CSS text.
      */
-    public static function string($string, $options = null)
+    public static function string($string, $options = array())
     {
         // For strings set boilerplate to not display by default
         if (! isset($options['boilerplate'])) {
