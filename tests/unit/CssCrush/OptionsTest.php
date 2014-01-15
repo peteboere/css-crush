@@ -2,6 +2,8 @@
 
 namespace CssCrush\UnitTest;
 
+use CssCrush\Options;
+
 class OptionsTest extends \PHPUnit_Framework_TestCase
 {
     public $testFile;
@@ -10,6 +12,22 @@ class OptionsTest extends \PHPUnit_Framework_TestCase
     {
         bootstrap_process();
         $this->testFile = temp_file("\n foo {bar: baz;} \n\n baz {bar: foo;}");
+    }
+
+    public function testDefaults()
+    {
+        $options = new Options();
+        $initial_options = Options::$initialOptions;
+
+        $this->assertEquals($initial_options, $options->get());
+
+        $test_options = array('enable' => array('foo', 'bar'), 'minify' => false);
+        $options = new Options($test_options);
+
+        $initial_options_copy = $initial_options;
+        $initial_options_copy = $test_options + $initial_options_copy;
+
+        $this->assertEquals($initial_options_copy, $options->get());
     }
 
     public function testBoilerplate()

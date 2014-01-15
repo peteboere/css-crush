@@ -11,7 +11,7 @@ class Options
     protected $computedOptions = array();
     protected $inputOptions = array();
 
-    protected static $initialOptions = array(
+    public static $initialOptions = array(
         'minify' => true,
         'formatter' => null,
         'versioning' => true,
@@ -35,20 +35,12 @@ class Options
 
     public function __construct(array $options = array(), Options $defaults = null)
     {
-        foreach ($options as $key => $value) {
-            $this->__set($key, $value);
-        }
         if ($defaults) {
-            foreach ($defaults->get() as $key => $value) {
-                if (! array_key_exists($key, $this->inputOptions)) {
-                    $this->__set($key, $value);
-                }
-            }
+            $options += $defaults->get();
         }
-        foreach (self::$initialOptions as $key => $value) {
-            if (! array_key_exists($key, $this->inputOptions)) {
-                $this->__set($key, $value);
-            }
+
+        foreach ($options + self::$initialOptions as $key => $value) {
+            $this->__set($key, $value);
         }
     }
 

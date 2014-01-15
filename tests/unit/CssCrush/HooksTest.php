@@ -6,7 +6,7 @@ use CssCrush\Hooks;
 
 class HookTest extends \PHPUnit_Framework_TestCase
 {
-    public function testAdd()
+    public function testAll()
     {
         $hooks = new Hooks();
 
