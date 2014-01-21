@@ -1,6 +1,8 @@
 <?php
 /**
  * Custom color keywords
+ *
+ * @see docs/plugins/color.md
  */
 namespace CssCrush;
 

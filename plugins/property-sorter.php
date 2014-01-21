@@ -2,25 +2,7 @@
 /**
  * Customizable property sorting
  *
- * Examples use the predefined sorting table.
- *
- * To define a custom sorting order pass an array to csscrush_set_property_sort_order():
- *
- *     csscrush_set_property_sort_order( array( 'color', ... ) );
- *
- *
- * @before
- *     color: red;
- *     background: #000;
- *     opacity: .5;
- *     display: block;
- *
- * @after
- *     display: block;
- *     opacity: .5;
- *     color: red;
- *     background: #000;
- *
+ * @see docs/plugins/property-sorter.md
  */
 namespace CssCrush {
 

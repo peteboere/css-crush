@@ -2,17 +2,7 @@
 /**
  * Pseudo classes for working with forms
  *
- * @before
- *      :input(date, search, email) {...}
- *      :checkbox {...}
- *      :radio {...}
- *      :text {...}
- *
- * @after
- *      input[type="date"], input[type="search"], input[type="email"] {...}
- *      input[type="checkbox"] {...}
- *      input[type="radio"] {...}
- *      input[type="text"] {...}
+ * @see docs/plugins/forms.md
  */
 namespace CssCrush;
 

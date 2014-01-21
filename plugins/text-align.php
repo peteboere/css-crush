@@ -2,14 +2,7 @@
 /**
  * Polyfill for direction sensitive text-align values, start and end
  *
- * If the 'dir' setting is 'rtl', 'start' translates to 'right' and 'end' translates to 'left'.
- *
- * @before
- *     text-align: start;
- *
- * @after
- *     text-align: left;
- *     text-align: start;
+ * @see docs/plugins/text-align.md
  */
 namespace CssCrush;
 

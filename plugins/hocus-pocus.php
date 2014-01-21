@@ -1,15 +1,8 @@
 <?php
 /**
  * :hover/:focus and :hover/:focus/:active composite pseudo classes
- * 
- * @before
- *     a:hocus { color: red; }
- *     a:pocus { color: red; }
- * 
- * @after
- *    a:hover, a:focus { color: red; }
- *    a:hover, a:focus, a:active { color: red; }
- * 
+ *
+ * @see docs/plugins/hocus-pocus.md
  */
 namespace CssCrush;
 

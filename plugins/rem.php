@@ -2,36 +2,7 @@
 /**
  * Polyfill for the rem (root em) length unit
  *
- * No version of IE to date (IE <= 10) resizes text set with pixels.
- * IE > 8 supports rem units which will resize. See http://caniuse.com/#feat=rem
- *
- * Three conversion modes:
- *
- *     rem-fallback (rem to px, with converted value as fallback)
- *     ============
- *     font-size: 1rem;
- *
- *     font-size: 16px;
- *     font-size: 1rem;
- *
- *     px-fallback (px to rem, with original pixel value as fallback)
- *     ===========
- *     font-size: 16px;
- *
- *     font-size: 16px;
- *     font-size: 1rem;
- *
- *     convert (in-place px to rem conversion)
- *     =======
- *     font-size: 16px;
- *
- *     font-size: 1rem;
- *
- * `rem-fallback` is the default mode. To change the conversion mode
- * declare the setting `rem-mode` with the mode name you want as its value.
- *
- * To convert all values, not just values of the font related properties,
- * declare the setting `rem-all` with the value 'true'.
+ * @see docs/plugins/rem.md
  */
 namespace CssCrush;
 

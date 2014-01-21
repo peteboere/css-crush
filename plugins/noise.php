@@ -2,75 +2,7 @@
 /**
  * Functions for generating noise textures with SVG filters
  *
- * Supported in any browser that supports SVG filters (Currently IE10 and all other browsers).
- *
- * noise()
- * -------
- * Syntax:
- *      noise(
- *          [ <fill-color> || <size> ]?
- *          [ , <frequency> <octaves>? <sharpness>? ]?
- *          [ , <blend-mode> || <fade> ]?
- *          [ , <color-filter> <color-filter-value> ]?
- *      )
- *
- *      <fill-color>
- *          Any valid CSS color value.
- *      <size>
- *          Pixel size of canvas in format WxH (e.g. 320x480).
- *      <frequency>
- *          Number. Noise frequency; useful values are between 0 and 1.
- *          x and y frequencies can be specified by joining two numbers with a colon.
- *      <octaves>
- *          Number. Noise complexity.
- *      <sharpness>
- *          Noise sharpening; possible values:
- *          "normal", "sharpen"
- *      <blend-mode>
- *          Blend mode for overlaying noise filter; possible values:
- *          "normal", "multiply", "screen", "darken", "lighten"
- *      <fade>
- *          Ranged number (0-1). Opacity of noise effect.
- *      <color-filter>
- *          Color filter type; possible values:
- *          "hueRotate", "saturate"
- *      <color-filter-value>
- *          Mixed. For "hueRotate" a degree as number. For "saturate" a ranged number (0-1).
- *
- * Returns:
- *      A base64 encoded svg data-uri.
- *
- * References:
- *      http://www.w3.org/TR/SVG/filters.html
- *      http://srufaculty.sru.edu/david.dailey/svg/SVGOpen2010/Filters2.htm#S11
- *
- * Examples:
- *      // Grainy noise with 50% opacity and de-saturated.
- *      // Demonstrates the "default" keyword for skipping arguments.
- *      background-image: noise( slategray, default, .5, saturate 0 );
- *
- *      // Cloud effect.
- *      background: noise( 700x700 skyblue, .01 4 normal, screen, saturate 0 );
- *
- * turbulence()
- * ------------
- * As noise() except uses default turbulance type 'turbulance' and not 'fractalNoise'
- *
- * Syntax:
- *      See noise().
- *
- * Returns:
- *      See noise().
- *
- * References:
- *      See noise().
- *
- * Examples:
- *      // Typical turbulence effect.
- *      background: turbulence();
- *
- *      // Sand effect.
- *      background: turbulence( wheat 400x400, .35:.2 4 sharpen, normal, saturate .4 );
+ * @see docs/plugins/noise.md
  */
 namespace CssCrush;
 

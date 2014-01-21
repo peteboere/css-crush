@@ -2,14 +2,7 @@
 /**
  * Expanded easing keywords for transitions
  *
- * Ported from rework by @tjholowaychuk.
- * For easing demos see http://easings.net
- *
- * @before
- *     transition: .2s ease-in-quad
- *
- * @after
- *    transition: .2s cubic-bezier(.550,.085,.680,.530)
+ * @see docs/plugins/ease.md
  */
 namespace CssCrush;
 

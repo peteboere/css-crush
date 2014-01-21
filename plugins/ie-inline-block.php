@@ -2,13 +2,7 @@
 /**
  * Polyfill for display:inline-block in IE < 8
  *
- * @before
- *     display: inline-block;
- *
- * @after
- *     display: inline-block;
- *     *display: inline;
- *     *zoom: 1;
+ * @see docs/plugins/ie-inline-block.md
  */
 namespace CssCrush;
 

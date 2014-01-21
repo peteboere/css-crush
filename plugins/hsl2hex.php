@@ -2,11 +2,7 @@
 /**
  * Polyfill for hsl() color values
  *
- * @before
- *     color: hsl(100, 50%, 50%)
- *
- * @after
- *    color: #6abf40
+ * @see docs/plugins/hsl2hex.md
  */
 namespace CssCrush;
 

@@ -2,46 +2,7 @@
 /**
  * Polyfill to auto-generate legacy flexbox syntaxes
  *
- * Works in conjunction with aliases to support legacy
- * flexbox (flexbox 2009) syntax with CR flexbox.
- *
- * @before
- *     display: flex;
- *     flex-flow: row-reverse wrap;
- *     justify-content: space-between;
- *
- * @after
- *     display: -webkit-box;
- *     display: -moz-box;
- *     display: -webkit-flex;
- *     display: -ms-flexbox;
- *     display: flex;
- *     -webkit-box-direction: reverse;
- *     -moz-box-direction: reverse;
- *     -webkit-box-orient: horizontal;
- *     -moz-box-orient: horizontal;
- *     -webkit-box-lines: wrap;
- *     -moz-box-lines: wrap;
- *     -webkit-flex-flow: row-reverse wrap;
- *     -ms-flex-flow: row-reverse wrap;
- *     flex-flow: row-reverse wrap;
- *     -webkit-box-pack: justify;
- *     -moz-box-pack: justify;
- *     -webkit-justify-content: space-between;
- *     -ms-flex-pack: justify;
- *     justify-content: space-between;
- *
- * @caveats
- *     Firefox's early flexbox implementation has several non-trivial issues:
- *     - With flex containers "display: -moz-box" generates an inline-block element,
- *       not a block level element as in other implementations.
- *       Suggested workaround is to set "width: 100%", in conjunction
- *       with "-moz-box-sizing: border-box" if padding is required.
- *     - The width of flex items can only be set in pixels.
- *     - Flex items cannot be justified. I.e. "-moz-box-pack: justify" does not work.
- *
- *     Firefox 20 will ship in April 2013 with an updated (and unprefixed) implementation
- *     of flexbox: https://developer.mozilla.org/en-US/docs/Firefox_20_for_developers
+ * @see docs/plugins/legacy-flexbox.md
  */
 namespace CssCrush;
 

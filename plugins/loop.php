@@ -2,51 +2,7 @@
 /**
  * For...in loops with lists and generator functions
  *
- * @example
- *      @for fruit in apple, orange, pear, blueberry {
- *          .#(fruit) {
- *              background-image: url("images/#(fruit).jpg");
- *              }
- *      }
- *
- *      // Yields:
- *      .apple { background-image: url(images/apple.jpg); }
- *      .orange { background-image: url(images/orange.jpg); }
- *      ...
- *
- * @example
- *      @for base in range(2, 24) {
- *          @for i in range(1, #(base)) {
- *              .grid-#(i)-of-#(base) {
- *                  width: (#(i) / #(base) * 100)%;
- *                  }
- *          }
- *      }
- *
- *      // Yields:
- *      .grid-1-of-2 { width: 50%; }
- *      .grid-2-of-2 { width: 100%; }
- *      ...
- *      .grid-23-of-24 { width: 95.83333%; }
- *      .grid-24-of-24 { width: 100%; }
- *
- * @example
- *      // The last argument to color-range() is an integer specifying how many
- *      // transition colors to generate between the color arguments.
- *
- *      @for color in color-range(powderblue, deeppink, a-adjust(yellow, -80), 5) {
- *          .foo-#(loop.counter) {
- *              background-color: #(color);
- *              }
- *      }
- *
- *      // Yields:
- *      .foo-1 { background-color: #b0e0e6; }
- *      .foo-2 { background-color: #bdbed8; }
- *      ...
- *      .foo-12 { background-color: rgba(255,216,25,.33); }
- *      .foo-13 { background-color: rgba(255,255,0,.2); }
- *
+ * @see docs/plugins/loop.md
  */
 namespace CssCrush;
 

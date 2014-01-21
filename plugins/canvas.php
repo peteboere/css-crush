@@ -2,50 +2,7 @@
 /**
  * Bitmap image generator
  *
- * Requires the GD image library bundled with PHP.
- *
- * @example
- *
- *     // Red semi-transparent square.
- *     @canvas foo {
- *         width: 50;
- *         height: 50;
- *         fill: rgba(255, 0, 0, .5);
- *     }
- *
- *     body {
- *         background: canvas(foo);
- *     }
- *
- * @example
- *
- *     // White to transparent east facing gradient with 10px margin and
- *     // background fill.
- *     @canvas foo {
- *         width: arg(0, 150);
- *         height: 150;
- *         fill: canvas-linear-gradient(to right, white, rgba(255,255,255,0));
- *         background-fill: powderblue;
- *         margin: 10;
- *     }
- *
- *     // Rectangle 300x150.
- *     body {
- *         background: red canvas(foo, 300) no-repeat;
- *     }
- *     // Default dimensions 150x150 as data URI.
- *     .bar {
- *         background: canvas-data(foo) repeat-x;
- *     }
- *
- * @example
- *
- *     // Google logo resized to 400px width and given a sepia effect.
- *     @canvas foo {
- *         src: url("https://www.google.co.uk/images/srpr/logo4w.png");
- *         width: 400;
- *         canvas-filter: greyscale() colorize(45, 45, 0);
- *     }
+ * @see docs/plugins/canvas.md
  */
 namespace CssCrush;
 
