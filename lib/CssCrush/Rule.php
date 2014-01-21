@@ -27,66 +27,8 @@ class Rule
         $process = Crush::$process;
         $this->label = $process->tokens->createLabel('r');
         $this->marker = $process->addTracingStubs || $process->generateMap ? $trace_token : null;
-        $this->selectors = new SelectorList();
-        $this->declarations = new DeclarationList();
-
-        // Parse selectors.
-        // Strip any other comments then create selector instances.
-        $selector_string = trim(Util::stripCommentTokens($selector_string));
-
-        foreach (Util::splitDelimList($selector_string) as $selector) {
-
-            if (preg_match(Regex::$patt->abstract, $selector, $m)) {
-                $this->name = strtolower($m['name']);
-                $this->isAbstract = true;
-            }
-            else {
-                $this->selectors->add(new Selector($selector));
-            }
-        }
-
-        $pairs = DeclarationList::parse($declarations_string);
-
-        foreach ($pairs as $index => $pair) {
-
-            list($prop, $value) = $pair;
-
-            if ($prop === 'extends') {
-
-                // Extends are also a special case.
-                $this->setExtendSelectors($value);
-                unset($pairs[$index]);
-            }
-            elseif ($prop === 'name') {
-
-                if (! $this->name) {
-                    $this->name = $value;
-                }
-                unset($pairs[$index]);
-            }
-        }
-
-        // Build declaration list.
-        foreach ($pairs as $index => &$pair) {
-
-            list($prop, $value) = $pair;
-
-            if (trim($value) !== '') {
-
-                if ($prop === 'mixin') {
-                    $this->declarations->flattened = false;
-                    $this->declarations->store[] = $pair;
-                }
-                else {
-                    // Only store to $this->data if the value does not itself make a
-                    // this() call to avoid circular references.
-                    if (! preg_match(Regex::$patt->thisFunction, $value)) {
-                        $this->declarations->data[strtolower($prop)] = $value;
-                    }
-                    $this->declarations->add($prop, $value, $index);
-                }
-            }
-        }
+        $this->selectors = new SelectorList($selector_string, $this);
+        $this->declarations = new DeclarationList($declarations_string, $this);
     }
 
     public function __toString()

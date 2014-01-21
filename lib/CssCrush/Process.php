@@ -185,10 +185,11 @@ class Process
     protected function resolveSelectorAliases()
     {
         $this->stream->pregReplaceCallback(
-            Regex::make('~@selector-alias +\:?({{ident}}) +([^;]+) *;~iS'),
+            Regex::make('~@selector-(?<type>alias|splat) +\:?(?<name>{{ident}}) +(?<args>[^;]+) *;~iS'),
             function ($m) {
-                $name = strtolower($m[1]);
-                Crush::$process->selectorAliases[$name] = new Template(Util::stripCommentTokens($m[2]));
+                $name = strtolower($m['name']);
+                $args = Util::stripCommentTokens($m['args']);
+                Crush::$process->selectorAliases[$name] = new Template($args);
             });
 
         // Merge with global selector aliases.
@@ -200,51 +201,6 @@ class Process
             $this->selectorAliasesPatt
                 = Regex::make('~\:(' . $names . '){{RB}}(\()?~iS');
         }
-    }
-
-    public static function applySelectorAliases($str)
-    {
-        $process = Crush::$process;
-
-        if (! $process->selectorAliases || ! preg_match($process->selectorAliasesPatt, $str)) {
-            return $str;
-        }
-
-        $table =& $process->selectorAliases;
-
-        while (preg_match_all($process->selectorAliasesPatt, $str, $m, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
-
-            $selector_alias_call = end($m);
-            $selector_alias_name = strtolower($selector_alias_call[1][0]);
-
-            $start = $selector_alias_call[0][1];
-            $length = strlen($selector_alias_call[0][0]);
-            $args = array();
-
-            // It's a function alias if a start paren is matched.
-            if (isset($selector_alias_call[2])) {
-
-                // Parse argument list.
-                if (preg_match(Regex::$patt->parens, $str, $parens, PREG_OFFSET_CAPTURE, $start)) {
-                    $args = Functions::parseArgs($parens[2][0]);
-
-                    // Amend offsets.
-                    $paren_start = $parens[0][1];
-                    $paren_len = strlen($parens[0][0]);
-                    $length = ($paren_start + $paren_len) - $start;
-                }
-            }
-
-            // Resolve the selector alias value to a template instance if a callable is given.
-            $template = $table[$selector_alias_name];
-            if (is_callable($template)) {
-                $template = new Template($template($args));
-            }
-
-            $str = substr_replace($str, $template->apply($args), $start, $length);
-        }
-
-        return $str;
     }
 
 
@@ -571,7 +527,7 @@ class Process
                 if (isset($m['parens'])) {
                     $args = Functions::parseArgs($m['parens_content']);
                 }
-                return $fragment->apply($args);
+                return $fragment($args);
             }
             return '';
         });
@@ -654,7 +610,7 @@ class Process
             $match_start_pos = $match[0][1];
             $raw_argument = trim($match[1][0]);
 
-            $arguments = Util::splitDelimList(Process::applySelectorAliases($raw_argument));
+            $arguments = Util::splitDelimList(Selector::expandAliases($raw_argument));
 
             $curly_match = new BalancedMatch($this->stream, $match_start_pos);
 

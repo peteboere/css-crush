@@ -20,9 +20,50 @@ class DeclarationList extends Iterator
     // Declarations hash table for external query() referencing.
     public $queryData = array();
 
-    public function __construct()
+    public function __construct($declarations_string, Rule $rule)
     {
         parent::__construct();
+
+        $pairs = DeclarationList::parse($declarations_string);
+
+        foreach ($pairs as $index => $pair) {
+
+            list($prop, $value) = $pair;
+
+            // Directives.
+            if ($prop === 'extends') {
+                $rule->setExtendSelectors($value);
+                unset($pairs[$index]);
+            }
+            elseif ($prop === 'name') {
+                if (! $rule->name) {
+                    $rule->name = $value;
+                }
+                unset($pairs[$index]);
+            }
+        }
+
+        // Build declaration list.
+        foreach ($pairs as $index => &$pair) {
+
+            list($prop, $value) = $pair;
+
+            if (trim($value) !== '') {
+
+                if ($prop === 'mixin') {
+                    $this->flattened = false;
+                    $this->store[] = $pair;
+                }
+                else {
+                    // Only store to $this->data if the value does not itself make a
+                    // this() call to avoid circular references.
+                    if (! preg_match(Regex::$patt->thisFunction, $value)) {
+                        $this->data[strtolower($prop)] = $value;
+                    }
+                    $this->add($prop, $value, $index);
+                }
+            }
+        }
     }
 
     public function add($property, $value, $contextIndex = 0)

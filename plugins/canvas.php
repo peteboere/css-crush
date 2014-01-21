@@ -71,7 +71,7 @@ function canvas_generator($input, $context) {
     }
 
     // Apply args to template.
-    $block = $canvas_defs[$name]->apply($args);
+    $block = $canvas_defs[$name]($args);
 
     $raw = DeclarationList::parse($block, array(
         'keyed' => true,

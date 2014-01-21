@@ -144,7 +144,7 @@ function svg_generator($input, $fn_name) {
     }
 
     // Apply args to template.
-    $block = $svg_defs[$name]->apply($args);
+    $block = $svg_defs[$name]($args);
 
     $raw_data = DeclarationList::parse($block, array(
         'keyed' => true,

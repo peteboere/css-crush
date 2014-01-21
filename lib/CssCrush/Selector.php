@@ -23,7 +23,7 @@ class Selector
         // Take readable value from original un-altered state.
         $this->readableValue = Selector::makeReadable($raw_selector);
 
-        $this->value = Process::applySelectorAliases($raw_selector);
+        $this->value = Selector::expandAliases($raw_selector);
     }
 
     public function __toString()
@@ -62,6 +62,51 @@ class Selector
         // Quick test for string tokens.
         if (strpos($str, '?s') !== false) {
             $str = Crush::$process->tokens->restore($str, 's');
+        }
+
+        return $str;
+    }
+
+    public static function expandAliases($str)
+    {
+        $process = Crush::$process;
+
+        if (! $process->selectorAliases || ! preg_match($process->selectorAliasesPatt, $str)) {
+            return $str;
+        }
+
+        $table =& $process->selectorAliases;
+
+        while (preg_match_all($process->selectorAliasesPatt, $str, $m, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
+
+            $selector_alias_call = end($m);
+            $selector_alias_name = strtolower($selector_alias_call[1][0]);
+
+            $start = $selector_alias_call[0][1];
+            $length = strlen($selector_alias_call[0][0]);
+            $args = array();
+
+            // It's a function alias if a start paren is matched.
+            if (isset($selector_alias_call[2])) {
+
+                // Parse argument list.
+                if (preg_match(Regex::$patt->parens, $str, $parens, PREG_OFFSET_CAPTURE, $start)) {
+                    $args = Functions::parseArgs($parens[2][0]);
+
+                    // Amend offsets.
+                    $paren_start = $parens[0][1];
+                    $paren_len = strlen($parens[0][0]);
+                    $length = ($paren_start + $paren_len) - $start;
+                }
+            }
+
+            // Resolve the selector alias value to a template instance if a callable is given.
+            $template = $table[$selector_alias_name];
+            if (is_callable($template)) {
+                $template = new Template($template($args));
+            }
+
+            $str = substr_replace($str, $template($args), $start, $length);
         }
 
         return $str;

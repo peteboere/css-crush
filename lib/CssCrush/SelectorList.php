@@ -8,9 +8,22 @@ namespace CssCrush;
 
 class SelectorList extends Iterator
 {
-    public function __construct()
+    public function __construct($selector_string, Rule $rule)
     {
         parent::__construct();
+
+        $selector_string = trim(Util::stripCommentTokens($selector_string));
+
+        foreach (Util::splitDelimList($selector_string) as $selector) {
+
+            if (preg_match(Regex::$patt->abstract, $selector, $m)) {
+                $rule->name = strtolower($m['name']);
+                $rule->isAbstract = true;
+            }
+            else {
+                $this->add(new Selector($selector));
+            }
+        }
     }
 
     public function add(Selector $selector)

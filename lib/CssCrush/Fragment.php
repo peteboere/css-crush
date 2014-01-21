@@ -16,9 +16,9 @@ class Fragment extends Template
         $this->name = $options['name'];
     }
 
-    public function apply(array $args = null, $str = null)
+    public function __invoke(array $args = null, $str = null)
     {
-        $str = parent::apply($args);
+        $str = parent::__invoke($args);
 
         // Flatten all fragment calls within the template string.
         while (preg_match(Regex::$patt->fragmentInvoke, $str, $m, PREG_OFFSET_CAPTURE)) {
@@ -36,7 +36,7 @@ class Fragment extends Template
                 if (isset($m['parens'][1])) {
                     $args = Functions::parseArgs($m['parens_content'][0]);
                 }
-                $replacement = $fragment->apply($args);
+                $replacement = $fragment($args);
             }
             $str = substr_replace($str, $replacement, $start, $length);
         }

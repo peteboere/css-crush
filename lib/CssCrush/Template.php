@@ -65,6 +65,29 @@ class Template
             ));
     }
 
+    public function __invoke(array $args = null, $str = null)
+    {
+        $str = isset($str) ? $str : $this->string;
+
+        // Apply passed arguments as priority.
+        if (isset($args)) {
+
+            list($find, $replace) = $this->prepare($args, false);
+        }
+
+        // Secondly use prepared substitutions if available.
+        elseif ($this->substitutions) {
+
+            list($find, $replace) = $this->substitutions;
+        }
+
+        // Apply substitutions.
+        $str = isset($find) ? str_replace($find, $replace, $str) : $str;
+
+        // Re-tokenize string on return.
+        return Template::tokenize($str);
+    }
+
     public function getArgValue($index, &$args)
     {
         // First lookup a passed value.
@@ -111,29 +134,6 @@ class Template
         }
 
         return $substitutions;
-    }
-
-    public function apply(array $args = null, $str = null)
-    {
-        $str = isset($str) ? $str : $this->string;
-
-        // Apply passed arguments as priority.
-        if (isset($args)) {
-
-            list($find, $replace) = $this->prepare($args, false);
-        }
-
-        // Secondly use prepared substitutions if available.
-        elseif ($this->substitutions) {
-
-            list($find, $replace) = $this->substitutions;
-        }
-
-        // Apply substitutions.
-        $str = isset($find) ? str_replace($find, $replace, $str) : $str;
-
-        // Re-tokenize string on return.
-        return Template::tokenize($str);
     }
 
     public static function tokenize($str)
