@@ -363,9 +363,9 @@ class Crush
     #############################
     #  Global selector aliases.
 
-    public static function addSelectorAlias($name, $body)
+    public static function addSelectorAlias($name, $handler, $type = 'alias')
     {
-        Crush::$config->selectorAliases[$name] = is_callable($body) ? $body : new Template($body);
+        Crush::$config->selectorAliases[$name] = new SelectorAlias($type, $handler);
     }
 
     public static function removeSelectorAlias($name)

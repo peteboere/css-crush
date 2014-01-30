@@ -188,8 +188,9 @@ class Process
             Regex::make('~@selector-(?<type>alias|splat) +\:?(?<name>{{ident}}) +(?<args>[^;]+) *;~iS'),
             function ($m) {
                 $name = strtolower($m['name']);
+                $type = strtolower($m['type']);
                 $args = Util::stripCommentTokens($m['args']);
-                Crush::$process->selectorAliases[$name] = new Template($args);
+                Crush::$process->selectorAliases[$name] = new SelectorAlias($type, $args);
             });
 
         // Merge with global selector aliases.

@@ -8,12 +8,13 @@ namespace CssCrush;
 
 Plugin::register('aria', array(
     'enable' => function () {
-        foreach (aria() as $name => $value) {
-            Crush::addSelectorAlias($name, $value);
+        foreach (aria() as $name => $handler) {
+            $type = is_callable($handler) ? 'callback' : 'alias';
+            Crush::addSelectorAlias($name, $handler, $type);
         }
     },
     'disable' => function () {
-        foreach (aria() as $name => $value) {
+        foreach (aria() as $name => $handler) {
             Crush::removeSelectorAlias($name);
         }
     },

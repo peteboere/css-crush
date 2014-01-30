@@ -8,12 +8,13 @@ namespace CssCrush;
 
 Plugin::register('forms', array(
     'enable' => function () {
-        foreach (forms() as $name => $value) {
-            Crush::addSelectorAlias($name, $value);
+        foreach (forms() as $name => $handler) {
+            $type = is_callable($handler) ? 'callback' : 'alias';
+            Crush::addSelectorAlias($name, $handler, $type);
         }
     },
     'disable' => function () {
-        foreach (forms() as $name => $value) {
+        foreach (forms() as $name => $handler) {
             Crush::removeSelectorAlias($name);
         }
     },
@@ -31,7 +32,6 @@ function forms() {
             $result = $types ? 'input:any(' .  implode(',', $types) . ')' : 'input[type="text"]';
             return Crush::$process->tokens->capture($result, 's');
         },
-
         'checkbox' => 'input[type="checkbox"]',
         'radio' => 'input[type="radio"]',
         'file' => 'input[type="file"]',

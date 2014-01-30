@@ -75,19 +75,17 @@ class Selector
             return $str;
         }
 
-        $table =& $process->selectorAliases;
-
         while (preg_match_all($process->selectorAliasesPatt, $str, $m, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
 
-            $selector_alias_call = end($m);
-            $selector_alias_name = strtolower($selector_alias_call[1][0]);
+            $alias_call = end($m);
+            $alias_name = strtolower($alias_call[1][0]);
 
-            $start = $selector_alias_call[0][1];
-            $length = strlen($selector_alias_call[0][0]);
+            $start = $alias_call[0][1];
+            $length = strlen($alias_call[0][0]);
             $args = array();
 
             // It's a function alias if a start paren is matched.
-            if (isset($selector_alias_call[2])) {
+            if (isset($alias_call[2])) {
 
                 // Parse argument list.
                 if (preg_match(Regex::$patt->parens, $str, $parens, PREG_OFFSET_CAPTURE, $start)) {
@@ -100,13 +98,7 @@ class Selector
                 }
             }
 
-            // Resolve the selector alias value to a template instance if a callable is given.
-            $template = $table[$selector_alias_name];
-            if (is_callable($template)) {
-                $template = new Template($template($args));
-            }
-
-            $str = substr_replace($str, $template($args), $start, $length);
+            $str = substr_replace($str, $process->selectorAliases[$alias_name]($args), $start, $length);
         }
 
         return $str;
