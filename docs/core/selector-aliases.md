@@ -13,9 +13,10 @@ They're  defined with the `@selector-alias` directive, and can be used anywhere 
 /* Defining selector aliases */
 @selector-alias heading :any(h1, h2, h3, h4, h5, h6);
 @selector-alias radio input[type="radio"];
-
+@selector-alias hocus :any(:hover, :focus);
 /* Selector alias with arguments */
 @selector-alias class-prefix :any([class^="#(0)"], [class*=" #(0)"]);
+@selector-alias col :class-prefix(-col);
 
 .sidebar :heading {
   color: honeydew;
@@ -25,8 +26,12 @@ They're  defined with the `@selector-alias` directive, and can be used anywhere 
   margin-right: 4px;
 }
 
-:class-prefix(button) {
-  border: 1px solid rgba(0,0,0,.5);
+:col {
+  float: left;
+}
+
+p a:hocus {
+    text-decoration: none;
 }
 ```
 
@@ -41,8 +46,13 @@ input[type="radio"] {
   margin-right: 4px;
 }
 
-[class^="button"],
-[class*=" button"] {
+[class^="col-"],
+[class*=" col-"] {
   border: 1px solid rgba(0,0,0,.5);
+}
+
+p a:hover,
+p a:focus {
+    text-decoration: none;
 }
 ```

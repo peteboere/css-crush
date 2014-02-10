@@ -13,15 +13,15 @@ Variables can be injected at runtime with the [vars option](#api--options).
 /* Defining variables */
 @define {
   helvetica: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
-  theme-bg-color: #88CDEA;
-  theme-fg-color: #F4F2E2;
-  breakpoint-1: 960px;
+  dark: #333;
+  light: #F4F2E2;
+  smaller-screen: only screen and (max-width: 800px);
 }
 
 /* Applying variables */
-@media only screen and (max-width: $(breakpoint-1)) {
+@media $(smaller-screen) {
   ul, p {
-    color: $(theme-fg-color);
+    color: $(dark);
     /* Specifying a fallback value */
     background-color: $(accent-color #ff0);
   }
