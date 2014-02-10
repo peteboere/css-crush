@@ -19,7 +19,7 @@ class Template
     // The string passed in with arg calls replaced by tokens.
     public $string;
 
-    public function __construct($str, $options = array())
+    public function __construct($str)
     {
         static $arg_patt;
         if (! $arg_patt) {

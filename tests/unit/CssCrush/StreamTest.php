@@ -62,7 +62,6 @@ class StreamTest extends \PHPUnit_Framework_TestCase
     public function testSubstr()
     {
         $stream = new Stream($this->sample);
-        $prepend_text = 'foo';
         $this->assertEquals(substr($this->sample, 1), (string) $stream->substr(1));
     }
 }

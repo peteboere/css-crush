@@ -92,7 +92,6 @@ class IO
     public static function validateCache()
     {
         $process = Crush::$process;
-        $config = Crush::$config;
         $options = $process->options;
         $input = $process->input;
         $output = $process->output;
@@ -164,8 +163,6 @@ class IO
 
     public static function getCacheData()
     {
-        $config = Crush::$config;
-        $logger = $config->logger;
         $process = Crush::$process;
 
         if (
@@ -207,7 +204,6 @@ class IO
     public static function saveCacheData()
     {
         $process = Crush::$process;
-        $logger = Crush::$config->logger;
 
         debug('Saving config.');
 

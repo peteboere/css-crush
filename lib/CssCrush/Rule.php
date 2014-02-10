@@ -88,7 +88,7 @@ class Rule
 
             // Filter the extendArgs list to usable references.
             $filtered = array();
-            foreach ($this->extendArgs as $key => $extend_arg) {
+            foreach ($this->extendArgs as $extend_arg) {
 
                 $name = $extend_arg->name;
 
@@ -135,7 +135,7 @@ class Rule
             if ($extend_arg->pseudo) {
 
                 $extend_selectors = array();
-                foreach ($this->selectors->store as $readable => $selector) {
+                foreach ($this->selectors->store as $selector) {
                     $new_selector = clone $selector;
                     $new_readable = $new_selector->appendPseudo($extend_arg->pseudo);
                     $extend_selectors[$new_readable] = $new_selector;

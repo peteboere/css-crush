@@ -193,10 +193,8 @@ class Crush
     {
         self::$process = new Process($options, array('io_context' => 'file'));
 
-        $config = self::$config;
         $process = self::$process;
         $options = $process->options;
-        $doc_root = $process->docRoot;
 
         $process->input->raw = $file;
 
@@ -318,7 +316,6 @@ class Crush
 
         self::$process = new Process($options, array('io_context' => 'filter'));
 
-        $config = self::$config;
         $process = self::$process;
         $options = $process->options;
 

@@ -10,7 +10,6 @@ class Importer
 {
     public static function hostfile()
     {
-        $config = Crush::$config;
         $process = Crush::$process;
         $options = $process->options;
         $regex = Regex::$patt;

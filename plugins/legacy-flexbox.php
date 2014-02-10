@@ -127,10 +127,9 @@ function legacy_flexbox(Rule $rule) {
 
                 $args = explode(' ', $value);
                 $direction = isset($args[0]) ? $args[0] : 'initial';
-                $wrap = isset($args[1]) ? $args[1] : 'initial';
 
                 $rule_updated = flex_direction($direction, $stack);
-                // $rule_updated = csscrush__flex_wrap($wrap, $stack);
+
                 break;
         }
 

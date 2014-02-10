@@ -21,7 +21,7 @@ class PostAliasFix
 
     public static function remove($alias_type, $key)
     {
-        if ($type === 'function') {
+        if ($alias_type === 'function') {
             unset(self::$functions[$key]);
         }
     }

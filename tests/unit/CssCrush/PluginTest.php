@@ -51,7 +51,7 @@ TPL;
 
     public function testLoad()
     {
-        $result = Plugin::load('dummy');
+        Plugin::load('dummy');
 
         $this->assertArrayHasKey('dummy', Plugin::$plugins);
 

@@ -85,13 +85,13 @@ class SelectorList extends Iterator
                     return $flattened_stack;
                 }
 
-                return array($input => true);
+                return array($selector_string => true);
             };
         }
 
         $expanded_set = array();
 
-        foreach ($this->store as $readable_value => $original_selector) {
+        foreach ($this->store as $original_selector) {
             if (stripos($original_selector->value, ':any(') !== false) {
                 foreach ($expandSelector($original_selector->value) as $selector_string => $bool) {
                     $new = new Selector($selector_string);

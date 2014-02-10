@@ -36,7 +36,7 @@ class TokensTest extends \PHPUnit_Framework_TestCase
 
     public function testAdd()
     {
-        $label = $this->tokens->add('/*monkey*/', 'c');
+        $this->tokens->add('/*monkey*/', 'c');
         $this->assertContains('/*monkey*/', array_values($this->tokens->store->c));
     }
 

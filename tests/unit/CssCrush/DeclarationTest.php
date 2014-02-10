@@ -37,7 +37,7 @@ class DeclarationTest extends \PHPUnit_Framework_TestCase
 
     public function testProcess()
     {
-        foreach ($this->rule->declarations as $index => $declaration) {
+        foreach ($this->rule->declarations as $declaration) {
             $declaration->process($this->rule);
             $this->assertEquals('20px', $declaration->value);
         }

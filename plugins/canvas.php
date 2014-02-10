@@ -39,7 +39,6 @@ function canvas_capture($process) {
 function canvas_generator($input, $context) {
 
     $process = Crush::$process;
-    $logger = Crush::$config->logger;
 
     // Check GD requirements are met.
     static $requirements;

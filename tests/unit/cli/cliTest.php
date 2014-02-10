@@ -37,7 +37,7 @@ class CliTest extends \PHPUnit_Framework_TestCase
         $out_path = temp_file();
 
         file_put_contents($in_path, $this->sample);
-        exec("php \"$this->path\" -i '$in_path' -o '$out_path' --enable property-sorter", $lines);
+        exec("php \"$this->path\" -i '$in_path' -o '$out_path' --enable property-sorter");
         $expected = 'p{position:absolute;opacity:1;color:red}';
 
         $this->assertEquals($expected, file_get_contents($out_path));

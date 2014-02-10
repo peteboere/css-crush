@@ -34,7 +34,7 @@ namespace CssCrush\UnitTest
     function stdout($message, $prepend_newline = false)
     {
         if (! is_string($message)) {
-            $buffer = ob_start();
+            ob_start();
             print_r($message);
             $message = ob_get_clean();
         }

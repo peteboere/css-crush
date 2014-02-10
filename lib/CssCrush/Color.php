@@ -29,7 +29,6 @@ class Color
 
             // If color name is longer than 4 and less than 8 test to see if its hex
             // representation could be shortened.
-            $table = array();
             $keywords = self::getKeywords();
 
             foreach ($keywords as $name => $rgba) {
@@ -256,7 +255,7 @@ class Color
         $h = array_shift($hsla);
         $h = $h % 360;
         if ($h < 0) {
-            $h = 360 + $hue;
+            $h = 360 + $h;
         }
         $h = $h / 360;
 

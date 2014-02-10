@@ -370,7 +370,7 @@ class Process
         }
 
         // Place variables referenced inside variables.
-        foreach ($this->vars as $name => &$value) {
+        foreach ($this->vars as &$value) {
             $value = preg_replace_callback(Regex::$patt->varFunction, 'CssCrush\Process::cb_placeVars', $value);
         }
     }
@@ -755,7 +755,6 @@ class Process
     {
         $options = $this->options;
         $minify = $options->minify;
-        $regex = Regex::$patt;
         $EOL = $this->newline;
 
         // Formatting replacements.
@@ -948,7 +947,7 @@ class Process
         $previous_src_line = 0;
         $previous_src_col = 0;
 
-        foreach ($lines as $line_number => &$line_text) {
+        foreach ($lines as &$line_text) {
 
             $line_segments = array();
 
@@ -997,9 +996,6 @@ class Process
 
         if (! $this->minifyOutput) {
             $debug_info .= $this->newline;
-        }
-        if ($this->generateMap) {
-            $debug_info .= $token;
         }
 
         return $debug_info;
