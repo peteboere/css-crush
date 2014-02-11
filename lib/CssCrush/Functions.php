@@ -148,18 +148,20 @@ class Functions
 
 function fn__math($input) {
 
+    list($expression, $unit) = array_pad(Functions::parseArgs($input), 2, '');
+
     // Swap in math constants.
-    $input = preg_replace(
+    $expression = preg_replace(
         array('~\bpi\b~i'),
         array(M_PI),
-        $input);
+        $expression);
 
     // Strip blacklisted characters.
-    $input = preg_replace(Regex::$patt->mathBlacklist, '', $input);
+    $expression = preg_replace('~[^\.0-9\*\/\+\-\(\)]~S', '', $expression);
 
-    $result = @eval("return $input;");
+    $result = @eval("return $expression;");
 
-    return $result === false ? 0 : round($result, 5);
+    return ($result === false ? 0 : round($result, 5)) . $unit;
 }
 
 function fn__percent($input) {
