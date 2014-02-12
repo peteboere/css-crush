@@ -11,10 +11,10 @@ class SelectorAlias
     public $type;
     public $handler;
 
-    public function __construct($type, $handler)
+    public function __construct($handler, $type = 'alias')
     {
-        $this->type = $type;
         $this->handler = $handler;
+        $this->type = $type;
 
         switch ($this->type) {
             case 'alias':

@@ -362,7 +362,10 @@ class Crush
 
     public static function addSelectorAlias($name, $handler, $type = 'alias')
     {
-        Crush::$config->selectorAliases[$name] = new SelectorAlias($type, $handler);
+        if ($type != 'callback') {
+            $handler = Crush::$process->tokens->capture($handler, 's');
+        }
+        Crush::$config->selectorAliases[$name] = new SelectorAlias($handler, $type);
     }
 
     public static function removeSelectorAlias($name)

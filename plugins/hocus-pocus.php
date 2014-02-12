@@ -8,8 +8,8 @@ namespace CssCrush;
 
 Plugin::register('hocus-pocus', array(
     'enable' => function () {
-        Crush::addSelectorAlias('hocus', ':any(:hover,:focus)');
-        Crush::addSelectorAlias('pocus', ':any(:hover,:focus,:active)');
+        Crush::addSelectorAlias('hocus', ':hover,:focus');
+        Crush::addSelectorAlias('pocus', ':hover,:focus,:active');
     },
     'disable' => function () {
         Crush::removeSelectorAlias('hocus');

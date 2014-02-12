@@ -185,12 +185,12 @@ class Process
     protected function resolveSelectorAliases()
     {
         $this->stream->pregReplaceCallback(
-            Regex::make('~@selector-(?<type>alias|splat) +\:?(?<name>{{ident}}) +(?<args>[^;]+) *;~iS'),
+            Regex::make('~@selector-(?<type>alias|splat) +\:?(?<name>{{ident}}) +(?<handler>[^;]+) *;~iS'),
             function ($m) {
                 $name = strtolower($m['name']);
                 $type = strtolower($m['type']);
-                $args = Util::stripCommentTokens($m['args']);
-                Crush::$process->selectorAliases[$name] = new SelectorAlias($type, $args);
+                $handler = Util::stripCommentTokens($m['handler']);
+                Crush::$process->selectorAliases[$name] = new SelectorAlias($handler, $type);
             });
 
         // Merge with global selector aliases.
