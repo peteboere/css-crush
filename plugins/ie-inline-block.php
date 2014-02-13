@@ -7,12 +7,9 @@
 namespace CssCrush;
 
 Plugin::register('ie-inline-block', array(
-    'enable' => function () {
-        Crush::$process->hooks->add('rule_postalias', 'CssCrush\ie_inline_block');
-    },
-    'disable' => function () {
-        Crush::$process->hooks->remove('rule_postalias', 'CssCrush\ie_inline_block');
-    },
+    'enable' => function ($process) {
+        $process->hooks->add('rule_postalias', 'CssCrush\ie_inline_block');
+    }
 ));
 
 

@@ -9,13 +9,12 @@ namespace CssCrush;
 use stdClass;
 
 Plugin::register('canvas', array(
-    'enable' => function () {
-        Crush::$process->hooks->add('capture_phase2', 'CssCrush\canvas_capture');
+    'enable' => function ($process) {
+        $process->hooks->add('capture_phase2', 'CssCrush\canvas_capture');
         Functions::register('canvas', 'CssCrush\canvas_generator');
         Functions::register('canvas-data', 'CssCrush\canvas_generator');
     },
-    'disable' => function () {
-        Crush::$process->hooks->remove('capture_phase2', 'CssCrush\canvas_capture');
+    'disable' => function ($process) {
         Functions::deRegister('canvas');
         Functions::deRegister('canvas-data');
     },

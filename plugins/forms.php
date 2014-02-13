@@ -7,20 +7,15 @@
 namespace CssCrush;
 
 Plugin::register('forms', array(
-    'enable' => function () {
+    'enable' => function ($process) {
         foreach (forms() as $name => $handler) {
             if (is_array($handler)) {
                 $type = $handler['type'];
                 $handler = $handler['handler'];
             }
-            Crush::addSelectorAlias($name, $handler, $type);
+            $process->addSelectorAlias($name, $handler, $type);
         }
-    },
-    'disable' => function () {
-        foreach (forms() as $name => $handler) {
-            Crush::removeSelectorAlias($name);
-        }
-    },
+    }
 ));
 
 

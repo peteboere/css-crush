@@ -7,12 +7,9 @@
 namespace CssCrush;
 
 Plugin::register('legacy-flexbox', array(
-    'enable' => function () {
-        Crush::$process->hooks->add('rule_prealias', 'CssCrush\legacy_flexbox');
-    },
-    'disable' => function () {
-        Crush::$process->hooks->remove('rule_prealias', 'CssCrush\legacy_flexbox');
-    },
+    'enable' => function ($process) {
+        $process->hooks->add('rule_prealias', 'CssCrush\legacy_flexbox');
+    }
 ));
 
 

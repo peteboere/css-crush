@@ -48,7 +48,6 @@ class Crush
             'declarations' => array(),
             'at-rules' => array(),
         );
-        self::$config->selectorAliases = array();
         self::$config->plugins = array();
         self::$config->options = new Options();
 
@@ -354,23 +353,6 @@ class Crush
         );
 
         return $stats;
-    }
-
-
-    #############################
-    #  Global selector aliases.
-
-    public static function addSelectorAlias($name, $handler, $type = 'alias')
-    {
-        if ($type != 'callback') {
-            $handler = Crush::$process->tokens->capture($handler, 's');
-        }
-        Crush::$config->selectorAliases[$name] = new SelectorAlias($handler, $type);
-    }
-
-    public static function removeSelectorAlias($name)
-    {
-        unset(Crush::$config->selectorAliases[$name]);
     }
 
 

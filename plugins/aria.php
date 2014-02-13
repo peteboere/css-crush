@@ -1,23 +1,18 @@
 <?php
 /**
- * Pseudo classes for working with ARIA roles, states and properties.
+ * Pseudo classes for working with ARIA roles, states and properties
  *
  * @see docs/plugins/aria.md
  */
 namespace CssCrush;
 
 Plugin::register('aria', array(
-    'enable' => function () {
+    'enable' => function ($process) {
         foreach (aria() as $name => $handler) {
             $type = is_callable($handler) ? 'callback' : 'alias';
-            Crush::addSelectorAlias($name, $handler, $type);
+            $process->addSelectorAlias($name, $handler, $type);
         }
-    },
-    'disable' => function () {
-        foreach (aria() as $name => $handler) {
-            Crush::removeSelectorAlias($name);
-        }
-    },
+    }
 ));
 
 

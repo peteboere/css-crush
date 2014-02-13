@@ -7,12 +7,9 @@
 namespace CssCrush {
 
     Plugin::register('property-sorter', array(
-        'enable' => function () {
-            Crush::$process->hooks->add('rule_prealias', 'CssCrush\property_sorter');
-        },
-        'disable' => function () {
-            Crush::$process->hooks->remove('rule_prealias', 'CssCrush\property_sorter');
-        },
+        'enable' => function ($process) {
+            $process->hooks->add('rule_prealias', 'CssCrush\property_sorter');
+        }
     ));
 
 

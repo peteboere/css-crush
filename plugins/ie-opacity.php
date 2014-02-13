@@ -7,12 +7,9 @@
 namespace CssCrush;
 
 Plugin::register('ie-opacity', array(
-    'enable' => function () {
-        Crush::$process->hooks->add('rule_postalias', 'CssCrush\ie_opacity');
-    },
-    'disable' => function () {
-        Crush::$process->hooks->remove('rule_postalias', 'CssCrush\ie_opacity');
-    },
+    'enable' => function ($process) {
+        $process->hooks->add('rule_postalias', 'CssCrush\ie_opacity');
+    }
 ));
 
 

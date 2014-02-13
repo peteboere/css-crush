@@ -72,7 +72,7 @@ class Plugin
             }
             elseif (isset(self::$plugins[$plugin_name]['load'])) {
                 $plugin_load = self::$plugins[$plugin_name]['load'];
-                $plugin_load();
+                $plugin_load(Crush::$process);
             }
         }
 
@@ -84,7 +84,7 @@ class Plugin
         $plugin = self::load($plugin_name);
 
         if (is_callable($plugin['enable'])) {
-            $plugin['enable']();
+            $plugin['enable'](Crush::$process);
         }
 
         return true;
@@ -94,8 +94,8 @@ class Plugin
     {
         $plugin = isset(self::$plugins[$plugin_name]) ? self::$plugins[$plugin_name] : null;
 
-        if (is_callable($plugin['disable'])) {
-            $plugin['disable']();
+        if (isset($plugin['disable']) && is_callable($plugin['disable'])) {
+            $plugin['disable'](Crush::$process);
         }
     }
 }

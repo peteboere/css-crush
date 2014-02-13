@@ -7,12 +7,9 @@
 namespace CssCrush;
 
 Plugin::register('text-align', array(
-    'enable' => function () {
-        Crush::$process->hooks->add('rule_prealias', 'CssCrush\text_align');
-    },
-    'disable' => function () {
-        Crush::$process->hooks->remove('rule_prealias', 'CssCrush\text_align');
-    },
+    'enable' => function ($process) {
+        $process->hooks->add('rule_prealias', 'CssCrush\text_align');
+    }
 ));
 
 

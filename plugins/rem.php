@@ -7,12 +7,9 @@
 namespace CssCrush;
 
 Plugin::register('rem', array(
-    'enable' => function () {
-        Crush::$process->hooks->add('rule_prealias', 'CssCrush\rem');
-    },
-    'disable' => function () {
-        Crush::$process->hooks->remove('rule_prealias', 'CssCrush\rem');
-    },
+    'enable' => function ($process) {
+        $process->hooks->add('rule_prealias', 'CssCrush\rem');
+    }
 ));
 
 

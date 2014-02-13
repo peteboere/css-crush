@@ -7,12 +7,9 @@
 namespace CssCrush;
 
 Plugin::register('initial', array(
-    'enable' => function () {
-        Crush::$process->hooks->add('rule_prealias', 'CssCrush\initial');
-    },
-    'disable' => function () {
-        Crush::$process->hooks->remove('rule_prealias', 'CssCrush\initial');
-    },
+    'enable' => function ($process) {
+        $process->hooks->add('rule_prealias', 'CssCrush\initial');
+    }
 ));
 
 function initial(Rule $rule) {

@@ -7,12 +7,9 @@
 namespace CssCrush;
 
 Plugin::register('loop', array(
-    'enable' => function () {
-        Crush::$process->hooks->add('capture_phase1', 'CssCrush\loop');
-    },
-    'disable' => function () {
-        Crush::$process->hooks->remove('capture_phase1', 'CssCrush\loop');
-    },
+    'enable' => function ($process) {
+        $process->hooks->add('capture_phase1', 'CssCrush\loop');
+    }
 ));
 
 

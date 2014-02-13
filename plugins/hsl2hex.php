@@ -7,12 +7,9 @@
 namespace CssCrush;
 
 Plugin::register('hsl2hex', array(
-    'enable' => function () {
-        Crush::$process->hooks->add('rule_postalias', 'CssCrush\hsl2hex');
-    },
-    'disable' => function () {
-        Crush::$process->hooks->remove('rule_postalias', 'CssCrush\hsl2hex');
-    },
+    'enable' => function ($process) {
+        $process->hooks->add('rule_postalias', 'CssCrush\hsl2hex');
+    }
 ));
 
 

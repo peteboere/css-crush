@@ -193,15 +193,20 @@ class Process
                 Crush::$process->selectorAliases[$name] = new SelectorAlias($handler, $type);
             });
 
-        // Merge with global selector aliases.
-        $this->selectorAliases += Crush::$config->selectorAliases;
-
         // Create the selector aliases pattern and store it.
         if ($this->selectorAliases) {
             $names = implode('|', array_keys($this->selectorAliases));
             $this->selectorAliasesPatt
                 = Regex::make('~\:(' . $names . '){{RB}}(\()?~iS');
         }
+    }
+
+    public function addSelectorAlias($name, $handler, $type = 'alias')
+    {
+        if ($type != 'callback') {
+            $handler = $this->tokens->capture($handler, 's');
+        }
+        $this->selectorAliases[$name] = new SelectorAlias($handler, $type);
     }
 
 
