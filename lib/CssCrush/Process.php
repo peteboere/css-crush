@@ -347,19 +347,10 @@ class Process
 
     protected function captureVars()
     {
-        $patt = Regex::make('~@define(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
-
-        $this->stream->pregReplaceCallback($patt, function ($m) {
-            if (isset($m['name'])) {
-                Crush::$process->vars[$m['name']] = $m['value'];
-            }
-            else {
-                Crush::$process->vars = DeclarationList::parse($m['block_content'], array(
-                        'keyed' => true,
-                        'ignore_directives' => true,
-                    )) + Crush::$process->vars;
-            }
-        });
+        Crush::$process->vars = Crush::$process->stream->captureDirectives('@define', array(
+            'singles' => true,
+            'lowercase_keys' => false,
+        )) + Crush::$process->vars;
 
         // In-file variables override global variables.
         $this->vars += Crush::$config->vars;
@@ -439,23 +430,7 @@ class Process
 
     protected function resolveSettings()
     {
-        $patt = Regex::make('~@settings(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
-        $captured_settings = array();
-
-        $this->stream->pregReplaceCallback($patt, function ($m) use (&$captured_settings) {
-            if (isset($m['name'])) {
-                $captured_settings[strtolower($m['name'])] = $m['value'];
-            }
-            else {
-                $captured_settings = DeclarationList::parse($m['block_content'], array(
-                    'keyed' => true,
-                    'ignore_directives' => true,
-                    'lowercase_keys' => true,
-                )) + $captured_settings;
-            }
-
-            return '';
-        });
+        $captured_settings = $this->stream->captureDirectives('@settings', array('singles' => true));
 
         // Like variables, settings passed via options override settings defined in CSS.
         $this->settings = new Settings($this->options->settings + $captured_settings);

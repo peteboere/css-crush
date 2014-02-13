@@ -29,24 +29,7 @@ function color(&$declaration) {
 
 function color_capture($process) {
 
-    $patt = Regex::make('~@color(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
-    $captured_keywords = array();
-
-    $process->stream->pregReplaceCallback($patt, function ($m) use (&$captured_keywords) {
-        if (isset($m['name'])) {
-            $captured_keywords[strtolower($m['name'])] = $m['value'];
-        }
-        else {
-            $captured_keywords = DeclarationList::parse($m['block_content'], array(
-                'keyed' => true,
-                'lowercase_keys' => true,
-                'flatten' => true,
-            )) + $captured_keywords;
-        }
-
-        return '';
-    });
-
+    $captured_keywords = $process->stream->captureDirectives('@color', array('singles' => true));
 
     if ($captured_keywords) {
 

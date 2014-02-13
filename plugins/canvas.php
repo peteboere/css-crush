@@ -25,13 +25,9 @@ Plugin::register('canvas', array(
 function canvas_capture($process) {
 
     $process->stream->pregReplaceCallback(
-        Regex::make('~@canvas \s+ (?<name>{{ident}}) \s* {{block}}~ixS'),
+        Regex::make('~@canvas\s+(?<name>{{ ident }})\s*{{ block }}~iS'),
         function ($m) {
-            $name = strtolower($m['name']);
-            $block = $m['block_content'];
-            if (! empty($block)) {
-                Crush::$process->misc->canvas_defs[$name] = new Template($block);
-            }
+            Crush::$process->misc->canvas_defs[strtolower($m['name'])] = new Template($m['block_content']);
             return '';
         });
 }

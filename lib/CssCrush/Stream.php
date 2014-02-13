@@ -117,4 +117,37 @@ class Stream
         $this->raw = ltrim($this->raw);
         return $this;
     }
+
+    public function captureDirectives($directive, $parse_options = array())
+    {
+        $directive = ltrim($directive, '@');
+        $parse_options += array(
+            'keyed' => true,
+            'lowercase_keys' => true,
+            'ignore_directives' => true,
+            'singles' => false,
+            'flatten' => false,
+        );
+
+        if ($parse_options['singles']) {
+            $patt = Regex::make('~@' . $directive . '(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
+        }
+        else {
+            $patt = Regex::make('~@' . $directive . '\s*{{ block }}~iS');
+        }
+
+        $captured_directives = array();
+        $this->pregReplaceCallback($patt, function ($m) use (&$captured_directives, $parse_options) {
+            if (isset($m['name'])) {
+                $name = $parse_options['lowercase_keys'] ? strtolower($m['name']) : $m['name'];
+                $captured_directives[$name] = $m['value'];
+            }
+            else {
+                $captured_directives = DeclarationList::parse($m['block_content'], $parse_options) + $captured_directives;
+            }
+            return '';
+        });
+
+        return $captured_directives;
+    }
 }

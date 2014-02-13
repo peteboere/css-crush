@@ -36,15 +36,10 @@ function fn__svg_data($input) {
 
 function svg_capture($process) {
 
-    // Extract svg definitions.
     $process->stream->pregReplaceCallback(
-        Regex::make('~@svg \s+ (?<name>{{ident}}) \s* {{block}}~ixS'),
+        Regex::make('~@svg\s+(?<name>{{ ident }})\s*{{ block }}~iS'),
         function ($m) {
-            $name = strtolower($m['name']);
-            $block = $m['block_content'];
-            if (! empty($block)) {
-                Crush::$process->misc->svg_defs[$name] = new Template($block);
-            }
+            Crush::$process->misc->svg_defs[strtolower($m['name'])] = new Template($m['block_content']);
             return '';
         });
 }
