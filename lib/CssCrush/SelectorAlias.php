@@ -18,7 +18,7 @@ class SelectorAlias
 
         switch ($this->type) {
             case 'alias':
-                $this->handler = new Template(SelectorAlias::wrap($handler));
+                $this->handler = new Template($handler);
                 break;
         }
     }
