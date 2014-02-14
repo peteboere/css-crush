@@ -11,13 +11,9 @@ use stdClass;
 Plugin::register('canvas', array(
     'enable' => function ($process) {
         $process->hooks->add('capture_phase2', 'CssCrush\canvas_capture');
-        Functions::register('canvas', 'CssCrush\canvas_generator');
-        Functions::register('canvas-data', 'CssCrush\canvas_generator');
-    },
-    'disable' => function ($process) {
-        Functions::deRegister('canvas');
-        Functions::deRegister('canvas-data');
-    },
+        $process->functions->add('canvas', 'CssCrush\canvas_generator');
+        $process->functions->add('canvas-data', 'CssCrush\canvas_generator');
+    }
 ));
 
 
@@ -363,7 +359,7 @@ function canvas_apply_css_funcs($canvas) {
             'functions' => $filter_functions,
         );
 
-        $generic_functions = array_diff_key(Functions::$functions, $map['fill']['functions']);
+        $generic_functions = array_diff_key(Crush::$process->functions->register, $map['fill']['functions']);
         $map['generic'] = array(
             'patt' => Regex::makeFunctionPatt(
                 array_keys($generic_functions), array('bare_paren' => true)),

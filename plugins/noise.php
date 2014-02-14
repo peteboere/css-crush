@@ -8,8 +8,8 @@ namespace CssCrush;
 
 Plugin::register('noise', array(
 
-    'enable' => function () {
-        Functions::register('noise', function ($input) {
+    'enable' => function ($process) {
+        $process->functions->add('noise', function ($input) {
             return noise_generator($input, array(
                 'type' => 'fractalNoise',
                 'frequency' => .7,
@@ -17,7 +17,7 @@ Plugin::register('noise', array(
                 'dimensions' => array(150, 150),
             ));
         });
-        Functions::register('turbulence', function ($input) {
+        $process->functions->add('turbulence', function ($input) {
             return noise_generator($input, array(
                 'type' => 'turbulence',
                 'frequency' => .01,
@@ -25,12 +25,7 @@ Plugin::register('noise', array(
                 'dimensions' => array(200, 200),
             ));
         });
-    },
-
-    'disable' => function () {
-        Functions::deRegister('noise');
-        Functions::deRegister('turbulence');
-    },
+    }
 ));
 
 

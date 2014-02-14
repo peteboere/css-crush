@@ -8,14 +8,7 @@ namespace CssCrush;
 
 class Functions
 {
-    // Regex pattern for finding custom functions.
-    public static $functionPatt;
-
-    public static $functions;
-
-    static protected $customFunctions = array();
-
-    static protected $builtinFunctions = array(
+    protected static $builtins = array(
 
         // These functions must come first in this order.
         'query' => 'CssCrush\fn__query',
@@ -32,15 +25,33 @@ class Functions
         'a-adjust' => 'CssCrush\fn__a_adjust',
     );
 
-    public static function setMatchPatt()
+    public $pattern;
+
+    public $register = array();
+
+    public function add($name, $callback)
     {
-        self::$functions = self::$builtinFunctions + self::$customFunctions;
-        self::$functionPatt = Regex::makeFunctionPatt(
-            array_keys(self::$functions), array('bare_paren' => true));
+        $this->register[$name] = $callback;
+    }
+
+    public function remove($name)
+    {
+        unset($this->register[$name]);
+    }
+
+    public function setMatchPatt($use_builtin = true, $options = array())
+    {
+        if ($use_builtin) {
+            $this->register = self::$builtins + $this->register;
+            $options += array('bare_paren' => true);
+        }
+        $this->pattern = Regex::makeFunctionPatt(array_keys($this->register), $options);
     }
 
     public static function executeOnString($str, $patt = null, $process_callback = null, \stdClass $context = null)
     {
+        $processFunctions = Crush::$process->functions;
+
         // No bracketed expressions, early return.
         if (strpos($str, '(') === false) {
 
@@ -49,7 +60,7 @@ class Functions
 
         // Set default pattern if not set.
         if (! isset($patt)) {
-            $patt = Functions::$functionPatt;
+            $patt = $processFunctions->pattern;
         }
 
         // No custom functions, early return.
@@ -101,9 +112,9 @@ class Functions
                 $func_returns = $process_callback[$fn_name]($raw_args, $context);
             }
             // Secondly look for built-in function.
-            elseif (isset(self::$functions[$fn_name])) {
+            elseif (isset($processFunctions->register[$fn_name])) {
 
-                $func = self::$functions[$fn_name];
+                $func = $processFunctions->register[$fn_name];
                 $func_returns = $func($raw_args, $context);
             }
 
@@ -114,19 +125,8 @@ class Functions
         return $str;
     }
 
-
     #############################
     #  API and helpers.
-
-    public static function register($name, $callback)
-    {
-        Functions::$customFunctions[$name] = $callback;
-    }
-
-    public static function deRegister($name)
-    {
-        unset(Functions::$customFunctions[$name]);
-    }
 
     public static function parseArgs($input, $allowSpaceDelim = false)
     {

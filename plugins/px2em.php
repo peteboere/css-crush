@@ -7,14 +7,10 @@
 namespace CssCrush;
 
 Plugin::register('px2em', array(
-    'enable' => function () {
-        Functions::register('px2em', 'CssCrush\fn__px2em');
-        Functions::register('px2rem', 'CssCrush\fn__px2rem');
-    },
-    'disable' => function () {
-        Functions::deRegister('px2em');
-        Functions::deRegister('px2rem');
-    },
+    'enable' => function ($process) {
+        $process->functions->add('px2em', 'CssCrush\fn__px2em');
+        $process->functions->add('px2rem', 'CssCrush\fn__px2rem');
+    }
 ));
 
 

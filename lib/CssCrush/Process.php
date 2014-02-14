@@ -30,6 +30,7 @@ class Process
         $this->input = new \stdClass();
         $this->output = new \stdClass();
         $this->tokens = new Tokens();
+        $this->functions = new Functions();
         $this->hooks = new Hooks();
         $this->sourceMap = null;
         $this->selectorAliases = array();
@@ -843,7 +844,7 @@ class Process
         $this->filterPlugins();
         $this->filterAliases();
 
-        Functions::setMatchPatt();
+        $this->functions->setMatchPatt();
 
         $this->stat['compile_start_time'] = microtime(true);
     }

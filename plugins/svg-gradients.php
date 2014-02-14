@@ -10,15 +10,11 @@ Plugin::register('svg-gradients', array(
     'load' => function () {
         $GLOBALS['CSSCRUSH_SVG_GRADIENT_UID'] = 0;
     },
-    'enable' => function () {
+    'enable' => function ($process) {
         $GLOBALS['CSSCRUSH_SVG_GRADIENT_UID'] = 0;
-        Functions::register('svg-linear-gradient', 'CssCrush\fn__svg_linear_gradient');
-        Functions::register('svg-radial-gradient', 'CssCrush\fn__svg_radial_gradient');
-    },
-    'disable' => function () {
-        Functions::deRegister('svg-linear-gradient');
-        Functions::deRegister('svg-radial-gradient');
-    },
+        $process->functions->add('svg-linear-gradient', 'CssCrush\fn__svg_linear_gradient');
+        $process->functions->add('svg-radial-gradient', 'CssCrush\fn__svg_radial_gradient');
+    }
 ));
 
 

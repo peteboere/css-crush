@@ -13,13 +13,9 @@ Plugin::register('svg', array(
     'enable' => function ($process) {
         $GLOBALS['CSSCRUSH_SVG_UID'] = 0;
         $process->hooks->add('capture_phase2', 'CssCrush\svg_capture');
-        Functions::register('svg', 'CssCrush\fn__svg');
-        Functions::register('svg-data', 'CssCrush\fn__svg_data');
-    },
-    'disable' => function () {
-        Functions::deRegister('svg');
-        Functions::deRegister('svg-data');
-    },
+        $process->functions->add('svg', 'CssCrush\fn__svg');
+        $process->functions->add('svg-data', 'CssCrush\fn__svg_data');
+    }
 ));
 
 
@@ -623,12 +619,9 @@ function svg_apply_css_funcs($element, &$raw_data) {
             'svg-radial-gradient' => 'CssCrush\svg_fn_radial_gradient',
             'pattern' => 'CssCrush\svg_fn_pattern',
         );
-        $generic_functions =
-            array_diff_key(Functions::$functions, $fill_functions);
-        $generic_functions_patt = Regex::makeFunctionPatt(
-            array_keys($generic_functions), array('bare_paren' => true));
-        $fill_functions_patt = Regex::makeFunctionPatt(
-            array_keys($fill_functions));
+        $generic_functions = array_diff_key(Crush::$process->functions->register, $fill_functions);
+        $generic_functions_patt = Regex::makeFunctionPatt(array_keys($generic_functions), array('bare_paren' => true));
+        $fill_functions_patt = Regex::makeFunctionPatt(array_keys($fill_functions));
     }
 
     foreach ($raw_data as $property => &$value) {
