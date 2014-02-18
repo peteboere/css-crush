@@ -127,7 +127,7 @@ class Crush
                 $store = array();
                 foreach ($items as $prop_val => $aliases) {
 
-                    list($prop, $value) = array_map('trim', explode('.', $prop_val));
+                    list($prop, $value) = array_map('trim', explode(':', $prop_val));
 
                     foreach ($aliases as &$alias) {
 
