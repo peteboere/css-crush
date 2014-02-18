@@ -192,10 +192,13 @@ class Util
 
     public static function filePutContents($file, $str)
     {
-        if (@file_put_contents($file, $str, LOCK_EX)) {
+        if ($stream = fopen($file, 'w')) {
+            fwrite($stream, $str);
+            fclose($stream);
 
             return true;
         }
+
         warning("[[CssCrush]] - Could not write file '$file'.");
 
         return false;

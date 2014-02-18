@@ -76,26 +76,22 @@ class Declaration
 
     /*
         Execute functions on value.
-        Capture parens.
         Index functions.
     */
     public function process($parent_rule)
     {
-        // Apply custom functions.
+        static $this_function;
+        if (! $this_function) {
+            $this_function = new Functions(array('this' => 'CssCrush\fn__this'));
+        }
+
         if (! $this->skip) {
 
-            // this() function needs to be called exclusively because
-            // it's self referencing.
+            // this() function needs to be called exclusively because it's self referencing.
             $context = (object) array(
                 'rule' => $parent_rule,
             );
-            $this->value = Functions::executeOnString(
-                $this->value,
-                Regex::$patt->thisFunction,
-                array(
-                    'this' => 'CssCrush\fn__this',
-                ),
-                $context);
+            $this->value = $this_function->apply($this->value, null, $context);
 
             $parent_rule->declarations->data += array($this->property => $this->value);
 
@@ -103,19 +99,14 @@ class Declaration
                 'rule' => $parent_rule,
                 'property' => $this->property
             );
-            $this->value = Functions::executeOnString(
-                $this->value,
-                null,
-                null,
-                $context);
+            $this->value = Crush::$process->functions->apply($this->value, null, $context);
         }
 
         // Trim whitespace that may have been introduced by functions.
         $this->value = trim($this->value);
 
-        // After functions have applied value may be empty.
+        // Value may now be empty.
         if ($this->value === '') {
-
             $this->valid = false;
             return;
         }

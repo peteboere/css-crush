@@ -25,9 +25,18 @@ class Functions
         'a-adjust' => 'CssCrush\fn__a_adjust',
     );
 
-    public $pattern;
-
     public $register = array();
+
+    protected $pattern;
+
+    protected $patternOptions;
+
+    public function __construct($register = array(), $pattern = null, $pattern_options = array())
+    {
+        $this->register = $register;
+        $this->pattern = $pattern;
+        $this->patternOptions = $pattern_options;
+    }
 
     public function add($name, $callback)
     {
@@ -39,8 +48,9 @@ class Functions
         unset($this->register[$name]);
     }
 
-    public function setMatchPatt($use_builtin = true, $options = array())
+    public function setPattern($use_builtin = false)
     {
+        $options = $this->patternOptions;
         if ($use_builtin) {
             $this->register = self::$builtins + $this->register;
             $options += array('bare_paren' => true);
@@ -48,36 +58,26 @@ class Functions
         $this->pattern = Regex::makeFunctionPatt(array_keys($this->register), $options);
     }
 
-    public static function executeOnString($str, $patt = null, $process_callback = null, \stdClass $context = null)
+    public function apply($str, $callbacks = null, \stdClass $context = null)
     {
-        $processFunctions = Crush::$process->functions;
-
-        // No bracketed expressions, early return.
         if (strpos($str, '(') === false) {
-
             return $str;
         }
 
-        // Set default pattern if not set.
-        if (! isset($patt)) {
-            $patt = $processFunctions->pattern;
+        if (! $this->pattern) {
+            $this->setPattern();
         }
 
-        // No custom functions, early return.
-        if (! preg_match($patt, $str)) {
-
+        if (! preg_match($this->pattern, $str)) {
             return $str;
         }
 
-        // Always pass in a context object.
         if (! $context) {
             $context = new \stdClass();
         }
 
-        // Find custom function matches.
-        $matches = Regex::matchAll($patt, $str);
+        $matches = Regex::matchAll($this->pattern, $str);
 
-        // Step through the matches from last to first.
         while ($match = array_pop($matches)) {
 
             $offset = $match[0][1];
@@ -106,15 +106,12 @@ class Functions
             $func_returns = '';
             $context->function = $fn_name;
 
-            // First look for function as directly passed.
-            if (isset($process_callback[$fn_name])) {
-
-                $func_returns = $process_callback[$fn_name]($raw_args, $context);
+            // Use override callback if one is specified.
+            if (isset($callbacks[$fn_name])) {
+                $func_returns = $callbacks[$fn_name]($raw_args, $context);
             }
-            // Secondly look for built-in function.
-            elseif (isset($processFunctions->register[$fn_name])) {
-
-                $func = $processFunctions->register[$fn_name];
+            elseif (isset($this->register[$fn_name])) {
+                $func = $this->register[$fn_name];
                 $func_returns = $func($raw_args, $context);
             }
 
@@ -124,6 +121,7 @@ class Functions
 
         return $str;
     }
+
 
     #############################
     #  API and helpers.

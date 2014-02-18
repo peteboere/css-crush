@@ -389,7 +389,7 @@ class Crush
 
                 case 'vars':
                     $process->stat['vars'] = array_map(function ($item) use ($process) {
-                        return $process->tokens->restore(Functions::executeOnString($item), array('s', 'u', 'p'));
+                        return $process->tokens->restore($process->functions->apply($item), array('s', 'u', 'p'));
                     }, $process->vars);
                     break;
 

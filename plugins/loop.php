@@ -57,7 +57,7 @@ function loop_resolve_list($list_text) {
     // Either a generator function or a plain list.
     $items = array();
 
-    $list_text = Functions::executeOnString($list_text);
+    $list_text = Crush::$process->functions->apply($list_text);
     $generator_func_patt = Regex::make('~(?<func>range|color-range) {{parens}}~ix');
 
     if (preg_match($generator_func_patt, $list_text, $m)) {

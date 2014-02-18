@@ -332,19 +332,15 @@ function canvas_apply_filters($canvas, $src) {
 
 function canvas_apply_css_funcs($canvas) {
 
-    // Setup functions for using on values.
-    static $map;
-    if (! $map) {
+    static $generic_functions, $fill_functions, $filter_functions;
+    if (! $generic_functions) {
 
-        $fill_functions = array(
-            'canvas-linear-gradient' => 'CssCrush\canvas_fn_linear_gradient',
-        );
-        $map['fill'] = array(
-            'patt' => Regex::makeFunctionPatt(array_keys($fill_functions)),
-            'functions' => $fill_functions,
-        );
+        $fill_functions = new Functions(array('canvas-linear-gradient' => 'CssCrush\canvas_fn_linear_gradient'));
 
-        $filter_functions = array(
+        $generic_register = array_diff_key(Crush::$process->functions->register, $fill_functions->register);
+        $generic_functions = new Functions($generic_register, null, array('bare_paren' => true));
+
+        $filter_functions = new Functions(array(
             'contrast' => 'CssCrush\canvas_fn_filter',
             'opacity' => 'CssCrush\canvas_fn_filter',
             'colorize' => 'CssCrush\canvas_fn_filter',
@@ -353,21 +349,9 @@ function canvas_apply_css_funcs($canvas) {
             'brightness' => 'CssCrush\canvas_fn_filter',
             'invert' => 'CssCrush\canvas_fn_filter',
             'blur' => 'CssCrush\canvas_fn_filter',
-        );
-        $map['filter'] = array(
-            'patt' => Regex::makeFunctionPatt(array_keys($filter_functions)),
-            'functions' => $filter_functions,
-        );
-
-        $generic_functions = array_diff_key(Crush::$process->functions->register, $map['fill']['functions']);
-        $map['generic'] = array(
-            'patt' => Regex::makeFunctionPatt(
-                array_keys($generic_functions), array('bare_paren' => true)),
-            'functions' => $generic_functions,
-        );
+        ));
     }
 
-    // Function context object.
     $context = new stdClass();
 
     foreach ($canvas->raw as $property => &$value) {
@@ -376,21 +360,16 @@ function canvas_apply_css_funcs($canvas) {
             continue;
         }
 
-        // Generic functions.
-        $value = Functions::executeOnString(
-            $value, $map['generic']['patt'], $map['generic']['functions']);
+        $value = $generic_functions->apply($value);
 
-        // Fill functions.
         if (in_array($property, array('fill', 'background-fill'))) {
             $context->currentProperty = $property;
             $context->canvas = $canvas;
-            $value = Functions::executeOnString(
-                $value, $map['fill']['patt'], $map['fill']['functions'], $context);
+            $value = $fill_functions->apply($value, null, $context);
         }
         elseif ($property === 'canvas-filter') {
             $context->canvas = $canvas;
-            $value = Functions::executeOnString(
-                $value, $map['filter']['patt'], $map['filter']['functions'], $context);
+            $value = $filter_functions->apply($value, null, $context);
         }
     }
 }

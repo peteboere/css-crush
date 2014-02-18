@@ -395,6 +395,19 @@ class Process
 
     static protected function placeVars(&$value)
     {
+        static $var_function;
+        if (! $var_function) {
+            $var_function = new Functions(array('$' => function ($raw_args) {
+                        list($name, $default_value) = Functions::parseArgsSimple($raw_args);
+                        if (isset(Crush::$process->vars[$name])) {
+                            return Crush::$process->vars[$name];
+                        }
+                        else {
+                            return $default_value;
+                        }
+                    }), '~(\$)\(~');
+        }
+
         // Variables with no default value.
         $value = preg_replace_callback(Regex::$patt->varFunction,
             'CssCrush\Process::cb_placeVars', $value, -1, $vars_placed);
@@ -403,19 +416,10 @@ class Process
         if (strpos($value, '$(') !== false) {
 
             // Assume at least one replace.
-            $vars_placed = 1;
+            $vars_placed = true;
 
             // Variables may be nested so need to apply full function parsing.
-            $value = Functions::executeOnString($value, '~(\$)\(~',
-                array('$' => function ($raw_args) {
-                    list($name, $default_value) = Functions::parseArgsSimple($raw_args);
-                    if (isset(Crush::$process->vars[$name])) {
-                        return Crush::$process->vars[$name];
-                    }
-                    else {
-                        return $default_value;
-                    }
-                }));
+            $value = $var_function->apply($value);
         }
 
         // If we know replacements have been made we may want to update $value. e.g URL tokens.
@@ -844,7 +848,7 @@ class Process
         $this->filterPlugins();
         $this->filterAliases();
 
-        $this->functions->setMatchPatt();
+        $this->functions->setPattern(true);
 
         $this->stat['compile_start_time'] = microtime(true);
     }

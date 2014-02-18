@@ -612,25 +612,25 @@ function svg_apply_css_funcs($element, &$raw_data) {
 
     // Setup functions for using on values.
     // Note using custom versions of svg-*-gradient().
-    static $generic_functions_patt, $fill_functions, $fill_functions_patt;
-    if (! $generic_functions_patt) {
-        $fill_functions = array(
+    static $generic_functions, $fill_functions;
+    if (! $generic_functions) {
+        $fill_register = array(
             'svg-linear-gradient' => 'CssCrush\svg_fn_linear_gradient',
             'svg-radial-gradient' => 'CssCrush\svg_fn_radial_gradient',
             'pattern' => 'CssCrush\svg_fn_pattern',
         );
-        $generic_functions = array_diff_key(Crush::$process->functions->register, $fill_functions);
-        $generic_functions_patt = Regex::makeFunctionPatt(array_keys($generic_functions), array('bare_paren' => true));
-        $fill_functions_patt = Regex::makeFunctionPatt(array_keys($fill_functions));
+        $fill_functions = new Functions($fill_register);
+
+        $generic_register = array_diff_key(Crush::$process->functions->register, $fill_register);
+        $generic_functions = new Functions($generic_register, null, array('bare_paren' => true));
     }
 
     foreach ($raw_data as $property => &$value) {
-        $value = Functions::executeOnString($value, $generic_functions_patt);
+        $value = $generic_functions->apply($value);
 
         // Only capturing fills for fill and stoke properties.
         if ($property === 'fill' || $property === 'stroke') {
-            $value = Functions::executeOnString(
-                $value, $fill_functions_patt, $fill_functions, $element);
+            $value = $fill_functions->apply($value, null, $element);
 
             // If the value is a color with alpha component we split the color
             // and set the corresponding *-opacity property because Webkit doesn't

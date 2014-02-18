@@ -31,14 +31,14 @@ function color_capture($process) {
 
         $native_keywords = Color::getKeywords();
         $custom_keywords = array();
-        Crush::$process->colorKeywords = $native_keywords;
+        $process->colorKeywords = $native_keywords;
 
         foreach ($captured_keywords as $key => $value) {
-            $value = Functions::executeOnString($value);
+            $value = $process->functions->apply($value);
             if (! isset($native_keywords[$key]) && $rgba = Color::parse($value)) {
                 $custom_keywords[] = $key;
-                Crush::$process->stat['colors'][$key] = new Color($rgba);
-                Crush::$process->colorKeywords[$key] = $rgba;
+                $process->stat['colors'][$key] = new Color($rgba);
+                $process->colorKeywords[$key] = $rgba;
             }
         }
 

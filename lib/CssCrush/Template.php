@@ -21,10 +21,10 @@ class Template
 
     public function __construct($str)
     {
-        static $arg_patt;
+        static $arg_patt, $template_functions;
         if (! $arg_patt) {
-            $arg_patt = Regex::makeFunctionPatt(
-                array('arg'), array('templating' => true));
+            $arg_patt = Regex::makeFunctionPatt(array('arg'), array('templating' => true));
+            $template_functions = new Functions(null, $arg_patt);
         }
 
         $str = Template::unTokenize($str);
@@ -40,8 +40,6 @@ class Template
 
             // Match the argument index integer.
             if (! isset($position) || ! ctype_digit($position)) {
-
-                // On failure to match an integer return empty string.
                 return '';
             }
 
@@ -52,14 +50,14 @@ class Template
                 $self->defaults[$position] = $default_value;
             }
 
-            // Update the argument count.
-            $argNumber = ((int) $position) + 1;
-            $self->argCount = max($self->argCount, $argNumber);
+            // Update argument count.
+            $arg_number = ((int) $position) + 1;
+            $self->argCount = max($self->argCount, $arg_number);
 
             return "?a$position?";
         };
 
-        $this->string = Functions::executeOnString($str, $arg_patt, array(
+        $this->string = $template_functions->apply($str, array(
                 'arg' => $capture_callback,
                 '#' => $capture_callback,
             ));
