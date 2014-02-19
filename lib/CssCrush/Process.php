@@ -150,9 +150,12 @@ class Process
             $tags = array(
                 'datetime' => @date('Y-m-d H:i:s O'),
                 'year' => @date('Y'),
-                'version' => csscrush_version(),
                 'command' => $command_args,
                 'plugins' => implode(',', array_keys($this->plugins)),
+                'version' => csscrush_version(),
+                'git_version' => function ()  {
+                    return csscrush_version(true);
+                },
                 'compile_time' => function () {
                     $now = microtime(true) - Crush::$process->stat['compile_start_time'];
                     return round($now, 4) . ' seconds';
@@ -160,7 +163,7 @@ class Process
             );
 
             foreach ($boilerplate_matches[0] as $index => $tag) {
-                $tag_name = $boilerplate_matches[1][$index];
+                $tag_name = trim($boilerplate_matches[1][$index]);
                 $replacement = '?';
                 if (isset($tags[$tag_name])) {
                     $replacement =  is_callable($tags[$tag_name]) ? $tags[$tag_name]() : $tags[$tag_name];
