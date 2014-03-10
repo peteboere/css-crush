@@ -208,7 +208,7 @@ class Crush
             return '';
         }
 
-        Crush::runStat('hostfile');
+        Crush::runStat('paths');
 
         if ($options->cache) {
             $process->cacheData = $process->io('getCacheData');
@@ -308,7 +308,7 @@ class Crush
      */
     public static function string($string, $options = array())
     {
-        // For strings set boilerplate to not display by default
+        // Set boilerplate to not display by default.
         if (! isset($options['boilerplate'])) {
             $options['boilerplate'] = false;
         }
@@ -318,8 +318,6 @@ class Crush
         $process = self::$process;
         $options = $process->options;
 
-        // Set the path context if one is given.
-        // Fallback to document root.
         if (! empty($options->context)) {
             $process->resolveContext($options->context);
         }
@@ -383,8 +381,11 @@ class Crush
         foreach (func_get_args() as $stat_name) {
 
             switch ($stat_name) {
-                case 'hostfile':
-                    $process->stat['hostfile'] = $process->input->filename;
+                case 'paths':
+                    $process->stat['input_filename'] = $process->input->filename;
+                    $process->stat['input_path'] = $process->input->path;
+                    $process->stat['output_filename'] = $process->output->filename;
+                    $process->stat['output_path'] = $process->output->dir . '/' . $process->output->filename;
                     break;
 
                 case 'vars':

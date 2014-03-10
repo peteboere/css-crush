@@ -310,19 +310,46 @@ if ($args->watch) {
 
     stdout('CONTROL-C to quit.');
 
+    // Surpress error reporting to avoid flooding the screen.
+    error_reporting(0);
+    $outstanding_errors = false;
+
     while (true) {
 
-        $created_file = csscrush_file($args->input_file, $process_opts);
+        csscrush_file($args->input_file, $process_opts);
         $stats = csscrush_stat();
 
-        if ($stats['errors']) {
-            stderr($stats['errors']);
+        $changed = $stats['compile_time'] && ! $stats['errors'];
+        $errors = $stats['errors'];
+        $show_errors = $errors && (! $outstanding_errors || ($outstanding_errors != $errors));
 
-            exit(STATUS_ERROR);
+        $output_file_display = "$stats[output_filename] ($stats[output_path])";
+        $input_file_display = "$stats[input_filename] ($stats[input_path])";
+
+        $compile_info = array();
+        if ($stats['input_path']) {
+            $compile_info['input_file'] = $input_file_display;
         }
 
-        if (is_array($args->trace) && $stats['compile_time'] > 0) {
-            stdout(format_stats($stats));
+        if ($errors) {
+            if ($show_errors) {
+                $outstanding_errors = $errors;
+                if ($stats['output_path']) {
+                    stderr(colorize("<R>ERROR: <r>$output_file_display</>"), true, false);
+                }
+                stderr($errors);
+            }
+        }
+        elseif ($changed) {
+            stdout(colorize("<G>FILE UPDATED: <g>$output_file_display</>"));
+            $compile_info['compile_time'] = round($stats['compile_time'], 5) . ' seconds';
+            $trace_options = isset($process_opts['trace']) ? array_flip($process_opts['trace']) : null;
+            $compile_info += $trace_options ? array_intersect_key($stats, $trace_options) : array();
+            $outstanding_errors = false;
+        }
+
+        if ($show_errors || $changed) {
+            stdout(format_stats($compile_info));
         }
 
         sleep(1);
@@ -350,7 +377,7 @@ else {
 
     if (is_array($args->trace)) {
         // Use stderror for stats to preserve stdout.
-        stderr(format_stats($stats) . PHP_EOL);
+        stderr(format_stats($stats) . PHP_EOL, true, 'b');
     }
 
     stdout($output);
@@ -362,9 +389,9 @@ else {
 ##################################################################
 ##  Helpers.
 
-function stderr($lines, $closing_newline = true) {
+function stderr($lines, $closing_newline = true, $color = 'r') {
     $out = implode(PHP_EOL, (array) $lines) . ($closing_newline ? PHP_EOL : '');
-    fwrite(STDERR, $out);
+    fwrite(STDERR, colorize($color ? "<$color>$out</>" : $out));
 }
 
 function stdout($lines, $closing_newline = true) {
@@ -403,8 +430,9 @@ function parse_list(array $option) {
 function format_stats($stats) {
     $out = array();
     foreach ($stats as $name => $value) {
+        $name = ucfirst(str_replace('_', ' ', $name));
         if (is_scalar($value)) {
-            $out[] = "$name: $value";
+            $out[] = colorize("<b>└── <B>$name:<b> $value</>");
         }
     }
     return implode(PHP_EOL, $out);
