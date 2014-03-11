@@ -35,6 +35,7 @@ class Process
         $this->sourceMap = null;
         $this->selectorAliases = array();
         $this->selectorAliasesPatt = null;
+        $this->io = new Crush::$config->io($this);
 
         $this->debugLog = array();
         $this->errors = array();
@@ -88,27 +89,18 @@ class Process
         $this->input->dir = $input_dir ?: $this->docRoot;
         $this->input->dirUrl = substr($input_dir, strlen($this->docRoot));
 
-        $this->output->dir = $this->io('getOutputDir');
-        $this->output->filename = $this->io('getOutputFileName');
+        $this->output->dir = $this->io->getOutputDir();
+        $this->output->filename = $this->io->getOutputFileName();
         $this->output->dirUrl = substr($this->output->dir, strlen($this->docRoot));
 
         $context_resolved = true;
         if ($input_file) {
-            $context_resolved = $this->io('testOutputDir');
+            $context_resolved = $this->io->testOutputDir();
         }
 
-        $this->io('init');
+        $this->io->init();
 
         return $context_resolved;
-    }
-
-    public function io($method)
-    {
-        // Get argument list (excluding the method name which comes first).
-        $args = func_get_args();
-        array_shift($args);
-
-        return call_user_func_array(array(Crush::$config->io, $method), $args);
     }
 
 
@@ -175,11 +167,11 @@ class Process
 
         // Pretty print.
         $EOL = $this->newline;
-        $boilerplate = preg_split('~[\t]*'. Regex::$classes->newline . '[\t]*~', $boilerplate);
+        $boilerplate = preg_split('~[\t]*'. Regex::$classes->newline . '[\t]*~', trim($boilerplate));
         $boilerplate = array_map('trim', $boilerplate);
         $boilerplate = "$EOL * " . implode("$EOL * ", $boilerplate);
 
-        return "/*{$boilerplate}$EOL */$EOL";
+        return "/*$boilerplate$EOL */$EOL";
     }
 
 

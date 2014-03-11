@@ -13,9 +13,9 @@ class Watch extends IO
 {
     public static $cacheData = array();
 
-    public static function getOutputFileName()
+    public function getOutputFileName()
     {
-        $process = Crush::$process;
+        $process = $this->process;
         $options = $process->options;
 
         $output_basename = basename($process->input->filename, '.css');
@@ -32,17 +32,17 @@ class Watch extends IO
         return "$output_basename$suffix.css";
     }
 
-    public static function getCacheData()
+    public function getCacheData()
     {
         // Clear results from earlier processes.
         clearstatcache();
-        Crush::$process->cacheData = array();
+        $this->process->cacheData = array();
 
         return self::$cacheData;
     }
 
-    public static function saveCacheData()
+    public function saveCacheData()
     {
-        self::$cacheData = Crush::$process->cacheData;
+        self::$cacheData = $this->process->cacheData;
     }
 }

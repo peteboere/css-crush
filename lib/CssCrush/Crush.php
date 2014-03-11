@@ -211,9 +211,9 @@ class Crush
         Crush::runStat('paths');
 
         if ($options->cache) {
-            $process->cacheData = $process->io('getCacheData');
-            if ($process->io('validateCache')) {
-                $file_url = $process->io('getOutputUrl');
+            $process->cacheData = $process->io->getCacheData();
+            if ($process->io->validateCache()) {
+                $file_url = $process->io->getOutputUrl();
                 $process->release();
 
                 return $file_url;
@@ -222,7 +222,7 @@ class Crush
 
         $stream = $process->compile();
 
-        return $process->io('write', $stream) ?  $process->io('getOutputUrl') : '';
+        return $process->io->write($stream) ?  $process->io->getOutputUrl() : '';
     }
 
     /**

@@ -8,23 +8,28 @@ namespace CssCrush;
 
 class IO
 {
-    public static function init()
+    protected $process;
+
+    public function __construct(Process $process)
     {
-        $process = Crush::$process;
-        $process->cacheFile = "{$process->output->dir}/.csscrush";
+        $this->process = $process;
     }
 
-    public static function getOutputDir()
+    public function init()
     {
-        $process = Crush::$process;
-        $output_dir = $process->options->output_dir;
-
-        return $output_dir ? $output_dir : $process->input->dir;
+        $this->process->cacheFile = "{$this->process->output->dir}/.csscrush";
     }
 
-    public static function testOutputDir()
+    public function getOutputDir()
     {
-        $dir = Crush::$process->output->dir;
+        $output_dir = $this->process->options->output_dir;
+
+        return $output_dir ? $output_dir : $this->process->input->dir;
+    }
+
+    public function testOutputDir()
+    {
+        $dir = $this->process->output->dir;
         $pathtest = true;
 
         if (! file_exists($dir)) {
@@ -47,12 +52,11 @@ class IO
         return $pathtest;
     }
 
-    public static function getOutputFileName()
+    public function getOutputFileName()
     {
-        $process = Crush::$process;
-        $options = $process->options;
+        $options = $this->process->options;
 
-        $output_basename = basename($process->input->filename, '.css');
+        $output_basename = basename($this->process->input->filename, '.css');
 
         if (! empty($options->output_file)) {
             $output_basename = basename($options->output_file, '.css');
@@ -61,9 +65,9 @@ class IO
         return "$output_basename.crush.css";
     }
 
-    public static function getOutputUrl()
+    public function getOutputUrl()
     {
-        $process = Crush::$process;
+        $process = $this->process;
         $options = $process->options;
         $filename = $process->output->filename;
 
@@ -89,9 +93,9 @@ class IO
         return $url;
     }
 
-    public static function validateCache()
+    public function validateCache()
     {
-        $process = Crush::$process;
+        $process = $this->process;
         $options = $process->options;
         $input = $process->input;
         $output = $process->output;
@@ -161,9 +165,9 @@ class IO
         }
     }
 
-    public static function getCacheData()
+    public function getCacheData()
     {
-        $process = Crush::$process;
+        $process = $this->process;
 
         if (
             file_exists($process->cacheFile) &&
@@ -201,9 +205,9 @@ class IO
         return $cache_data;
     }
 
-    public static function saveCacheData()
+    public function saveCacheData()
     {
-        $process = Crush::$process;
+        $process = $this->process;
 
         debug('Saving config.');
 
@@ -211,9 +215,9 @@ class IO
         Util::filePutContents($process->cacheFile, json_encode($process->cacheData, $flags), __METHOD__);
     }
 
-    public static function write(Stream $stream)
+    public function write(Stream $stream)
     {
-        $process = Crush::$process;
+        $process = $this->process;
         $output = $process->output;
         $source_map_filename = "$output->filename.map";
 

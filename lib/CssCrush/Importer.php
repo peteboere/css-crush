@@ -138,7 +138,7 @@ class Importer
                 'options' => $options->get(),
             );
 
-            $process->io('saveCacheData');
+            $process->io->saveCacheData();
         }
 
         return $str;
