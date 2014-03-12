@@ -95,7 +95,24 @@ class Process
 
         $context_resolved = true;
         if ($input_file) {
-            $context_resolved = $this->io->testOutputDir();
+            $output_dir = $this->output->dir;
+
+            if (! file_exists($output_dir)) {
+                warning("[[CssCrush]] - Output directory '$output_dir' doesn't exist.");
+                $context_resolved = false;
+            }
+            elseif (! is_writable($output_dir)) {
+
+                debug('Attempting to change permissions.');
+
+                if (! @chmod($output_dir, 0755)) {
+                    warning("[[CssCrush]] - Output directory '$output_dir' is unwritable.");
+                    $context_resolved = false;
+                }
+                else {
+                    debug('Permissions updated.');
+                }
+            }
         }
 
         $this->io->init();

@@ -27,31 +27,6 @@ class IO
         return $output_dir ? $output_dir : $this->process->input->dir;
     }
 
-    public function testOutputDir()
-    {
-        $dir = $this->process->output->dir;
-        $pathtest = true;
-
-        if (! file_exists($dir)) {
-            warning("[[CssCrush]] - Output directory '$dir' doesn't exist.");
-            $pathtest = false;
-        }
-        elseif (! is_writable($dir)) {
-
-            debug('Attempting to change permissions.');
-
-            if (! @chmod($dir, 0755)) {
-                warning("[[CssCrush]] - Output directory '$dir' is unwritable.");
-                $pathtest = false;
-            }
-            else {
-                debug('Permissions updated.');
-            }
-        }
-
-        return $pathtest;
-    }
-
     public function getOutputFileName()
     {
         $options = $this->process->options;

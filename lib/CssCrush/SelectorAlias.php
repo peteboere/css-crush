@@ -8,8 +8,8 @@ namespace CssCrush;
 
 class SelectorAlias
 {
-    public $type;
-    public $handler;
+    protected $type;
+    protected $handler;
 
     public function __construct($handler, $type = 'alias')
     {
