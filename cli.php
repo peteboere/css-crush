@@ -169,13 +169,13 @@ if ($args->input_file) {
 }
 
 if ($args->output_file) {
-    $out_dir = realpath(dirname($args->output_file));
-    if (! $out_dir) {
-        stderr('Output directory does not exist.');
+    $out_dir = dirname($args->output_file);
+    if (! realpath($out_dir) && ! @mkdir($out_dir)) {
+        stderr('Output directory does not exist and could not be created.');
 
         exit(STATUS_ERROR);
     }
-    $args->output_file = $out_dir . '/' . basename($args->output_file);
+    $args->output_file = realpath($out_dir) . '/' . basename($args->output_file);
 }
 
 if ($args->context) {
@@ -299,7 +299,6 @@ if ($args->output_file) {
     $process_opts['output_file'] = basename($args->output_file);
 }
 
-
 ##################################################################
 ##  Output.
 
@@ -374,13 +373,14 @@ else {
             exit(STATUS_ERROR);
         }
     }
+    else {
+        stdout($output);
+    }
 
     if (is_array($args->trace)) {
         // Use stderror for stats to preserve stdout.
         stderr(format_stats($stats) . PHP_EOL, true, 'b');
     }
-
-    stdout($output);
 
     exit(STATUS_OK);
 }
