@@ -6,10 +6,10 @@
 
 Evaluate a raw mathematical expression.
 
-<code>math( *expression* )</code> *or* <code>( *expression* )</code>
+<code>math( *expression* [, *unit*] )</code>
 
 ```css
-font-size: ( 12 / 16 )em;
+font-size: math( 12 / 16, em );
 ```
 
 ```css

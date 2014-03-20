@@ -1,8 +1,19 @@
 
-Functions for converting pixel values into em (px2em) or rem (px2rem) values
+Functions for converting pixel values into `em` (__px2em__) or `rem` (__px2rem__) values
 
-For both functions the optional second argument is base font-size for calculation
-(16px by default) though usually not required when converting pixel to rem.
+For both functions the optional second argument is base font-size for calculation though usually not required when converting pixel to rem.
+
+
+## Settings
+
+### px2em-base
+
+The default base pixel value (16px by default) used for px2em conversion.
+
+### px2rem-base
+
+The default base pixel value (16px by default) used for px2rem conversion.
+
 
 ```css
 font-size: px2em(11 13);

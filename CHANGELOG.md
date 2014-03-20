@@ -1,3 +1,24 @@
+### 2.1.0 (2014-?-?)
+
+* Added HHVM support (HHVM >= 2.4)
+* Added Travis CI support.
+* Added custom color keywords plugin.
+* Added text-align plugin for polyfilling the direction sensitive text-align values, start and end.
+* Added selector `splat` aliases, which expand based on arguments.
+* Added settings interface for plugins and CSS environment. Old variable based settings (as used in rem and px2em plugins) is now deprecated.
+* Added library docs at the repository level, written in markdown.
+* Added unit argument to the math function.
+* Deprecated bare parens math e.g. `()` due to their use in developing CSS specs.
+* Removed `-ms-` gradient aliases.
+* Renamed plugin `hsl-to-hex` to `hsl2hex`.
+* Updated plugin API.
+* Improved feedback for command line watched files.
+* Removed date modified from default boilerplate.
+* Made git version available for use in boilerplates.
+* Reported version now uses `git describe` style output if available.
+* Changed base IO class to use non-static methods.
+* Numerous under the hood improvements.
+
 ### 2.0.0 (2013-11-2)
 
 * Raised PHP version requirement to PHP 5.3.1.

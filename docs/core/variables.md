@@ -12,7 +12,6 @@ Variables can be injected at runtime with the [vars option](#api--options).
 ```crush
 /* Defining variables */
 @define {
-  helvetica: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
   dark: #333;
   light: #F4F2E2;
   smaller-screen: only screen and (max-width: 800px);
@@ -22,7 +21,7 @@ Variables can be injected at runtime with the [vars option](#api--options).
 @media $(smaller-screen) {
   ul, p {
     color: $(dark);
-    /* Specifying a fallback value */
+    /* Using a fallback value with an undefined variable */
     background-color: $(accent-color #ff0);
   }
 }

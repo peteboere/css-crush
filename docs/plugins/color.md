@@ -1,7 +1,7 @@
 
 Define custom color keywords.
 
-Standard color keywords (blue, red etc.) cannot be overridden.
+Standard color keywords (e.g. blue, red) cannot be overridden.
 
 ```crush
 @color {
@@ -9,7 +9,6 @@ Standard color keywords (blue, red etc.) cannot be overridden.
     kolanut: #D0474E;
 }
 
-/* Alternative syntax */
 @color vanilla #FBF7EC;
 
 

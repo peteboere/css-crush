@@ -54,7 +54,7 @@ There are several other [functions](http://the-echoplex.net/csscrush#api) for wo
 * `csscrush_string($css, $options)` - Compiles a raw string of css and returns the resulting css.
 * `csscrush_inline($file, $options, $tag_attributes)` - Returns compiled css in an inline style tag.
 
-There are a number of [options](http://the-echoplex.net/csscrush#options) available for tailoring the output, and a collection of bundled [plugins](http://the-echoplex.net/csscrush#plugins) that cover many workflow issues in contemporary CSS development.
+There are a number of [options](http://the-echoplex.net/csscrush#api--options) available for tailoring the output, and a collection of bundled [plugins](http://the-echoplex.net/csscrush#plugins) that cover many workflow issues in contemporary CSS development.
 
 
 ### Contributing
