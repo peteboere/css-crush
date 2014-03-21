@@ -5,8 +5,8 @@ Standard color keywords (e.g. blue, red) cannot be overridden.
 
 ```crush
 @color {
-    acme-blue: s-adjust(blue -10);
-    kolanut: #D0474E;
+  acme-blue: s-adjust(blue -10);
+  kolanut: #D0474E;
 }
 
 @color vanilla #FBF7EC;
@@ -14,7 +14,7 @@ Standard color keywords (e.g. blue, red) cannot be overridden.
 
 /* Usage is the same as with native color keywords */
 p {
-    color: vanilla;
-    border: 1px solid acme-blue;
+  color: vanilla;
+  border: 1px solid acme-blue;
 }
 ```

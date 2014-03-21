@@ -3,9 +3,9 @@ For...in loops with lists and generator functions.
 
 ```crush
 @for fruit in apple, orange, pear {
-    .#(fruit) {
-        background-image: url("images/#(fruit).jpg");
-    }
+  .#(fruit) {
+    background-image: url("images/#(fruit).jpg");
+  }
 }
 ```
 
@@ -17,11 +17,11 @@ For...in loops with lists and generator functions.
 
 ```crush
 @for base in range(2, 24) {
-    @for i in range(1, #(base)) {
-        .grid-#(i)-of-#(base) {
-            width: (#(i) / #(base) * 100)%;
-        }
+  @for i in range(1, #(base)) {
+    .grid-#(i)-of-#(base) {
+      width: math(#(i) / #(base) * 100, %);
     }
+  }
 }
 ```
 
@@ -39,11 +39,11 @@ For...in loops with lists and generator functions.
 /* The last argument to color-range() is an integer
    specifying how many transition colors to generate
    between the color arguments. */
- @for color in color-range(powderblue, deeppink, a-adjust(yellow, -80), 5) {
-     .foo-#(loop.counter) {
-         background-color: #(color);
-     }
- }
+@for color in color-range(powderblue, deeppink, a-adjust(yellow, -80), 5) {
+  .foo-#(loop.counter) {
+    background-color: #(color);
+  }
+}
 ```
 
 ```css

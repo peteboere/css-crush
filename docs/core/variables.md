@@ -44,15 +44,15 @@ Sections of CSS can be included and excluded on the basis of variable existence 
 @define foo #f00;
 
 @ifdefine foo {
-    p {
-        color: $(foo);
-    }
+  p {
+    color: $(foo);
+  }
 }
 
 p {
-    font-size: 12px;
-    @ifdefine not foo {
-        line-height: 1.5;
-    }
+  font-size: 12px;
+  @ifdefine not foo {
+    line-height: 1.5;
+  }
 }
 ```

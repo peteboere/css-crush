@@ -10,7 +10,7 @@ In some cases (e.g. CSS3 gradients) final syntax is incompatible with older pref
 
 ```crush
 .foo {
-    background: linear-gradient(to right, red, white);
+  background: linear-gradient(to right, red, white);
 }
 ```
 
@@ -26,7 +26,7 @@ In some cases (e.g. CSS3 gradients) final syntax is incompatible with older pref
 
 ```crush
 @keyframes bounce {
-  50% {transform: scale(1.4);}
+  50% { transform: scale(1.4); }
 }
 ```
 

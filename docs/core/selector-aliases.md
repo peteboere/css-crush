@@ -14,7 +14,8 @@ They're  defined with the `@selector-alias` directive, and can be used anywhere 
 @selector-alias heading :any(h1, h2, h3, h4, h5, h6);
 @selector-alias radio input[type="radio"];
 @selector-alias hocus :any(:hover, :focus);
-/* Selector alias with arguments */
+
+/* Selector aliases with arguments */
 @selector-alias class-prefix :any([class^="#(0)"], [class*=" #(0)"]);
 @selector-alias col :class-prefix(-col);
 
@@ -31,7 +32,7 @@ They're  defined with the `@selector-alias` directive, and can be used anywhere 
 }
 
 p a:hocus {
-    text-decoration: none;
+  text-decoration: none;
 }
 ```
 
@@ -53,6 +54,28 @@ input[type="radio"] {
 
 p a:hover,
 p a:focus {
-    text-decoration: none;
+  text-decoration: none;
+}
+```
+
+## Selector splatting
+
+Selector splats are a special kind of selector alias that expand using passed arguments.
+
+```crush
+@selector-splat input input[type="#(text)"];
+
+form :input(time, text, url, email, number) {
+  border: 1px solid;
+}
+```
+
+```css
+form input[type="time"],
+form input[type="text"],
+form input[type="url"],
+form input[type="email"],
+form input[type="number"] {
+  border: 1px solid;
 }
 ```

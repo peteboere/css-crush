@@ -9,7 +9,7 @@ Supported in any browser that supports SVG filters (IE > 9 and most other browse
 Both functions work in the same way, the difference being `noise()` uses feTurbulence type 'fractalNoise' and `turbulence()` uses feTurbulence type 'turbulence'.
 
 ```syntax
-<function-name>(
+noise/turbulence(
     [ fill-color || size ]?
     [, frequency octaves? sharpness? ]?
     [, blend-mode || fade ]?
