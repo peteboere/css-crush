@@ -23,7 +23,6 @@ The referenced property value, or the fallback if it has not been set.
 ```css
 .foo {
   width: this( height );
-  margin-top: -( this( height ) / 2 )em;
   height: 100em;
 }
 ```

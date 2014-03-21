@@ -44,7 +44,7 @@ body {
 ```crush
 /* Google logo resized to 400px width and given a sepia effect. */
 @canvas sepia {
-  src: url("https://www.google.co.uk/images/srpr/logo4w.png");
+  src: url(http://www.google.com/images/logo.png);
   width: 400;
   canvas-filter: greyscale() colorize(45, 45, 0);
 }

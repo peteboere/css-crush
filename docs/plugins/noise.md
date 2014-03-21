@@ -10,10 +10,10 @@ Both functions work in the same way, the difference being `noise()` uses feTurbu
 
 ```syntax
 noise/turbulence(
-    [ fill-color || size ]?
-    [, frequency octaves? sharpness? ]?
-    [, blend-mode || fade ]?
-    [, color-filter color-filter-value ]?
+  [ <fill-color> || <size> ]?
+  [, <frequency> <octaves>? <sharpness>? ]?
+  [, <blend-mode> || <fade> ]?
+  [, <color-filter> <color-filter-value> ]?
 )
 ```
 

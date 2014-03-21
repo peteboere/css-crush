@@ -7,8 +7,9 @@ Primarily useful for supporting Internet Explorer 9.
 
 Syntax is the same as [linear-gradient()](http://dev.w3.org/csswg/css3-images/#linear-gradient)
 
-`svg-linear-gradent( [ <angle> | to <side-or-corner> ,]? <color-stop> [, <color-stop>]+ )`
-
+```syntax
+svg-linear-gradent( [ <angle> | to <side-or-corner> ,]? <color-stop> [, <color-stop>]+ )
+```
 
 ### Returns
 
@@ -28,7 +29,9 @@ background-image: svg-linear-gradient( 35deg, red, gold 20%, powderblue );
 
 Syntax is similar to but more limited than [radial-gradient()](http://dev.w3.org/csswg/css3-images/#radial-gradient)
 
-`svg-radial-gradent( [ <origin> | at <position> ,]? <color-stop> [, <color-stop>]+ )`
+```syntax
+svg-radial-gradent( [ <origin> | at <position> ,]? <color-stop> [, <color-stop>]+ )
+```
 
 ### Returns
 

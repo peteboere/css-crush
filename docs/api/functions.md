@@ -34,7 +34,7 @@ Compile a raw string of CSS string and return it.
 
 ## csscrush_stat()
 
-Retrieve statistics from the most recent compiled file. Current available stats: selector_count, rule_count, compile_time and errors.
+Retrieve statistics from the most recent compiled file. Available stats include `selector_count`, `rule_count` and `compile_time`.
 
 `csscrush_stat()`
 

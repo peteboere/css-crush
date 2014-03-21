@@ -15,10 +15,10 @@ Note use of the parent selector `&`:
       font-size: 110%;
     }
   }
-  &amp;.blue {
+  &.blue {
     color: powderblue;
   }
-  .no-js &amp; {
+  .no-js & {
     max-width: 1024px;
   }
 }

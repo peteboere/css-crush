@@ -26,5 +26,5 @@ background: silver data-uri(../images/stripe.png);
 ```
 
 ```css
-background: silver url(data:&lt;img-data&gt;);
+background: silver url(data:<img-data>);
 ```
