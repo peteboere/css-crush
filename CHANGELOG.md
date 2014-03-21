@@ -1,12 +1,12 @@
-### 2.1.0 (2014-?-?)
+### 2.1.0 (2014-03-21)
 
 * Added HHVM support (HHVM >= 2.4)
 * Added Travis CI support.
 * Added custom color keywords plugin.
 * Added text-align plugin for polyfilling the direction sensitive text-align values, start and end.
-* Added selector `splat` aliases, which expand based on arguments.
-* Added settings interface for plugins and CSS environment. Old variable based settings (as used in rem and px2em plugins) is now deprecated.
-* Added library docs at the repository level, written in markdown.
+* Added selector splat aliases which expand based on arguments.
+* Added settings interface for plugins and CSS environment. Old variable based settings (as used in rem and px2em plugins) are now deprecated.
+* Added library docs to repository.
 * Added unit argument to the math function.
 * Deprecated bare parens math e.g. `()` due to their use in developing CSS specs.
 * Removed `-ms-` gradient aliases.
