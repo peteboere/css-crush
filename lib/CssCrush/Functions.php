@@ -128,8 +128,12 @@ class Functions
 
     public static function parseArgs($input, $allowSpaceDelim = false)
     {
-        return Util::splitDelimList(
-            $input, ($allowSpaceDelim ? '\s*[,\s]\s*' : ','));
+        $options = array();
+        if ($allowSpaceDelim) {
+            $options['regex'] = '\s*[,\s]\s*';
+        }
+
+        return Util::splitDelimList($input, $options);
     }
 
     // Intended as a quick arg-list parse for function that take up-to 2 arguments

@@ -50,10 +50,13 @@ class SelectorList extends Iterator
                     list($full_match, $full_match_offset) = $m[0];
                     $before = substr($selector_string, 0, $full_match_offset);
                     $after = substr($selector_string, strlen($full_match) + $full_match_offset);
-
                     $selectors = array();
-                    foreach (Util::splitDelimList($m['parens_content'][0]) as $segment) {
-                        $selectors["$before$segment$after"] = true;
+
+                    // Allowing empty strings for more expansion possibilities.
+                    foreach (Util::splitDelimList($m['parens_content'][0], array('allow_empty_strings' => true)) as $segment) {
+                        if ($selector = trim("$before$segment$after")) {
+                            $selectors[$selector] = true;
+                        }
                     }
 
                     return $selectors;

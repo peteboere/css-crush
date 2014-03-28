@@ -129,13 +129,18 @@ class Util
         return preg_replace($find, $replace, $str);
     }
 
-    public static function splitDelimList($str, $delim = ',')
+    public static function splitDelimList($str, $options = array())
     {
-        $do_preg_split = strlen($delim) > 1;
+        extract($options + array(
+            'delim' => ',',
+            'regex' => false,
+            'allow_empty_strings' => false,
+        ));
+
         $str = trim($str);
 
-        if (! $do_preg_split && strpos($str, $delim) === false) {
-            return strlen($str) ? array($str) : array();
+        if (! $regex && strpos($str, $delim) === false) {
+            return ! $allow_empty_strings && ! strlen($str) ? array() : array($str);
         }
 
         if ($match_count = preg_match_all(Regex::$patt->parens, $str, $matches)) {
@@ -146,7 +151,7 @@ class Util
             $str = str_replace($matches[0], $keys, $str);
         }
 
-        $list = $do_preg_split ? preg_split('~' . $delim . '~', $str) : explode($delim, $str);
+        $list = $regex ? preg_split('~' . $regex . '~', $str) : explode($delim, $str);
 
         if ($match_count) {
             foreach ($list as &$value) {
@@ -154,8 +159,9 @@ class Util
             }
         }
 
-        // Trim items and remove empty strings before returning.
-        return array_filter(array_map('trim', $list), 'strlen');
+        $list = array_map('trim', $list);
+
+        return ! $allow_empty_strings ? array_filter($list, 'strlen') : $list;
     }
 
     public static function getLinkBetweenPaths($path1, $path2, $directories = true)
