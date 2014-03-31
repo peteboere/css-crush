@@ -68,7 +68,6 @@ class Regex
 
         // Functions.
         $patt->functionTest = Regex::make('~{{ LB }} (?<func_name>{{ ident }}) \(~xS');
-        $patt->varFunction = Regex::make('~\$\( \s* ({{ ident }}) \s* \)~xS');
         $patt->thisFunction = Regex::makeFunctionPatt(array('this'));
 
         // Strings and comments.

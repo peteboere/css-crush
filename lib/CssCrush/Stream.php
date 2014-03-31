@@ -130,10 +130,10 @@ class Stream
         );
 
         if ($parse_options['singles']) {
-            $patt = Regex::make('~@' . $directive . '(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~iS');
+            $patt = Regex::make('~@(?i)' . $directive . '(?-i)(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~S');
         }
         else {
-            $patt = Regex::make('~@' . $directive . '\s*{{ block }}~iS');
+            $patt = Regex::make('~@(?i)' . $directive . '(?-i)\s*{{ block }}~S');
         }
 
         $captured_directives = array();

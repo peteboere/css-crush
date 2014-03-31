@@ -380,70 +380,67 @@ class Process
 
         // Place variables referenced inside variables.
         foreach ($this->vars as &$value) {
-            $value = preg_replace_callback(Regex::$patt->varFunction, 'CssCrush\Process::cb_placeVars', $value);
+            $this->placeVars($value);
         }
     }
 
     protected function placeAllVars()
     {
         // Place variables in main stream.
-        self::placeVars($this->stream->raw);
+        $this->placeVars($this->stream->raw);
 
-        $raw_tokens =& $this->tokens->store;
+        $rawTokens =& $this->tokens->store;
 
         // Repeat above steps for variables embedded in string tokens.
-        foreach ($raw_tokens->s as $label => &$value) {
-            self::placeVars($value);
+        foreach ($rawTokens->s as $label => &$value) {
+            $this->placeVars($value);
         }
 
         // Repeat above steps for variables embedded in URL tokens.
-        foreach ($raw_tokens->u as $label => $url) {
-            if (! $url->isData && self::placeVars($url->value)) {
+        foreach ($rawTokens->u as $label => $url) {
+            if (! $url->isData && $this->placeVars($url->value)) {
                 // Re-evaluate $url->value if anything has been interpolated.
                 $url->evaluate();
             }
         }
     }
 
-    static protected function placeVars(&$value)
+    protected function placeVars(&$value)
     {
-        static $var_function;
-        if (! $var_function) {
-            $var_function = new Functions(array('$' => function ($raw_args) {
-                        list($name, $default_value) = Functions::parseArgsSimple($raw_args);
-                        if (isset(Crush::$process->vars[$name])) {
-                            return Crush::$process->vars[$name];
-                        }
-                        else {
-                            return $default_value;
-                        }
-                    }), '~(\$)\(~');
+        static $varFunction, $varFunctionSimple;
+        if (! $varFunction) {
+            $varFunctionSimple = Regex::make('~\$\( \s* ({{ ident }}) \s* \)~xS');
+            $varFunction = new Functions(array('$' => function ($rawArgs) {
+                    list($name, $defaultValue) = Functions::parseArgsSimple($rawArgs);
+                    if (isset(Crush::$process->vars[$name])) {
+                        return Crush::$process->vars[$name];
+                    }
+                    else {
+                        return $defaultValue;
+                    }
+                }), '~(\$)\(~');
         }
 
         // Variables with no default value.
-        $value = preg_replace_callback(Regex::$patt->varFunction,
-            'CssCrush\Process::cb_placeVars', $value, -1, $vars_placed);
+        $value = preg_replace_callback($varFunctionSimple, function ($m) {
+            $varName = $m[1];
+            if (isset(Crush::$process->vars[$varName])) {
+                return Crush::$process->vars[$varName];
+            }
+        }, $value, -1, $varsPlaced);
 
         // Variables with default value.
         if (strpos($value, '$(') !== false) {
 
             // Assume at least one replace.
-            $vars_placed = true;
+            $varsPlaced = true;
 
             // Variables may be nested so need to apply full function parsing.
-            $value = $var_function->apply($value);
+            $value = $varFunction->apply($value);
         }
 
         // If we know replacements have been made we may want to update $value. e.g URL tokens.
-        return $vars_placed;
-    }
-
-    static protected function cb_placeVars($m)
-    {
-        $var_name = $m[1];
-        if (isset(Crush::$process->vars[$var_name])) {
-            return Crush::$process->vars[$var_name];
-        }
+        return $varsPlaced;
     }
 
 
@@ -454,7 +451,6 @@ class Process
     {
         $captured_settings = $this->stream->captureDirectives('@settings', array('singles' => true));
 
-        // Like variables, settings passed via options override settings defined in CSS.
         $this->settings = new Settings($this->options->settings + $captured_settings);
     }
 
