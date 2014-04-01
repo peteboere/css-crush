@@ -53,7 +53,6 @@ class Functions
         $options = $this->patternOptions;
         if ($use_builtin) {
             $this->register = self::$builtins + $this->register;
-            $options += array('bare_paren' => true);
         }
         $this->pattern = Regex::makeFunctionPatt(array_keys($this->register), $options);
     }
@@ -80,18 +79,10 @@ class Functions
 
         while ($match = array_pop($matches)) {
 
-            $offset = $match[0][1];
+            list($function, $offset) = $match['function'];
 
             if (! preg_match(Regex::$patt->parens, $str, $parens, PREG_OFFSET_CAPTURE, $offset)) {
                 continue;
-            }
-
-            // No function name default to math expression.
-            // Store the raw function name match.
-            $raw_fn_name = isset($match[1]) ? strtolower($match[1][0]) : '';
-            $fn_name = $raw_fn_name ? $raw_fn_name : 'math';
-            if ('-' === $fn_name) {
-                $fn_name = 'math';
             }
 
             $opening_paren = $parens[0][1];
@@ -100,23 +91,21 @@ class Functions
             // Get the function arguments.
             $raw_args = trim($parens['parens_content'][0]);
 
-            // Workaround the signs.
-            $before_operator = '-' === $raw_fn_name ? '-' : '';
+            // Update the context function identifier.
+            $context->function = $function;
 
-            $func_returns = '';
-            $context->function = $fn_name;
+            $returns = '';
 
             // Use override callback if one is specified.
-            if (isset($callbacks[$fn_name])) {
-                $func_returns = $callbacks[$fn_name]($raw_args, $context);
+            if (isset($callbacks[$function])) {
+                $returns = $callbacks[$function]($raw_args, $context);
             }
-            elseif (isset($this->register[$fn_name])) {
-                $func = $this->register[$fn_name];
-                $func_returns = $func($raw_args, $context);
+            elseif (isset($this->register[$function])) {
+                $fn = $this->register[$function];
+                $returns = $fn($raw_args, $context);
             }
 
-            // Splice in the function result.
-            $str = substr_replace($str, "$before_operator$func_returns", $offset, $closing_paren - $offset);
+            $str = substr_replace($str, $returns, $offset, $closing_paren - $offset);
         }
 
         return $str;

@@ -17,13 +17,10 @@ class RegexTest extends \PHPUnit_Framework_TestCase
     public function testMakeFunctionPatt()
     {
         $patt = Regex::makeFunctionPatt(array('foo', 'bar'));
-        $this->assertEquals('~((?<![\w-])(?:foo|bar))\(~iS', $patt);
-
-        $patt = Regex::makeFunctionPatt(array('foo', 'bar'), array('bare_paren' => true));
-        $this->assertEquals('~((?<![\w-])(?:foo|bar|\-)?)\(~iS', $patt);
+        $this->assertEquals('~(?<function>(?<![\w-])(?:foo|bar))\(~iS', $patt);
 
         $patt = Regex::makeFunctionPatt(array('foo', 'bar'), array('templating' => true));
-        $this->assertEquals('~(#|(?<![\w-])(?:foo|bar))\(~iS', $patt);
+        $this->assertEquals('~(?<function>#|(?<![\w-])(?:foo|bar))\(~iS', $patt);
     }
 
     public function testMatchAll()

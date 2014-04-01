@@ -142,14 +142,6 @@ class Regex
 
     public static function makeFunctionPatt($list, $options = array())
     {
-        // Bare parens.
-        $question = '';
-        if (! empty($options['bare_paren'])) {
-            $question = '?';
-            // Signing on math bare parens.
-            $list[] = '-';
-        }
-
         // Templating func.
         $template = '';
         if (! empty($options['templating'])) {
@@ -158,7 +150,7 @@ class Regex
 
         $flat_list = implode('|', array_map('preg_quote', $list));
 
-        return Regex::make("~($template{{ LB }}(?:$flat_list)$question)\(~iS");
+        return Regex::make("~(?<function>$template{{ LB }}(?:$flat_list))\(~iS");
     }
 }
 

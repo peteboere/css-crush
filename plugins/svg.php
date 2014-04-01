@@ -622,7 +622,7 @@ function svg_apply_css_funcs($element, &$raw_data) {
         $fill_functions = new Functions($fill_register);
 
         $generic_register = array_diff_key(Crush::$process->functions->register, $fill_register);
-        $generic_functions = new Functions($generic_register, null, array('bare_paren' => true));
+        $generic_functions = new Functions($generic_register);
     }
 
     foreach ($raw_data as $property => &$value) {

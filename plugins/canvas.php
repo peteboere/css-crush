@@ -338,7 +338,7 @@ function canvas_apply_css_funcs($canvas) {
         $fill_functions = new Functions(array('canvas-linear-gradient' => 'CssCrush\canvas_fn_linear_gradient'));
 
         $generic_register = array_diff_key(Crush::$process->functions->register, $fill_functions->register);
-        $generic_functions = new Functions($generic_register, null, array('bare_paren' => true));
+        $generic_functions = new Functions($generic_register);
 
         $filter_functions = new Functions(array(
             'contrast' => 'CssCrush\canvas_fn_filter',

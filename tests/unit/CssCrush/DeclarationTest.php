@@ -15,7 +15,7 @@ class DeclarationTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->process = bootstrap_process(array('minify' => false));
-        $this->rule = new Rule('.foo', '-fOo-BAR: (10 + 10)px !important');
+        $this->rule = new Rule('.foo', '-fOo-BAR: math(10 + 10, px) !important');
         $this->declaration = new Declaration('-fOo-BAR', 'baz !important');
     }
 
