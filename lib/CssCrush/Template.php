@@ -21,10 +21,9 @@ class Template
 
     public function __construct($str)
     {
-        static $arg_patt, $template_functions;
-        if (! $arg_patt) {
-            $arg_patt = Regex::makeFunctionPatt(array('arg'), array('templating' => true));
-            $template_functions = new Functions(null, $arg_patt);
+        static $templateFunctions;
+        if (! $templateFunctions) {
+            $templateFunctions = new Functions();
         }
 
         $str = Template::unTokenize($str);
@@ -32,7 +31,7 @@ class Template
         // Parse all arg function calls in the passed string,
         // callback creates default values.
         $self = $this;
-        $capture_callback = function ($str) use (&$self)
+        $captureCallback = function ($str) use (&$self)
         {
             $args = Functions::parseArgsSimple($str);
 
@@ -44,23 +43,22 @@ class Template
             }
 
             // Store the default value.
-            $default_value = isset($args[0]) ? $args[0] : null;
-
-            if (isset($default_value)) {
-                $self->defaults[$position] = $default_value;
+            $defaultValue = isset($args[0]) ? $args[0] : null;
+            if (isset($defaultValue)) {
+                $self->defaults[$position] = $defaultValue;
             }
 
             // Update argument count.
-            $arg_number = ((int) $position) + 1;
-            $self->argCount = max($self->argCount, $arg_number);
+            $argNumber = ((int) $position) + 1;
+            $self->argCount = max($self->argCount, $argNumber);
 
             return "?a$position?";
         };
 
-        $this->string = $template_functions->apply($str, array(
-                'arg' => $capture_callback,
-                '#' => $capture_callback,
-            ));
+        $templateFunctions->register['#'] = $captureCallback;
+        $templateFunctions->register['arg'] = $captureCallback;
+
+        $this->string = $templateFunctions->apply($str);
     }
 
     public function __invoke(array $args = null, $str = null)
@@ -82,7 +80,6 @@ class Template
         // Apply substitutions.
         $str = isset($find) ? str_replace($find, $replace, $str) : $str;
 
-        // Re-tokenize string on return.
         return Template::tokenize($str);
     }
 

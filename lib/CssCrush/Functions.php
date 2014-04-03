@@ -31,11 +31,9 @@ class Functions
 
     protected $patternOptions;
 
-    public function __construct($register = array(), $pattern = null, $pattern_options = array())
+    public function __construct($register = array())
     {
         $this->register = $register;
-        $this->pattern = $pattern;
-        $this->patternOptions = $pattern_options;
     }
 
     public function add($name, $callback)
@@ -48,16 +46,16 @@ class Functions
         unset($this->register[$name]);
     }
 
-    public function setPattern($use_builtin = false)
+    public function setPattern($useBuiltins = false)
     {
-        $options = $this->patternOptions;
-        if ($use_builtin) {
+        if ($useBuiltins) {
             $this->register = self::$builtins + $this->register;
         }
-        $this->pattern = Regex::makeFunctionPatt(array_keys($this->register), $options);
+
+        $this->pattern = Functions::makePattern(array_keys($this->register));
     }
 
-    public function apply($str, $callbacks = null, \stdClass $context = null)
+    public function apply($str, \stdClass $context = null)
     {
         if (strpos($str, '(') === false) {
             return $str;
@@ -69,10 +67,6 @@ class Functions
 
         if (! preg_match($this->pattern, $str)) {
             return $str;
-        }
-
-        if (! $context) {
-            $context = new \stdClass();
         }
 
         $matches = Regex::matchAll($this->pattern, $str);
@@ -92,15 +86,12 @@ class Functions
             $raw_args = trim($parens['parens_content'][0]);
 
             // Update the context function identifier.
-            $context->function = $function;
+            if ($context) {
+                $context->function = $function;
+            }
 
             $returns = '';
-
-            // Use override callback if one is specified.
-            if (isset($callbacks[$function])) {
-                $returns = $callbacks[$function]($raw_args, $context);
-            }
-            elseif (isset($this->register[$function])) {
+            if (isset($this->register[$function])) {
                 $fn = $this->register[$function];
                 $returns = $fn($raw_args, $context);
             }
@@ -130,6 +121,32 @@ class Functions
     public static function parseArgsSimple($input)
     {
         return preg_split(Regex::$patt->argListSplit, $input, 2);
+    }
+
+    public static function makePattern($functionNames)
+    {
+        $idents = array();
+        $nonIdents = array();
+
+        foreach ($functionNames as $functionName) {
+            if (preg_match(Regex::$patt->ident, $functionName[0])) {
+                $idents[] = preg_quote($functionName);
+            }
+            else {
+                $nonIdents[] = preg_quote($functionName);
+            }
+        }
+
+        $flatList = '';
+        if (! $idents) {
+            $flatList = implode('|', $nonIdents);
+        }
+        else {
+            $idents = '{{ LB }}(?:' . implode('|', $idents) . ')';
+            $flatList = $nonIdents ? '(?:' . implode('|', $nonIdents) . "|$idents)" : $idents;
+        }
+
+        return Regex::make("~(?<function>$flatList)\(~iS");
     }
 }
 

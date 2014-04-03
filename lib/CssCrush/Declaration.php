@@ -23,8 +23,7 @@ class Declaration
         // Normalize the property name.
         $property = strtolower($property);
 
-        // Test for escape tilde.
-        if ($skip = strpos($property, '~') === 0) {
+        if ($this->skip = strpos($property, '~') === 0) {
             $property = substr($property, 1);
         }
 
@@ -42,7 +41,7 @@ class Declaration
         // Check for !important.
         if (($important = stripos($value, '!important')) !== false) {
             $value = rtrim(substr($value, 0, $important));
-            $important = true;
+            $this->important = true;
         }
 
         Crush::$process->hooks->run('declaration_preprocess', array('property' => &$property, 'value' => &$value));
@@ -57,8 +56,6 @@ class Declaration
         $this->vendor = $vendor;
         $this->index = $contextIndex;
         $this->value = $value;
-        $this->skip = $skip;
-        $this->important = $important;
     }
 
     public function __toString()
@@ -78,41 +75,39 @@ class Declaration
         Execute functions on value.
         Index functions.
     */
-    public function process($parent_rule)
+    public function process($parentRule)
     {
-        static $this_function;
-        if (! $this_function) {
-            $this_function = new Functions(array('this' => 'CssCrush\fn__this'));
+        static $thisFunction;
+        if (! $thisFunction) {
+            $thisFunction = new Functions(array('this' => 'CssCrush\fn__this'));
         }
 
         if (! $this->skip) {
 
-            // this() function needs to be called exclusively because it's self referencing.
+            // this() function needs to be called exclusively because it is self referencing.
             $context = (object) array(
-                'rule' => $parent_rule,
+                'rule' => $parentRule
             );
-            $this->value = $this_function->apply($this->value, null, $context);
+            $this->value = $thisFunction->apply($this->value, $context);
 
-            $parent_rule->declarations->data += array($this->property => $this->value);
+            $parentRule->declarations->data += array($this->property => $this->value);
 
             $context = (object) array(
-                'rule' => $parent_rule,
+                'rule' => $parentRule,
                 'property' => $this->property
             );
-            $this->value = Crush::$process->functions->apply($this->value, null, $context);
+            $this->value = Crush::$process->functions->apply($this->value, $context);
         }
 
-        // Trim whitespace that may have been introduced by functions.
+        // Whitespace may have been introduced by functions.
         $this->value = trim($this->value);
 
-        // Value may now be empty.
         if ($this->value === '') {
             $this->valid = false;
             return;
         }
 
-        // Store value as data on the parent rule.
-        $parent_rule->declarations->queryData[$this->property] = $this->value;
+        $parentRule->declarations->queryData[$this->property] = $this->value;
 
         $this->indexFunctions();
     }

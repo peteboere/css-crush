@@ -68,7 +68,7 @@ class Regex
 
         // Functions.
         $patt->functionTest = Regex::make('~{{ LB }} (?<func_name>{{ ident }}) \(~xS');
-        $patt->thisFunction = Regex::makeFunctionPatt(array('this'));
+        $patt->thisFunction = Functions::makePattern(array('this'));
 
         // Strings and comments.
         $patt->string = '~(\'|")(?:\\\\\1|[^\1])*?\1~xS';
@@ -138,19 +138,6 @@ class Regex
         $count = preg_match_all($patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset);
 
         return $count ? $matches : array();
-    }
-
-    public static function makeFunctionPatt($list, $options = array())
-    {
-        // Templating func.
-        $template = '';
-        if (! empty($options['templating'])) {
-            $template = '#|';
-        }
-
-        $flat_list = implode('|', array_map('preg_quote', $list));
-
-        return Regex::make("~(?<function>$template{{ LB }}(?:$flat_list))\(~iS");
     }
 }
 

@@ -332,15 +332,15 @@ function canvas_apply_filters($canvas, $src) {
 
 function canvas_apply_css_funcs($canvas) {
 
-    static $generic_functions, $fill_functions, $filter_functions;
-    if (! $generic_functions) {
+    static $functions;
+    if (! $functions) {
+        $functions = new stdClass();
 
-        $fill_functions = new Functions(array('canvas-linear-gradient' => 'CssCrush\canvas_fn_linear_gradient'));
+        $functions->fill = new Functions(array('canvas-linear-gradient' => 'CssCrush\canvas_fn_linear_gradient'));
 
-        $generic_register = array_diff_key(Crush::$process->functions->register, $fill_functions->register);
-        $generic_functions = new Functions($generic_register);
+        $functions->generic = new Functions(array_diff_key(Crush::$process->functions->register, $functions->fill->register));
 
-        $filter_functions = new Functions(array(
+        $functions->filter = new Functions(array(
             'contrast' => 'CssCrush\canvas_fn_filter',
             'opacity' => 'CssCrush\canvas_fn_filter',
             'colorize' => 'CssCrush\canvas_fn_filter',
@@ -360,16 +360,15 @@ function canvas_apply_css_funcs($canvas) {
             continue;
         }
 
-        $value = $generic_functions->apply($value);
+        $value = $functions->generic->apply($value);
+        $context->canvas = $canvas;
 
         if (in_array($property, array('fill', 'background-fill'))) {
             $context->currentProperty = $property;
-            $context->canvas = $canvas;
-            $value = $fill_functions->apply($value, null, $context);
+            $value = $functions->fill->apply($value, $context);
         }
         elseif ($property === 'canvas-filter') {
-            $context->canvas = $canvas;
-            $value = $filter_functions->apply($value, null, $context);
+            $value = $functions->filter->apply($value, $context);
         }
     }
 }

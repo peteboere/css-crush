@@ -418,7 +418,7 @@ class Process
                     else {
                         return $defaultValue;
                     }
-                }), '~(?<function>\$)\(~');
+                }));
         }
 
         // Variables with no default value.
