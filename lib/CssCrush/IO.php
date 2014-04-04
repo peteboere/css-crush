@@ -190,17 +190,17 @@ class IO
         Util::filePutContents($process->cacheFile, json_encode($process->cacheData, $flags), __METHOD__);
     }
 
-    public function write(Stream $stream)
+    public function write(StringObject $string)
     {
         $process = $this->process;
         $output = $process->output;
         $source_map_filename = "$output->filename.map";
 
         if ($process->sourceMap) {
-            $stream->append($process->newline . "/*# sourceMappingURL=$source_map_filename */");
+            $string->append($process->newline . "/*# sourceMappingURL=$source_map_filename */");
         }
 
-        if (Util::filePutContents("$output->dir/$output->filename", $stream, __METHOD__)) {
+        if (Util::filePutContents("$output->dir/$output->filename", $string, __METHOD__)) {
 
             $json_encode_flags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
 

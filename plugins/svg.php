@@ -31,7 +31,7 @@ function fn__svg_data($input) {
 
 function svg_capture($process) {
 
-    $process->stream->pregReplaceCallback(
+    $process->string->pregReplaceCallback(
         Regex::make('~@svg\s+(?<name>{{ ident }})\s*{{ block }}~iS'),
         function ($m) {
             Crush::$process->misc->svg_defs[strtolower($m['name'])] = new Template($m['block_content']);

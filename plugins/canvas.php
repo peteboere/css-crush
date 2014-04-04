@@ -19,7 +19,7 @@ Plugin::register('canvas', array(
 
 function canvas_capture($process) {
 
-    $process->stream->pregReplaceCallback(
+    $process->string->pregReplaceCallback(
         Regex::make('~@canvas\s+(?<name>{{ ident }})\s*{{ block }}~iS'),
         function ($m) {
             Crush::$process->misc->canvas_defs[strtolower($m['name'])] = new Template($m['block_content']);

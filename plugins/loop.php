@@ -21,7 +21,7 @@ define('CssCrush\LOOP_PATT',
 
 function loop($process) {
 
-    $process->stream->pregReplaceCallback(LOOP_PATT, function ($m) {
+    $process->string->pregReplaceCallback(LOOP_PATT, function ($m) {
 
         return Template::tokenize(loop_unroll(Template::unTokenize($m[0])));
     });

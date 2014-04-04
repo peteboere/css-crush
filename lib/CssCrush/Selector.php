@@ -41,7 +41,7 @@ class Selector
     public function appendPseudo($pseudo)
     {
         // Check to avoid doubling-up.
-        if (! Stream::endsWith($this->readableValue, $pseudo)) {
+        if (! StringObject::endsWith($this->readableValue, $pseudo)) {
 
             $this->readableValue .= $pseudo;
             $this->value .= $pseudo;

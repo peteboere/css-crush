@@ -1,29 +1,29 @@
 <?php
 /**
  *
- *  Balanced bracket matching on the main stream.
+ *  Balanced bracket matching on string objects.
  *
  */
 namespace CssCrush;
 
 class BalancedMatch
 {
-    public function __construct(Stream $stream, $offset, $brackets = '{}')
+    public function __construct(StringObject $string, $offset, $brackets = '{}')
     {
-        $this->stream = $stream;
+        $this->string = $string;
         $this->offset = $offset;
         $this->match = null;
         $this->length = 0;
 
         list($opener, $closer) = str_split($brackets, 1);
 
-        if (strpos($stream->raw, $opener, $this->offset) === false) {
+        if (strpos($string->raw, $opener, $this->offset) === false) {
 
             return;
         }
 
-        if (substr_count($stream->raw, $opener) !== substr_count($stream->raw, $closer)) {
-            $sample = substr($stream->raw, $this->offset, 25);
+        if (substr_count($string->raw, $opener) !== substr_count($string->raw, $closer)) {
+            $sample = substr($string->raw, $this->offset, 25);
             warning("[[CssCrush]] - Unmatched token near '$sample'.");
 
             return;
@@ -31,7 +31,7 @@ class BalancedMatch
 
         $patt = ($opener === '{') ? Regex::$patt->block : Regex::$patt->parens;
 
-        if (preg_match($patt, $stream->raw, $m, PREG_OFFSET_CAPTURE, $this->offset)) {
+        if (preg_match($patt, $string->raw, $m, PREG_OFFSET_CAPTURE, $this->offset)) {
 
             $this->match = $m;
             $this->matchLength = strlen($m[0][0]);
@@ -51,16 +51,16 @@ class BalancedMatch
 
     public function whole()
     {
-        return substr($this->stream->raw, $this->offset, $this->length);
+        return substr($this->string->raw, $this->offset, $this->length);
     }
 
     public function replace($replacement)
     {
-        $this->stream->splice($replacement, $this->offset, $this->length);
+        $this->string->splice($replacement, $this->offset, $this->length);
     }
 
     public function unWrap()
     {
-        $this->stream->splice($this->inside(), $this->offset, $this->length);
+        $this->string->splice($this->inside(), $this->offset, $this->length);
     }
 }

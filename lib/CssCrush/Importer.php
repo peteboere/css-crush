@@ -240,7 +240,7 @@ class Importer
                 }
             }
 
-            // Reverse the stream (and brackets) to find stray closing brackets.
+            // Reverse the string (and brackets) to find stray closing brackets.
             $str = strtr(strrev($str), $pairing, strrev($pairing));
 
             preg_match_all($opener_patt, $str, $matches, PREG_OFFSET_CAPTURE);

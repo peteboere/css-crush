@@ -197,7 +197,7 @@ class Process
 
     protected function resolveSelectorAliases()
     {
-        $this->stream->pregReplaceCallback(
+        $this->string->pregReplaceCallback(
             Regex::make('~@selector-(?<type>alias|splat) +\:?(?<name>{{ident}}) +(?<handler>[^;]+) *;~iS'),
             function ($m) {
                 $name = strtolower($m['name']);
@@ -365,7 +365,7 @@ class Process
 
     protected function captureVars()
     {
-        Crush::$process->vars = Crush::$process->stream->captureDirectives('@define', array(
+        Crush::$process->vars = Crush::$process->string->captureDirectives('@define', array(
             'singles' => true,
             'lowercase_keys' => false,
         )) + Crush::$process->vars;
@@ -386,8 +386,7 @@ class Process
 
     protected function placeAllVars()
     {
-        // Place variables in main stream.
-        $this->placeVars($this->stream->raw);
+        $this->placeVars($this->string->raw);
 
         $rawTokens =& $this->tokens->store;
 
@@ -449,7 +448,7 @@ class Process
 
     protected function resolveSettings()
     {
-        $captured_settings = $this->stream->captureDirectives('@settings', array('singles' => true));
+        $captured_settings = $this->string->captureDirectives('@settings', array('singles' => true));
 
         $this->settings = new Settings($this->options->settings + $captured_settings);
     }
@@ -460,29 +459,27 @@ class Process
 
     protected function resolveIfDefines()
     {
-        $ifdefine_patt = Regex::make('~@ifdefine \s+ (not \s+)? ({{ ident }}) \s* \{~ixS');
+        $ifdefinePatt = Regex::make('~@ifdefine \s+ (not \s+)? ({{ ident }}) \s* \{~ixS');
 
-        $matches = $this->stream->matchAll($ifdefine_patt);
+        $matches = $this->string->matchAll($ifdefinePatt);
 
         while ($match = array_pop($matches)) {
 
-            $curly_match = new BalancedMatch($this->stream, $match[0][1]);
+            $curlyMatch = new BalancedMatch($this->string, $match[0][1]);
 
-            if (! $curly_match->match) {
+            if (! $curlyMatch->match) {
                 continue;
             }
 
             $negate = $match[1][1] != -1;
             $name = $match[2][0];
-            $name_defined = isset($this->vars[$name]);
+            $nameDefined = isset($this->vars[$name]);
 
-            if (! $negate && $name_defined || $negate && ! $name_defined) {
-                // Test resolved true so include the innards.
-                $curly_match->unWrap();
+            if (! $negate && $nameDefined || $negate && ! $nameDefined) {
+                $curlyMatch->unWrap();
             }
             else {
-                // Recontruct the stream without the innards.
-                $curly_match->replace('');
+                $curlyMatch->replace('');
             }
         }
     }
@@ -493,7 +490,7 @@ class Process
 
     protected function captureMixins()
     {
-        $this->stream->pregReplaceCallback(Regex::$patt->mixin, function ($m) {
+        $this->string->pregReplaceCallback(Regex::$patt->mixin, function ($m) {
             Crush::$process->mixins[$m['name']] = new Mixin($m['block_content']);
         });
     }
@@ -506,7 +503,7 @@ class Process
     {
         $fragments =& Crush::$process->fragments;
 
-        $this->stream->pregReplaceCallback(Regex::$patt->fragmentCapture, function ($m) use (&$fragments) {
+        $this->string->pregReplaceCallback(Regex::$patt->fragmentCapture, function ($m) use (&$fragments) {
             $fragments[$m['name']] = new Fragment(
                     $m['block_content'],
                     array('name' => strtolower($m['name']))
@@ -514,7 +511,7 @@ class Process
             return '';
         });
 
-        $this->stream->pregReplaceCallback(Regex::$patt->fragmentInvoke, function ($m) use (&$fragments) {
+        $this->string->pregReplaceCallback(Regex::$patt->fragmentInvoke, function ($m) use (&$fragments) {
             $fragment = isset($fragments[$m['name']]) ? $fragments[$m['name']] : null;
             if ($fragment) {
                 $args = array();
@@ -533,7 +530,7 @@ class Process
 
     public function captureRules()
     {
-        $this->stream->pregReplaceCallback(Regex::$patt->rule, function ($m) {
+        $this->string->pregReplaceCallback(Regex::$patt->rule, function ($m) {
 
             $selector = trim($m['selector']);
             $block = trim($m['block_content']);
@@ -595,7 +592,7 @@ class Process
 
     protected function resolveInBlocks()
     {
-        $matches = $this->stream->matchAll('~@in\s+([^{]+)\{~iS');
+        $matches = $this->string->matchAll('~@in\s+([^{]+)\{~iS');
         $tokens = Crush::$process->tokens;
 
         // Move through the matches in reverse order.
@@ -606,7 +603,7 @@ class Process
 
             $arguments = Util::splitDelimList(Selector::expandAliases($raw_argument));
 
-            $curly_match = new BalancedMatch($this->stream, $match_start_pos);
+            $curly_match = new BalancedMatch($this->string, $match_start_pos);
 
             if (! $curly_match->match || empty($raw_argument)) {
                 continue;
@@ -679,12 +676,12 @@ class Process
 
         foreach ($aliases as $at_rule => $at_rule_aliases) {
 
-            $matches = $this->stream->matchAll("~@$at_rule" . '[\s{]~i');
+            $matches = $this->string->matchAll("~@$at_rule" . '[\s{]~i');
 
             // Find at-rules that we want to alias.
             while ($match = array_pop($matches)) {
 
-                $curly_match = new BalancedMatch($this->stream, $match[0][1]);
+                $curly_match = new BalancedMatch($this->string, $match[0][1]);
 
                 if (! $curly_match->match) {
                     // Couldn't match the block.
@@ -774,9 +771,9 @@ class Process
         }
 
         // Apply all formatting replacements.
-        $this->stream->pregReplaceHash($regex_replacements)->lTrim();
+        $this->string->pregReplaceHash($regex_replacements)->lTrim();
 
-        $this->stream->restore('r');
+        $this->string->restore('r');
 
         // Record stats then drop rule objects to reclaim memory.
         Crush::runStat('selector_count', 'rule_count', 'vars');
@@ -798,7 +795,7 @@ class Process
             }
 
             // Insert comments and do final whitespace cleanup.
-            $this->stream
+            $this->string
                 ->restore('c')
                 ->trim()
                 ->append($EOL);
@@ -826,17 +823,17 @@ class Process
         }
 
         if ($options->boilerplate) {
-            $this->stream->prepend($this->getBoilerplate());
+            $this->string->prepend($this->getBoilerplate());
         }
 
         if ($this->charset) {
-            $this->stream->prepend("@charset \"$this->charset\";$EOL");
+            $this->string->prepend("@charset \"$this->charset\";$EOL");
         }
 
-        $this->stream->restore(array('u', 's'));
+        $this->string->restore(array('u', 's'));
 
         if ($this->addTracingStubs) {
-            $this->stream->restore('t', false, array($this, 'generateTracingStub'));
+            $this->string->restore('t', false, array($this, 'generateTracingStub'));
         }
         if ($this->generateMap) {
             $this->generateSourceMap();
@@ -877,7 +874,7 @@ class Process
         $this->preCompile();
 
         // Collate hostfile and imports.
-        $this->stream = new Stream(Importer::hostfile($this->input));
+        $this->string = new StringObject(Importer::hostfile($this->input));
 
         $this->captureVars();
 
@@ -911,7 +908,7 @@ class Process
 
         $this->postCompile();
 
-        return $this->stream;
+        return $this->string;
     }
 
 
@@ -931,7 +928,7 @@ class Process
 
         $token_patt = Regex::make('~\?[tm]{{token-id}}\?~S');
         $mappings = array();
-        $lines = preg_split(Regex::$patt->newline, $this->stream->raw);
+        $lines = preg_split(Regex::$patt->newline, $this->string->raw);
         $tokens =& $this->tokens->store;
 
         // All mappings are calculated as delta values.
@@ -969,7 +966,7 @@ class Process
             $mappings[] = implode(',', $line_segments);
         }
 
-        $this->stream->raw = implode($this->newline, $lines);
+        $this->string->raw = implode($this->newline, $lines);
         $this->sourceMap['mappings'] = implode(';', $mappings);
     }
 
@@ -1000,7 +997,7 @@ class Process
 
     protected function decruft()
     {
-        return $this->stream->pregReplaceHash(array(
+        return $this->string->pregReplaceHash(array(
 
             // Strip leading zeros on floats.
             '~([: \(,])(-?)0(\.\d+)~S' => '$1$2$3',
@@ -1038,11 +1035,11 @@ class Process
             $functions_patt = Regex::make('~{{ LB }}(rgb|hsl)\(([^\)]{5,})\)~iS');
         }
 
-        $this->stream->pregReplaceCallback($keywords_patt, function ($m) use ($minified_keywords) {
+        $this->string->pregReplaceCallback($keywords_patt, function ($m) use ($minified_keywords) {
             return $minified_keywords[strtolower($m[0])];
         });
 
-        $this->stream->pregReplaceCallback($functions_patt, function ($m) {
+        $this->string->pregReplaceCallback($functions_patt, function ($m) {
             $args = Functions::parseArgs(trim($m[2]));
             if (stripos($m[1], 'hsl') === 0) {
                 $args = Color::cssHslToRgb($args);

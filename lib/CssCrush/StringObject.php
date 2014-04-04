@@ -1,12 +1,12 @@
 <?php
 /**
  *
- *  Stream sugar.
+ *  String sugar.
  *
  */
 namespace CssCrush;
 
-class Stream
+class StringObject
 {
     public function __construct($str)
     {
@@ -45,13 +45,6 @@ class Stream
     public function matchAll($patt, $offset = 0)
     {
         return Regex::matchAll($patt, $this->raw, $offset);
-    }
-
-    public function restore($types, $release = false, $callback = null)
-    {
-        $this->raw = Crush::$process->tokens->restore($this->raw, $types, $release, $callback);
-
-        return $this;
     }
 
     public function replaceHash($replacements)
@@ -115,6 +108,13 @@ class Stream
     public function lTrim()
     {
         $this->raw = ltrim($this->raw);
+        return $this;
+    }
+
+    public function restore($types, $release = false, $callback = null)
+    {
+        $this->raw = Crush::$process->tokens->restore($this->raw, $types, $release, $callback);
+
         return $this;
     }
 

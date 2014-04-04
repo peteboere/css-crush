@@ -1,14 +1,14 @@
 <?php
 /**
  *
- * Main script. Includes core public API.
+ * Core public API.
  *
  */
 namespace CssCrush;
 
 class Crush
 {
-    const VERSION = '2.1.0';
+    const VERSION = '2.2.0-beta';
 
     // Global settings.
     public static $config;
@@ -220,9 +220,9 @@ class Crush
             }
         }
 
-        $stream = $process->compile();
+        $string = $process->compile();
 
-        return $process->io->write($stream) ?  $process->io->getOutputUrl() : '';
+        return $process->io->write($string) ?  $process->io->getOutputUrl() : '';
     }
 
     /**
