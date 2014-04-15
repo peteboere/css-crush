@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/peteboere/css-crush.png)](https://travis-ci.org/peteboere/css-crush)
+[![Build Status](https://travis-ci.org/peteboere/css-crush.svg)](https://travis-ci.org/peteboere/css-crush)
 
-<img src="http://the-echoplex.net/csscrush/images/css-crush-external.svg" alt="Logo"/>
+<img src="http://the-echoplex.net/csscrush/images/css-crush-external.svg?v=1" alt="Logo"/>
 
 CSS-Crush is a standards inspired preprocessor designed to enable a modern and uncluttered CSS workflow.
 
