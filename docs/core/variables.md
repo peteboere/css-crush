@@ -4,9 +4,9 @@
 
 }-->
 
-Declare variables in your CSS with a `@define` directive and apply them using the `$()` function.
+Declare variables in your CSS with a `@define` directive and use them with the `$()` function.
 
-Variables can be injected at runtime with the [vars option](#api--options).
+Variables can also be injected at runtime with the [vars option](#api--options).
 
 
 ```crush
@@ -14,15 +14,15 @@ Variables can be injected at runtime with the [vars option](#api--options).
 @define {
   dark: #333;
   light: #F4F2E2;
-  smaller-screen: only screen and (max-width: 800px);
+  smaller-screen: screen and (max-width: 800px);
 }
 
-/* Applying variables */
+/* Using variables */
 @media $(smaller-screen) {
   ul, p {
     color: $(dark);
     /* Using a fallback value with an undefined variable */
-    background-color: $(accent-color #ff0);
+    background-color: $(accent-color, #ff0);
   }
 }
 ```
@@ -30,9 +30,9 @@ Variables can be injected at runtime with the [vars option](#api--options).
 *******
 
 ```css
-/* Interpolation */
+/* String interpolation */
 .username::before {
-  content: "$(lang-greeting)";
+  content: "$(greeting)";
 }
 ```
 

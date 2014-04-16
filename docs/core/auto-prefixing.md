@@ -18,7 +18,6 @@ In some cases (e.g. CSS3 gradients) final syntax is incompatible with older pref
 .foo {
   background: -webkit-linear-gradient(left, red, white);
   background: -moz-linear-gradient(left, red, white);
-  background: -o-linear-gradient(left, red, white);
   background: linear-gradient(to right, red, white);
 }
 ```
@@ -39,15 +38,10 @@ In some cases (e.g. CSS3 gradients) final syntax is incompatible with older pref
   50% {-moz-transform: scale(1.4);
             transform: scale(1.4);}
 }
-@-o-keyframes bounce {
-  50% {-o-transform: scale(1.4);
-          transform: scale(1.4);}
-}
 @keyframes bounce {
   50% {-webkit-transform: scale(1.4);
           -moz-transform: scale(1.4);
            -ms-transform: scale(1.4);
-            -o-transform: scale(1.4);
                transform: scale(1.4);}
 }
 ```

@@ -45,6 +45,24 @@ Inheritance is recursive:
 .one, .two, .three, .four { color: pink; }
 ```
 
+## Referencing by name
+
+If you want to reference a rule without being concerned about later changes to the identifying selector use the `@name` directive:
+
+```crush
+.foo123 {
+  @name foo;
+  text-decoration: underline;
+}
+
+.bar {
+  @include foo;
+}
+.baz {
+  @extend foo;
+}
+```
+
 
 ## Extending with pseudo classes/elements
 
@@ -107,20 +125,3 @@ The same outcome can also be achieved with an [Abstract rule](#core--abstract) w
 }
 ```
 
-## Referencing rules by name
-
-If you want to reference a rule without being concerned about later changes to the identifying selector use the `@name` directive:
-
-```crush
-.foo123 {
-  @name foo;
-  text-decoration: underline;
-}
-
-.bar {
-  @include foo;
-}
-.baz {
-  @extend foo;
-}
-```
