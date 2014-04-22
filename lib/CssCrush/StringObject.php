@@ -120,7 +120,10 @@ class StringObject
 
     public function captureDirectives($directive, $parse_options = array())
     {
-        $directive = ltrim($directive, '@');
+        if (is_array($directive)) {
+            $directive = '(?:' . implode('|', $directive) . ')';
+        }
+
         $parse_options += array(
             'keyed' => true,
             'lowercase_keys' => true,

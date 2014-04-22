@@ -198,10 +198,10 @@ class Process
     protected function resolveSelectorAliases()
     {
         $this->string->pregReplaceCallback(
-            Regex::make('~@selector-(?<type>alias|splat) +\:?(?<name>{{ident}}) +(?<handler>[^;]+) *;~iS'),
+            Regex::make('~@selector(?:-(?<type>alias|splat))? +\:?(?<name>{{ident}}) +(?<handler>[^;]+) *;~iS'),
             function ($m) {
                 $name = strtolower($m['name']);
-                $type = strtolower($m['type']);
+                $type = ! empty($m['type']) ? strtolower($m['type']) : 'alias';
                 $handler = Util::stripCommentTokens($m['handler']);
                 Crush::$process->selectorAliases[$name] = new SelectorAlias($handler, $type);
             });
@@ -365,7 +365,7 @@ class Process
 
     protected function captureVars()
     {
-        Crush::$process->vars = Crush::$process->string->captureDirectives('@define', array(
+        Crush::$process->vars = Crush::$process->string->captureDirectives(array('set', 'define'), array(
             'singles' => true,
             'lowercase_keys' => false,
         )) + Crush::$process->vars;
@@ -448,7 +448,7 @@ class Process
 
     protected function resolveSettings()
     {
-        $captured_settings = $this->string->captureDirectives('@settings', array('singles' => true));
+        $captured_settings = $this->string->captureDirectives('settings', array('singles' => true));
 
         $this->settings = new Settings($this->options->settings + $captured_settings);
     }
@@ -459,7 +459,7 @@ class Process
 
     protected function resolveIfDefines()
     {
-        $ifdefinePatt = Regex::make('~@ifdefine \s+ (not \s+)? ({{ ident }}) \s* \{~ixS');
+        $ifdefinePatt = Regex::make('~@if(?:set|define) \s+ (?<negate>not \s+)? (?<name>{{ ident }}) \s* \{~ixS');
 
         $matches = $this->string->matchAll($ifdefinePatt);
 
@@ -471,9 +471,8 @@ class Process
                 continue;
             }
 
-            $negate = $match[1][1] != -1;
-            $name = $match[2][0];
-            $nameDefined = isset($this->vars[$name]);
+            $negate = $match['negate'][1] != -1;
+            $nameDefined = isset($this->vars[$match['name'][0]]);
 
             if (! $negate && $nameDefined || $negate && ! $nameDefined) {
                 $curlyMatch->unWrap();
