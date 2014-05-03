@@ -529,30 +529,49 @@ class Process
 
     public function captureRules()
     {
-        $this->string->pregReplaceCallback(Regex::$patt->rule, function ($m) {
+        $rulePatt = Regex::make('~
+            (?<trace_token> {{t-token}} )
+            \s*
+            (?<selector> [^{]+ )
+            \s*
+            {{block}}
+        ~xiS');
 
-            $selector = trim($m['selector']);
-            $block = trim($m['block_content']);
+        $tracePatt = Regex::make('~{{t-token}}~S');
+        $rulesAndMediaPatt = Regex::make('~{{r-token}}|@media[^\{]+{{block}}~iS');
 
-            // Ignore and remove empty rules.
-            if (empty($block) || empty($selector)) {
+        $count = preg_match_all($tracePatt, $this->string->raw, $traceMatches, PREG_OFFSET_CAPTURE);
+        while ($count--) {
+
+            $traceOffset = $traceMatches[0][$count][1];
+
+            preg_match($rulePatt, $this->string->raw, $match, null, $traceOffset);
+
+            $replace = '';
+            $block = preg_replace_callback($rulesAndMediaPatt, function ($m) use (&$replace) {
+                $replace .= $m[0];
                 return '';
-            }
+            }, $match['block_content']);
 
-            $rule = new Rule($selector, $block, $m['trace_token']);
+            $rule = new Rule(trim($match['selector']), trim($block), $match['trace_token']);
 
-            // Store rules if they have declarations or extend arguments.
+            // Store rules only if they have declarations or extend arguments.
             if (! empty($rule->declarations->store) || $rule->extendArgs) {
-
-                return Crush::$process->tokens->add($rule, 'r', $rule->label);
+                $replace = Crush::$process->tokens->add($rule, 'r', $rule->label) . $replace;
             }
-        });
+
+            $this->string->splice($replace, $traceOffset, strlen($match[0]));
+        }
     }
 
     protected function processRules()
     {
         // Create table of name/selector to rule references.
         $named_references = array();
+
+        // Flip because rules are captured from end of file.
+        $this->tokens->store->r = array_reverse($this->tokens->store->r);
+
         foreach ($this->tokens->store->r as $rule) {
             if ($rule->name) {
                 $named_references[$rule->name] = $rule;

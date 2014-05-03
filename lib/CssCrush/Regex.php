@@ -80,31 +80,6 @@ class Regex
             /\*(?:.*?)(?:\*/|$)
         ~xsS';
 
-        // Rules.
-        $patt->ruleFirstPass = Regex::make('~
-            (?:^|(?<=[;{}]))
-            (?<before>
-                (?: \s | {{c-token}} )*
-            )
-            (?<selector>
-                (?:
-                    # Some @-rules are treated like standard rule blocks.
-                    @(?: (?i)page|abstract|font-face(?-i) ) {{RB}} [^{]*
-                    |
-                    [^@;{}]+
-                )
-            )
-            {{block}}
-        ~xS');
-
-        $patt->rule = Regex::make('~
-            (?<trace_token> {{t-token}} )
-            \s*
-            (?<selector> [^{]+ )
-            \s*
-            {{block}}
-        ~xiS');
-
         // Misc.
         $patt->vendorPrefix = '~^-([a-z]+)-([a-z-]+)~iS';
         $patt->ruleDirective = '~^(?:(@include)|(@extends?)|(@name))[\s]+~iS';

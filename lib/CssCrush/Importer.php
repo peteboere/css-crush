@@ -273,8 +273,26 @@ class Importer
     {
         $process = Crush::$process;
         $current_file_index = count($process->sources) -1;
+        static $patt;
+        if (! $patt) {
+            $patt = Regex::make('~
+                (?:^|(?<=[;{}]))
+                (?<before>
+                    (?: \s | {{c-token}} )*
+                )
+                (?<selector>
+                    (?:
+                        # Some @-rules are treated like standard rule blocks.
+                        @(?: (?i)page|abstract|font-face(?-i) ) {{RB}} [^{]*
+                        |
+                        [^@;{}]+
+                    )
+                )
+                \{
+            ~xS');
+        }
 
-        $count = preg_match_all(Regex::$patt->ruleFirstPass, $str, $matches, PREG_OFFSET_CAPTURE);
+        $count = preg_match_all($patt, $str, $matches, PREG_OFFSET_CAPTURE);
         while ($count--) {
 
             $selector_offset = $matches['selector'][$count][1];

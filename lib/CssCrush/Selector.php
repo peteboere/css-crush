@@ -12,18 +12,17 @@ class Selector
     public $readableValue;
     public $allowPrefix = true;
 
-    public function __construct($raw_selector)
+    public function __construct($rawSelector)
     {
         // Look for rooting prefix.
-        if (strpos($raw_selector, '^') === 0) {
-            $raw_selector = ltrim($raw_selector, "^ \n\r\t");
+        if (strpos($rawSelector, '^') === 0) {
+            $rawSelector = ltrim($rawSelector, "^ \n\r\t");
             $this->allowPrefix = false;
         }
 
-        // Take readable value from original un-altered state.
-        $this->readableValue = Selector::makeReadable($raw_selector);
+        $this->readableValue = Selector::makeReadable($rawSelector);
 
-        $this->value = Selector::expandAliases($raw_selector);
+        $this->value = Selector::expandAliases($rawSelector);
     }
 
     public function __toString()
