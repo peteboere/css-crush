@@ -8,13 +8,13 @@ namespace CssCrush;
 
 class SelectorList extends Iterator
 {
-    public function __construct($selector_string, Rule $rule)
+    public function __construct($selectorString, Rule $rule)
     {
         parent::__construct();
 
-        $selector_string = trim(Util::stripCommentTokens($selector_string));
+        $selectorString = trim(Util::stripCommentTokens($selectorString));
 
-        foreach (Util::splitDelimList($selector_string) as $selector) {
+        foreach (Util::splitDelimList($selectorString) as $selector) {
 
             if (preg_match(Regex::$patt->abstract, $selector, $m)) {
                 $rule->name = strtolower($m['name']);
@@ -107,5 +107,30 @@ class SelectorList extends Iterator
         }
 
         $this->store = $expanded_set;
+    }
+
+    public function merge($rawSelectors)
+    {
+        $stack = array();
+
+        foreach ($rawSelectors as $rawParentSelector) {
+            foreach ($this->store as $selector) {
+
+                $useParentSymbol = strpos($selector->value, '&') !== false;
+
+                if (! $selector->allowPrefix && ! $useParentSymbol) {
+                    $stack[$selector->readableValue] = $selector;
+                }
+                elseif ($useParentSymbol) {
+                    $new = new Selector(str_replace('&', $rawParentSelector, $selector->value));
+                    $stack[$new->readableValue] = $new;
+                }
+                else {
+                    $new = new Selector("$rawParentSelector {$selector->value}");
+                    $stack[$new->readableValue] = $new;
+                }
+            }
+        }
+        $this->store = $stack;
     }
 }

@@ -529,6 +529,8 @@ class Process
 
     public function captureRules()
     {
+        $tokens = Crush::$process->tokens;
+
         $rulePatt = Regex::make('~
             (?<trace_token> {{t-token}} )
             \s*
@@ -536,31 +538,44 @@ class Process
             \s*
             {{block}}
         ~xiS');
-
-        $tracePatt = Regex::make('~{{t-token}}~S');
         $rulesAndMediaPatt = Regex::make('~{{r-token}}|@media[^\{]+{{block}}~iS');
+        $tracePatt = Regex::make('~{{t-token}}~S');
 
         $count = preg_match_all($tracePatt, $this->string->raw, $traceMatches, PREG_OFFSET_CAPTURE);
         while ($count--) {
 
             $traceOffset = $traceMatches[0][$count][1];
 
-            preg_match($rulePatt, $this->string->raw, $match, null, $traceOffset);
+            preg_match($rulePatt, $this->string->raw, $ruleMatch, null, $traceOffset);
 
+            $selector = trim($ruleMatch['selector']);
+            $block = trim($ruleMatch['block_content']);
             $replace = '';
-            $block = preg_replace_callback($rulesAndMediaPatt, function ($m) use (&$replace) {
-                $replace .= $m[0];
-                return '';
-            }, $match['block_content']);
 
-            $rule = new Rule(trim($match['selector']), trim($block), $match['trace_token']);
+            // If rules are nested they must be extracted and have selectors merged with the parent.
+            if (preg_match_all(Regex::$patt->r_token, $block, $childRules)) {
+
+                $block = preg_replace_callback($rulesAndMediaPatt, function ($m) use (&$replace) {
+                    $replace .= $m[0];
+                    return '';
+                }, $block);
+
+                $rule = new Rule($selector, $block, $ruleMatch['trace_token']);
+                $rawSelectors = array_keys($rule->selectors->store);
+                foreach ($childRules[0] as $childRule) {
+                    $tokens->get($childRule)->selectors->merge($rawSelectors);
+                }
+            }
+            else  {
+                $rule = new Rule($selector, $block, $ruleMatch['trace_token']);
+            }
 
             // Store rules only if they have declarations or extend arguments.
             if (! empty($rule->declarations->store) || $rule->extendArgs) {
-                $replace = Crush::$process->tokens->add($rule, 'r', $rule->label) . $replace;
+                $replace = $tokens->add($rule, 'r', $rule->label) . $replace;
             }
 
-            $this->string->splice($replace, $traceOffset, strlen($match[0]));
+            $this->string->splice($replace, $traceOffset, strlen($ruleMatch[0]));
         }
     }
 
@@ -610,71 +625,24 @@ class Process
 
     protected function resolveInBlocks()
     {
-        $matches = $this->string->matchAll('~@in\s+([^{]+)\{~iS');
-        $tokens = Crush::$process->tokens;
+        $matches = $this->string->matchAll('~@in\s+(?<selectors>[^{]+)\{~iS');
 
-        // Move through the matches in reverse order.
         while ($match = array_pop($matches)) {
 
-            $match_start_pos = $match[0][1];
-            $raw_argument = trim($match[1][0]);
+            $selectorsMatch = trim($match['selectors'][0]);
+            $curlyMatch = new BalancedMatch($this->string, $match[0][1]);
 
-            $arguments = Util::splitDelimList(Selector::expandAliases($raw_argument));
-
-            $curly_match = new BalancedMatch($this->string, $match_start_pos);
-
-            if (! $curly_match->match || empty($raw_argument)) {
+            if (! $curlyMatch->match || empty($selectorsMatch)) {
                 continue;
             }
 
-            // Match all the rule tokens.
-            $rule_matches = Regex::matchAll(
-                Regex::$patt->r_token, $curly_match->inside());
+            $rawSelectors = Util::splitDelimList($selectorsMatch);
 
-            foreach ($rule_matches as $rule_match) {
-
-                // Get the rule instance.
-                $rule = $tokens->get($rule_match[0][0]);
-
-                // Using arguments create new selector list for the rule.
-                $new_selector_list = array();
-
-                foreach ($arguments as $arg_selector) {
-
-                    foreach ($rule->selectors as $rule_selector) {
-
-                        $use_parent_symbol = strpos($rule_selector->value, '&') !== false;
-
-                        // Skipping the prefix.
-                        if (! $rule_selector->allowPrefix && ! $use_parent_symbol) {
-
-                            $new_selector_list[$rule_selector->readableValue] = $rule_selector;
-                        }
-
-                        // Positioning the prefix with parent symbol "&".
-                        elseif ($use_parent_symbol) {
-
-                            $new_value = str_replace(
-                                    '&',
-                                    $arg_selector,
-                                    $rule_selector->value);
-
-                            $new = new Selector($new_value);
-                            $new_selector_list[$new->readableValue] = $new;
-                        }
-
-                        // Prepending the prefix.
-                        else {
-
-                            $new = new Selector("$arg_selector {$rule_selector->value}");
-                            $new_selector_list[$new->readableValue] = $new;
-                        }
-                    }
-                }
-                $rule->selectors->store = $new_selector_list;
+            foreach (Regex::matchAll(Regex::$patt->r_token, $curlyMatch->inside()) as $ruleMatch) {
+                Crush::$process->tokens->get($ruleMatch[0][0])->selectors->merge($rawSelectors);
             }
 
-            $curly_match->unWrap();
+            $curlyMatch->unWrap();
         }
     }
 
