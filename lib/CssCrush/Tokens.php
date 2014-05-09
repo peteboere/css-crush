@@ -71,7 +71,7 @@ class Tokens
     public function restore($str, $types, $release = false, $callback = null)
     {
         $types = implode('', (array) $types);
-        $patt = Regex::make("~\?[$types]{{ token-id }}\?~S");
+        $patt = Regex::make("~\?[$types]{{ token_id }}\?~S");
         $tokens = $this;
         $callback = $callback ?: function ($m) use ($tokens, $release) {
             return $release ? $tokens->pop($m[0]) : $tokens->get($m[0]);
@@ -96,7 +96,7 @@ class Tokens
     public function captureUrls($str, $add_padding = false)
     {
         $count = preg_match_all(
-            Regex::make('~@import \s+ (?<import>{{s-token}}) | {{LB}} (?<func>url|data-uri) {{parens}}~ixS'),
+            Regex::make('~@import \s+ (?<import>{{s_token}}) | {{LB}} (?<func>url|data-uri) {{parens}}~ixS'),
             $str,
             $m,
             PREG_OFFSET_CAPTURE);
@@ -146,7 +146,7 @@ class Tokens
 
     public static function is($label, $of_type)
     {
-        if (preg_match(Regex::make('~^ \? (?<type>[a-zA-Z]) {{token-id}} \? $~xS'), $label, $m)) {
+        if (preg_match(Regex::make('~^ \? (?<type>[a-zA-Z]) {{token_id}} \? $~xS'), $label, $m)) {
 
             return $of_type ? ($of_type === $m['type']) : true;
         }

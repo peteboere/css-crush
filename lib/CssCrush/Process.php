@@ -532,16 +532,15 @@ class Process
         $tokens = Crush::$process->tokens;
 
         $rulePatt = Regex::make('~
-            (?<trace_token> {{t-token}} )
+            (?<trace_token> {{ t_token }})
             \s*
-            (?<selector> [^{]+ )
+            (?<selector> [^{]+)
             \s*
-            {{block}}
+            {{ block }}
         ~xiS');
-        $rulesAndMediaPatt = Regex::make('~{{r-token}}|@media[^\{]+{{block}}~iS');
-        $tracePatt = Regex::make('~{{t-token}}~S');
+        $rulesAndMediaPatt = Regex::make('~{{ r_token }}|@media[^\{]+{{ block }}~iS');
 
-        $count = preg_match_all($tracePatt, $this->string->raw, $traceMatches, PREG_OFFSET_CAPTURE);
+        $count = preg_match_all(Regex::$patt->t_token, $this->string->raw, $traceMatches, PREG_OFFSET_CAPTURE);
         while ($count--) {
 
             $traceOffset = $traceMatches[0][$count][1];
@@ -750,10 +749,10 @@ class Process
             $regex_replacements['~ ?(@[^;]+\;)~'] = "$1$EOL";
 
             // Trim leading spaces on @-rules and some tokens.
-            $regex_replacements[Regex::make('~ +([@}]|\?[rc]{{token-id}}\?)~S')] = "$1";
+            $regex_replacements[Regex::make('~ +([@}]|\?[rc]{{token_id}}\?)~S')] = "$1";
 
             // Additional newline between adjacent rules and comments.
-            $regex_replacements[Regex::make('~({{r-token}}) (\s*) ({{c-token}})~xS')] = "$1$EOL$2$3";
+            $regex_replacements[Regex::make('~({{r_token}}) (\s*) ({{c_token}})~xS')] = "$1$EOL$2$3";
         }
 
         // Apply all formatting replacements.
@@ -912,7 +911,7 @@ class Process
             $this->sourceMap['sources'][] = Util::getLinkBetweenPaths($this->output->dir, $source, false);
         }
 
-        $token_patt = Regex::make('~\?[tm]{{token-id}}\?~S');
+        $token_patt = Regex::make('~\?[tm]{{token_id}}\?~S');
         $mappings = array();
         $lines = preg_split(Regex::$patt->newline, $this->string->raw);
         $tokens =& $this->tokens->store;

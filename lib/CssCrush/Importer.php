@@ -155,7 +155,7 @@ class Importer
         }
 
         // Match all urls that are not imports.
-        preg_match_all(Regex::make('~(?<!@import ){{u-token}}~iS'), $import->content, $matches);
+        preg_match_all(Regex::make('~(?<!@import ){{u_token}}~iS'), $import->content, $matches);
 
         foreach ($matches[0] as $token) {
 
@@ -278,7 +278,7 @@ class Importer
             $patt = Regex::make('~
                 (?:^|(?<=[;{}]))
                 (?<before>
-                    (?: \s | {{c-token}} )*
+                    (?: \s | {{c_token}} )*
                 )
                 (?<selector>
                     (?:

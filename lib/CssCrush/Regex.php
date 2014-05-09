@@ -59,8 +59,8 @@ class Regex
         $patt->rooted_number = '~^' . $classes->number . '$~';
 
         // @-rules.
-        $patt->import = Regex::make('~@import \s+ ({{u-token}}) \s? ([^;]*);~ixS');
-        $patt->charset = Regex::make('~@charset \s+ ({{s-token}}) \s*;~ixS');
+        $patt->import = Regex::make('~@import \s+ ({{u_token}}) \s? ([^;]*);~ixS');
+        $patt->charset = Regex::make('~@charset \s+ ({{s_token}}) \s*;~ixS');
         $patt->mixin = Regex::make('~@mixin \s+ (?<name>{{ident}}) \s* {{block}}~ixS');
         $patt->fragmentCapture = Regex::make('~@fragment \s+ (?<name>{{ident}}) \s* {{block}}~ixS');
         $patt->fragmentInvoke = Regex::make('~@fragment \s+ (?<name>{{ident}}) {{parens}}? \s* ;~ixS');
@@ -89,23 +89,15 @@ class Regex
 
     public static function make($pattern)
     {
-        static $cache = array(), $pattern_map;
+        static $cache = array();
 
         if (isset($cache[$pattern])) {
             return $cache[$pattern];
         }
 
-        if (! $pattern_map) {
-            $pattern_map = array();
-            foreach (self::$classes as $name => $regex_class) {
-                $pattern_map[str_replace('_', '-', $name)] = $regex_class;
-            }
-        }
-
-        return $cache[$pattern] = preg_replace_callback(
-            '~\{\{ *(?<name>[\w-]+) *\}\}~S', function ($m) use ($pattern_map) {
-                return $pattern_map[$m['name']];
-            }, $pattern);
+        return $cache[$pattern] = preg_replace_callback('~\{\{ *(?<name>\w+) *\}\}~S', function ($m) {
+            return Regex::$classes->{ $m['name'] };
+        }, $pattern);
     }
 
     public static function matchAll($patt, $subject, $offset = 0)
