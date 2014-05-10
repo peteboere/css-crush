@@ -53,14 +53,14 @@ class Importer
                 continue;
             }
 
-            // Create import object for convenience.
             $import = new \stdClass();
             $import->url = $process->tokens->get($match[1][0]);
             $import->media = trim($match[2][0]);
 
-            // Skip import if the import URL is protocoled.
+            // Protocoled import urls are not processed. Stash for prepending to output.
             if ($import->url->protocol) {
-                $search_offset = $match_end;
+                $str = substr_replace($str, '', $match_start, $match_len);
+                $process->absoluteImports[] = $import;
                 continue;
             }
 

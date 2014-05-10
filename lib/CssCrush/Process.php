@@ -22,6 +22,7 @@ class Process
         $this->mixins = array();
         $this->fragments = array();
         $this->references = array();
+        $this->absoluteImports = array();
         $this->charset = null;
         $this->sources = array();
         $this->vars = array();
@@ -805,6 +806,15 @@ class Process
                     }
                 }
             }
+        }
+
+        if ($this->absoluteImports) {
+            $absoluteImports = '';
+            $closing = $minify ? ';' : ";$EOL";
+            foreach ($this->absoluteImports as $import) {
+                $absoluteImports .= "@import $import->url" . ($import->media ? " $import->media" : '') . $closing;
+            }
+            $this->string->prepend($absoluteImports);
         }
 
         if ($options->boilerplate) {
