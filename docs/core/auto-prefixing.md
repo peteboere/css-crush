@@ -1,6 +1,6 @@
 <!--{
 
-"title": "Vendor prefixing"
+"title": "Auto prefixing"
 
 }-->
 

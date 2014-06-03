@@ -4,34 +4,46 @@
 
 }-->
 
-Block nesting is done with the `@in` directive. Especially useful for when you need to group lots of styles under a common selector prefix.
+Rules can be nested to avoid repetitive typing when scoping to a common parent selector.
 
-Note use of the parent selector `&`:
-
-```crush2
-@in .homepage {
-  @in .content {
+```crush
+.homepage {
+  color: #333;
+  background: white;
+  .content {
     p {
       font-size: 110%;
     }
   }
-  &.blue {
-    color: powderblue;
-  }
+}
+```
+
+```css
+.homepage {
+  color: #333;
+  background: white;
+}
+.homepage .content p {
+  font-size: 110%;
+}
+```
+
+## Parent referencing
+
+Sometimes when nesting it can be convenient to use the parent selector in different ways. The parent reference symbol `&` can be used for this.
+
+```crush
+.homepage {
   .no-js & {
-    max-width: 1024px;
+    p {
+      font-size: 110%;
+    }
   }
 }
 ```
 
-```crush
-.homepage .content p {
+```css
+.no-js .homepage p {
   font-size: 110%;
-}
-.homepage.blue {
-  color: powderblue;
-}
-.no-js .homepage {
-  max-width: 1024px;
 }
 ```

@@ -4,14 +4,14 @@
 
 }-->
 
-Declare variables in your CSS with a `@define` directive and use them with the `$()` function.
+Declare variables in your CSS with a `@set` directive and use them with the `$()` function.
 
 Variables can also be injected at runtime with the [vars option](#api--options).
 
 
 ```crush
 /* Defining variables */
-@define {
+@set {
   dark: #333;
   light: #F4F2E2;
   smaller-screen: screen and (max-width: 800px);
@@ -38,12 +38,12 @@ Variables can also be injected at runtime with the [vars option](#api--options).
 
 ## Conditionals
 
-Sections of CSS can be included and excluded on the basis of variable existence with the `@ifdefine` directive:
+Sections of CSS can be included and excluded on the basis of variable existence with the `@ifset` directive:
 
 ```crush
-@define foo #f00;
+@set foo #f00;
 
-@ifdefine foo {
+@ifset foo {
   p {
     color: $(foo);
   }
@@ -51,7 +51,7 @@ Sections of CSS can be included and excluded on the basis of variable existence 
 
 p {
   font-size: 12px;
-  @ifdefine not foo {
+  @ifset not foo {
     line-height: 1.5;
   }
 }
