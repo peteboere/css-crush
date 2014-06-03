@@ -30,9 +30,9 @@ Rules can be nested to avoid repetitive typing when scoping to a common parent s
 
 ## Parent referencing
 
-Sometimes when nesting it can be convenient to use the parent selector in different ways. The parent reference symbol `&` can be used for this.
+You can use the parent reference symbol `&` for placing the parent selector explicitly.
 
-```crush
+```crush2
 .homepage {
   .no-js & {
     p {
