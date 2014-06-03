@@ -868,8 +868,8 @@ class Process
     {
         $this->preCompile();
 
-        // Collate hostfile and imports.
-        $this->string = new StringObject(Importer::hostfile($this->input));
+        $importer = new Importer($this);
+        $this->string = new StringObject($importer->collate());
 
         $this->captureVars();
 

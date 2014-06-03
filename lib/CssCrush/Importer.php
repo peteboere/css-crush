@@ -8,9 +8,16 @@ namespace CssCrush;
 
 class Importer
 {
-    public static function hostfile()
+    protected $process;
+
+    public function __construct(Process $process)
     {
-        $process = Crush::$process;
+        $this->process = $process;
+    }
+
+    public function collate()
+    {
+        $process = $this->process;
         $options = $process->options;
         $regex = Regex::$patt;
         $input = $process->input;
@@ -32,7 +39,7 @@ class Importer
         }
 
         // If there's a parsing error go no further.
-        if (! self::prepareForStream($str)) {
+        if (! self::prepareImport($str)) {
 
             return $str;
         }
@@ -88,7 +95,7 @@ class Importer
             $filenames[] = $import->url->value;
 
             // If the import content doesn't pass syntax validation skip to next import.
-            if (! self::prepareForStream($import->content)) {
+            if (! self::prepareImport($import->content)) {
 
                 $str = substr_replace($str, '', $match_start, $match_len);
                 continue;
@@ -146,11 +153,9 @@ class Importer
 
     static protected function rewriteImportedUrls($import)
     {
-        $link = Util::getLinkBetweenPaths(
-            Crush::$process->input->dir, dirname($import->path));
+        $link = Util::getLinkBetweenPaths(Crush::$process->input->dir, dirname($import->path));
 
         if (empty($link)) {
-
             return;
         }
 
@@ -168,19 +173,19 @@ class Importer
         }
     }
 
-    static protected function prepareForStream(&$str)
+    static protected function prepareImport(&$str)
     {
         $regex = Regex::$patt;
         $process = Crush::$process;
         $tokens = $process->tokens;
 
-        // Convert all end-of-lines to unix style.
+        // Convert all EOL to unix style.
         $str = preg_replace('~\r\n?~', "\n", $str);
 
-        // rtrim is necessary to avoid catastrophic backtracking in large files and some edge cases.
+        // Necessary to avoid catastrophic backtracking in large files and some edge cases.
         $str = rtrim(self::captureCommentAndString($str));
 
-        if (! self::checkSyntax($str)) {
+        if (! self::syntaxCheck($str)) {
 
             $str = '';
             return false;
@@ -209,7 +214,7 @@ class Importer
         return true;
     }
 
-    static protected function checkSyntax(&$str)
+    static protected function syntaxCheck(&$str)
     {
         // Catch obvious typing errors.
         $errors = false;
