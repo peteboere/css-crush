@@ -22,22 +22,26 @@ class IO
 
     public function getOutputDir()
     {
-        $output_dir = $this->process->options->output_dir;
+        $outputDir = $this->process->options->output_dir;
 
-        return $output_dir ? $output_dir : $this->process->input->dir;
+        return $outputDir ? $outputDir : $this->process->input->dir;
     }
 
     public function getOutputFileName()
     {
         $options = $this->process->options;
 
-        $output_basename = basename($this->process->input->filename, '.css');
+        $outputBasename = basename($this->process->input->filename, '.css');
 
         if (! empty($options->output_file)) {
-            $output_basename = basename($options->output_file, '.css');
+            $outputBasename = basename($options->output_file, '.css');
         }
 
-        return "$output_basename.crush.css";
+        if ($this->process->input->dir === $this->getOutputDir()) {
+            $outputBasename .= '.crush';
+        }
+
+        return "$outputBasename.css";
     }
 
     public function getOutputUrl()
