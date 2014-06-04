@@ -39,7 +39,7 @@ class Importer
         }
 
         // If there's a parsing error go no further.
-        if (! self::prepareImport($str)) {
+        if (! $this->prepareImport($str)) {
 
             return $str;
         }
@@ -95,7 +95,7 @@ class Importer
             $filenames[] = $import->url->value;
 
             // If the import content doesn't pass syntax validation skip to next import.
-            if (! self::prepareImport($import->content)) {
+            if (! $this->prepareImport($import->content)) {
 
                 $str = substr_replace($str, '', $match_start, $match_len);
                 continue;
@@ -126,7 +126,7 @@ class Importer
 
             // Optionally rewrite relative url and custom function data-uri references.
             if ($options->rewrite_import_urls) {
-                self::rewriteImportedUrls($import);
+                $this->rewriteImportedUrls($import);
             }
 
             if ($import->media) {
@@ -151,9 +151,9 @@ class Importer
         return $str;
     }
 
-    static protected function rewriteImportedUrls($import)
+    protected function rewriteImportedUrls($import)
     {
-        $link = Util::getLinkBetweenPaths(Crush::$process->input->dir, dirname($import->path));
+        $link = Util::getLinkBetweenPaths($this->process->input->dir, dirname($import->path));
 
         if (empty($link)) {
             return;
@@ -164,28 +164,27 @@ class Importer
 
         foreach ($matches[0] as $token) {
 
-            $url = Crush::$process->tokens->get($token);
+            $url = $this->process->tokens->get($token);
 
             if ($url->isRelative) {
-                // Prepend the relative url prefix.
                 $url->prepend($link);
             }
         }
     }
 
-    static protected function prepareImport(&$str)
+    protected function prepareImport(&$str)
     {
         $regex = Regex::$patt;
-        $process = Crush::$process;
+        $process = $this->process;
         $tokens = $process->tokens;
 
         // Convert all EOL to unix style.
         $str = preg_replace('~\r\n?~', "\n", $str);
 
         // Necessary to avoid catastrophic backtracking in large files and some edge cases.
-        $str = rtrim(self::captureCommentAndString($str));
+        $str = rtrim($this->captureCommentAndString($str));
 
-        if (! self::syntaxCheck($str)) {
+        if (! $this->syntaxCheck($str)) {
 
             $str = '';
             return false;
@@ -207,18 +206,18 @@ class Importer
 
         $str = $tokens->captureUrls($str, true);
 
-        self::addMarkers($str);
+        $this->addMarkers($str);
 
         $str = Util::normalizeWhiteSpace($str);
 
         return true;
     }
 
-    static protected function syntaxCheck(&$str)
+    protected function syntaxCheck(&$str)
     {
         // Catch obvious typing errors.
         $errors = false;
-        $current_file = 'file://' . end(Crush::$process->sources);
+        $current_file = 'file://' . end($this->process->sources);
         $balanced_parens = substr_count($str, "(") === substr_count($str, ")");
         $balanced_curlies = substr_count($str, "{") === substr_count($str, "}");
 
@@ -274,10 +273,11 @@ class Importer
         return $errors ? false : true;
     }
 
-    static protected function addMarkers(&$str)
+    protected function addMarkers(&$str)
     {
-        $process = Crush::$process;
-        $current_file_index = count($process->sources) -1;
+        $process = $this->process;
+        $currentFileIndex = count($process->sources) - 1;
+
         static $patt;
         if (! $patt) {
             $patt = Regex::make('~
@@ -300,65 +300,63 @@ class Importer
         $count = preg_match_all($patt, $str, $matches, PREG_OFFSET_CAPTURE);
         while ($count--) {
 
-            $selector_offset = $matches['selector'][$count][1];
+            $selectorOffset = $matches['selector'][$count][1];
 
             $line = 0;
-            $before = substr($str, 0, $selector_offset);
-            if ($selector_offset) {
+            $before = substr($str, 0, $selectorOffset);
+            if ($selectorOffset) {
                 $line = substr_count($before, "\n");
             }
 
-            $point_data = array($current_file_index, $line);
+            $pointData = array($currentFileIndex, $line);
 
             // Source maps require column index too.
             if ($process->generateMap) {
-                $point_data[] = strlen($before) - strrpos($before, "\n") - 1;
+                $pointData[] = strlen($before) - strrpos($before, "\n") - 1;
             }
 
             // Splice in marker token (packing point_data into string is more memory efficient).
             $str = substr_replace(
                 $str,
-                $process->tokens->add(implode(',', $point_data), 't'),
-                $selector_offset,
+                $process->tokens->add(implode(',', $pointData), 't'),
+                $selectorOffset,
                 0);
         }
     }
 
-    static protected function captureCommentAndString($str)
+    protected function captureCommentAndString($str)
     {
-        $callback = function ($m) {
+        $process = $this->process;
+        $callback = function ($m) use ($process) {
 
-            $full_match = $m[0];
-            $process = Crush::$process;
+            $fullMatch = $m[0];
 
-            if (strpos($full_match, '/*') === 0) {
+            if (strpos($fullMatch, '/*') === 0) {
 
                 // Bail without storing comment if output is minified or a private comment.
-                if (
-                    $process->minifyOutput ||
-                    strpos($full_match, '/*$') === 0
-                ) {
-                    return Tokens::pad('', $full_match);
+                if ($process->minifyOutput || strpos($fullMatch, '/*$') === 0) {
+
+                    return Tokens::pad('', $fullMatch);
                 }
 
                 // Fix broken comments as they will break any subsquent
                 // imported files that are inlined.
-                if (! preg_match('~\*/$~', $full_match)) {
-                    $full_match .= '*/';
+                if (! preg_match('~\*/$~', $fullMatch)) {
+                    $fullMatch .= '*/';
                 }
-                $label = $process->tokens->add($full_match, 'c');
+                $label = $process->tokens->add($fullMatch, 'c');
             }
             else {
 
                 // Fix broken strings as they will break any subsquent
                 // imported files that are inlined.
-                if ($full_match[0] !== $full_match[strlen($full_match)-1]) {
-                    $full_match .= $full_match[0];
+                if ($fullMatch[0] !== $fullMatch[strlen($fullMatch)-1]) {
+                    $fullMatch .= $fullMatch[0];
                 }
-                $label = $process->tokens->add($full_match, 's');
+                $label = $process->tokens->add($fullMatch, 's');
             }
 
-            return Tokens::pad($label, $full_match);
+            return Tokens::pad($label, $fullMatch);
         };
 
         return preg_replace_callback(Regex::$patt->commentAndString, $callback, $str);
