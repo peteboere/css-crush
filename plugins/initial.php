@@ -16,7 +16,7 @@ function initial(Rule $rule) {
 
     static $initial_values;
     if (! $initial_values) {
-        if (! ($initial_values = Util::loadIni('misc/initial-values.ini'))) {
+        if (! ($initial_values = Util::parseIni(Crush::$dir . '/misc/initial-values.ini'))) {
             return;
         }
     }

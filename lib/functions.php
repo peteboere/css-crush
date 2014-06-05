@@ -1,38 +1,108 @@
 <?php
 /**
   *
-  * High level API.
+  * Public API.
   *
   */
 use CssCrush\Crush;
 class_alias('CssCrush\Crush', 'CssCrush\CssCrush');
 
+
+/**
+ * Process CSS file and return a new compiled file.
+ *
+ * @param string $file  URL or System path to the host CSS file.
+ * @param mixed $options  An array of options or null.
+ * @return string  The public path to the compiled file or an empty string.
+ */
 function csscrush_file($file, $options = array()) {
-    return Crush::file($file, $options);
-}
 
-function csscrush_tag($file, $options = array(), $attributes = array()) {
-    return Crush::tag($file, $options, $attributes);
-}
-
-function csscrush_inline($file, $options = array(), $attributes = array()) {
-    return Crush::inline($file, $options, $attributes);
-}
-
-function csscrush_string($string, $options = array()) {
-    return Crush::string($string, $options);
-}
-
-function csscrush_stat() {
-    return Crush::stat();
-}
-
-function csscrush_version($use_git = false) {
-    if ($use_git && $version = \CssCrush\Version::gitDescribe()) {
-        return $version;
+    try {
+        Crush::$process = new CssCrush\Process($options, array('type' => 'file', 'data' => $file));
     }
-    return Crush::$config->version;
+    catch (\Exception $e) {
+        CssCrush\warning("[[CssCrush]] - {$e->getMessage()}");
+
+        return '';
+    }
+
+    return new CssCrush\File(Crush::$process);
 }
+
+
+/**
+ * Process CSS file and return an HTML link tag with populated href.
+ *
+ * @param string $file  Absolute or relative path to the host CSS file.
+ * @param mixed $options  An array of options or null.
+ * @param array $tag_attributes  An array of HTML attributes.
+ * @return string  HTML link tag or error message inside HTML comment.
+ */
+function csscrush_tag($file, $options = array(), $tag_attributes = array()) {
+
+    $file = csscrush_file($file, $options);
+    if ($file && $file->url) {
+        $tag_attributes['href'] = $file->url;
+        $tag_attributes += array(
+            'rel' => 'stylesheet',
+            'media' => 'all',
+        );
+        $attrs = CssCrush\Util::htmlAttributes($tag_attributes, array('rel', 'href', 'media'));
+
+        return "<link$attrs />\n";
+    }
+}
+
+
+/**
+ * Process CSS file and return CSS as text wrapped in html style tags.
+ *
+ * @param string $file  Absolute or relative path to the host CSS file.
+ * @param mixed $options  An array of options or null.
+ * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag.
+ * @return string  HTML link tag or error message inside HTML comment.
+ */
+function csscrush_inline($file, $options = array(), $tag_attributes = array()) {
+
+    if (! is_array($options)) {
+        $options = array();
+    }
+    if (! isset($options['boilerplate'])) {
+        $options['boilerplate'] = false;
+    }
+
+    $file = csscrush_file($file, $options);
+    if ($file && $file->path) {
+        $tagOpen = '';
+        $tagClose = '';
+        if (is_array($tag_attributes)) {
+            $attrs = CssCrush\Util::htmlAttributes($tag_attributes);
+            $tagOpen = "<style$attrs>";
+            $tagClose = '</style>';
+        }
+        return $tagOpen . file_get_contents($file->path) . $tagClose . "\n";
+    }
+}
+
+
+/**
+ * Compile a raw string of CSS string and return it.
+ *
+ * @param string $string  CSS text.
+ * @param mixed $options  An array of options or null.
+ * @return string  CSS text.
+ */
+function csscrush_string($string, $options = array()) {
+
+    if (! isset($options['boilerplate'])) {
+        $options['boilerplate'] = false;
+    }
+
+    Crush::$process = new CssCrush\Process($options, array('type' => 'filter', 'data' => $string));
+
+    return Crush::$process->compile()->__toString();
+}
+
 
 /**
  * Set default options and config settings.
@@ -57,6 +127,7 @@ function csscrush_set($object_name, $modifier) {
     }
 }
 
+
 /**
  * Get default options and config settings.
  *
@@ -70,14 +141,41 @@ function csscrush_get($object_name, $property = null) {
         $pointer = $object_name === 'options' ? Crush::$config->options : Crush::$config;
 
         if (! isset($property)) {
-
             return $pointer;
         }
         else {
-
             return isset($pointer->{$property}) ? $pointer->{$property} : null;
         }
     }
-
     return null;
+}
+
+
+/**
+ * Get version information.
+ *
+ * @param string $use_git  Return version as reported by command `git describe`.
+ */
+function csscrush_version($use_git = false) {
+
+    if ($use_git && $version = \CssCrush\Version::gitDescribe()) {
+        return $version;
+    }
+    return Crush::$config->version;
+}
+
+
+/**
+ * Get stats from most recent compile.
+ */
+function csscrush_stat() {
+
+    $process = Crush::$process;
+    $stats = $process->stat;
+
+    // Get logged errors as late as possible.
+    $stats['errors'] = $process->errors;
+    $stats += array('compile_time' => 0);
+
+    return $stats;
 }

@@ -13,7 +13,7 @@ class Color
     public static function getKeywords()
     {
         if (! isset(self::$keywords)) {
-            if ($keywords = Util::loadIni('misc/color-keywords.ini')) {
+            if ($keywords = Util::parseIni(Crush::$dir . '/misc/color-keywords.ini')) {
                 foreach ($keywords as $keyword => $rgb) {
                     self::$keywords[$keyword] = array_map('floatval', explode(',', $rgb)) + array(0,0,0,1);
                 }

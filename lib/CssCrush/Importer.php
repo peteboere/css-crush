@@ -54,12 +54,6 @@ class Importer
             $match_start = $match[0][1];
             $match_end = $match_start + $match_len;
 
-            // If just stripping the import statements.
-            if (isset($input->importIgnore)) {
-                $str = substr_replace($str, '', $match_start, $match_len);
-                continue;
-            }
-
             $import = new \stdClass();
             $import->url = $process->tokens->get($match[1][0]);
             $import->media = trim($match[2][0]);

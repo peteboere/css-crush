@@ -210,14 +210,14 @@ class Util
         return false;
     }
 
-    public static function loadIni($library_relative_path, $sections = false)
+    public static function parseIni($path, $sections = false)
     {
-        if (! ($ini_array = @parse_ini_file(Crush::$dir . '/' . $library_relative_path, $sections))) {
-            notice("[[CssCrush]] - Ini file '$library_relative_path' could not be parsed.");
+        if (! ($result = @parse_ini_file($path, $sections))) {
+            notice("[[CssCrush]] - Ini file '$path' could not be parsed.");
 
             return false;
         }
-        return $ini_array;
+        return $result;
     }
 
     /*

@@ -14,9 +14,6 @@ class Process
 
         Crush::loadAssets();
 
-        $dev_options += array('io_context' => 'filter');
-        $this->ioContext = $dev_options['io_context'];
-
         // Initialize properties.
         $this->cacheData = array();
         $this->mixins = array();
@@ -49,6 +46,10 @@ class Process
         // Options.
         $this->options = new Options($user_options, $config->options);
 
+        // Dev options.
+        $dev_options += array('type' => 'filter', 'data' => '');
+        $this->ioContext = $dev_options['type'];
+
         // Keep track of global vars to maintain cache integrity.
         $this->options->global_vars = $config->vars;
 
@@ -59,6 +60,25 @@ class Process
         $this->ruleFormatter = $this->options->__get('formatter');
         $this->minifyOutput = $this->options->__get('minify');
         $this->newline = $this->options->__get('newlines');
+
+
+        if ($dev_options['type'] === 'file') {
+            $file = $dev_options['data'];
+            $this->input->raw = $file;
+            if (! ($inputFile = Util::resolveUserPath($file))) {
+                throw new \Exception('Input file \'' . basename($file) . '\' not found.');
+            }
+            $this->resolveContext(dirname($inputFile), $inputFile);
+        }
+        elseif ($dev_options['type'] === 'filter') {
+            if (! empty($this->options->context)) {
+                $this->resolveContext($this->options->context);
+            }
+            else {
+                $this->resolveContext();
+            }
+            $this->input->string = $dev_options['data'];
+        }
     }
 
     public function release()

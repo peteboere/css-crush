@@ -7,10 +7,10 @@ CSS-Crush is a standards inspired preprocessor designed to enable a modern and u
 * Automatic vendor prefixing
 * Variables
 * Import inlining
+* Nesting
 * Functions (color manipulation, math, data-uris etc.)
 * Rule inheritance (@extends)
 * Mixins
-* Block nesting
 * Minification
 * Lightweight plugin system
 

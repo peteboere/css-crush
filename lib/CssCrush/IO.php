@@ -27,7 +27,7 @@ class IO
         return $outputDir ? $outputDir : $this->process->input->dir;
     }
 
-    public function getOutputFileName()
+    public function getOutputFilename()
     {
         $options = $this->process->options;
 
@@ -77,11 +77,12 @@ class IO
         $process = $this->process;
         $options = $process->options;
         $input = $process->input;
-        $output = $process->output;
 
-        $filename = $output->filename;
+        $dir = $this->getOutputDir();
+        $filename = $this->getOutputFilename();
+        $path = "$dir/$filename";
 
-        if (! file_exists($output->dir . '/' . $filename)) {
+        if (! file_exists($path)) {
             debug('No file cached.');
 
             return false;
@@ -197,28 +198,30 @@ class IO
     public function write(StringObject $string)
     {
         $process = $this->process;
-        $output = $process->output;
-        $source_map_filename = "$output->filename.map";
+
+        $dir = $this->getOutputDir();
+        $filename = $this->getOutputFilename();
+        $sourcemapFilename = "$filename.map";
 
         if ($process->sourceMap) {
-            $string->append($process->newline . "/*# sourceMappingURL=$source_map_filename */");
+            $string->append($process->newline . "/*# sourceMappingURL=$sourcemapFilename */");
         }
 
-        if (Util::filePutContents("$output->dir/$output->filename", $string, __METHOD__)) {
+        if (Util::filePutContents("$dir/$filename", $string, __METHOD__)) {
 
-            $json_encode_flags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
+            $jsonFlags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
 
             if ($process->sourceMap) {
-                Util::filePutContents("$output->dir/$source_map_filename",
-                    json_encode($process->sourceMap, $json_encode_flags), __METHOD__);
+                Util::filePutContents("$dir/$sourcemapFilename",
+                    json_encode($process->sourceMap, $jsonFlags), __METHOD__);
             }
 
             if ($process->options->stat_dump) {
-                $stat_file = is_string($process->options->stat_dump) ?
-                    $process->options->stat_dump : "$output->dir/$output->filename.json";
+                $statFile = is_string($process->options->stat_dump) ?
+                    $process->options->stat_dump : "$dir/$filename.json";
 
-                $GLOBALS['CSSCRUSH_STAT_FILE'] = $stat_file;
-                Util::filePutContents($stat_file, json_encode(csscrush_stat(), $json_encode_flags), __METHOD__);
+                $GLOBALS['CSSCRUSH_STAT_FILE'] = $statFile;
+                Util::filePutContents($statFile, json_encode(csscrush_stat(), $jsonFlags), __METHOD__);
             }
 
             return true;

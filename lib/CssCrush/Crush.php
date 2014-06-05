@@ -109,10 +109,7 @@ class Crush
 
     public static function parseAliasesFile($file)
     {
-        $tree = @parse_ini_file($file, true);
-
-        if ($tree === false) {
-            notice("[[CssCrush]] - Could not parse aliases file '$file'.");
+        if (! ($tree = Util::parseIni($file, true))) {
 
             return false;
         }
@@ -177,180 +174,54 @@ class Crush
         return $tree + self::$config->bareAliases;
     }
 
-
-    #############################
-    #  Public API.
-
     /**
-     * Process host CSS file and return a new compiled file.
+     * Deprecated.
      *
-     * @param string $file  URL or System path to the host CSS file.
-     * @param mixed $options  An array of options or null.
-     * @return string  The public path to the compiled file or an empty string.
+     * @see csscrush_file().
      */
     public static function file($file, $options = array())
     {
-        self::$process = new Process($options, array('io_context' => 'file'));
-
-        $process = self::$process;
-        $options = $process->options;
-
-        $process->input->raw = $file;
-
-        if (! ($input_file = Util::resolveUserPath($file))) {
-            warning('[[CssCrush]] - Input file \'' . basename($file) . '\' not found.');
-
-            return '';
-        }
-
-        if (! $process->resolveContext(dirname($input_file), $input_file)) {
-
-            return '';
-        }
-
-        Crush::runStat('paths');
-
-        if ($options->cache) {
-            $process->cacheData = $process->io->getCacheData();
-            if ($process->io->validateCache()) {
-                $file_url = $process->io->getOutputUrl();
-                $process->release();
-
-                return $file_url;
-            }
-        }
-
-        $string = $process->compile();
-
-        return $process->io->write($string) ?  $process->io->getOutputUrl() : '';
+        return csscrush_file($file, $options);
     }
 
     /**
-     * Process host CSS file and return an HTML link tag with populated href.
+     * Deprecated.
      *
-     * @param string $file  Absolute or relative path to the host CSS file.
-     * @param mixed $options  An array of options or null.
-     * @param array $attributes  An array of HTML attributes.
-     * @return string  HTML link tag or error message inside HTML comment.
+     * @see csscrush_tag().
      */
     public static function tag($file, $options = array(), $tag_attributes = array())
     {
-        $file = self::file($file, $options);
-
-        if (! empty($file)) {
-            $tag_attributes['href'] = $file;
-            $tag_attributes += array(
-                'rel' => 'stylesheet',
-                'media' => 'all',
-            );
-            $attrs = Util::htmlAttributes($tag_attributes, array('rel', 'href', 'media'));
-
-            return "<link$attrs />\n";
-        }
-        else {
-            // Return an HTML comment with message on failure
-            $class = __CLASS__;
-            $errors = implode("\n", self::$process->errors);
-
-            return "<!-- $class: $errors -->\n";
-        }
+        return csscrush_tag($file, $options, $tag_attributes);
     }
 
     /**
-     * Process host CSS file and return CSS as text wrapped in html style tags.
+     * Deprecated.
      *
-     * @param string $file  Absolute or relative path to the host CSS file.
-     * @param mixed $options  An array of options or null.
-     * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag.
-     * @return string  HTML link tag or error message inside HTML comment.
+     * @see csscrush_inline().
      */
     public static function inline($file, $options = array(), $tag_attributes = array())
     {
-        // For inline output set boilerplate to not display by default.
-        if (! is_array($options)) {
-            $options = array();
-        }
-        if (! isset($options['boilerplate'])) {
-            $options['boilerplate'] = false;
-        }
-
-        $file = self::file($file, $options);
-
-        if (! empty($file)) {
-
-            // On success fetch the CSS text.
-            $content = file_get_contents(self::$process->output->dir . '/' . self::$process->output->filename);
-            $tag_open = '';
-            $tag_close = '';
-
-            if (is_array($tag_attributes)) {
-                $attr_string = Util::htmlAttributes($tag_attributes);
-                $tag_open = "<style$attr_string>";
-                $tag_close = '</style>';
-            }
-            return "$tag_open{$content}$tag_close\n";
-        }
-        else {
-
-            // Return an HTML comment with message on failure.
-            $class = __CLASS__;
-            $errors = implode("\n", self::$process->errors);
-            return "<!-- $class: $errors -->\n";
-        }
+        return csscrush_inline($file, $options, $tag_attributes);
     }
 
     /**
-     * Compile a raw string of CSS string and return it.
+     * Deprecated.
      *
-     * @param string $string  CSS text.
-     * @param mixed $options  An array of options or null.
-     * @return string  CSS text.
+     * @see csscrush_string().
      */
     public static function string($string, $options = array())
     {
-        // Set boilerplate to not display by default.
-        if (! isset($options['boilerplate'])) {
-            $options['boilerplate'] = false;
-        }
-
-        self::$process = new Process($options, array('io_context' => 'filter'));
-
-        $process = self::$process;
-        $options = $process->options;
-
-        if (! empty($options->context)) {
-            $process->resolveContext($options->context);
-        }
-        else {
-            $process->resolveContext();
-        }
-
-        // Set the string on the input object.
-        $process->input->string = $string;
-
-        // Import files may be ignored.
-        if (isset($options->no_import)) {
-            $process->input->importIgnore = true;
-        }
-
-        return $process->compile()->__toString();
+        return csscrush_string($string, $options);
     }
 
     /**
-     * Get debug info.
+     * Deprecated.
+     *
+     * @see csscrush_stat().
      */
     public static function stat()
     {
-        $process = Crush::$process;
-        $stats = $process->stat;
-
-        // Get logged errors as late as possible.
-        $stats['errors'] = $process->errors;
-        $stats += array(
-            'compile_time' => 0,
-        );
-
-        return $stats;
+        return csscrush_stat();
     }
 
 
