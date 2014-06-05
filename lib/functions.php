@@ -152,6 +152,46 @@ function csscrush_get($object_name, $property = null) {
 
 
 /**
+ * Add custom CSS functions.
+ *
+ * Custom functions added this way are stored on a stack and used by any
+ * subsequent compilations within the duration of the script.
+ *
+ * @param mixed $function_name  Name of CSS function, or null to clear all CSS
+ *        functions added by `csscrush_add_function()`.
+ * @param mixed $callback  CSS function callback, or null to remove function
+ *        named `$function_name`. If CSS function call contains arguments
+ *        they are passed to `$callback` as a string.
+ */
+function csscrush_add_function($function_name = null, $callback = null) {
+
+    static $stack = array();
+
+    if (! func_num_args()) {
+        return $stack;
+    }
+
+    if (! $function_name) {
+        $stack = array();
+        return;
+    }
+
+    $function_name = strtolower($function_name);
+    if (! $callback) {
+        if (isset($stack[$function_name])) {
+            unset($stack[$function_name]);
+        }
+    }
+    else {
+        $stack[$function_name] = array(
+            'callback' => $callback,
+            'parse_args' => true,
+        );
+    }
+}
+
+
+/**
  * Get version information.
  *
  * @param string $use_git  Return version as reported by command `git describe`.

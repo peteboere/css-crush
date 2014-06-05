@@ -18,7 +18,6 @@ namespace CssCrush\UnitTest
     {
         $process = \CssCrush\Crush::$process = new \CssCrush\Process($options);
         $process->preCompile();
-        $process->resolveContext();
         return $process;
     }
 

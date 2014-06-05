@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class Process
 {
-    public function __construct($user_options = array(), $dev_options = array())
+    public function __construct($user_options = array(), $context = array())
     {
         $config = Crush::$config;
 
@@ -46,9 +46,9 @@ class Process
         // Options.
         $this->options = new Options($user_options, $config->options);
 
-        // Dev options.
-        $dev_options += array('type' => 'filter', 'data' => '');
-        $this->ioContext = $dev_options['type'];
+        // Context options.
+        $context += array('type' => 'filter', 'data' => '');
+        $this->ioContext = $context['type'];
 
         // Keep track of global vars to maintain cache integrity.
         $this->options->global_vars = $config->vars;
@@ -61,23 +61,22 @@ class Process
         $this->minifyOutput = $this->options->__get('minify');
         $this->newline = $this->options->__get('newlines');
 
-
-        if ($dev_options['type'] === 'file') {
-            $file = $dev_options['data'];
+        if ($context['type'] === 'file') {
+            $file = $context['data'];
             $this->input->raw = $file;
-            if (! ($inputFile = Util::resolveUserPath($file))) {
+            if (! ($inputFile = Util::resolveUserPath($file, null, $this->docRoot))) {
                 throw new \Exception('Input file \'' . basename($file) . '\' not found.');
             }
             $this->resolveContext(dirname($inputFile), $inputFile);
         }
-        elseif ($dev_options['type'] === 'filter') {
+        elseif ($context['type'] === 'filter') {
             if (! empty($this->options->context)) {
                 $this->resolveContext($this->options->context);
             }
             else {
                 $this->resolveContext();
             }
-            $this->input->string = $dev_options['data'];
+            $this->input->string = $context['data'];
         }
     }
 

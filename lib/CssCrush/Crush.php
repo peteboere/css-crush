@@ -19,22 +19,17 @@ class Crush
     // Library root directory.
     public static $dir;
 
-    // Init called once manually post class definition.
     public static function init()
     {
         self::$dir = dirname(dirname(__DIR__));
 
         self::$config = new \stdClass();
 
-        // Plugin directories.
         self::$config->pluginDirs = array(self::$dir . '/plugins');
-
         self::$config->version = new Version(self::VERSION);
         self::$config->scriptDir = dirname(realpath($_SERVER['SCRIPT_FILENAME']));
         self::$config->docRoot = self::resolveDocRoot();
         self::$config->logger = new Logger();
-
-        // Set default IO handler.
         self::$config->io = 'CssCrush\IO';
 
         // Shared resources.
@@ -51,7 +46,6 @@ class Crush
         self::$config->plugins = array();
         self::$config->options = new Options();
 
-        // Register stock formatters.
         require_once self::$dir . '/misc/formatters.php';
     }
 

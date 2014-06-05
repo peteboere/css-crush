@@ -75,20 +75,22 @@ class Util
         return $path;
     }
 
-    public static function resolveUserPath($path, $recovery = null)
+    public static function resolveUserPath($path, $recovery = null, $docRoot = null)
     {
         // System path.
         if ($realpath = realpath($path)) {
             $path = $realpath;
         }
         else {
-            $doc_root = isset(Crush::$process) ? Crush::$process->docRoot : Crush::$config->docRoot;
+            if (! $docRoot) {
+                $docRoot = isset(Crush::$process->docRoot) ? Crush::$process->docRoot : Crush::$config->docRoot;
+            }
 
             // Absolute path.
             if (strpos($path, '/') === 0) {
                 // If $path is not doc_root based assume it's doc_root relative and prepend doc_root.
-                if (strpos($path, $doc_root) !== 0) {
-                    $path = $doc_root . $path;
+                if (strpos($path, $docRoot) !== 0) {
+                    $path = $docRoot . $path;
                 }
             }
             // Relative path. Try resolving based on the directory of the executing script.
@@ -151,7 +153,7 @@ class Util
             $str = str_replace($matches[0], $keys, $str);
         }
 
-        $list = $regex ? preg_split('~' . $regex . '~', $str) : explode($delim, $str);
+        $list = $regex ? preg_split($regex, $str) : explode($delim, $str);
 
         if ($match_count) {
             foreach ($list as &$value) {

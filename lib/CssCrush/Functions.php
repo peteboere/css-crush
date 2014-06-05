@@ -46,10 +46,10 @@ class Functions
         unset($this->register[$name]);
     }
 
-    public function setPattern($useBuiltins = false)
+    public function setPattern($useAll = false)
     {
-        if ($useBuiltins) {
-            $this->register = self::$builtins + $this->register;
+        if ($useAll) {
+            $this->register = self::$builtins + $this->register + csscrush_add_function();
         }
 
         $this->pattern = Functions::makePattern(array_keys($this->register));
@@ -79,11 +79,9 @@ class Functions
                 continue;
             }
 
-            $opening_paren = $parens[0][1];
-            $closing_paren = $opening_paren + strlen($parens[0][0]);
-
-            // Get the function arguments.
-            $raw_args = trim($parens['parens_content'][0]);
+            $openingParen = $parens[0][1];
+            $closingParen = $openingParen + strlen($parens[0][0]);
+            $rawArgs = trim($parens['parens_content'][0]);
 
             // Update the context function identifier.
             if ($context) {
@@ -93,10 +91,15 @@ class Functions
             $returns = '';
             if (isset($this->register[$function])) {
                 $fn = $this->register[$function];
-                $returns = $fn($raw_args, $context);
+                if (is_array($fn) && !empty($fn['parse_args'])) {
+                    $returns = $fn['callback'](self::parseArgs($rawArgs), $context);
+                }
+                else {
+                    $returns = $fn($rawArgs, $context);
+                }
             }
 
-            $str = substr_replace($str, $returns, $offset, $closing_paren - $offset);
+            $str = substr_replace($str, $returns, $offset, $closingParen - $offset);
         }
 
         return $str;
@@ -110,14 +113,16 @@ class Functions
     {
         $options = array();
         if ($allowSpaceDelim) {
-            $options['regex'] = '\s*[,\s]\s*';
+            $options['regex'] = Regex::$patt->argListSplit;
         }
 
         return Util::splitDelimList($input, $options);
     }
 
-    // Intended as a quick arg-list parse for function that take up-to 2 arguments
-    // with the proviso the first argument is an ident.
+    /*
+        Quick argument list parsing for functions that take 1 or 2 arguments
+        with the proviso the first argument is an ident.
+    */
     public static function parseArgsSimple($input)
     {
         return preg_split(Regex::$patt->argListSplit, $input, 2);
