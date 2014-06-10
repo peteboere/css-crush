@@ -17,7 +17,7 @@ noise/turbulence(
 )
 ```
 
-### Params
+### Parameters
 
 * **fill-color** - Any valid CSS color value.
 * **size** - Pixel size of canvas in format WxH (e.g. 320x480).

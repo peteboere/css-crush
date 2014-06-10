@@ -6,18 +6,17 @@
 
 Selector aliases can be useful for grouping together common selector chains for reuse.
 
-They're  defined with the `@selector-alias` directive, and can be used anywhere you might use a psuedo class.
+They're  defined with the `@selector` directive, and can be used anywhere you might use a psuedo class.
 
 
 ```crush
-/* Defining selector aliases */
-@selector-alias heading :any(h1, h2, h3, h4, h5, h6);
-@selector-alias radio input[type="radio"];
-@selector-alias hocus :any(:hover, :focus);
+@selector heading :any(h1, h2, h3, h4, h5, h6);
+@selector radio input[type="radio"];
+@selector hocus :any(:hover, :focus);
 
 /* Selector aliases with arguments */
-@selector-alias class-prefix :any([class^="#(0)"], [class*=" #(0)"]);
-@selector-alias col :class-prefix(-col);
+@selector class-prefix :any([class^="#(0)"], [class*=" #(0)"]);
+@selector col :class-prefix(-col);
 
 .sidebar :heading {
   color: honeydew;

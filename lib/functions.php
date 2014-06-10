@@ -11,9 +11,7 @@ class_alias('CssCrush\Crush', 'CssCrush\CssCrush');
 /**
  * Process CSS file and return a new compiled file.
  *
- * @param string $file  URL or System path to the host CSS file.
- * @param mixed $options  An array of options or null.
- * @return string  The public path to the compiled file or an empty string.
+ * @see docs/api/functions.md
  */
 function csscrush_file($file, $options = array()) {
 
@@ -33,10 +31,7 @@ function csscrush_file($file, $options = array()) {
 /**
  * Process CSS file and return an HTML link tag with populated href.
  *
- * @param string $file  Absolute or relative path to the host CSS file.
- * @param mixed $options  An array of options or null.
- * @param array $tag_attributes  An array of HTML attributes.
- * @return string  HTML link tag or error message inside HTML comment.
+ * @see docs/api/functions.md
  */
 function csscrush_tag($file, $options = array(), $tag_attributes = array()) {
 
@@ -57,10 +52,7 @@ function csscrush_tag($file, $options = array(), $tag_attributes = array()) {
 /**
  * Process CSS file and return CSS as text wrapped in html style tags.
  *
- * @param string $file  Absolute or relative path to the host CSS file.
- * @param mixed $options  An array of options or null.
- * @param array $attributes  An array of HTML attributes, set false to return CSS text without tag.
- * @return string  HTML link tag or error message inside HTML comment.
+ * @see docs/api/functions.md
  */
 function csscrush_inline($file, $options = array(), $tag_attributes = array()) {
 
@@ -88,9 +80,7 @@ function csscrush_inline($file, $options = array(), $tag_attributes = array()) {
 /**
  * Compile a raw string of CSS string and return it.
  *
- * @param string $string  CSS text.
- * @param mixed $options  An array of options or null.
- * @return string  CSS text.
+ * @see docs/api/functions.md
  */
 function csscrush_string($string, $options = array()) {
 
@@ -107,8 +97,7 @@ function csscrush_string($string, $options = array()) {
 /**
  * Set default options and config settings.
  *
- * @param string $object_name  Name of object you want to modify: 'config' or 'options'.
- * @param mixed $modifier  Assoc array of keys and values to set, or callable which is passed the object.
+ * @see docs/api/functions.md
  */
 function csscrush_set($object_name, $modifier) {
 
@@ -131,8 +120,7 @@ function csscrush_set($object_name, $modifier) {
 /**
  * Get default options and config settings.
  *
- * @param string $object_name  Name of object you want to modify: 'config' or 'options'.
- * @param mixed $property  The property name to retrieve.
+ * @see docs/api/functions.md
  */
 function csscrush_get($object_name, $property = null) {
 
@@ -154,14 +142,7 @@ function csscrush_get($object_name, $property = null) {
 /**
  * Add custom CSS functions.
  *
- * Custom functions added this way are stored on a stack and used by any
- * subsequent compilations within the duration of the script.
- *
- * @param mixed $function_name  Name of CSS function, or null to clear all CSS
- *        functions added by `csscrush_add_function()`.
- * @param mixed $callback  CSS function callback, or null to remove function
- *        named `$function_name`. If CSS function call contains arguments
- *        they are passed to `$callback` as a string.
+ * @see docs/api/functions.md
  */
 function csscrush_add_function($function_name = null, $callback = null) {
 
@@ -194,7 +175,7 @@ function csscrush_add_function($function_name = null, $callback = null) {
 /**
  * Get version information.
  *
- * @param string $use_git  Return version as reported by command `git describe`.
+ * @see docs/api/functions.md
  */
 function csscrush_version($use_git = false) {
 
@@ -207,6 +188,8 @@ function csscrush_version($use_git = false) {
 
 /**
  * Get stats from most recent compile.
+ *
+ * @see docs/api/functions.md
  */
 function csscrush_stat() {
 

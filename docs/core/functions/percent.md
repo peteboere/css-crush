@@ -8,7 +8,7 @@ Calculate a percentage value based on two given values.
 
 <code>percent( *value1*, *value2* [, *precision* = 5] )</code>
 
-## Params
+## Parameters
 
 * *`value1`* Number
 * *`value2`* Number

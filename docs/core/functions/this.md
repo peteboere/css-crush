@@ -10,7 +10,7 @@ Restricted to referencing properties that don't already reference other properti
 
 <code>this( *property-name*, *fallback* )</code>
 
-## Params
+## Parameters
 
 * *`property-name`* Property name
 * *`fallback`* A CSS value

@@ -8,7 +8,7 @@ Manipulate the hue, saturation and lightness of a color value
 
 <code>hsl-adjust( *color*, *hue-offset*, *saturation-offset*, *lightness-offset*  )</code>
 
-## Params
+## Parameters
 
 * *`color`* Any valid CSS color value
 * *`hue-offset`* The percentage to offset the color hue

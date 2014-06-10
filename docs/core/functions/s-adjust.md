@@ -8,7 +8,7 @@ Adjust the saturation of a color value.
 
 <code>s-adjust( *color*, *offset* )</code>
 
-## Params
+## Parameters
 
 * *`color`* Any valid CSS color value
 * *`offset`* The percentage to offset the color hue (percent mark optional)

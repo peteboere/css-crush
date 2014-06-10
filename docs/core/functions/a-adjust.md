@@ -8,7 +8,7 @@ Manipulate the opacity (alpha channel) of a color value.
 
 <code>a-adjust( *color*, *offset* )</code>
 
-## Params
+## Parameters
 
 * *`color`* Any valid CSS color value
 * *`offset`* The percentage to offset the color opacity

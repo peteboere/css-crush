@@ -6,9 +6,9 @@
 
 Manipulate the hue, saturation, lightness and opacity of a color value.
 
-<code>hsl-adjust( *color*, *hue-offset*, *saturation-offset*, *lightness-offset*, *alpha-offset* = 0 )</code>
+<code>hsla-adjust( *color*, *hue-offset*, *saturation-offset*, *lightness-offset*, *alpha-offset* )</code>
 
-## Params
+## Parameters
 
 * *`color`* Any valid CSS color value
 * *`hue-offset`* The percentage to offset the color hue

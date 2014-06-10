@@ -8,7 +8,7 @@ Copy a value from another rule.
 
 <code>query( *reference* [, *property-name* = default] [, *fallback*] )</code>
 
-## Params
+## Parameters
 
 * *`reference`* A CSS selector to match, or abstract rule name
 * *`property-name`* The CSS property name to copy, or just 'default' to pass over. Defaults to the calling property

@@ -8,7 +8,7 @@ Create a data-uri.
 
 <code>data-uri( *url* )</code>
 
-## Params
+## Parameters
 
 * *`url`* URL of an asset
 
