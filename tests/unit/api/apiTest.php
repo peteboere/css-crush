@@ -115,4 +115,21 @@ TPL;
 
         csscrush_set('options', array('enable' => array()));
     }
+
+    public function testAddFunction()
+    {
+        csscrush_add_function(null);
+
+        $this->assertEquals(array(), csscrush_add_function());
+
+        csscrush_add_function('foo', function ($arguments) {return 'bar';});
+
+        $functions = csscrush_add_function();
+        $this->assertTrue(is_callable($functions['foo']['callback']));
+
+        csscrush_add_function('foo', null);
+
+        $functions = csscrush_add_function();
+        $this->assertFalse(isset($functions['foo']));
+    }
 }

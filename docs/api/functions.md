@@ -6,7 +6,7 @@
 
 ## csscrush_file()
 
-Process host CSS file and return the compiled file URL.
+Process CSS file and return the compiled file URL.
 
 <code>csscrush_file( string $file [, array [$options](#api--options) ] )</code>
 
@@ -15,18 +15,18 @@ Process host CSS file and return the compiled file URL.
 
 ## csscrush_tag()
 
-Process host CSS file and return an HTML link tag with populated href.
+Process CSS file and return an html `link` tag with populated href.
 
-<code>csscrush_tag( string $file [, array [$options](#api--options) [, array $attributes ]] )</code>
+<code>csscrush_tag( string $file [, array [$options](#api--options) [, array $tag\_attributes ]] )</code>
 
 
 ***************
 
 ## csscrush_inline()
 
-Process host CSS file and return CSS as text wrapped in html `style` tags.
+Process CSS file and return CSS as text wrapped in html `style` tags.
 
-<code>csscrush_inline( string $file [, array [$options](#api--options) [, array $attributes ]] )</code>
+<code>csscrush_inline( string $file [, array [$options](#api--options) [, array $tag\_attributes ]] )</code>
 
 
 ***************
@@ -51,8 +51,8 @@ subsequent compilations within the duration of the script.
 
 ### Parameters
 
- * `$function_name`  Name of CSS function, or null to clear all CSS
- * `$callback`  CSS function callback, or null to remove function named `$function_name`.
+ * `$function_name`  Name of CSS function, or `null` to clear all functions added with `csscrush_add_function()`.
+ * `$callback`  CSS function callback, or `null` to remove function named `$function_name`.
 
 `callback ( array $arguments, stdClass $context )`
 
@@ -95,7 +95,7 @@ Set a config setting or option default.
 ### Parameters
 
  * `$object_name`  Name of object you want to modify: 'config' or 'options'.
- * `$settings`  Assoc array of keys and values to set, or callable which argument is the object specified in `$object_name`.
+ * `$settings`  Associative array of keys and values to set, or callable which argument is the object specified in `$object_name`.
 
 
 ***************
