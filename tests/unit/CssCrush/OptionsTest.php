@@ -42,8 +42,8 @@ TPL;
             'newlines' => 'unix',
         ));
 
-        $this->assertContains(' * ' . csscrush_version(), $result);
-        $this->assertContains(" * Line breaks\n * preserved\n *", $result);
+        $this->assertContains(' * ' . csscrush_version(), (string) $result);
+        $this->assertContains(" * Line breaks\n * preserved\n *", (string) $result);
     }
 
     public function testFormatters()

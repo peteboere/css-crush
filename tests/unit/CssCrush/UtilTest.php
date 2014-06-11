@@ -89,4 +89,20 @@ class UtilTest extends \PHPUnit_Framework_TestCase
         $test_file = sys_get_temp_dir() . '/' . str_replace('\\', '_', __CLASS__);
         $this->assertTrue(Util::filePutContents($test_file, 'Hello Mum'));
     }
+
+    public function testReadConfigFile()
+    {
+        $contents = <<<'NOW_DOC'
+<?php
+
+$enable = array('svg', 'px2em');
+$boilerplate = true;
+$unrecognised_option = true;
+
+NOW_DOC;
+
+        $options = Util::readConfigFile(temp_file($contents));
+        $this->assertArrayHasKey('enable', $options);
+        $this->assertArrayNotHasKey('unrecognised_option', $options);
+    }
 }

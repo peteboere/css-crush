@@ -222,6 +222,12 @@ class Util
         return $result;
     }
 
+    public static function readConfigFile($path)
+    {
+        require_once $path;
+        return Options::filter(get_defined_vars());
+    }
+
     /*
      * Encode integer to Base64 VLQ.
      */
