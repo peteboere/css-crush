@@ -17,17 +17,15 @@ class OptionsTest extends \PHPUnit_Framework_TestCase
     public function testDefaults()
     {
         $options = new Options();
-        $initial_options = Options::$initialOptions;
+        $standardOptions = Options::filter();
 
-        $this->assertEquals($initial_options, $options->get());
+        $this->assertEquals($standardOptions, $options->get());
 
-        $test_options = array('enable' => array('foo', 'bar'), 'minify' => false);
-        $options = new Options($test_options);
+        $testOptions = array('enable' => array('foo', 'bar'), 'minify' => false);
+        $options = new Options($testOptions);
 
-        $initial_options_copy = $initial_options;
-        $initial_options_copy = $test_options + $initial_options_copy;
-
-        $this->assertEquals($initial_options_copy, $options->get());
+        $initialOptionsCopy = $testOptions + $standardOptions;
+        $this->assertEquals($initialOptionsCopy, $options->get());
     }
 
     public function testBoilerplate()

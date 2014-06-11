@@ -11,13 +11,14 @@ class Options
     protected $computedOptions = array();
     protected $inputOptions = array();
 
-    public static $initialOptions = array(
+    protected static $standardOptions = array(
         'minify' => true,
         'formatter' => null,
         'versioning' => true,
         'boilerplate' => true,
         'vars' => array(),
         'cache' => true,
+        'context' => null,
         'output_file' => null,
         'output_dir' => null,
         'asset_dir' => null,
@@ -35,11 +36,13 @@ class Options
 
     public function __construct(array $options = array(), Options $defaults = null)
     {
+        $options = array_change_key_case($options, CASE_LOWER);
+
         if ($defaults) {
             $options += $defaults->get();
         }
 
-        foreach ($options + self::$initialOptions as $key => $value) {
+        foreach ($options + self::$standardOptions as $key => $value) {
             $this->__set($key, $value);
         }
     }
@@ -163,6 +166,11 @@ class Options
 
     public function get($computed = false)
     {
-        return $computed ? $this->computedOptions : $this->inputOptions;
+        return $computed ? $this->computedOptions : self::filter($this->inputOptions);
+    }
+
+    public static function filter(array $optionsArray = null)
+    {
+        return $optionsArray ? array_intersect_key($optionsArray, self::$standardOptions) : self::$standardOptions;
     }
 }
