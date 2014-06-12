@@ -49,8 +49,20 @@ class CliTest extends \PHPUnit_Framework_TestCase
         $context = __DIR__;
 
         exec("echo '$sample' | php \"$this->path\" --context '$context'", $lines);
-        $expected = 'foo{bar:baz}baz{bar:foo}';
 
-        $this->assertEquals($expected, implode('',$lines));
+        $this->assertEquals('foo{bar:baz}baz{bar:foo}', implode('', $lines));
+    }
+
+    public function testConfigFile()
+    {
+        $currentDirectory = getcwd();
+        chdir(__DIR__ . '/context');
+
+        $sample = '@import "import.css"; @color dark #111; baz {color: dark;}';
+        exec("echo '$sample' | php \"$this->path\"", $lines);
+
+        $this->assertEquals('foo{bar:baz}baz{color:#111}', implode('', $lines));
+
+        chdir($currentDirectory);
     }
 }

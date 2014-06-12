@@ -7,121 +7,26 @@
  */
 require_once 'CssCrush.php';
 
-##################################################################
-##  Exit statuses.
-
 define('STATUS_OK', 0);
 define('STATUS_ERROR', 1);
 
-
-##################################################################
-##  PHP requirements check.
-
 $version = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
-$required_version = 5.3;
+$requiredVersion = 5.3;
 
-if ($version < $required_version) {
-
-    stderr(array(
-        "PHP version $required_version or higher is required to use this tool.",
-        "You are currently running PHP version $version")
-    );
+if ($version < $requiredVersion) {
+    stderr(array("PHP version $requiredVersion or higher is required to use this tool.",
+        "You are currently running PHP $version"));
 
     exit(STATUS_ERROR);
 }
 
-
-##################################################################
-##  Resolve options.
-
-$required_value_opts = array(
-    'i|input|f|file', // Input file. Defaults to STDIN.
-    'o|output', // Output file. Defaults to STDOUT.
-    'E|enable' ,
-    'D|disable',
-    'vars|variables',
-    'formatter',
-    'vendor-target',
-    'context',
-    'newlines',
-);
-
-$optional_value_opts = array(
-    'b|boilerplate',
-    'stat-dump',
-    'trace',
-);
-
-$flag_opts = array(
-    'p|pretty',
-    'w|watch',
-    'list',
-    'help',
-    'version',
-    'source-map',
-);
-
-// Create option strings for getopt().
-$short_opts = array();
-$long_opts = array();
-$join_opts = function ($opts_list, $modifier) use (&$short_opts, &$long_opts) {
-    foreach ($opts_list as $opt) {
-        foreach (explode('|', $opt) as $arg) {
-            if (strlen($arg) === 1) {
-                $short_opts[] = "$arg$modifier";
-            }
-            else {
-                $long_opts[] = "$arg$modifier";
-            }
-        }
-    }
-};
-$join_opts($required_value_opts, ':');
-$join_opts($optional_value_opts, '::');
-$join_opts($flag_opts, '');
-
-
-// Parse opts.
-$opts = getopt(implode($short_opts), $long_opts);
-$args = new stdClass();
-
-// File arguments.
-$args->input_file = pick($opts, 'i', 'input', 'f', 'file');
-$args->output_file = pick($opts, 'o', 'output');
-$args->context = pick($opts, 'context');
-
-// Flags.
-$args->pretty = isset($opts['p']) ?: isset($opts['pretty']);
-$args->watch = isset($opts['w']) ?: isset($opts['watch']);
-$args->list = isset($opts['l']) ?: isset($opts['list']);
-$args->help = isset($opts['h']) ?: isset($opts['help']);
-$args->version = isset($opts['version']);
-$args->source_map = isset($opts['source-map']);
-
-// Arguments that optionally accept a single value.
-$args->boilerplate = pick($opts, 'b', 'boilerplate');
-$args->stat_dump = pick($opts, 'stat-dump');
-$args->trace = pick($opts, 'trace');
-
-// Arguments that require a single value.
-$args->formatter = pick($opts, 'formatter');
-$args->vendor_target = pick($opts, 'vendor-target');
-$args->vars = pick($opts, 'vars', 'variables');
-$args->newlines = pick($opts, 'newlines');
-
-// Arguments that require a value but accept multiple values.
-$args->enable_plugins = pick($opts, 'E', 'enable');
-$args->disable_plugins = pick($opts, 'D', 'disable');
-
-// Detect trailing IO files from raw script arguments.
-list($trailing_input_file, $trailing_output_file) = get_trailing_io_args();
-
-// If detected apply, not overriding explicit IO file options.
-if (! $args->input_file && $trailing_input_file) {
-    $args->input_file = $trailing_input_file;
+try  {
+    $args = parse_args();
 }
-if (! $args->output_file && $trailing_output_file) {
-    $args->output_file = $trailing_output_file;
+catch (Exception $ex) {
+    stderr($ex->getMessage());
+
+    exit($ex->getCode());
 }
 
 
@@ -130,7 +35,7 @@ if (! $args->output_file && $trailing_output_file) {
 
 if ($args->version) {
 
-    stdout(csscrush_version(true)->__toString());
+    stdout((string) csscrush_version(true));
 
     exit(STATUS_OK);
 }
@@ -145,7 +50,6 @@ elseif ($args->list) {
     $plugins = array();
 
     foreach (CssCrush\Plugin::info() as $name => $docs) {
-        // Use first line of plugin doc for description.
         $headline = isset($docs[0]) ? $docs[0] : false;
         $plugins[] = colorize("<g>$name</>" . ($headline ? " - $headline" : ''));
     }
@@ -156,74 +60,19 @@ elseif ($args->list) {
 
 
 ##################################################################
-##  Validate option values.
-
-// Filepath arguments.
-if ($args->input_file) {
-    $input_file = $args->input_file;
-    if (! ($args->input_file = realpath($args->input_file))) {
-        stderr("Input file '$input_file' does not exist.");
-
-        exit(STATUS_ERROR);
-    }
-}
-
-if ($args->output_file) {
-    $out_dir = dirname($args->output_file);
-    if (! realpath($out_dir) && ! @mkdir($out_dir)) {
-        stderr('Output directory does not exist and could not be created.');
-
-        exit(STATUS_ERROR);
-    }
-    $args->output_file = realpath($out_dir) . '/' . basename($args->output_file);
-}
-
-if ($args->context) {
-    if (! ($args->context = realpath($args->context))) {
-        stderr('Context path does not exist.');
-
-        exit(STATUS_ERROR);
-    }
-}
-
-if (is_string($args->boilerplate)) {
-
-    if (! ($args->boilerplate = realpath($args->boilerplate))) {
-        stderr('Boilerplate file does not exist.');
-
-        exit(STATUS_ERROR);
-    }
-}
-
-// Run multiple value arguments through array cast.
-foreach (array('enable_plugins', 'disable_plugins', 'vendor_target') as $arg) {
-    if ($args->{$arg}) {
-        $args->{$arg} = (array) $args->{$arg};
-    }
-}
-
-
-##################################################################
 ##  Resolve input.
 
 $input = null;
 
-// File input.
 if ($args->input_file) {
 
     $input = file_get_contents($args->input_file);
 }
+elseif ($stdin = get_stdin_contents()) {
 
-// STDIN.
-elseif ($stdin_contents = get_stdin_contents()) {
-
-    $input = $stdin_contents;
+    $input = $stdin;
 }
-
-// Bail with manpage if no input.
 else {
-
-    // No input, just output help screen.
     stdout(manpage());
 
     exit(STATUS_OK);
@@ -237,118 +86,112 @@ if ($args->watch && ! $args->input_file) {
     exit(STATUS_ERROR);
 }
 
+
 ##################################################################
-##  Set process options.
+##  Resolve process options.
 
-$process_opts = array();
-$process_opts['boilerplate'] = isset($args->boilerplate) ? $args->boilerplate : false;
-$process_opts['minify'] = $args->pretty ? false : true;
-
-if ($args->formatter) {
-    $process_opts['formatter'] = $args->formatter;
+$configFile = 'crushfile.php';
+if (file_exists($configFile)) {
+    $options = CssCrush\Util::readConfigFile($configFile);
+}
+else {
+    $options = array();
 }
 
-if ($args->newlines) {
-    $process_opts['newlines'] = $args->newlines;
+if ($args->pretty) {
+    $options['minify'] = false;
+}
+
+foreach (array('boilerplate', 'formatter', 'newlines', 'stat_dump', 'source_map') as $option) {
+    if ($args->$option) {
+        $options[$option] = $args->$option;
+    }
 }
 
 if ($args->enable_plugins) {
-    $process_opts['enable'] = parse_list($args->enable_plugins);
+    $options['enable'] = parse_list($args->enable_plugins);
 }
 
 if ($args->disable_plugins) {
-    $process_opts['disable'] = parse_list($args->disable_plugins);
+    $options['disable'] = parse_list($args->disable_plugins);
+}
+
+if ($args->vendor_target) {
+    $options['vendor_target'] = parse_list($args->vendor_target);
 }
 
 if ($args->trace) {
     if (is_string($args->trace)) {
         $args->trace = (array) $args->trace;
     }
-    $process_opts['trace'] = is_array($args->trace) ? parse_list($args->trace) : true;
-}
-
-if ($args->stat_dump) {
-    $process_opts['stat_dump'] = $args->stat_dump;
-}
-
-if ($args->vendor_target) {
-    $process_opts['vendor_target'] = parse_list($args->vendor_target);
-}
-
-if ($args->source_map) {
-    $process_opts['source_map'] = true;
+    $options['trace'] = is_array($args->trace) ? parse_list($args->trace) : true;
 }
 
 if ($args->vars) {
     parse_str($args->vars, $in_vars);
-    $process_opts['vars'] = $in_vars;
+    $options['vars'] = $in_vars;
 }
 
-// Resolve an input file context for relative filepaths.
-if (! $args->context) {
-    $args->context = $args->input_file ? dirname($args->input_file) : getcwd();
-}
-$process_opts['context'] = $args->context;
-
-// Set document_root to the current working directory.
-$process_opts['doc_root'] = getcwd();
-
-// If output file is specified set output directory and output filename.
 if ($args->output_file) {
-    $process_opts['output_dir'] = dirname($args->output_file);
-    $process_opts['output_file'] = basename($args->output_file);
+    $options['output_dir'] = dirname($args->output_file);
+    $options['output_file'] = basename($args->output_file);
 }
+
+$options += array(
+    'doc_root' => getcwd(),
+    'context' => $args->context,
+);
+
 
 ##################################################################
 ##  Output.
 
 if ($args->watch) {
 
-    // Override the IO class.
     csscrush_set('config', array('io' => 'CssCrush\IO\Watch'));
 
     stdout('CONTROL-C to quit.');
 
     // Surpress error reporting to avoid flooding the screen.
     error_reporting(0);
-    $outstanding_errors = false;
+    $outstandingErrors = false;
 
     while (true) {
 
-        csscrush_file($args->input_file, $process_opts);
+        csscrush_file($args->input_file, $options);
         $stats = csscrush_stat();
 
         $changed = $stats['compile_time'] && ! $stats['errors'];
         $errors = $stats['errors'];
-        $show_errors = $errors && (! $outstanding_errors || ($outstanding_errors != $errors));
+        $showErrors = $errors && (! $outstandingErrors || ($outstandingErrors != $errors));
 
-        $output_file_display = "$stats[output_filename] ($stats[output_path])";
-        $input_file_display = "$stats[input_filename] ($stats[input_path])";
+        $outputFileDisplay = "$stats[output_filename] ($stats[output_path])";
+        $inputFileDisplay = "$stats[input_filename] ($stats[input_path])";
 
-        $compile_info = array();
+        $compileInfo = array();
         if ($stats['input_path']) {
-            $compile_info['input_file'] = $input_file_display;
+            $compileInfo['input_file'] = $inputFileDisplay;
         }
 
         if ($errors) {
-            if ($show_errors) {
-                $outstanding_errors = $errors;
+            if ($showErrors) {
+                $outstandingErrors = $errors;
                 if ($stats['output_path']) {
-                    stderr(colorize("<R>ERROR: <r>$output_file_display</>"), true, false);
+                    stderr(colorize("<R>ERROR: <r>$outputFileDisplay</>"), true, false);
                 }
                 stderr($errors);
             }
         }
         elseif ($changed) {
-            stdout(colorize("<G>FILE UPDATED: <g>$output_file_display</>"));
-            $compile_info['compile_time'] = round($stats['compile_time'], 5) . ' seconds';
-            $trace_options = isset($process_opts['trace']) ? array_flip($process_opts['trace']) : null;
-            $compile_info += $trace_options ? array_intersect_key($stats, $trace_options) : array();
-            $outstanding_errors = false;
+            stdout(colorize("<G>FILE UPDATED: <g>$outputFileDisplay</>"));
+            $compileInfo['compile_time'] = round($stats['compile_time'], 5) . ' seconds';
+            $traceOptions = isset($options['trace']) ? array_flip($options['trace']) : null;
+            $compileInfo += $traceOptions ? array_intersect_key($stats, $traceOptions) : array();
+            $outstandingErrors = false;
         }
 
-        if ($show_errors || $changed) {
-            stdout(format_stats($compile_info));
+        if ($showErrors || $changed) {
+            stdout(format_stats($compileInfo));
         }
 
         sleep(1);
@@ -356,16 +199,8 @@ if ($args->watch) {
 }
 else {
 
-    $output = csscrush_string($input, $process_opts);
-    $stats = csscrush_stat();
-
-    if ($stats['errors']) {
-        stderr($stats['errors']);
-    }
-
     if ($args->output_file) {
-
-        if (! @file_put_contents($args->output_file, $output, LOCK_EX)) {
+        if (! @file_put_contents($args->output_file, csscrush_string($input, $options))) {
 
             $message[] = "Could not write to path '{$args->output_file}'.";
             stderr($message);
@@ -373,12 +208,23 @@ else {
             exit(STATUS_ERROR);
         }
     }
+    elseif (isset($options['output_dir'])) {
+        csscrush_file($args->input_file, $options);
+    }
     else {
-        stdout($output);
+        stdout(csscrush_string($input, $options));
+    }
+
+    $stats = csscrush_stat();
+
+    if ($stats['errors']) {
+        stderr($stats['errors']);
+
+        exit(STATUS_ERROR);
     }
 
     if (is_array($args->trace)) {
-        // Use stderror for stats to preserve stdout.
+        unset($stats['errors']);
         stderr(format_stats($stats) . PHP_EOL, true, 'b');
     }
 
@@ -390,25 +236,27 @@ else {
 ##  Helpers.
 
 function stderr($lines, $closing_newline = true, $color = 'r') {
+
     $out = implode(PHP_EOL, (array) $lines) . ($closing_newline ? PHP_EOL : '');
     fwrite(STDERR, colorize($color ? "<$color>$out</>" : $out));
 }
 
 function stdout($lines, $closing_newline = true) {
+
     $out = implode(PHP_EOL, (array) $lines) . ($closing_newline ? PHP_EOL : '');
 
-    // On OSX terminal is sometimes truncating 'visual' output to terminal
-    // with fwrite to STDOUT.
+    // On OSX terminal is sometimes truncating 'visual' output to terminal with fwrite to STDOUT.
     echo $out;
 }
 
 function get_stdin_contents() {
+
     $stdin = fopen('php://stdin', 'r');
     stream_set_blocking($stdin, false);
-    $stdin_contents = stream_get_contents($stdin);
+    $stdinContents = stream_get_contents($stdin);
     fclose($stdin);
 
-    return $stdin_contents;
+    return $stdinContents;
 }
 
 function parse_list(array $option) {
@@ -428,6 +276,7 @@ function parse_list(array $option) {
 }
 
 function format_stats($stats) {
+
     $out = array();
     foreach ($stats as $name => $value) {
         $name = ucfirst(str_replace('_', ' ', $name));
@@ -490,7 +339,7 @@ function colorize($str) {
     return str_replace($find, $replace, $str);
 }
 
-function get_trailing_io_args() {
+function get_trailing_io_args($required_value_opts) {
 
     $trailing_input_file = null;
     $trailing_output_file = null;
@@ -500,8 +349,8 @@ function get_trailing_io_args() {
     array_shift($trailing_args);
     $trailing_args = array_slice($trailing_args, -3);
 
-    // Create patterns to detecting options.
-    $required_values = implode('|', $GLOBALS['required_value_opts']);
+    // Create patterns for detecting options.
+    $required_values = implode('|', $required_value_opts);
     $value_opt_patt = "~^-{1,2}($required_values)$~";
     $other_opt_patt = "~^-{1,2}([a-z0-9\-]+)?(=|$)~ix";
 
@@ -539,6 +388,139 @@ function get_trailing_io_args() {
     }
 
     return array($trailing_input_file, $trailing_output_file);
+}
+
+function parse_args() {
+
+    $required_value_opts = array(
+        'i|input|f|file', // Input file. Defaults to STDIN.
+        'o|output', // Output file. Defaults to STDOUT.
+        'E|enable' ,
+        'D|disable',
+        'vars|variables',
+        'formatter',
+        'vendor-target',
+        'context',
+        'newlines',
+    );
+
+    $optional_value_opts = array(
+        'b|boilerplate',
+        'stat-dump',
+        'trace',
+    );
+
+    $flag_opts = array(
+        'p|pretty',
+        'w|watch',
+        'list',
+        'help',
+        'version',
+        'source-map',
+    );
+
+    // Create option strings for getopt().
+    $short_opts = array();
+    $long_opts = array();
+    $join_opts = function ($opts_list, $modifier) use (&$short_opts, &$long_opts) {
+        foreach ($opts_list as $opt) {
+            foreach (explode('|', $opt) as $arg) {
+                if (strlen($arg) === 1) {
+                    $short_opts[] = "$arg$modifier";
+                }
+                else {
+                    $long_opts[] = "$arg$modifier";
+                }
+            }
+        }
+    };
+    $join_opts($required_value_opts, ':');
+    $join_opts($optional_value_opts, '::');
+    $join_opts($flag_opts, '');
+
+    $opts = getopt(implode($short_opts), $long_opts);
+
+    $args = new stdClass();
+
+    // Information options.
+    $args->help = isset($opts['h']) ?: isset($opts['help']);
+    $args->version = isset($opts['version']);
+    $args->list = isset($opts['l']) ?: isset($opts['list']);
+
+    // File arguments.
+    $args->input_file = pick($opts, 'i', 'input', 'f', 'file');
+    $args->output_file = pick($opts, 'o', 'output');
+    $args->context = pick($opts, 'context');
+
+    // Flags.
+    $args->pretty = isset($opts['p']) ?: isset($opts['pretty']);
+    $args->watch = isset($opts['w']) ?: isset($opts['watch']);
+    $args->source_map = isset($opts['source-map']);
+
+    // Arguments that optionally accept a single value.
+    $args->boilerplate = pick($opts, 'b', 'boilerplate');
+    $args->stat_dump = pick($opts, 'stat-dump');
+    $args->trace = pick($opts, 'trace');
+
+    // Arguments that require a single value.
+    $args->formatter = pick($opts, 'formatter');
+    $args->vendor_target = pick($opts, 'vendor-target');
+    $args->vars = pick($opts, 'vars', 'variables');
+    $args->newlines = pick($opts, 'newlines');
+
+    // Arguments that require a value but accept multiple values.
+    $args->enable_plugins = pick($opts, 'E', 'enable');
+    $args->disable_plugins = pick($opts, 'D', 'disable');
+
+    // Run multiple value arguments through array cast.
+    foreach (array('enable_plugins', 'disable_plugins', 'vendor_target') as $arg) {
+        if ($args->{$arg}) {
+            $args->{$arg} = (array) $args->{$arg};
+        }
+    }
+
+    // Detect trailing IO files from raw script arguments.
+    list($trailing_input_file, $trailing_output_file) = get_trailing_io_args($required_value_opts);
+
+    // If detected apply, not overriding explicit IO file options.
+    if (! $args->input_file && $trailing_input_file) {
+        $args->input_file = $trailing_input_file;
+    }
+    if (! $args->output_file && $trailing_output_file) {
+        $args->output_file = $trailing_output_file;
+    }
+
+    if ($args->input_file) {
+        $input_file = $args->input_file;
+        if (! ($args->input_file = realpath($args->input_file))) {
+            throw new Exception("Input file '$input_file' does not exist.", STATUS_ERROR);
+        }
+    }
+
+    if ($args->output_file) {
+        $out_dir = dirname($args->output_file);
+        if (! realpath($out_dir) && ! @mkdir($out_dir, 0755, true)) {
+            throw new Exception('Output directory does not exist and could not be created.', STATUS_ERROR);
+        }
+        $args->output_file = realpath($out_dir) . '/' . basename($args->output_file);
+    }
+
+    if ($args->context) {
+        if (! ($args->context = realpath($args->context))) {
+            throw new Exception('Context path does not exist.', STATUS_ERROR);
+        }
+    }
+    else {
+        $args->context = $args->input_file ? dirname($args->input_file) : getcwd();
+    }
+
+    if (is_string($args->boilerplate)) {
+        if (! ($args->boilerplate = realpath($args->boilerplate))) {
+            throw new Exception('Boilerplate file does not exist.', STATUS_ERROR);
+        }
+    }
+
+    return $args;
 }
 
 function manpage() {
@@ -622,7 +604,7 @@ function manpage() {
     cat styles.css | csscrush --vars 'foo=black&bar=white' > alt-styles.css
 
     # Linting.
-    csscrush --pretty --E property-sorter -i styles.css -o linted.css
+    csscrush --pretty -E property-sorter -i styles.css -o linted.css
 
     # Watch mode.
     csscrush --watch -i styles.css -o compiled/styles.css

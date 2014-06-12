@@ -122,14 +122,17 @@ TPL;
 
         $this->assertEquals(array(), csscrush_add_function());
 
-        csscrush_add_function('foo', function ($arguments) {return 'bar';});
+        csscrush_add_function('baz', function ($arguments) {return implode('-', $arguments);});
+
+        $result = (string) csscrush_string('.foo {bar: baz(one, two, three);}');
+        $this->assertEquals('.foo{bar:one-two-three}', $result);
 
         $functions = csscrush_add_function();
-        $this->assertTrue(is_callable($functions['foo']['callback']));
+        $this->assertTrue(is_callable($functions['baz']['callback']));
 
-        csscrush_add_function('foo', null);
+        csscrush_add_function('baz', null);
 
         $functions = csscrush_add_function();
-        $this->assertFalse(isset($functions['foo']));
+        $this->assertFalse(isset($functions['baz']));
     }
 }

@@ -52,7 +52,6 @@ class Importer
 
             $match_len = strlen($match[0][0]);
             $match_start = $match[0][1];
-            $match_end = $match_start + $match_len;
 
             $import = new \stdClass();
             $import->url = $process->tokens->get($match[1][0]);

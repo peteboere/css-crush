@@ -305,7 +305,6 @@ class Process
 
                 foreach ($group_array as $func_group => $vendors) {
                     foreach ($vendors as $vendor => $replacements) {
-
                         if (! in_array($vendor, $vendor_names)) {
                             unset($this->aliases['function_groups'][$func_group][$vendor]);
                         }
