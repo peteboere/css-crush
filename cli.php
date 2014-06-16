@@ -491,18 +491,18 @@ function parse_args() {
     }
 
     if ($args->input_file) {
-        $input_file = $args->input_file;
+        $inputFile = $args->input_file;
         if (! ($args->input_file = realpath($args->input_file))) {
-            throw new Exception("Input file '$input_file' does not exist.", STATUS_ERROR);
+            throw new Exception("Input file '$inputFile' does not exist.", STATUS_ERROR);
         }
     }
 
     if ($args->output_file) {
-        $out_dir = dirname($args->output_file);
-        if (! realpath($out_dir) && ! @mkdir($out_dir, 0755, true)) {
+        $outDir = dirname($args->output_file);
+        if (! realpath($outDir) && ! @mkdir($outDir)) {
             throw new Exception('Output directory does not exist and could not be created.', STATUS_ERROR);
         }
-        $args->output_file = realpath($out_dir) . '/' . basename($args->output_file);
+        $args->output_file = realpath($outDir) . '/' . basename($args->output_file);
     }
 
     if ($args->context) {
