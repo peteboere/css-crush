@@ -90,7 +90,7 @@ function csscrush_string($string, $options = array()) {
 
     Crush::$process = new CssCrush\Process($options, array('type' => 'filter', 'data' => $string));
 
-    return Crush::$process->compile();
+    return Crush::$process->compile()->__toString();
 }
 
 

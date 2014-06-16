@@ -499,7 +499,7 @@ function parse_args() {
 
     if ($args->output_file) {
         $outDir = dirname($args->output_file);
-        if (! realpath($outDir) && ! @mkdir($outDir)) {
+        if (! realpath($outDir) && ! @mkdir($outDir, 0755, true)) {
             throw new Exception('Output directory does not exist and could not be created.', STATUS_ERROR);
         }
         $args->output_file = realpath($outDir) . '/' . basename($args->output_file);
