@@ -1,3 +1,18 @@
+### 2.2.0 (2014-06-17)
+
+* Rule nesting now works without `@in` directives.
+* Added `csscrush_add_function()` as a simple way of adding custom functions without plugins.
+* Added alternative directive names: `@set`/`@ifset` for `@define`/`@ifdefine` and `@selector` for `@selector-alias`.
+* Added support for a command line config file (`crushfile.php`).
+* Added `Util::readConfigFile()` method to enable easier configuration sharing between different workflows; esp. command-line and server.
+* Protocoled `@import` directives are now hoisted to the top of output.
+* Default output filename now uses `.crush.css` suffix only when outputting to the same directory as input. Otherwise a regular `.css` suffix is used.
+* Updated vendor aliases.
+* Removed math shorthand syntax.
+* Deprecated `@in` directives. Supported until at-least 3.x.
+* Deprecated `@define`/`@ifdefine`/`@selector-alias` in favour of new directive names. Supported until at-least 3.x.
+* Deprecated the static api methods in favour of the `csscrush_*` functions. Supported until at-least 3.x.
+
 ### 2.1.0 (2014-03-21)
 
 * Added HHVM support (HHVM >= 2.4)
