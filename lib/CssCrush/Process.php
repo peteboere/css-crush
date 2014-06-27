@@ -570,8 +570,8 @@ class Process
             $block = trim($ruleMatch['block_content']);
             $replace = '';
 
-            // If rules are nested they must be extracted and have selectors merged with the parent.
-            if (preg_match_all(Regex::$patt->r_token, $block, $childRules)) {
+            // If rules are nested inside we set their parent property.
+            if (preg_match_all(Regex::$patt->r_token, $block, $childMatches)) {
 
                 $block = preg_replace_callback($rulesAndMediaPatt, function ($m) use (&$replace) {
                     $replace .= $m[0];
@@ -579,9 +579,11 @@ class Process
                 }, $block);
 
                 $rule = new Rule($selector, $block, $ruleMatch['trace_token']);
-                $rawSelectors = array_keys($rule->selectors->store);
-                foreach ($childRules[0] as $childRule) {
-                    $tokens->get($childRule)->selectors->merge($rawSelectors);
+                foreach ($childMatches[0] as $childToken) {
+                    $childRule = $tokens->get($childToken);
+                    if (! $childRule->parent) {
+                        $childRule->parent = $rule;
+                    }
                 }
             }
             else  {
@@ -595,15 +597,21 @@ class Process
 
             $this->string->splice($replace, $traceOffset, strlen($ruleMatch[0]));
         }
+
+        // Flip, since we just captured rules in reverse order.
+        $this->tokens->store->r = array_reverse($this->tokens->store->r);
+
+        foreach ($this->tokens->store->r as $rule) {
+            if ($rule->parent) {
+                $rule->selectors->merge(array_keys($rule->parent->selectors->store));
+            }
+        }
     }
 
     protected function processRules()
     {
         // Create table of name/selector to rule references.
         $named_references = array();
-
-        // Flip because rules are captured from end of file.
-        $this->tokens->store->r = array_reverse($this->tokens->store->r);
 
         foreach ($this->tokens->store->r as $rule) {
             if ($rule->name) {

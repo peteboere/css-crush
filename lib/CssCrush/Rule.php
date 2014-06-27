@@ -14,6 +14,7 @@ class Rule
     public $name;
     public $isAbstract;
     public $resolvedExtendables;
+    public $parent;
 
     public $selectors;
     public $declarations;
