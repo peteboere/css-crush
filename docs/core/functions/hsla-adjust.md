@@ -20,6 +20,8 @@ Manipulate the hue, saturation, lightness and opacity of a color value.
 
 The modified color value.
 
+## Examples
+
 ```css
 color: hsla-adjust( #f00 0 5 5 -10 );
 ```

@@ -280,47 +280,46 @@ function fn__query($input, $context) {
 
     $args = Functions::parseArgs($input);
 
-    // Function relies on a context property, bail if none.
-    if (count($args) < 1 || ! isset($context->property)) {
+    // Context property is required.
+    if (! count($args) || ! isset($context->property)) {
         return '';
     }
 
-    $call_property = $context->property;
+    list($target, $property, $fallback) = $args + array(null, $context->property, null);
+
+    if (strtolower($property) === 'default') {
+        $property = $context->property;
+    }
+
+    if (! preg_match(Regex::$patt->rooted_ident, $target)) {
+        $target = Selector::makeReadable($target);
+    }
+
+    $targetRule = null;
     $references =& Crush::$process->references;
-
-    // Resolve arguments.
-    $name = array_shift($args);
-    $property = $call_property;
-
-    if (isset($args[0])) {
-        $args[0] = strtolower($args[0]);
-        if ($args[0] !== 'default') {
-            $property = array_shift($args);
-        }
-        else {
-            array_shift($args);
-        }
+    $targetLowerCase = strtolower($target);
+    if ($targetLowerCase === 'parent') {
+        $targetRule = $context->rule->parent;
     }
-    $default = isset($args[0]) ? $args[0] : null;
-
-    if (! preg_match(Regex::$patt->rooted_ident, $name)) {
-        $name = Selector::makeReadable($name);
+    elseif ($targetLowerCase === 'top') {
+        $targetRule = $context->rule->parent;
+        while ($targetRule && $targetRule->parent && $targetRule = $targetRule->parent);
+    }
+    elseif (isset($references[$target])) {
+        $targetRule = $references[$target];
     }
 
-    // If a rule reference is found, query its data.
     $result = '';
-    if (isset($references[$name])) {
-        $query_rule = $references[$name];
-        $query_rule->declarations->process($query_rule);
-        $query_rule->declarations->expandData('queryData', $property);
-
-        if (isset($query_rule->declarations->queryData[$property])) {
-            $result = $query_rule->declarations->queryData[$property];
+    if ($targetRule) {
+        $targetRule->declarations->process($targetRule);
+        $targetRule->declarations->expandData('queryData', $property);
+        if (isset($targetRule->declarations->queryData[$property])) {
+            $result = $targetRule->declarations->queryData[$property];
         }
     }
 
-    if ($result === '' && isset($default)) {
-        $result = $default;
+    if ($result === '' && isset($fallback)) {
+        $result = $fallback;
     }
 
     return $result;

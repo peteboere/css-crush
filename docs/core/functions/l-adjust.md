@@ -17,6 +17,8 @@ Adjust the lightness of a color value.
 
 The modified color value.
 
+## Examples
+
 ```css
 color: l-adjust( deepskyblue 10 );
 ```

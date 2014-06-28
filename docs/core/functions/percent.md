@@ -18,6 +18,7 @@ Calculate a percentage value based on two given values.
 
 *`value1`* as a percentage of *`value2`*.
 
+## Examples
 
 ```css
 width: percent( 20, 960 );

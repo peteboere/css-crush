@@ -19,6 +19,8 @@ Manipulate the hue, saturation and lightness of a color value
 
 The modified color value
 
+## Examples
+
 ```css
 /* Lighten and increase saturation */
 color: hsl-adjust( red 0 5 5 );

@@ -17,6 +17,9 @@ Manipulate the opacity (alpha channel) of a color value.
 
 The modified color value
 
+
+## Examples
+
 ```css
 /* Reduce color opacity by 10% */
 color: a-adjust( rgb(50,50,0) -10 );

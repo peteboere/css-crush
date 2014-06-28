@@ -17,6 +17,8 @@ Adjust the saturation of a color value.
 
 The modified color value.
 
+## Examples
+
 ```css
 /* Desaturate */
 color: s-adjust( deepskyblue -100 );

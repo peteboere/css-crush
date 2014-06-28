@@ -6,18 +6,21 @@
 
 Copy a value from another rule.
 
-<code>query( *reference* [, *property-name* = default] [, *fallback*] )</code>
+<code>query( *target* [, *property-name* = default] [, *fallback*] )</code>
 
 ## Parameters
 
-* *`reference`* A CSS selector to match, or abstract rule name
-* *`property-name`* The CSS property name to copy, or just 'default' to pass over. Defaults to the calling property
+* *`target`* A rule selector, an abstract rule name or context keyword (`top` or `parent` with nested structures)
+* *`property-name`* The CSS property name to copy, or just `default` to pass over. Defaults to the calling property
 * *`fallback`* A CSS value to use if the target property does not exist
 
 
 ## Returns
 
 The referenced property value, or the fallback if it has not been set.
+
+
+## Examples
 
 
 ```css
@@ -29,9 +32,23 @@ The referenced property value, or the fallback if it has not been set.
 .bar {
   width: query( .foo ); /* 40em */
   margin-top: query( .foo, height ); /* 100em */
-  margin-right: query( .foo, top, auto ); /* auto */
   margin-bottom: query( .foo, default, 3em ); /* 3em */
 }
 ```
 
+Using context keywords:
 
+```css
+.foo {
+  width: 40em;
+  .bar {
+    width: 30em;
+    .baz: {
+      width: query( parent ); /* 30em */
+      .qux {
+        width: query( top ); /* 40em */
+      }
+    }
+  }
+}
+```

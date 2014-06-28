@@ -19,6 +19,7 @@ Restricted to referencing properties that don't already reference other properti
 
 The referenced property value, or the fallback if it has not been set.
 
+## Examples
 
 ```css
 .foo {

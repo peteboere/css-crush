@@ -17,6 +17,8 @@ Adjust the hue of a color value.
 
 The modified color value.
 
+## Examples
+
 ```css
 color: h-adjust( deepskyblue -10 );
 ```
