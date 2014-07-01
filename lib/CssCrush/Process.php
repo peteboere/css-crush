@@ -548,7 +548,7 @@ class Process
 
     public function captureRules()
     {
-        $tokens = Crush::$process->tokens;
+        $tokens = $this->tokens;
 
         $rulePatt = Regex::make('~
             (?<trace_token> {{ t_token }})
@@ -590,22 +590,30 @@ class Process
                 $rule = new Rule($selector, $block, $ruleMatch['trace_token']);
             }
 
-            // Store rules only if they have declarations or extend arguments.
-            if (! empty($rule->declarations->store) || $rule->extendArgs) {
-                $replace = $tokens->add($rule, 'r', $rule->label) . $replace;
-            }
+            $replace = $tokens->add($rule, 'r', $rule->label) . $replace;
 
             $this->string->splice($replace, $traceOffset, strlen($ruleMatch[0]));
         }
 
         // Flip, since we just captured rules in reverse order.
-        $this->tokens->store->r = array_reverse($this->tokens->store->r);
+        $tokens->store->r = array_reverse($tokens->store->r);
 
-        foreach ($this->tokens->store->r as $rule) {
+        foreach ($tokens->store->r as $rule) {
             if ($rule->parent) {
                 $rule->selectors->merge(array_keys($rule->parent->selectors->store));
             }
         }
+
+        // Cleanup unused, or unuseable, rules.
+        $this->string->pregReplaceCallback(Regex::$patt->r_token, function ($m) use ($tokens) {
+            $ruleToken = $m[0];
+            $rule = $tokens->store->r[$ruleToken];
+            if (empty($rule->declarations->store) && ! $rule->extendArgs) {
+                unset($tokens->store->r[$ruleToken]);
+                return '';
+            }
+            return $ruleToken;
+        });
     }
 
     protected function processRules()
