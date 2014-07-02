@@ -604,7 +604,7 @@ class Process
             }
         }
 
-        // Cleanup unused, or unuseable, rules.
+        // Cleanup unusable rules.
         $this->string->pregReplaceCallback(Regex::$patt->r_token, function ($m) use ($tokens) {
             $ruleToken = $m[0];
             $rule = $tokens->store->r[$ruleToken];

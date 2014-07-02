@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class Crush
 {
-    const VERSION = '2.2.0';
+    const VERSION = '2.2.1';
 
     // Global settings.
     public static $config;
