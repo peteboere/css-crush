@@ -31,13 +31,14 @@ class IO
     {
         $options = $this->process->options;
 
-        $outputBasename = basename($this->process->input->filename, '.css');
+        $inputBasename = basename($this->process->input->filename, '.css');
+        $outputBasename = $inputBasename;
 
         if (! empty($options->output_file)) {
             $outputBasename = basename($options->output_file, '.css');
         }
 
-        if ($this->process->input->dir === $this->getOutputDir()) {
+        if ($this->process->input->dir === $this->getOutputDir() && $inputBasename === $outputBasename) {
             $outputBasename .= '.crush';
         }
 
@@ -149,10 +150,8 @@ class IO
     {
         $process = $this->process;
 
-        if (
-            file_exists($process->cacheFile) &&
-            $process->cacheData
-        ) {
+        if (file_exists($process->cacheFile) && $process->cacheData) {
+
             // Already loaded and config file exists in the current directory
             return;
         }
@@ -173,7 +172,7 @@ class IO
             // Config file may exist but not be writable (may not be visible in some ftp situations?)
             if ($cache_data_exists) {
                 if (! @unlink($process->cacheFile)) {
-                    notice('[[CssCrush]] - Could not delete cache data file.');
+                    notice('Could not delete cache data file.');
                 }
             }
             else {

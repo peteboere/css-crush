@@ -34,13 +34,13 @@ class CliTest extends \PHPUnit_Framework_TestCase
     public function testIO()
     {
         $in_path = temp_file();
-        $out_path = temp_file();
+        $out_path = temp_file() . '.css';
 
         file_put_contents($in_path, $this->sample);
-        exec("php \"$this->path\" -i '$in_path' -o '$out_path' --enable property-sorter");
+        exec("php \"$this->path\" -i '$in_path' -o '$out_path' --enable property-sorter --test");
         $expected = 'p{position:absolute;opacity:1;color:red}';
 
-        $this->assertEquals($expected, file_get_contents($out_path));
+        $this->assertContains($expected, file_get_contents($out_path));
     }
 
     public function testContext()

@@ -612,7 +612,7 @@ function canvas_requirements() {
 
     if (! extension_loaded('gd')) {
         $requirements_met = false;
-        warning('[[CssCrush]] - GD extension not available.');
+        warning('GD extension not available.');
     }
     else {
         $gd_info = implode('|', array_keys(array_filter(gd_info())));
@@ -620,7 +620,7 @@ function canvas_requirements() {
         foreach (array('jpe?g' => 'JPG', 'png' => 'PNG') as $file_ext_patt => $file_ext) {
             if (! preg_match("~\b(?<ext>$file_ext_patt) support\b~i", $gd_info)) {
                 $requirements_met = false;
-                warning("[[CssCrush]] - GD extension has no $file_ext support.");
+                warning("GD extension has no $file_ext support.");
             }
         }
     }

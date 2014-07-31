@@ -207,7 +207,7 @@ class Util
             return true;
         }
 
-        warning("[[CssCrush]] - Could not write file '$file'.");
+        warning("Could not write file '$file'.");
 
         return false;
     }
@@ -215,7 +215,7 @@ class Util
     public static function parseIni($path, $sections = false)
     {
         if (! ($result = @parse_ini_file($path, $sections))) {
-            notice("[[CssCrush]] - Ini file '$path' could not be parsed.");
+            notice("Ini file '$path' could not be parsed.");
 
             return false;
         }

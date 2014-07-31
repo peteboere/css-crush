@@ -59,7 +59,6 @@ class Logger
      */
     public function error($message, array $context = array())
     {
-        Crush::$process->errors[] = $message;
         trigger_error($message, E_USER_ERROR);
     }
 
@@ -75,7 +74,6 @@ class Logger
      */
     public function warning($message, array $context = array())
     {
-        Crush::$process->errors[] = $message;
         trigger_error($message, E_USER_WARNING);
     }
 
@@ -88,7 +86,6 @@ class Logger
      */
     public function notice($message, array $context = array())
     {
-        Crush::$process->errors[] = $message;
         trigger_error($message, E_USER_NOTICE);
     }
 

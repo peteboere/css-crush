@@ -80,7 +80,7 @@ class Crush
             }
 
             if (! $doc_root) {
-                warning("[[CssCrush]] - Could not get a valid DOCUMENT_ROOT reference.");
+                warning("Could not get a valid DOCUMENT_ROOT reference.");
             }
         }
 
@@ -279,21 +279,30 @@ class Crush
     }
 }
 
+function warning($message, $context = array()) {
+    Crush::$process->errors[] = $message;
+    $logger = Crush::$config->logger;
+    if ($logger instanceof Logger) {
+        $message = "[[CssCrush]] - $message";
+    }
+    $logger->warning($message, $context);
+}
 
-function log($message, $context = array(), $type = 'debug') {
-    Crush::$config->logger->{$type}($message, $context);
+function notice($message, $context = array()) {
+    Crush::$process->warnings[] = $message;
+    $logger = Crush::$config->logger;
+    if ($logger instanceof Logger) {
+        $message = "[[CssCrush]] - $message";
+    }
+    $logger->notice($message, $context);
 }
 
 function debug($message, $context = array()) {
     Crush::$config->logger->debug($message, $context);
 }
 
-function notice($message, $context = array()) {
-    Crush::$config->logger->notice($message, $context);
-}
-
-function warning($message, $context = array()) {
-    Crush::$config->logger->warning($message, $context);
+function log($message, $context = array(), $type = 'debug') {
+    Crush::$config->logger->$type($message, $context);
 }
 
 

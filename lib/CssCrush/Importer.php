@@ -77,7 +77,7 @@ class Importer
             $import->content = @file_get_contents($import->path);
             if ($import->content === false) {
 
-                debug("Import file '{$import->url->value}' not found");
+                notice("Import file '{$import->url->value}' not found");
                 $str = substr_replace($str, '', $match_start, $match_len);
                 continue;
             }
@@ -256,11 +256,11 @@ class Importer
 
         if (! $balanced_curlies) {
             $errors = true;
-            warning('[[CssCrush]] - ' . $validate_pairings($str, '{}') ?: "Unbalanced '{' in $current_file.");
+            warning($validate_pairings($str, '{}') ?: "Unbalanced '{' in $current_file.");
         }
         if (! $balanced_parens) {
             $errors = true;
-            warning('[[CssCrush]] - ' . $validate_pairings($str, '()') ?: "Unbalanced '(' in $current_file.");
+            warning($validate_pairings($str, '()') ?: "Unbalanced '(' in $current_file.");
         }
 
         return $errors ? false : true;

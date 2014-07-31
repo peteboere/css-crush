@@ -19,7 +19,7 @@ function csscrush_file($file, $options = array()) {
         Crush::$process = new CssCrush\Process($options, array('type' => 'file', 'data' => $file));
     }
     catch (\Exception $e) {
-        CssCrush\warning("[[CssCrush]] - {$e->getMessage()}");
+        CssCrush\warning($e->getMessage());
 
         return '';
     }
@@ -198,6 +198,7 @@ function csscrush_stat() {
 
     // Get logged errors as late as possible.
     $stats['errors'] = $process->errors;
+    $stats['warnings'] = $process->warnings;
     $stats += array('compile_time' => 0);
 
     return $stats;

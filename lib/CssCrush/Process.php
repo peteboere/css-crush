@@ -35,8 +35,9 @@ class Process
         $this->selectorAliasesPatt = null;
         $this->io = new Crush::$config->io($this);
 
-        $this->debugLog = array();
         $this->errors = array();
+        $this->warnings = array();
+        $this->debugLog = array();
         $this->stat = array();
 
         // Copy config values.
@@ -118,7 +119,7 @@ class Process
             $output_dir = $this->output->dir;
 
             if (! file_exists($output_dir)) {
-                warning("[[CssCrush]] - Output directory '$output_dir' doesn't exist.");
+                warning("Output directory '$output_dir' doesn't exist.");
                 $context_resolved = false;
             }
             elseif (! is_writable($output_dir)) {
@@ -126,7 +127,7 @@ class Process
                 debug('Attempting to change permissions.');
 
                 if (! @chmod($output_dir, 0755)) {
-                    warning("[[CssCrush]] - Output directory '$output_dir' is unwritable.");
+                    warning("Output directory '$output_dir' is unwritable.");
                     $context_resolved = false;
                 }
                 else {

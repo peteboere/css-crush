@@ -20,11 +20,12 @@ if ($version < $requiredVersion) {
     exit(STATUS_ERROR);
 }
 
-try  {
+try {
     $args = parse_args();
 }
 catch (Exception $ex) {
-    stderr($ex->getMessage());
+
+    stderr(message($ex->getMessage(), array('type'=>'error')));
 
     exit($ex->getCode());
 }
@@ -47,13 +48,10 @@ elseif ($args->help) {
 }
 elseif ($args->list) {
 
-    $plugins = array();
-
     foreach (CssCrush\Plugin::info() as $name => $docs) {
-        $headline = isset($docs[0]) ? $docs[0] : false;
-        $plugins[] = colorize("<g>$name</>" . ($headline ? " - $headline" : ''));
+        $headline = isset($docs[0]) ? $docs[0] : '';
+        stdout(message(array($name => $headline), array('color'=>'g')));
     }
-    stdout($plugins);
 
     exit(STATUS_OK);
 }
@@ -81,7 +79,7 @@ else {
 
 if ($args->watch && ! $args->input_file) {
 
-    stderr('Watch mode requires an input file.');
+    stderr(message('Watch mode requires an input file.', array('type'=>'error')));
 
     exit(STATUS_ERROR);
 }
@@ -146,14 +144,14 @@ $options += array(
 ##################################################################
 ##  Output.
 
+error_reporting(0);
+
 if ($args->watch) {
 
     csscrush_set('config', array('io' => 'CssCrush\IO\Watch'));
 
     stdout('CONTROL-C to quit.');
 
-    // Surpress error reporting to avoid flooding the screen.
-    error_reporting(0);
     $outstandingErrors = false;
 
     while (true) {
@@ -163,6 +161,7 @@ if ($args->watch) {
 
         $changed = $stats['compile_time'] && ! $stats['errors'];
         $errors = $stats['errors'];
+        $warnings = $stats['warnings'];
         $showErrors = $errors && (! $outstandingErrors || ($outstandingErrors != $errors));
 
         $outputFileDisplay = "$stats[output_filename] ($stats[output_path])";
@@ -176,22 +175,24 @@ if ($args->watch) {
         if ($errors) {
             if ($showErrors) {
                 $outstandingErrors = $errors;
-                if ($stats['output_path']) {
-                    stderr(colorize("<R>ERROR: <r>$outputFileDisplay</>"), true, false);
-                }
-                stderr($errors);
+                stderr(message($errors, array('type'=>'error')));
             }
         }
         elseif ($changed) {
-            stdout(colorize("<G>FILE UPDATED: <g>$outputFileDisplay</>"));
+            stderr(message($outputFileDisplay, array('type'=>'write')));
+
             $compileInfo['compile_time'] = round($stats['compile_time'], 5) . ' seconds';
             $traceOptions = isset($options['trace']) ? array_flip($options['trace']) : null;
             $compileInfo += $traceOptions ? array_intersect_key($stats, $traceOptions) : array();
             $outstandingErrors = false;
         }
 
-        if ($showErrors || $changed) {
-            stdout(format_stats($compileInfo));
+        if (($showErrors || $changed) && $warnings) {
+            stderr(message($warnings, array('type'=>'warning')));
+        }
+
+        if ($changed) {
+            stderr(message($compileInfo, array('type'=>'stats')));
         }
 
         sleep(1);
@@ -199,33 +200,42 @@ if ($args->watch) {
 }
 else {
 
-    if ($args->output_file) {
-        if (! @file_put_contents($args->output_file, csscrush_string($input, $options))) {
+    $stdOutput = null;
 
-            $message[] = "Could not write to path '{$args->output_file}'.";
-            stderr($message);
-
-            exit(STATUS_ERROR);
-        }
-    }
-    elseif (isset($options['output_dir'])) {
+    if ($args->input_file && isset($options['output_dir'])) {
+        $options['cache'] = false;
         csscrush_file($args->input_file, $options);
     }
     else {
-        stdout(csscrush_string($input, $options));
+        $stdOutput = csscrush_string($input, $options);
     }
 
     $stats = csscrush_stat();
+    $errors = $stats['errors'];
+    unset($stats['errors']);
+    $warnings = $stats['warnings'];
+    unset($stats['warnings']);
 
-    if ($stats['errors']) {
-        stderr($stats['errors']);
+    if ($errors) {
+        stderr(message($errors, array('type'=>'error')));
 
         exit(STATUS_ERROR);
     }
+    elseif ($args->input_file && ! empty($stats['output_filename'])) {
+        $outputFileDisplay = "$stats[output_filename] ($stats[output_path])";
+        stderr(message($outputFileDisplay, array('type'=>'write')));
+    }
+
+    if ($warnings) {
+        stderr(message($warnings, array('type'=>'warning')));
+    }
 
     if (is_array($args->trace)) {
-        unset($stats['errors']);
-        stderr(format_stats($stats) . PHP_EOL, true, 'b');
+        stderr(message($stats, array('type'=>'stats')));
+    }
+
+    if ($stdOutput) {
+        stdout($stdOutput);
     }
 
     exit(STATUS_OK);
@@ -235,18 +245,16 @@ else {
 ##################################################################
 ##  Helpers.
 
-function stderr($lines, $closing_newline = true, $color = 'r') {
+function stderr($lines, $closing_newline = true) {
 
     $out = implode(PHP_EOL, (array) $lines) . ($closing_newline ? PHP_EOL : '');
-    fwrite(STDERR, colorize($color ? "<$color>$out</>" : $out));
+    fwrite(defined('TESTMODE') && TESTMODE ? STDOUT : STDERR, $out);
 }
 
 function stdout($lines, $closing_newline = true) {
 
     $out = implode(PHP_EOL, (array) $lines) . ($closing_newline ? PHP_EOL : '');
-
-    // On OSX terminal is sometimes truncating 'visual' output to terminal with fwrite to STDOUT.
-    echo $out;
+    fwrite(STDOUT, $out);
 }
 
 function get_stdin_contents() {
@@ -275,13 +283,45 @@ function parse_list(array $option) {
     return $out;
 }
 
-function format_stats($stats) {
+function message($messages, $options = array()) {
+
+    $defaults = array(
+        'color' => 'b',
+        'label' => null,
+        'indent' => false,
+        'format_label' => false,
+    );
+    $preset = ! empty($options['type']) ? $options['type'] : null;
+    switch ($preset) {
+        case 'error':
+            $defaults['color'] = 'r';
+            $defaults['label'] = 'ERROR';
+            break;
+        case 'warning':
+            $defaults['color'] = 'y';
+            $defaults['label'] = 'WARNING';
+            break;
+        case 'write':
+            $defaults['color'] = 'g';
+            $defaults['label'] = 'WRITE';
+            break;
+        case 'stats':
+            $defaults['indent'] = true;
+            $defaults['format_label'] = true;
+            break;
+    }
+    extract($options + $defaults);
 
     $out = array();
-    foreach ($stats as $name => $value) {
-        $name = ucfirst(str_replace('_', ' ', $name));
+    foreach ((array) $messages as $_label => $value) {
+        $_label = $label ?: $_label;
+        if ($format_label) {
+            $_label = ucfirst(str_replace('_', ' ', $_label));
+        }
+        $prefix = $indent ? '└── ' : '';
+        $colorUp = strtoupper($color);
         if (is_scalar($value)) {
-            $out[] = colorize("<b>└── <B>$name:<b> $value</>");
+            $out[] = colorize("<$color>$prefix<$colorUp>$_label:<$color> $value</>");
         }
     }
     return implode(PHP_EOL, $out);
@@ -417,6 +457,7 @@ function parse_args() {
         'help',
         'version',
         'source-map',
+        'test',
     );
 
     // Create option strings for getopt().
@@ -456,6 +497,7 @@ function parse_args() {
     $args->pretty = isset($opts['p']) ?: isset($opts['pretty']);
     $args->watch = isset($opts['w']) ?: isset($opts['watch']);
     $args->source_map = isset($opts['source-map']);
+    define('TESTMODE', isset($opts['test']));
 
     // Arguments that optionally accept a single value.
     $args->boilerplate = pick($opts, 'b', 'boilerplate');

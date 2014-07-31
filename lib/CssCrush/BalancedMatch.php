@@ -24,7 +24,7 @@ class BalancedMatch
 
         if (substr_count($string->raw, $opener) !== substr_count($string->raw, $closer)) {
             $sample = substr($string->raw, $this->offset, 25);
-            warning("[[CssCrush]] - Unmatched token near '$sample'.");
+            warning("Unmatched token near '$sample'.");
 
             return;
         }
@@ -40,7 +40,7 @@ class BalancedMatch
             $this->length = $this->matchEnd - $this->offset;
         }
         else {
-            warning("[[CssCrush]] - Could not match '$opener'. Exiting.");
+            warning("Could not match '$opener'. Exiting.");
         }
     }
 
