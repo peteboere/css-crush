@@ -14,6 +14,7 @@ $version = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
 $requiredVersion = 5.3;
 
 if ($version < $requiredVersion) {
+
     stderr(array("PHP version $requiredVersion or higher is required to use this tool.",
         "You are currently running PHP $version"));
 
@@ -118,13 +119,6 @@ if ($args->vendor_target) {
     $options['vendor_target'] = parse_list($args->vendor_target);
 }
 
-if ($args->trace) {
-    if (is_string($args->trace)) {
-        $args->trace = (array) $args->trace;
-    }
-    $options['trace'] = is_array($args->trace) ? parse_list($args->trace) : true;
-}
-
 if ($args->vars) {
     parse_str($args->vars, $in_vars);
     $options['vars'] = $in_vars;
@@ -164,14 +158,6 @@ if ($args->watch) {
         $warnings = $stats['warnings'];
         $showErrors = $errors && (! $outstandingErrors || ($outstandingErrors != $errors));
 
-        $outputFileDisplay = "$stats[output_filename] ($stats[output_path])";
-        $inputFileDisplay = "$stats[input_filename] ($stats[input_path])";
-
-        $compileInfo = array();
-        if ($stats['input_path']) {
-            $compileInfo['input_file'] = $inputFileDisplay;
-        }
-
         if ($errors) {
             if ($showErrors) {
                 $outstandingErrors = $errors;
@@ -179,20 +165,16 @@ if ($args->watch) {
             }
         }
         elseif ($changed) {
-            stderr(message($outputFileDisplay, array('type'=>'write')));
-
-            $compileInfo['compile_time'] = round($stats['compile_time'], 5) . ' seconds';
-            $traceOptions = isset($options['trace']) ? array_flip($options['trace']) : null;
-            $compileInfo += $traceOptions ? array_intersect_key($stats, $traceOptions) : array();
             $outstandingErrors = false;
+            stderr(message(fmt_fileinfo($stats, 'output'), array('type'=>'write')));
         }
 
         if (($showErrors || $changed) && $warnings) {
             stderr(message($warnings, array('type'=>'warning')));
         }
 
-        if ($changed) {
-            stderr(message($compileInfo, array('type'=>'stats')));
+        if ($changed && $args->stats) {
+            stderr(message($stats, array('type'=>'stats')));
         }
 
         sleep(1);
@@ -212,9 +194,7 @@ else {
 
     $stats = csscrush_stat();
     $errors = $stats['errors'];
-    unset($stats['errors']);
     $warnings = $stats['warnings'];
-    unset($stats['warnings']);
 
     if ($errors) {
         stderr(message($errors, array('type'=>'error')));
@@ -222,15 +202,14 @@ else {
         exit(STATUS_ERROR);
     }
     elseif ($args->input_file && ! empty($stats['output_filename'])) {
-        $outputFileDisplay = "$stats[output_filename] ($stats[output_path])";
-        stderr(message($outputFileDisplay, array('type'=>'write')));
+        stderr(message(fmt_fileinfo($stats, 'output'), array('type'=>'write')));
     }
 
     if ($warnings) {
         stderr(message($warnings, array('type'=>'warning')));
     }
 
-    if (is_array($args->trace)) {
+    if ($args->stats) {
         stderr(message($stats, array('type'=>'stats')));
     }
 
@@ -259,12 +238,11 @@ function stdout($lines, $closing_newline = true) {
 
 function get_stdin_contents() {
 
-    $stdin = fopen('php://stdin', 'r');
-    stream_set_blocking($stdin, false);
-    $stdinContents = stream_get_contents($stdin);
-    fclose($stdin);
+    stream_set_blocking(STDIN, 0);
+    $contents = stream_get_contents(STDIN);
+    stream_set_blocking(STDIN, 1);
 
-    return $stdinContents;
+    return $contents;
 }
 
 function parse_list(array $option) {
@@ -306,6 +284,14 @@ function message($messages, $options = array()) {
             $defaults['label'] = 'WRITE';
             break;
         case 'stats':
+            // Making stats concise and readable.
+            $messages['input_file'] = $messages['input_path'];
+            $messages['compile_time'] = round($messages['compile_time'], 5) . ' seconds';
+            foreach (array('input_filename', 'input_path', 'output_filename',
+                'output_path', 'vars', 'errors', 'warnings') as $key) {
+                unset($messages[$key]);
+            }
+            ksort($messages);
             $defaults['indent'] = true;
             $defaults['format_label'] = true;
             break;
@@ -325,6 +311,10 @@ function message($messages, $options = array()) {
         }
     }
     return implode(PHP_EOL, $out);
+}
+
+function fmt_fileinfo($stats, $type) {
+    return $stats[$type . '_filename'] . ' ' . '(' . $stats[$type . '_path'] . ')';
 }
 
 function pick(array &$arr) {
@@ -447,7 +437,6 @@ function parse_args() {
     $optional_value_opts = array(
         'b|boilerplate',
         'stat-dump',
-        'trace',
     );
 
     $flag_opts = array(
@@ -457,6 +446,7 @@ function parse_args() {
         'help',
         'version',
         'source-map',
+        'stats',
         'test',
     );
 
@@ -497,27 +487,27 @@ function parse_args() {
     $args->pretty = isset($opts['p']) ?: isset($opts['pretty']);
     $args->watch = isset($opts['w']) ?: isset($opts['watch']);
     $args->source_map = isset($opts['source-map']);
+    $args->stats = pick($opts, 'stats');
     define('TESTMODE', isset($opts['test']));
 
     // Arguments that optionally accept a single value.
     $args->boilerplate = pick($opts, 'b', 'boilerplate');
     $args->stat_dump = pick($opts, 'stat-dump');
-    $args->trace = pick($opts, 'trace');
 
     // Arguments that require a single value.
     $args->formatter = pick($opts, 'formatter');
-    $args->vendor_target = pick($opts, 'vendor-target');
     $args->vars = pick($opts, 'vars', 'variables');
     $args->newlines = pick($opts, 'newlines');
 
     // Arguments that require a value but accept multiple values.
     $args->enable_plugins = pick($opts, 'E', 'enable');
     $args->disable_plugins = pick($opts, 'D', 'disable');
+    $args->vendor_target = pick($opts, 'vendor-target');
 
     // Run multiple value arguments through array cast.
     foreach (array('enable_plugins', 'disable_plugins', 'vendor_target') as $arg) {
-        if ($args->{$arg}) {
-            $args->{$arg} = (array) $args->{$arg};
+        if ($args->$arg) {
+            $args->$arg = (array) $args->$arg;
         }
     }
 
@@ -555,7 +545,6 @@ function parse_args() {
     else {
         $args->context = $args->input_file ? dirname($args->input_file) : getcwd();
     }
-
     if (is_string($args->boilerplate)) {
         if (! ($args->boilerplate = realpath($args->boilerplate))) {
             throw new Exception('Boilerplate file does not exist.', STATUS_ERROR);
@@ -573,70 +562,73 @@ function manpage() {
     <B>csscrush <G>[OPTIONS] <g>[input-file] [output-file]
 
 <B>OPTIONS:</>
-    <G>-i<g>, --input</>:
+    <G>-i<g>, --input</>
         Input file. If omitted takes input from STDIN.
 
-    <G>-o<g>, --output</>:
+    <G>-o<g>, --output</>
         Output file. If omitted prints to STDOUT.
 
-    <G>-p<g>, --pretty</>:
+    <G>-p<g>, --pretty</>
         Formatted, un-minified output.
 
-    <G>-w<g>, --watch</>:
+    <G>-w<g>, --watch</>
         Watch input file for changes.
         Writes to file specified with -o option or to the input file
         directory with a '.crush.css' file extension.
 
-    <G>-D<g>, --disable</>:
-        List of plugins to disable. Pass 'all' to disable all.
+    <G>-D<g>, --disable</>
+        List of plugins (comma separated) to disable. Pass 'all' to disable all.
 
-    <G>-E<g>, --enable</>:
-        List of plugins to enable. Overrides <g>--disable</>.
+    <G>-E<g>, --enable</>
+        List of plugins (comma separated) to enable. Overrides <g>--disable</>.
 
-    <g>--boilerplate</>:
+    <g>--boilerplate</>
         Whether or not to output a boilerplate. Optionally accepts filepath
         to a custom boilerplate template.
 
-    <g>--context</>:
+    <g>--context</>
         Filepath context for resolving relative URLs. Only meaningful when
         taking raw input from STDIN.
 
-    <g>--formatter</>:
-        Formatting styles.
+    <g>--formatter</>
+        Possible values:
+            'block' (default)
+                Rules are block formatted.
+            'single-line'
+                Rules are printed in single lines.
+            'padded'
+                Rules are printed in single lines with right padded selectors.
 
-        'block' (default) -
-            Rules are block formatted.
-        'single-line' -
-            Rules are printed in single lines.
-        'padded' -
-            Rules are printed in single lines with right padded selectors.
-
-    <g>--help</>:
+    <g>--help</>
         Display this help message.
 
-     <g>--list</>:
+     <g>--list</>
         Show plugins.
 
-    <g>--newlines</>:
+    <g>--newlines</>
         Force newline style on output css. Defaults to the current platform
         newline. Possible values: 'windows' (or 'win'), 'unix', 'use-platform'.
 
-    <g>--source-map</>:
-        Output a source map (compliant with the Source Map v3 proposal).
+    <g>--source-map</>
+        Create a source map file (compliant with the Source Map v3 proposal).
 
-    <g>--trace</>:
-        Output debug-info stubs compatible with client-side Sass debuggers.
+    <g>--stats</>
+        Display post-compile stats.
 
-    <g>--vars</>:
+    <g>--vars</>
         Map of variable names in an http query string format.
 
-    <g>--vendor-target</>:
-        Set to 'all' for all vendor prefixes (default).
-        Set to 'none' for no vendor prefixes.
-        Set to a specific vendor prefix.
+    <g>--vendor-target</>
+        Possible values:
+            'all'
+                For all vendor prefixes (default).
+            'none'
+                For no vendor prefixing.
+            'moz', 'webkit', 'ms' etc.
+                Limit to a specific vendor prefix (or comma separated list).
 
-    <g>--version</>:
-        Print version number.
+    <g>--version</>
+        Display version number.
 
 <B>EXAMPLES:</>
     # Restrict vendor prefixing.
