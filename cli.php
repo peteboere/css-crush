@@ -357,7 +357,7 @@ function colorize($str) {
     );
 
     if (! isset($color_support)) {
-        $color_support = true;
+        $color_support = defined('TESTMODE') && TESTMODE ? false : true;
         if (DIRECTORY_SEPARATOR == '\\') {
             $color_support = false !== getenv('ANSICON') || 'ON' === getenv('ConEmuANSI');
         }

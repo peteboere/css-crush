@@ -43,6 +43,17 @@ class CliTest extends \PHPUnit_Framework_TestCase
         $this->assertContains($expected, file_get_contents($out_path));
     }
 
+    public function testStats()
+    {
+        exec("echo '$this->sample' | php \"$this->path\" --stats --test", $lines);
+        $output = implode('', $lines);
+
+        $this->assertContains('Selector count: 1', $output);
+        $this->assertContains('Rule count: 1', $output);
+        $this->assertContains('Compile time:', $output);
+        $this->assertContains('p{color:red;position:absolute;opacity:1}', $output);
+    }
+
     public function testContext()
     {
         $sample = '@import "context/import.css"; baz {bar: foo;}';

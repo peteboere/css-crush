@@ -165,7 +165,13 @@ class Crush
             }
         }
 
-        return $tree + self::$config->bareAliases;
+        $tree += self::$config->bareAliases;
+
+        $tree['properties']['foo'] =
+        $tree['at-rules']['foo'] =
+        $tree['functions']['foo'] = array('-webkit-foo', '-moz-foo', '-ms-foo');
+
+        return $tree;
     }
 
     /**
