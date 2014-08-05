@@ -1,4 +1,4 @@
-### 2.2.0 (2014-06-17)
+## 2.2.0 (2014-06-17)
 
 * Rule nesting now works without `@in` directives.
 * Added `csscrush_add_function()` as a simple way of adding custom functions without plugins.
@@ -13,7 +13,7 @@
 * Deprecated `@define`/`@ifdefine`/`@selector-alias` in favour of new directive names. Supported until at-least 3.x.
 * Deprecated the static api methods in favour of the `csscrush_*` functions. Supported until at-least 3.x.
 
-### 2.1.0 (2014-03-21)
+## 2.1.0 (2014-03-21)
 
 * Added HHVM support (HHVM >= 2.4)
 * Added Travis CI support.
@@ -34,7 +34,7 @@
 * Changed base IO class to use non-static methods.
 * Numerous under the hood improvements.
 
-### 2.0.0 (2013-11-2)
+## 2.0.0 (2013-11-2)
 
 * Raised PHP version requirement to PHP 5.3.1.
 * Library code (excluding API functions) is now namespaced.
@@ -58,7 +58,7 @@
 
 ********************************************************************
 
-### 1.11.0 (2013-8-3)
+## 1.11.0 (2013-8-3)
 
 * Added source map support according to the Source Map v3 proposal (boolean option `source-map`).
 * Compile times are now 20-30% reduced.
@@ -73,7 +73,7 @@
 * Removed Prepend.css.
 * Various refactoring for cleaner under-the-hood APIs.
 
-### 1.10.0 (2013-5-18)
+## 1.10.0 (2013-5-18)
 
 * Added SVG plugin for defining and generating SVG files/data URIs in CSS.
 * Added Canvas plugin for image generation and manipulation (requires GD extension).
@@ -93,7 +93,7 @@
 * Fixed issue with empty imported files not registering.
 * Various bug fixes.
 
-### 1.9.1 (2013-1-31)
+## 1.9.1 (2013-1-31)
 
 * Added noise plugin (noise/texture generating functions).
 * Resolved issues #42 and #43.
@@ -101,7 +101,7 @@
 * Fixed error notice with no enabled plugins in Plugins.ini file.
 * Updated aliases file.
 
-### 1.9 (2013-1-12)
+## 1.9 (2013-1-12)
 
 * Added flexbox aliases for both 2009 and 2012 edition specs.
 * Added a legacy-flexbox plugin for auto-generating the flexbox 2009 spec equivilant properties.
@@ -125,7 +125,7 @@
 * Property/value aliases expanded and renamed as declaration aliases.
 * Classes now loaded via an autoloader, also some other refactoring for moving towards PSR-0 compliance.
 
-### 1.8.0 (2012-11-13)
+## 1.8.0 (2012-11-13)
 
 * Added selector aliasing with the `@selector-alias` directive.
 * Added `output_dir` option for specifying the destination of compiled files.
@@ -144,7 +144,7 @@
 * Improved minification.
 * Major refactoring.
 
-### 1.7.0 (2012-9-28)
+## 1.7.0 (2012-9-28)
 
 * Added `trace` option to output SASS compatible debug-info stubs for use with tools like FireSass.
 * Added `@ifdefine` directive for dynamically including/excluding parts of a CSS file based on the
@@ -159,11 +159,11 @@
 * Updated aliases and initial value files.
 * Fixed parsing issue introduced in 1.6.1.
 
-### 1.6.1 (2012-8-22)
+## 1.6.1 (2012-8-22)
 
 * Resolved issues #34 and #35.
 
-### 1.6.0 (2012-8-1)
+## 1.6.0 (2012-8-1)
 
 * Inheritance model improved to support adoption of pseudo classes and elements (see wiki).
 * Added rule self-referencing function `this()` and complimentary data-* properties.
@@ -175,23 +175,23 @@
 * Double-colon plugin moved to core.
 * Option `rewrite_import_urls` now defaults to true.
 
-### 1.5.3 (2012-6-13)
+## 1.5.3 (2012-6-13)
 
 * Refactoring.
 * Fixed some test cases.
 
-### 1.5.2 (2012-6-8)
+## 1.5.2 (2012-6-8)
 
 * Resolved issue #32.
 * `CssCrush::inline` method now defaults to not printing a boilerplate.
 * Updated aliases file.
 
-### 1.5.1 (2012-6-1)
+## 1.5.1 (2012-6-1)
 
 * Extended mixins to work with abstract rules and regular rules.
 * Fixed issue with selector grouping and inheritance in combination.
 
-### 1.5.0 (2012-5-21)
+## 1.5.0 (2012-5-21)
 
 * New feature: Rule inheritance / abstract rules.
 * New feature: Block nesting.
@@ -205,12 +205,12 @@
 * Internal refactoring.
 * Resolved issues #23, #24, #27, #28 and #29.
 
-### 1.4.2 (2012-3-14)
+## 1.4.2 (2012-3-14)
 
 * Fixed bug with @import statement parsing.
 * Some minor under the hood changes.
 
-### 1.4.1 (2012-2-10)
+## 1.4.1 (2012-2-10)
 
 * Added command line application.
 * Added `rewrite_import_urls` option - Ability to rewrite relative url references inside imported css files.
@@ -220,7 +220,7 @@
 * Initial-values updated.
 * Updated `CssCrush::string` method to correctly handle import statements.
 
-### 1.4.0 (2012-1-24)
+## 1.4.0 (2012-1-24)
 
 * Added initial-keyword plugin (shim for the CSS3 keyword).
 * Added inline method (Issue #18).
@@ -232,14 +232,14 @@
 * Some internal cleaning up.
 * Disabled IE6 min-height plugin by default.
 
-### 1.3.6 (2011-11-9)
+## 1.3.6 (2011-11-9)
 
 * Improved color functions.
 * Added `a-adjust()` function for altering a color's opacity.
 * Deprecated hsl-adjust function (you can use nested color functions instead).
 * Added the ability to use local versions of alias and plugin files so pull updates don't clobber local settings.
 
-### 1.3.5 (2011-11-8)
+## 1.3.5 (2011-11-8)
 
 * Added hook system for plugins.
 * Plugins split into seperate files.
@@ -248,40 +248,40 @@
 * Updated filter plugin.
 * Fixed nested custom function parsing (issue #14).
 
-### 1.3.4 (2011-10-29)
+## 1.3.4 (2011-10-29)
 
 * Added output_filename option.
 * Added vendor_target option.
 * Renamed 'macros' to the more general 'plugins' and split them into their own files.
 * Removed superfluous outer containing directory (update your include paths).
 
-### 1.3.3 (2011-10-28)
+## 1.3.3 (2011-10-28)
 
 * Fixed regression with absolute URL file imports (issue #12).
 * Fixed minification bug (issue #13).
 
-### 1.3.2 (2011-10-18)
+## 1.3.2 (2011-10-18)
 
 * Updated variable syntax.
 * Fixed minification bug.
 
-### 1.3.1 (2011-10-9)
+## 1.3.1 (2011-10-9)
 
 * Added support for svg and svgz data uris.
 * Added animation shorthand alias.
 * Added user-select alias.
 
-### 1.3 (2011-10-20)
+## 1.3 (2011-10-20)
 
 * Added the public function `CssCrush::string` for processing raw strings of CSS.
 * Added color functions.
 * Added aliases for IE10.
 
-### 1.2.0 (2011-9-8)
+## 1.2.0 (2011-9-8)
 
 * File importer rewritten.
 
-### 1.1.0 (2011-9-2)
+## 1.1.0 (2011-9-2)
 
 * Added support for global variables.
 * Added support for variable interpolation within string literals.
@@ -293,7 +293,7 @@
 * Minor correction to WAMP support.
 * Minor fix to rule API.
 
-### 1.0.0 (2011-7-14)
+## 1.0.0 (2011-7-14)
 
 * Major refactoring.
 * Custom functions.
@@ -302,6 +302,6 @@
 * Resolved document root issues.
 * Minification improvements.
 
-### 0.9.0 (2010-9-20)
+## 0.9.0 (2010-9-20)
 
 * Initial release.
