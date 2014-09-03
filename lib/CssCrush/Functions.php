@@ -221,32 +221,32 @@ function fn__percent($input) {
 
 function fn__hsla_adjust($input) {
     list($color, $h, $s, $l, $a) = array_pad(Functions::parseArgs($input, true), 5, 0);
-    return Color::colorAdjust($color, array($h, $s, $l, $a));
+    return Color::test($color) ? Color::colorAdjust($color, array($h, $s, $l, $a)) : '';
 }
 
 function fn__hsl_adjust($input) {
     list($color, $h, $s, $l) = array_pad(Functions::parseArgs($input, true), 4, 0);
-    return Color::colorAdjust($color, array($h, $s, $l, 0));
+    return Color::test($color) ? Color::colorAdjust($color, array($h, $s, $l, 0)) : '';
 }
 
 function fn__h_adjust($input) {
     list($color, $h) = array_pad(Functions::parseArgs($input, true), 2, 0);
-    return Color::colorAdjust($color, array($h, 0, 0, 0));
+    return Color::test($color) ? Color::colorAdjust($color, array($h, 0, 0, 0)) : '';
 }
 
 function fn__s_adjust($input) {
     list($color, $s) = array_pad(Functions::parseArgs($input, true), 2, 0);
-    return Color::colorAdjust($color, array(0, $s, 0, 0));
+    return Color::test($color) ? Color::colorAdjust($color, array(0, $s, 0, 0)) : '';
 }
 
 function fn__l_adjust($input) {
     list($color, $l) = array_pad(Functions::parseArgs($input, true), 2, 0);
-    return Color::colorAdjust($color, array(0, 0, $l, 0));
+    return Color::test($color) ? Color::colorAdjust($color, array(0, 0, $l, 0)) : '';
 }
 
 function fn__a_adjust($input) {
     list($color, $a) = array_pad(Functions::parseArgs($input, true), 2, 0);
-    return Color::colorAdjust($color, array(0, 0, 0, $a));
+    return Color::test($color) ? Color::colorAdjust($color, array(0, 0, 0, $a)) : '';
 }
 
 function fn__this($input, $context) {
