@@ -10,7 +10,7 @@ Copy a value from another rule.
 
 ## Parameters
 
-* *`target`* A rule selector, an abstract rule name or context keyword (`top` or `parent` with nested structures)
+* *`target`* A rule selector, an abstract rule name or context keyword: `previous`, `next` (also `parent` and  `top` within nested structures)
 * *`property-name`* The CSS property name to copy, or just `default` to pass over. Defaults to the calling property
 * *`fallback`* A CSS value to use if the target property does not exist
 

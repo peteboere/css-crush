@@ -297,16 +297,26 @@ function fn__query($input, $context) {
 
     $targetRule = null;
     $references =& Crush::$process->references;
-    $targetLowerCase = strtolower($target);
-    if ($targetLowerCase === 'parent') {
-        $targetRule = $context->rule->parent;
-    }
-    elseif ($targetLowerCase === 'top') {
-        $targetRule = $context->rule->parent;
-        while ($targetRule && $targetRule->parent && $targetRule = $targetRule->parent);
-    }
-    elseif (isset($references[$target])) {
-        $targetRule = $references[$target];
+
+    switch (strtolower($target)) {
+        case 'parent':
+            $targetRule = $context->rule->parent;
+            break;
+        case 'previous':
+            $targetRule = $context->rule->previous;
+            break;
+        case 'next':
+            $targetRule = $context->rule->next;
+            break;
+        case 'top':
+            $targetRule = $context->rule->parent;
+            while ($targetRule && $targetRule->parent && $targetRule = $targetRule->parent);
+            break;
+        default:
+            if (isset($references[$target])) {
+                $targetRule = $references[$target];
+            }
+            break;
     }
 
     $result = '';

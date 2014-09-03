@@ -620,19 +620,25 @@ class Process
     protected function processRules()
     {
         // Create table of name/selector to rule references.
-        $named_references = array();
+        $namedReferences = array();
 
+        $previousRule = null;
         foreach ($this->tokens->store->r as $rule) {
             if ($rule->name) {
-                $named_references[$rule->name] = $rule;
+                $namedReferences[$rule->name] = $rule;
             }
             foreach ($rule->selectors as $selector) {
                 $this->references[$selector->readableValue] = $rule;
             }
+            if ($previousRule) {
+                $rule->previous = $previousRule;
+                $previousRule->next = $rule;
+            }
+            $previousRule = $rule;
         }
 
         // Explicit named references take precedence.
-        $this->references = $named_references + $this->references;
+        $this->references = $namedReferences + $this->references;
 
         foreach ($this->tokens->store->r as $rule) {
 
