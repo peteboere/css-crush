@@ -70,12 +70,12 @@ class Rule
     #############################
     #  Rule inheritance.
 
-    public function setExtendSelectors($raw_value)
+    public function setExtendSelectors($rawValue)
     {
         // Reset if called earlier, last call wins by intention.
         $this->extendArgs = array();
 
-        foreach (Util::splitDelimList($raw_value) as $arg) {
+        foreach (Util::splitDelimList($rawValue) as $arg) {
             $this->extendArgs[] = new ExtendArg($arg);
         }
     }
@@ -92,16 +92,13 @@ class Rule
 
             // Filter the extendArgs list to usable references.
             $filtered = array();
-            foreach ($this->extendArgs as $extend_arg) {
+            foreach ($this->extendArgs as $extendArg) {
 
-                $name = $extend_arg->name;
-
-                if (isset($references[$name])) {
-
-                    $parent_rule = $references[$name];
-                    $parent_rule->resolveExtendables();
-                    $extend_arg->pointer = $parent_rule;
-                    $filtered[$parent_rule->label] = $extend_arg;
+                if (isset($references[$extendArg->name])) {
+                    $parentRule = $references[$extendArg->name];
+                    $parentRule->resolveExtendables();
+                    $extendArg->pointer = $parentRule;
+                    $filtered[$parentRule->label] = $extendArg;
                 }
             }
 
@@ -120,32 +117,32 @@ class Rule
         }
 
         // Create a stack of all parent rule args.
-        $parent_extend_args = array();
-        foreach ($this->extendArgs as $extend_arg) {
-            $parent_extend_args += $extend_arg->pointer->extendArgs;
+        $parentExtendArgs = array();
+        foreach ($this->extendArgs as $extendArg) {
+            $parentExtendArgs += $extendArg->pointer->extendArgs;
         }
 
         // Merge this rule's extendArgs with parent extendArgs.
-        $this->extendArgs += $parent_extend_args;
+        $this->extendArgs += $parentExtendArgs;
 
         // Add this rule's selectors to all extendArgs.
-        foreach ($this->extendArgs as $extend_arg) {
+        foreach ($this->extendArgs as $extendArg) {
 
-            $ancestor = $extend_arg->pointer;
+            $ancestor = $extendArg->pointer;
 
-            $extend_selectors = $this->selectors->store;
+            $extendSelectors = $this->selectors->store;
 
             // If there is a pseudo class extension create a new set accordingly.
-            if ($extend_arg->pseudo) {
+            if ($extendArg->pseudo) {
 
-                $extend_selectors = array();
+                $extendSelectors = array();
                 foreach ($this->selectors->store as $selector) {
-                    $new_selector = clone $selector;
-                    $new_readable = $new_selector->appendPseudo($extend_arg->pseudo);
-                    $extend_selectors[$new_readable] = $new_selector;
+                    $newSelector = clone $selector;
+                    $newReadable = $newSelector->appendPseudo($extendArg->pseudo);
+                    $extendSelectors[$newReadable] = $newSelector;
                 }
             }
-            $ancestor->extendSelectors += $extend_selectors;
+            $ancestor->extendSelectors += $extendSelectors;
         }
     }
 }

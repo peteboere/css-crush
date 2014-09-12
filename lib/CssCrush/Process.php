@@ -147,14 +147,14 @@ class Process
     protected function getBoilerplate()
     {
         $file = false;
-        $boilerplate_option = $this->options->boilerplate;
+        $boilerplateOption = $this->options->boilerplate;
 
-        if ($boilerplate_option === true) {
+        if ($boilerplateOption === true) {
             $file = Crush::$dir . '/boilerplate.txt';
         }
-        elseif (is_string($boilerplate_option)) {
-            if (file_exists($boilerplate_option)) {
-                $file = $boilerplate_option;
+        elseif (is_string($boilerplateOption)) {
+            if (file_exists($boilerplateOption)) {
+                $file = $boilerplateOption;
             }
         }
 
@@ -166,20 +166,20 @@ class Process
         $boilerplate = file_get_contents($file);
 
         // Substitute any tags
-        if (preg_match_all('~\{\{([^}]+)\}\}~', $boilerplate, $boilerplate_matches)) {
+        if (preg_match_all('~\{\{([^}]+)\}\}~', $boilerplate, $boilerplateMatches)) {
 
             // Command line arguments (if any).
-            $command_args = 'n/a';
+            $commandArgs = 'n/a';
             if (isset($_SERVER['argv'])) {
                 $argv = $_SERVER['argv'];
                 array_shift($argv);
-                $command_args = 'csscrush ' . implode(' ', $argv);
+                $commandArgs = 'csscrush ' . implode(' ', $argv);
             }
 
             $tags = array(
                 'datetime' => @date('Y-m-d H:i:s O'),
                 'year' => @date('Y'),
-                'command' => $command_args,
+                'command' => $commandArgs,
                 'plugins' => implode(',', array_keys($this->plugins)),
                 'version' => csscrush_version(),
                 'git_version' => function ()  {
@@ -191,15 +191,15 @@ class Process
                 },
             );
 
-            foreach ($boilerplate_matches[0] as $index => $tag) {
-                $tag_name = trim($boilerplate_matches[1][$index]);
+            foreach (array_keys($boilerplateMatches[0]) as $index) {
+                $tagName = trim($boilerplateMatches[1][$index]);
                 $replacement = '?';
-                if (isset($tags[$tag_name])) {
-                    $replacement =  is_callable($tags[$tag_name]) ? $tags[$tag_name]() : $tags[$tag_name];
+                if (isset($tags[$tagName])) {
+                    $replacement =  is_callable($tags[$tagName]) ? $tags[$tagName]() : $tags[$tagName];
                 }
                 $replacements[] = $replacement;
             }
-            $boilerplate = str_replace($boilerplate_matches[0], $replacements, $boilerplate);
+            $boilerplate = str_replace($boilerplateMatches[0], $replacements, $boilerplate);
         }
 
         // Pretty print.
@@ -304,7 +304,7 @@ class Process
             elseif ($section === 'function_groups') {
 
                 foreach ($group_array as $func_group => $vendors) {
-                    foreach ($vendors as $vendor => $replacements) {
+                    foreach (array_keys($vendors) as $vendor) {
                         if (! in_array($vendor, $vendor_names)) {
                             unset($this->aliases['function_groups'][$func_group][$vendor]);
                         }
@@ -360,21 +360,21 @@ class Process
 
         // Remove option disabled plugins from the list, and disable them.
         if ($disable) {
-            foreach ($disable as $plugin_name => $index) {
-                Plugin::disable($plugin_name);
-                unset($this->plugins[$plugin_name]);
+            foreach (array_keys($disable) as $pluginName) {
+                Plugin::disable($pluginName);
+                unset($this->plugins[$pluginName]);
             }
         }
 
         // Secondly add option enabled plugins to the list.
         if ($enable) {
-            foreach ($enable as $plugin_name => $index) {
-                $this->plugins[$plugin_name] = true;
+            foreach (array_keys($enable) as $pluginName) {
+                $this->plugins[$pluginName] = true;
             }
         }
 
-        foreach ($this->plugins as $plugin_name => $bool) {
-            Plugin::enable($plugin_name);
+        foreach (array_keys($this->plugins) as $pluginName) {
+            Plugin::enable($pluginName);
         }
     }
 
@@ -892,8 +892,8 @@ class Process
 
     public function postCompile()
     {
-        foreach ($this->plugins as $plugin_name => $bool) {
-            Plugin::disable($plugin_name);
+        foreach (array_keys($this->plugins) as $pluginName) {
+            Plugin::disable($pluginName);
         }
 
         $this->release();
