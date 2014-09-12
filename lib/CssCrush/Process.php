@@ -56,7 +56,6 @@ class Process
 
         // Shortcut commonly used options to avoid __get() overhead.
         $this->docRoot = isset($this->options->doc_root) ? $this->options->doc_root : $config->docRoot;
-        $this->addTracingStubs = in_array('stubs', $this->options->__get('trace'));
         $this->generateMap = $this->ioContext === 'file' && $this->options->__get('source_map');
         $this->ruleFormatter = $this->options->__get('formatter');
         $this->minifyOutput = $this->options->__get('minify');
@@ -868,9 +867,6 @@ class Process
 
         $this->string->restore(array('u', 's'));
 
-        if ($this->addTracingStubs) {
-            $this->string->restore('t', false, array($this, 'generateTracingStub'));
-        }
         if ($this->generateMap) {
             $this->generateSourceMap();
         }
@@ -1004,27 +1000,6 @@ class Process
 
         $this->string->raw = implode($this->newline, $lines);
         $this->sourceMap['mappings'] = implode(';', $mappings);
-    }
-
-    public function generateTracingStub($m)
-    {
-        if (! ($value = $this->tokens->get($m[0]))) {
-            return '';
-        }
-
-        list($source_index, $line) = explode(',', $value);
-        $line += 1;
-
-        // Get the currently processed file path, and escape it.
-        $current_file = 'file://' . str_replace(' ', '%20', $this->sources[$source_index]);
-        $current_file = preg_replace('~[^\w-]~', '\\\\$0', $current_file);
-        $debug_info = "@media -sass-debug-info{filename{font-family:$current_file}line{font-family:\\00003$line}}";
-
-        if (! $this->minifyOutput) {
-            $debug_info .= $this->newline;
-        }
-
-        return $debug_info;
     }
 
 

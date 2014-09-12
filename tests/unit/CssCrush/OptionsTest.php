@@ -85,19 +85,6 @@ TPL;
         $this->assertRegExp('~"version": ?"3",~', $source_map_contents);
     }
 
-    public function testTrace()
-    {
-        csscrush_file($this->testFile, array('trace' => true));
-        $output_contents = file_get_contents("$this->testFile.crush.css");
-
-        $this->assertContains('@media -sass-debug-info', $output_contents);
-
-        csscrush_file($this->testFile, array('trace' => array('stubs')));
-        $output_contents = file_get_contents("$this->testFile.crush.css");
-
-        $this->assertContains('@media -sass-debug-info', $output_contents);
-    }
-
     public function testAdvancedMinify()
     {
         $sample = "foo { color: papayawhip; color: #cccccc;}";

@@ -26,13 +26,13 @@ class Rule
     public $extendArgs = array();
     public $extendSelectors = array();
 
-    public function __construct($selector_string, $declarations_string, $trace_token = null)
+    public function __construct($selectorString, $declarationsString, $traceToken = null)
     {
         $process = Crush::$process;
         $this->label = $process->tokens->createLabel('r');
-        $this->marker = $process->addTracingStubs || $process->generateMap ? $trace_token : null;
-        $this->selectors = new SelectorList($selector_string, $this);
-        $this->declarations = new DeclarationList($declarations_string, $this);
+        $this->marker = $process->generateMap ? $traceToken : null;
+        $this->selectors = new SelectorList($selectorString, $this);
+        $this->declarations = new DeclarationList($declarationsString, $this);
     }
 
     public function __toString()

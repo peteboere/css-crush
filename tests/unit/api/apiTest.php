@@ -80,7 +80,6 @@ TPL;
 
         csscrush_string($sample, array(
             'minify' => false,
-            'trace' => array( 'selector_count', 'rule_count' ),
             'disable' => array( 'all' ),
         ));
 

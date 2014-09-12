@@ -91,11 +91,6 @@
     <td>Output a source map (compliant with the Source Map v3 proposal).
 </tr>
 <tr>
-    <td class="option">trace
-    <td class="values">true | <b>false</b>
-    <td>Output SASS debug-info stubs for use with tools like FireSass.
-</tr>
-<tr>
     <td class="option">context
     <td class="values">Path
     <td>Context for importing resources from relative urls (Only applies to `csscrush_string()` and command line utility).

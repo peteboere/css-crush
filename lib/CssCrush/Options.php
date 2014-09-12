@@ -29,7 +29,6 @@ class Options
         'disable' => null,
         'settings' => array(),
         'stat_dump' => false,
-        'trace' => array(),
         'source_map' => false,
         'newlines' => 'use-platform',
     );
@@ -58,12 +57,6 @@ class Options
                 if (! array_key_exists('minify', $this->inputOptions)) {
                     $name = 'minify';
                     $value = ! $value;
-                }
-                break;
-
-            case 'trace':
-                if (! is_array($value)) {
-                    $value = $value ? array('stubs') : array();
                 }
                 break;
 
