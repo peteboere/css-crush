@@ -1,0 +1,17 @@
+{
+    "name": "csscrush",
+    "version": "2.1.1",
+    "description": "CSS-Crush, CSS preprocessor",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/peteboere/css-crush.git"
+    },
+    "bugs": {
+        "url": "https://github.com/peteboere/css-crush/issues"
+    },
+    "bin" : {
+        "csscrush" : "./misc/csscrush"
+    },
+    "homepage": "http://the-echoplex.net/csscrush",
+    "license": "MIT"
+}
