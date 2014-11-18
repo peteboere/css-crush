@@ -442,8 +442,15 @@ class DeclarationList extends Iterator
         $new_set = array();
         foreach ($this->store as $declaration) {
             if (is_array($declaration) && $declaration[0] === 'mixin') {
-                foreach (Mixin::merge(array(), $declaration[1], array('context' => $rule_context)) as $pair) {
-                    $new_set[] = new Declaration($pair[0], $pair[1], count($new_set));
+                foreach (Mixin::merge(array(), $declaration[1], array('context' => $rule_context)) as $mixable) {
+                    if ($mixable instanceof Declaration) {
+                        $clone = clone $mixable;
+                        $clone->index = count($new_set);
+                        $new_set[] = $clone;
+                    }
+                    else {
+                        $new_set[] = new Declaration($mixable[0], $mixable[1], count($new_set));
+                    }
                 }
             }
             else {

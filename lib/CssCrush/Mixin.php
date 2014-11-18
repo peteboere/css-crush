@@ -68,20 +68,7 @@ class Mixin
         }
         elseif ($mixable instanceof Rule) {
 
-            $result = array();
-            foreach ($mixable->declarations as $declaration) {
-                if ($declaration instanceof Declaration) {
-                    $result[] = array(
-                        $declaration->property,
-                        $declaration->value,
-                    );
-                }
-                else {
-                    $result[] = $declaration;
-                }
-            }
-
-            return $result;
+            return $mixable->declarations->store;
         }
     }
 
@@ -96,18 +83,21 @@ class Mixin
             }
         }
 
-        while ($pair = array_shift($mixables)) {
-
-            list($property, $value) = $pair;
-
-            if ($property === 'mixin') {
-                $input = Mixin::merge($input, $value, $options);
-            }
-            elseif (! empty($options['keyed'])) {
-                $input[$property] = $value;
+        while ($mixable = array_shift($mixables)) {
+            if ($mixable instanceof Declaration) {
+                $input[] = $mixable;
             }
             else {
-                $input[] = array($property, $value);
+                list($property, $value) = $mixable;
+                if ($property === 'mixin') {
+                    $input = Mixin::merge($input, $value, $options);
+                }
+                elseif (! empty($options['keyed'])) {
+                    $input[$property] = $value;
+                }
+                else {
+                    $input[] = array($property, $value);
+                }
             }
         }
 
