@@ -6,7 +6,7 @@
 
 Selector aliases can be useful for grouping together common selector chains for reuse.
 
-They're  defined with the `@selector` directive, and can be used anywhere, you might use a pseudo class.
+They're defined with the `@selector` directive, and can be used anywhere you might use a pseudo class.
 
 
 ```crush
