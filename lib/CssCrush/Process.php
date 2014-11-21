@@ -429,14 +429,14 @@ class Process
         if (! $varFunction) {
             $varFunctionSimple = Regex::make('~\$\( \s* ({{ ident }}) \s* \)~xS');
             $varFunction = new Functions(array('$' => function ($rawArgs) {
-                    list($name, $defaultValue) = Functions::parseArgsSimple($rawArgs);
-                    if (isset(Crush::$process->vars[$name])) {
-                        return Crush::$process->vars[$name];
-                    }
-                    else {
-                        return $defaultValue;
-                    }
-                }));
+                list($name, $defaultValue) = Functions::parseArgsSimple($rawArgs);
+                if (isset(Crush::$process->vars[$name])) {
+                    return Crush::$process->vars[$name];
+                }
+                else {
+                    return $defaultValue;
+                }
+            }));
         }
 
         // Variables with no default value.
@@ -931,6 +931,12 @@ class Process
         $this->captureRules();
 
         $this->resolveInBlocks();
+
+        // Calling functions on media query lists.
+        $process = $this;
+        $this->string->pregReplaceCallback('~@media\s+(?<media_list>[^{]+)\{~i', function ($m) use (&$process) {
+            return "@media {$process->functions->apply($m['media_list'])}{";
+        });
 
         $this->aliasAtRules();
 
