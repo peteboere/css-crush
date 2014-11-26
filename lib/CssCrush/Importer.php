@@ -174,8 +174,8 @@ class Importer
         // Convert all EOL to unix style.
         $str = preg_replace('~\r\n?~', "\n", $str);
 
-        // Necessary to avoid catastrophic backtracking in large files and some edge cases.
-        $str = rtrim($this->captureCommentAndString($str));
+        // Trimming to reduce regex backtracking.
+        $str = rtrim($this->captureCommentAndString(rtrim($str)));
 
         if (! $this->syntaxCheck($str)) {
 
@@ -329,18 +329,18 @@ class Importer
                 // Bail without storing comment if output is minified or a private comment.
                 if ($process->minifyOutput || strpos($fullMatch, '/*$') === 0) {
 
-                    return Tokens::pad('', $fullMatch);
+                    $label = '';
                 }
-
-                // Fix broken comments as they will break any subsquent
-                // imported files that are inlined.
-                if (! preg_match('~\*/$~', $fullMatch)) {
-                    $fullMatch .= '*/';
+                else {
+                    // Fix broken comments as they will break any subsquent
+                    // imported files that are inlined.
+                    if (! preg_match('~\*/$~', $fullMatch)) {
+                        $fullMatch .= '*/';
+                    }
+                    $label = $process->tokens->add($fullMatch, 'c');
                 }
-                $label = $process->tokens->add($fullMatch, 'c');
             }
             else {
-
                 // Fix broken strings as they will break any subsquent
                 // imported files that are inlined.
                 if ($fullMatch[0] !== $fullMatch[strlen($fullMatch)-1]) {
@@ -349,7 +349,7 @@ class Importer
                 $label = $process->tokens->add($fullMatch, 's');
             }
 
-            return Tokens::pad($label, $fullMatch);
+            return $process->generateMap ? Tokens::pad($label, $fullMatch) : $label;
         };
 
         return preg_replace_callback(Regex::$patt->commentAndString, $callback, $str);
