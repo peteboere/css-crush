@@ -10,7 +10,7 @@
         "url": "https://github.com/peteboere/css-crush/issues"
     },
     "bin" : {
-        "csscrush" : "./misc/csscrush"
+        "csscrush" : "./bin/csscrush"
     },
     "homepage": "http://the-echoplex.net/csscrush",
     "license": "MIT"

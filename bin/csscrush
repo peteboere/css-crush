@@ -2,7 +2,7 @@
 <?php
 /**
  *
- * Alias for composer's vendor/bin directory.
+ * Alias for package managers.
  *
  */
 require __DIR__ . '/../cli.php';

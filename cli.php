@@ -601,7 +601,7 @@ function manpage() {
     <g>--help</>
         Display this help message.
 
-     <g>--list</>
+    <g>--list</>
         Show plugins.
 
     <g>--newlines</>

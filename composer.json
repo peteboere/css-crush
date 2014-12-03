@@ -24,7 +24,7 @@
         "twig/twig": "1.*"
     },
     "bin": [
-        "misc/csscrush"
+        "bin/csscrush"
     ],
     "autoload": {
         "psr-0": { "CssCrush": "lib/" },
