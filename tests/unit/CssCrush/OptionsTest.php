@@ -21,7 +21,7 @@ class OptionsTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals($standardOptions, $options->get());
 
-        $testOptions = array('enable' => array('foo', 'bar'), 'minify' => false);
+        $testOptions = array('plugins' => array('foo', 'bar'), 'minify' => false);
         $options = new Options($testOptions);
 
         $initialOptionsCopy = $testOptions + $standardOptions;

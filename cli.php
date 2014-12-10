@@ -107,11 +107,7 @@ foreach (array('boilerplate', 'formatter', 'newlines', 'stat_dump', 'source_map'
 }
 
 if ($args->enable_plugins) {
-    $options['enable'] = parse_list($args->enable_plugins);
-}
-
-if ($args->disable_plugins) {
-    $options['disable'] = parse_list($args->disable_plugins);
+    $options['plugins'] = parse_list($args->enable_plugins);
 }
 
 if ($args->vendor_target) {
@@ -424,7 +420,7 @@ function parse_args() {
     $required_value_opts = array(
         'i|input|f|file', // Input file. Defaults to STDIN.
         'o|output', // Output file. Defaults to STDOUT.
-        'E|enable' ,
+        'E|enable|plugins',
         'D|disable',
         'vars|variables',
         'formatter',
@@ -499,12 +495,11 @@ function parse_args() {
     $args->newlines = pick($opts, 'newlines');
 
     // Arguments that require a value but accept multiple values.
-    $args->enable_plugins = pick($opts, 'E', 'enable');
-    $args->disable_plugins = pick($opts, 'D', 'disable');
+    $args->enable_plugins = pick($opts, 'E', 'enable', 'plugins');
     $args->vendor_target = pick($opts, 'vendor-target');
 
     // Run multiple value arguments through array cast.
-    foreach (array('enable_plugins', 'disable_plugins', 'vendor_target') as $arg) {
+    foreach (array('enable_plugins', 'vendor_target') as $arg) {
         if ($args->$arg) {
             $args->$arg = (array) $args->$arg;
         }
@@ -575,11 +570,8 @@ function manpage() {
         Writes to file specified with -o option or to the input file
         directory with a '.crush.css' file extension.
 
-    <G>-D<g>, --disable</>
-        List of plugins (comma separated) to disable. Pass 'all' to disable all.
-
-    <G>-E<g>, --enable</>
-        List of plugins (comma separated) to enable. Overrides <g>--disable</>.
+    <G>-E<g>, --plugins</>
+        List of plugins (comma separated) to enable.
 
     <g>--boilerplate</>
         Whether or not to output a boilerplate. Optionally accepts filepath

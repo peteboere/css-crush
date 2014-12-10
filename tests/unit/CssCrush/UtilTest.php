@@ -95,14 +95,14 @@ class UtilTest extends \PHPUnit_Framework_TestCase
         $contents = <<<'NOW_DOC'
 <?php
 
-$enable = array('svg', 'px2em');
+$plugins = array('svg', 'px2em');
 $boilerplate = true;
 $unrecognised_option = true;
 
 NOW_DOC;
 
         $options = Util::readConfigFile(temp_file($contents));
-        $this->assertArrayHasKey('enable', $options);
+        $this->assertArrayHasKey('plugins', $options);
         $this->assertArrayNotHasKey('unrecognised_option', $options);
     }
 }

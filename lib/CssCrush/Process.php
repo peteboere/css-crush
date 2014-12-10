@@ -23,6 +23,7 @@ class Process
         $this->charset = null;
         $this->sources = array();
         $this->vars = array();
+        $this->plugins = array();
         $this->settings = array();
         $this->misc = new \stdClass();
         $this->input = new \stdClass();
@@ -41,7 +42,6 @@ class Process
         $this->stat = array();
 
         // Copy config values.
-        $this->plugins = $config->plugins;
         $this->aliases = $config->aliases;
 
         // Options.
@@ -180,7 +180,7 @@ class Process
                 'datetime' => @date('Y-m-d H:i:s O'),
                 'year' => @date('Y'),
                 'command' => $commandArgs,
-                'plugins' => implode(',', array_keys($this->plugins)),
+                'plugins' => implode(',', $this->plugins),
                 'version' => csscrush_version(),
                 'git_version' => function ()  {
                     return csscrush_version(true);
@@ -347,34 +347,10 @@ class Process
 
     protected function filterPlugins()
     {
-        $options = $this->options;
-        $config = Crush::$config;
+        $this->plugins = array_unique($this->options->plugins);
 
-        // Checking for table keys is more convenient than array searching.
-        $disable = array_flip($options->disable);
-        $enable = array_flip($options->enable);
-
-        if (isset($disable['all'])) {
-            $disable = $config->plugins;
-        }
-
-        // Remove option disabled plugins from the list, and disable them.
-        if ($disable) {
-            foreach (array_keys($disable) as $pluginName) {
-                Plugin::disable($pluginName);
-                unset($this->plugins[$pluginName]);
-            }
-        }
-
-        // Secondly add option enabled plugins to the list.
-        if ($enable) {
-            foreach (array_keys($enable) as $pluginName) {
-                $this->plugins[$pluginName] = true;
-            }
-        }
-
-        foreach (array_keys($this->plugins) as $pluginName) {
-            Plugin::enable($pluginName);
+        foreach ($this->plugins as $plugin) {
+            Plugin::enable($plugin);
         }
     }
 
@@ -892,8 +868,8 @@ class Process
 
     public function postCompile()
     {
-        foreach (array_keys($this->plugins) as $pluginName) {
-            Plugin::disable($pluginName);
+        foreach ($this->plugins as $plugin) {
+            Plugin::disable($plugin);
         }
 
         $this->release();

@@ -2,4 +2,4 @@
 
 $context = __DIR__;
 
-$enable = array('color');
+$plugins = array('color');

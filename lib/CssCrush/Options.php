@@ -25,8 +25,7 @@ class Options
         'doc_root' => null,
         'vendor_target' => 'all',
         'rewrite_import_urls' => true,
-        'enable' => null,
-        'disable' => null,
+        'plugins' => null,
         'settings' => array(),
         'stat_dump' => false,
         'source_map' => false,
@@ -41,8 +40,15 @@ class Options
             $options += $defaults->get();
         }
 
-        foreach ($options + self::$standardOptions as $key => $value) {
-            $this->__set($key, $value);
+        if (! empty($options['enable'])) {
+            if (empty($options['plugins'])) {
+                $options['plugins'] = $options['enable'];
+            }
+            unset($options['enable']);
+        }
+
+        foreach ($options + self::$standardOptions as $name => $value) {
+            $this->__set($name, $value);
         }
     }
 
@@ -52,7 +58,7 @@ class Options
 
         switch ($name) {
 
-            // Legacy debug option.
+            // Legacy option.
             case 'debug':
                 if (! array_key_exists('minify', $this->inputOptions)) {
                     $name = 'minify';
@@ -109,8 +115,7 @@ class Options
                 break;
 
             // Options used internally as arrays.
-            case 'enable':
-            case 'disable':
+            case 'plugins':
                 $value = (array) $value;
                 break;
         }
@@ -120,11 +125,9 @@ class Options
 
     public function __get($name)
     {
-        $input_value = $this->inputOptions[$name];
-
         switch ($name) {
             case 'newlines':
-                switch ($input_value) {
+                switch ($this->inputOptions[$name]) {
                     case 'windows':
                     case 'win':
                         return "\r\n";

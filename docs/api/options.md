@@ -76,14 +76,9 @@
     <td>Rewrite relative URLs inside inlined imported files.
 </tr>
 <tr>
-    <td class="option">enable
+    <td class="option">plugins
     <td class="values">Array
     <td>An array of plugin names to enable.
-</tr>
-<tr>
-    <td class="option">disable
-    <td class="values">Array | "all"
-    <td>An array of plugin names to disable. This option is always evaluated before enable.
 </tr>
 <tr>
     <td class="option">source_map

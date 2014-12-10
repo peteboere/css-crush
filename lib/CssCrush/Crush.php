@@ -43,7 +43,6 @@ class Crush
             'declarations' => array(),
             'at-rules' => array(),
         );
-        self::$config->plugins = array();
         self::$config->options = new Options();
 
         require_once self::$dir . '/misc/formatters.php';
