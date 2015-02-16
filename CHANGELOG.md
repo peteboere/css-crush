@@ -1,3 +1,16 @@
+## 2.3.0 (2015-02-16)
+
+* Added support for function calls on media query lists.
+* Added package.json for node package managers.
+* Added `previous`/`next` context keywords to `query()` function.
+* Removed legacy-flexbox plugin.
+* Removed `disable` option. Renamed `enable` option to `plugins`, old name still supported.
+* Removing trace option (SASS debug-info is obsolete) and related functionality. CSS source maps are now well supported.
+* Color functions now return nothing if the color argument is invalid.
+* Improvements to logging and error reporting.
+* Various bug fixes.
+
+
 ## 2.2.0 (2014-06-17)
 
 * Rule nesting now works without `@in` directives.
