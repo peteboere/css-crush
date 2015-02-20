@@ -13,6 +13,7 @@ CSS-Crush is a standards inspired preprocessor designed to enable a modern and u
 * Mixins
 * Minification
 * Lightweight plugin system
+* Source maps
 
 See the [docs](http://the-echoplex.net/csscrush) for full details.
 
