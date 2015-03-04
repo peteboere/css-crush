@@ -365,6 +365,9 @@ class Process
             'lowercase_keys' => false,
         )) + Crush::$process->vars;
 
+        // For convenience adding a runtime variable for cache busting linked resources.
+        $this->vars['timestamp'] = (int) $this->stat['compile_start_time'];
+
         // In-file variables override global variables.
         $this->vars += Crush::$config->vars;
 

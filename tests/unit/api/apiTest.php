@@ -86,6 +86,9 @@ TPL;
 
         $this->assertEquals(6, $stats['selector_count']);
         $this->assertEquals(2, $stats['rule_count']);
+        $this->assertArrayHasKey('timestamp', $stats['vars']);
+        unset($stats['vars']['timestamp']);
+        $this->assertEquals(array(), $stats['vars']);
         $this->assertEquals(array(), $stats['vars']);
         $this->assertEquals(array(), $stats['errors']);
         $this->assertTrue(isset($stats['compile_time']));
