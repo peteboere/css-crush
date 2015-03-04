@@ -43,7 +43,7 @@ class Url
 
         // Only wrap url with quotes if it contains tricky characters.
         $quote = '';
-        if ($this->isData || preg_match('~[()*]~S', $this->value)) {
+        if ($this->isData || preg_match('~[()*\s]~S', $this->value)) {
             $quote = '"';
         }
 
