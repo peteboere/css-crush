@@ -821,7 +821,9 @@ class Process
                     }
                     // If output dir is different to input dir prepend a link between the two.
                     elseif ($link) {
-                        $url->prepend($link);
+                        // If rewrite_import_urls is active
+						if($options->rewrite_import_urls === true)
+                            $url->prepend($link);
                     }
                 }
             }
