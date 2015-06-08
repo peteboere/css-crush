@@ -457,7 +457,7 @@ class Process
 
     protected function resolveIfDefines()
     {
-        $ifdefinePatt = Regex::make('~@if(?:set|define) \s+ (?<negate>not \s+)? (?<name>{{ ident }}) \s* \{~ixS');
+        $ifdefinePatt = Regex::make('~@if(?:set|define) \s+ (?<negate>not \s+)? (?<name>{{ ident }}) \s* (?:\( \s* (?<value>[a-zA-Z0-9_-]+) \s* \) \s*)? \s* \{~ixS');
 
         $matches = $this->string->matchAll($ifdefinePatt);
 
@@ -472,7 +472,15 @@ class Process
             $negate = $match['negate'][1] != -1;
             $nameDefined = isset($this->vars[$match['name'][0]]);
 
-            if (! $negate && $nameDefined || $negate && ! $nameDefined) {
+            $valueDefined = isset($match['value'][0]);
+            $valueMatch = $nameDefined && $valueDefined ? $this->vars[$match['name'][0]] == $match['value'][0] : false;
+
+            if(
+                ( $valueDefined && !$negate && $valueMatch )
+                || ( $valueDefined && $negate && !$valueMatch )
+                || ( !$valueDefined && !$negate && $nameDefined )
+                || ( !$valueDefined && $negate && !$nameDefined )
+            ) {
                 $curlyMatch->unWrap();
             }
             else {

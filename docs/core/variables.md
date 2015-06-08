@@ -42,6 +42,7 @@ Sections of CSS can be included and excluded on the basis of variable existence 
 
 ```crush
 @set foo #f00;
+@set bar true;
 
 @ifset foo {
   p {
@@ -53,6 +54,9 @@ p {
   font-size: 12px;
   @ifset not foo {
     line-height: 1.5;
+  }
+  @ifset bar(true) {
+    margin-bottom: 5px;
   }
 }
 ```
