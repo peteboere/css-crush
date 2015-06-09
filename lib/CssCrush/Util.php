@@ -229,6 +229,23 @@ class Util
     }
 
     /*
+     * Get raw value (useful if testing values that may or may not be a token).
+     */
+    public static function rawValue($value)
+    {
+        if ($tokenType = Tokens::test($value)) {
+            if ($tokenType == 'u') {
+                $value = Crush::$process->tokens->get($value)->value;
+            }
+            elseif ($tokenType == 's') {
+                $value = Crush::$process->tokens->get($value);
+            }
+        }
+
+        return $value;
+    }
+
+    /*
      * Encode integer to Base64 VLQ.
      */
     public static function vlqEncode($value)

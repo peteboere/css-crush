@@ -146,11 +146,16 @@ class Tokens
 
     public static function is($label, $of_type)
     {
-        if (preg_match(Regex::make('~^ \? (?<type>[a-zA-Z]) {{token_id}} \? $~xS'), $label, $m)) {
+        if (preg_match(Regex::$patt->token, $label, $m)) {
 
             return $of_type ? ($of_type === $m['type']) : true;
         }
 
         return false;
+    }
+
+    public static function test($value)
+    {
+        return preg_match(Regex::$patt->token, $value, $m) ? $m['type'] : false;
     }
 }

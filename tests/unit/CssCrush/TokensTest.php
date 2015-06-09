@@ -111,4 +111,11 @@ class TokensTest extends \PHPUnit_Framework_TestCase
     {
         $this->assertTrue(Tokens::is($this->tokens->createLabel('s'), 's'));
     }
+
+    public function testTest()
+    {
+        $this->assertFalse(Tokens::test('foobar'));
+        $this->assertEquals(Tokens::test($this->tokens->createLabel('u')), 'u');
+        $this->assertEquals(Tokens::test($this->tokens->createLabel('s')), 's');
+    }
 }
