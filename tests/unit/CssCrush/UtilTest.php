@@ -3,9 +3,17 @@
 namespace CssCrush\UnitTest;
 
 use CssCrush\Util;
+use CssCrush\Tokens;
+use CssCrush\Url;
 
 class UtilTest extends \PHPUnit_Framework_TestCase
 {
+    public function setUp()
+    {
+        $this->process = bootstrap_process(array('minify' => false));
+        $this->tokens = $this->process->tokens;
+    }
+
     public function testNormalizePath()
     {
         $this->assertEquals('/Some/crazy/Path', Util::normalizePath('C:\\Some\crazy/Path\\', true));
@@ -88,6 +96,24 @@ class UtilTest extends \PHPUnit_Framework_TestCase
     {
         $test_file = sys_get_temp_dir() . '/' . str_replace('\\', '_', __CLASS__);
         $this->assertTrue(Util::filePutContents($test_file, 'Hello Mum'));
+    }
+
+    public function testRawValue()
+    {
+        $url1 = $this->tokens->add(new Url('foo.jpg'));
+        $url2 = $this->tokens->add(new Url('foo.jpg'));
+        $this->assertNotEquals($url1, $url2);
+        $this->assertEquals(Util::rawValue($url1), Util::rawValue($url2));
+        $this->assertEquals(Util::rawValue($url1), 'foo.jpg');
+
+        $string1 = $this->tokens->add('"bar"', 's');
+        $string2 = $this->tokens->add('"bar"', 's');
+        $this->assertNotEquals($string1, $string2);
+        $this->assertEquals(Util::rawValue($string1), Util::rawValue($string2));
+        $this->assertEquals(Util::rawValue($string1), '"bar"');
+
+        $this->assertEquals(Util::rawValue('foobar'), 'foobar');
+        $this->assertNotEquals(Util::rawValue('foobar'), 'notFoobar');
     }
 
     public function testReadConfigFile()

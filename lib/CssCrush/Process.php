@@ -457,7 +457,7 @@ class Process
 
     protected function resolveIfDefines()
     {
-        $ifdefinePatt = Regex::make('~@if(?:set|define) \s+ (?<negate>not \s+)? (?<name>{{ ident }}) \s* (?:\( \s* (?<value>[a-zA-Z0-9_-]+) \s* \) \s*)? \s* \{~ixS');
+        $ifdefinePatt = Regex::make('~@if(?:set|define) \s+ (?<negate>not \s+)? (?<name>{{ ident }}) \s* {{ parens }}? \s* \{~ixS');
 
         $matches = $this->string->matchAll($ifdefinePatt);
 
@@ -472,10 +472,15 @@ class Process
             $negate = $match['negate'][1] != -1;
             $nameDefined = isset($this->vars[$match['name'][0]]);
 
-            $valueDefined = isset($match['value'][0]);
-            $valueMatch = $nameDefined && $valueDefined ? $this->vars[$match['name'][0]] == $match['value'][0] : false;
+            $valueDefined = isset($match['parens_content'][0]);
+            $valueMatch = false;
+            if ($nameDefined && $valueDefined) {
+                $testValue = Util::rawValue(trim($match['parens_content'][0]));
+                $varValue = Util::rawValue($this->vars[$match['name'][0]]);
+                $valueMatch = $varValue == $testValue;
+            }
 
-            if(
+            if (
                 ( $valueDefined && !$negate && $valueMatch )
                 || ( $valueDefined && $negate && !$valueMatch )
                 || ( !$valueDefined && !$negate && $nameDefined )

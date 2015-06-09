@@ -85,6 +85,7 @@ class Regex
         $patt->ruleDirective = '~^(?:(@include)|(@extends?)|(@name))[\s]+~iS';
         $patt->argListSplit = '~\s*[,\s]\s*~S';
         $patt->cruftyHex = Regex::make('~\#({{hex}})\1({{hex}})\2({{hex}})\3~S');
+        $patt->token = Regex::make('~^ \? (?<type>[a-zA-Z]) {{token_id}} \? $~xS');
     }
 
     public static function make($pattern)
