@@ -834,7 +834,9 @@ class Process
                     }
                     // If output dir is different to input dir prepend a link between the two.
                     elseif ($link) {
-                        $url->prepend($link);
+                        // If rewrite_import_urls is active
+                        if($options->rewrite_import_urls === true)
+                            $url->prepend($link);
                     }
                 }
             }
@@ -900,6 +902,9 @@ class Process
         $importer = new Importer($this);
         $this->string = new StringObject($importer->collate());
 
+        // Capture phase 0 hook: Before all variables and settings have resolved.
+        $this->hooks->run('capture_phase0', $this);
+        
         $this->captureVars();
 
         $this->placeAllVars();
