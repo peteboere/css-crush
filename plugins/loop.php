@@ -8,7 +8,7 @@ namespace CssCrush;
 
 Plugin::register('loop', array(
     'enable' => function ($process) {
-        $process->hooks->add('capture_phase1', 'CssCrush\loop');
+        $process->hooks->add('capture_phase0', 'CssCrush\loop');
     }
 ));
 
