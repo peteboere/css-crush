@@ -8,19 +8,20 @@ namespace CssCrush;
 
 class Color
 {
-    protected static $keywords, $minifyableKeywords;
+    protected static $minifyableKeywords;
 
     public static function getKeywords()
     {
-        if (! isset(self::$keywords)) {
-            if ($keywords = Util::parseIni(Crush::$dir . '/misc/color-keywords.ini')) {
-                foreach ($keywords as $keyword => $rgb) {
-                    self::$keywords[$keyword] = array_map('floatval', explode(',', $rgb)) + array(0,0,0,1);
+        static $namedColors;
+        if (! isset($namedColors)) {
+            if ($colors = Util::parseIni(Crush::$dir . '/misc/color-keywords.ini')) {
+                foreach ($colors as $name => $rgb) {
+                    $namedColors[$name] = array_map('floatval', explode(',', $rgb)) + array(0,0,0,1);
                 }
             }
         }
 
-        return isset(Crush::$process->colorKeywords) ? Crush::$process->colorKeywords : self::$keywords;
+        return isset(Crush::$process->colorKeywords) ? Crush::$process->colorKeywords : $namedColors;
     }
 
     public static function getMinifyableKeywords()
@@ -364,13 +365,19 @@ class Color
 
     protected $value;
     protected $hslColorSpace;
+    protected $namedComponents = array(
+        'red' => 0,
+        'green' => 1,
+        'blue' => 2,
+        'alpha' => 3,
+    );
     public $isValid;
 
-    public function __construct($color, $use_hsl_color_space = false)
+    public function __construct($color, $useHslColorSpace = false)
     {
         $this->value = is_array($color) ? $color : self::parse($color);
         $this->isValid = ! empty($this->value);
-        if ($use_hsl_color_space && $this->isValid) {
+        if ($useHslColorSpace && $this->isValid) {
             $this->toHsl();
         }
     }
@@ -378,20 +385,18 @@ class Color
     public function __toString()
     {
         // For opaque colors return hex notation as it's the most compact.
-        if ($this->value[3] === 1) {
+        if ($this->getComponent('alpha') == 1) {
 
             return $this->getHex();
         }
-        else {
 
-            // R, G and B components must be integers.
-            $components = array();
-            foreach (($this->hslColorSpace ? $this->getRgb() : $this->value) as $component_index => $component) {
-                $components[] = $component_index === 3 ? $component : min(round($component), 255);
-            }
-
-            return 'rgba(' . implode(',', $components) . ')';
+        // R, G and B components must be integers.
+        $components = array();
+        foreach (($this->hslColorSpace ? $this->getRgb() : $this->value) as $index => $component) {
+            $components[] = ($index === 3) ? $component : min(round($component), 255);
         }
+
+        return 'rgba(' . implode(',', $components) . ')';
     }
 
     public function toRgb()
@@ -431,17 +436,19 @@ class Color
 
     public function getComponent($index)
     {
+        $index = isset($this->namedComponents[$index]) ? $this->namedComponents[$index] : $index;
         return $this->value[$index];
     }
 
-    public function setComponent($index, $new_component_value)
+    public function setComponent($index, $newComponentValue)
     {
-        $this->value[$index] = $new_component_value;
+        $index = isset($this->namedComponents[$index]) ? $this->namedComponents[$index] : $index;
+        $this->value[$index] = is_numeric($newComponentValue) ? $newComponentValue : 0;
     }
 
     public function adjust(array $adjustments)
     {
-        $was_hsl_color_space = $this->hslColorSpace;
+        $wasHslColor = $this->hslColorSpace;
 
         $this->toHsl();
 
@@ -459,6 +466,6 @@ class Color
             }
         }
 
-        return ! $was_hsl_color_space ? $this->toRgb() : $this;
+        return ! $wasHslColor ? $this->toRgb() : $this;
     }
 }

@@ -47,6 +47,10 @@ class ColorTest extends \PHPUnit_Framework_TestCase
     {
         $color = new Color('red');
         $this->assertEquals(255, $color->getComponent(0));
+        $this->assertEquals(255, $color->getComponent('red'));
+        $this->assertEquals(0, $color->getComponent('green'));
+        $this->assertEquals(0, $color->getComponent('blue'));
+        $this->assertEquals(1, $color->getComponent('alpha'));
     }
 
     public function testSetComponent()
@@ -54,6 +58,18 @@ class ColorTest extends \PHPUnit_Framework_TestCase
         $color = new Color('red');
         $color->setComponent(0, 0);
         $this->assertEquals(0, $color->getComponent(0));
+
+        $color = new Color('#000000');
+        $color->setComponent(3, '1');
+        $this->assertEquals('#000000', $color->__toString());
+        $color->setComponent(3, .5);
+        $this->assertEquals('rgba(0,0,0,0.5)', $color->__toString());
+
+        $color->setComponent('red', 100);
+        $color->setComponent('green', 100);
+        $color->setComponent('blue', 100);
+        $color->setComponent('alpha', .1);
+        $this->assertEquals('rgba(100,100,100,0.1)', $color->__toString());
     }
 
     public function testColorSplit()
