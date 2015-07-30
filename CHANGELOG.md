@@ -1,3 +1,10 @@
+## 2.4.0 (2015-07-30)
+
+* Added simple value checking to `@ifset`.
+* Updated vendor aliases.
+* Various fixes and under the hood improvements.
+
+
 ## 2.3.0 (2015-02-16)
 
 * Added support for function calls on media query lists.
