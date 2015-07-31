@@ -182,10 +182,21 @@ function fn__math($input) {
         array(M_PI),
         $expression);
 
-    // Strip blacklisted characters.
-    $expression = preg_replace('~[^\.0-9\*\/\+\-\(\)]~S', '', $expression);
+    // Filter expression so it's just characters necessary for simple math.
+    $expression = preg_replace("~[^.0-9/*()+-]~S", '', $expression);
 
-    $result = @eval("return $expression;");
+    $evalExpression = "return $expression;";
+    $result = false;
+
+    if (class_exists('\\ParseError')) {
+        try {
+            $result = eval($evalExpression);
+        }
+        catch (\ParseError $e) {}
+    }
+    else {
+        $result = @eval($evalExpression);
+    }
 
     return ($result === false ? 0 : round($result, 5)) . $unit;
 }
