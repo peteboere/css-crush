@@ -73,7 +73,12 @@ class Functions
 
         while ($match = array_pop($matches)) {
 
-            list($function, $offset) = $match['function'];
+            if (isset($match['function']) && $match['function'][1] !== -1) {
+                list($function, $offset) = $match['function'];
+            }
+            else {
+                list($function, $offset) = $match['simple_function'];
+            }
 
             if (! preg_match(Regex::$patt->parens, $str, $parens, PREG_OFFSET_CAPTURE, $offset)) {
                 continue;
@@ -142,16 +147,24 @@ class Functions
             }
         }
 
-        $flatList = '';
-        if (! $idents) {
-            $flatList = implode('|', $nonIdents);
+        if ($idents) {
+            $idents = '{{ LB }}-?(?<function>' . implode('|', $idents) . ')';
         }
-        else {
-            $idents = '{{ LB }}(?:' . implode('|', $idents) . ')';
-            $flatList = $nonIdents ? '(?:' . implode('|', $nonIdents) . "|$idents)" : $idents;
+        if ($nonIdents) {
+            $nonIdents = '(?<simple_function>' . implode('|', $nonIdents) . ')';
         }
 
-        return Regex::make("~(?<function>$flatList)\(~iS");
+        if ($idents && $nonIdents) {
+            $patt = "(?:$idents|$nonIdents)";
+        }
+        elseif ($idents) {
+            $patt = $idents;
+        }
+        elseif ($nonIdents) {
+            $patt = $nonIdents;
+        }
+
+        return Regex::make("~$patt\(~iS");
     }
 }
 
