@@ -90,7 +90,9 @@ class Declaration
             );
             $this->value = $thisFunction->apply($this->value, $context);
 
-            $parentRule->declarations->data += array($this->property => $this->value);
+            if (isset($parentRule->declarations->data)) {
+                $parentRule->declarations->data += array($this->property => $this->value);
+            }
 
             $context = (object) array(
                 'rule' => $parentRule,

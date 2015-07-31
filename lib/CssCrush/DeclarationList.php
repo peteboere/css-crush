@@ -10,6 +10,7 @@ class DeclarationList extends Iterator
 {
     public $flattened = true;
     public $processed = false;
+    protected $rule;
 
     public $properties = array();
     public $canonicalProperties = array();
@@ -20,11 +21,12 @@ class DeclarationList extends Iterator
     // Declarations hash table for external query() referencing.
     public $queryData = array();
 
-    public function __construct($declarations_string, Rule $rule)
+    public function __construct($declarationsString, Rule $rule)
     {
         parent::__construct();
 
-        $pairs = DeclarationList::parse($declarations_string);
+        $this->rule = $rule;
+        $pairs = DeclarationList::parse($declarationsString);
 
         foreach ($pairs as $index => $pair) {
 
@@ -32,12 +34,12 @@ class DeclarationList extends Iterator
 
             // Directives.
             if ($prop === 'extends') {
-                $rule->setExtendSelectors($value);
+                $this->rule->addExtendSelectors($value);
                 unset($pairs[$index]);
             }
             elseif ($prop === 'name') {
-                if (! $rule->name) {
-                    $rule->name = $value;
+                if (! $this->rule->name) {
+                    $this->rule->name = $value;
                 }
                 unset($pairs[$index]);
             }
@@ -405,7 +407,10 @@ class DeclarationList extends Iterator
                 }
 
                 if ($options['apply_hooks']) {
-                    Crush::$process->hooks->run('declaration_preprocess', array('property' => &$property, 'value' => &$value));
+                    Crush::$process->hooks->run('declaration_preprocess', array(
+                        'property' => &$property,
+                        'value' => &$value,
+                    ));
                 }
             }
             else {
@@ -433,37 +438,40 @@ class DeclarationList extends Iterator
         return $pairs;
     }
 
-    public function flatten($rule_context)
+    public function flatten()
     {
         if ($this->flattened) {
             return;
         }
 
-        $new_set = array();
+        $newSet = array();
         foreach ($this->store as $declaration) {
             if (is_array($declaration) && $declaration[0] === 'mixin') {
-                foreach (Mixin::merge(array(), $declaration[1], array('context' => $rule_context)) as $mixable) {
+                foreach (Mixin::merge(array(), $declaration[1], array('context' => $this->rule)) as $mixable) {
                     if ($mixable instanceof Declaration) {
                         $clone = clone $mixable;
-                        $clone->index = count($new_set);
-                        $new_set[] = $clone;
+                        $clone->index = count($newSet);
+                        $newSet[] = $clone;
+                    }
+                    elseif ($mixable[0] === 'extends') {
+                        $this->rule->addExtendSelectors($mixable[1]);
                     }
                     else {
-                        $new_set[] = new Declaration($mixable[0], $mixable[1], count($new_set));
+                        $newSet[] = new Declaration($mixable[0], $mixable[1], count($newSet));
                     }
                 }
             }
             else {
-                $declaration->index = count($new_set);
-                $new_set[] = $declaration;
+                $declaration->index = count($newSet);
+                $newSet[] = $declaration;
             }
         }
 
-        $this->reset($new_set);
+        $this->reset($newSet);
         $this->flattened = true;
     }
 
-    public function process($rule_context)
+    public function process()
     {
         if ($this->processed) {
             return;
@@ -472,7 +480,7 @@ class DeclarationList extends Iterator
         foreach ($this->store as $index => $declaration) {
 
             // Execute functions, store as data etc.
-            $declaration->process($rule_context);
+            $declaration->process($this->rule);
 
             // Drop declaration if value is now empty.
             if (! $declaration->valid) {

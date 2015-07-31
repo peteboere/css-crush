@@ -70,13 +70,11 @@ class Rule
     #############################
     #  Rule inheritance.
 
-    public function setExtendSelectors($rawValue)
+    public function addExtendSelectors($rawValue)
     {
-        // Reset if called earlier, last call wins by intention.
-        $this->extendArgs = array();
-
         foreach (Util::splitDelimList($rawValue) as $arg) {
-            $this->extendArgs[] = new ExtendArg($arg);
+            $extendArg = new ExtendArg($arg);
+            $this->extendArgs[$extendArg->raw] = $extendArg;
         }
     }
 

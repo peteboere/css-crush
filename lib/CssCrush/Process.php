@@ -633,8 +633,8 @@ class Process
 
         foreach ($this->tokens->store->r as $rule) {
 
-            $rule->declarations->flatten($rule);
-            $rule->declarations->process($rule);
+            $rule->declarations->flatten();
+            $rule->declarations->process();
 
             $this->hooks->run('rule_prealias', $rule);
 

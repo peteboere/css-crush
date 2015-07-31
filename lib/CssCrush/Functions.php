@@ -321,7 +321,7 @@ function fn__query($input, $context) {
 
     $result = '';
     if ($targetRule) {
-        $targetRule->declarations->process($targetRule);
+        $targetRule->declarations->process();
         $targetRule->declarations->expandData('queryData', $property);
         if (isset($targetRule->declarations->queryData[$property])) {
             $result = $targetRule->declarations->queryData[$property];
