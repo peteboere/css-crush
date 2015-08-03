@@ -190,9 +190,9 @@ function fn__math($input) {
 
     if (class_exists('\\ParseError')) {
         try {
-            $result = eval($evalExpression);
+            $result = @eval($evalExpression);
         }
-        catch (\ParseError $e) {}
+        catch (\Error $e) {}
     }
     else {
         $result = @eval($evalExpression);
