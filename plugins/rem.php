@@ -37,8 +37,8 @@ function rem(Rule $rule) {
     // Determine what conversion mode we're using.
     $mode = Crush::$process->settings->get('rem-mode', $modes[0]);
 
-    // Determine the default base em-size, to my knowledge always 16px.
-    $base = Crush::$process->settings->get('rem-base', 16);
+    // Determine a base font size for calculations, in browsers this is usually 16px.
+    $base = floatval(Crush::$process->settings->get('rem-base', 16));
 
     // Select the length match pattern depending on mode.
     $length_patt = $mode === 'rem-fallback' ? $rem_patt : $px_patt;
