@@ -271,7 +271,6 @@ class DeclarationList extends Iterator
 
                 // Single function aliases.
                 else {
-
                     foreach ($function_aliases[$fn_name] as $fn_alias) {
 
                         // If the declaration is vendor specific only create aliases for the same vendor.
@@ -289,7 +288,7 @@ class DeclarationList extends Iterator
 
                         // Make swaps.
                         $copy->value = preg_replace(
-                            '~(?<![\w-])' . $fn_name . '(?=\?)~',
+                            Regex::make("~{{ LB }}$fn_name(?=\()~iS"),
                             $fn_alias,
                             $copy->value
                         );

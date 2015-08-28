@@ -97,7 +97,7 @@ class Regex
         }
 
         return $cache[$pattern] = preg_replace_callback('~\{\{ *(?<name>\w+) *\}\}~S', function ($m) {
-            return Regex::$classes->{ $m['name'] };
+            return Regex::$classes->$m['name'];
         }, $pattern);
     }
 

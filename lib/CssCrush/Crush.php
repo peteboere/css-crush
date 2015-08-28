@@ -155,17 +155,19 @@ class Crush
                         if (preg_match($regex->vendorPrefix, $alias_func, $m)) {
 
                             // We'll cache the function matching regex here.
-                            $vendor_grouped_aliases[$m[1]]['find'][] = Regex::make("~{{ LB }}$func_name(?=\()~i");
+                            $vendor_grouped_aliases[$m[1]]['find'][] = Regex::make("~{{ LB }}$func_name(?=\()~iS");
                             $vendor_grouped_aliases[$m[1]]['replace'][] = $alias_func;
                         }
                     }
                 }
                 $tree['function_groups'][$group] = $vendor_grouped_aliases;
+                unset($tree[$section]);
             }
         }
 
         $tree += self::$config->bareAliases;
 
+        // Persisting dummy aliases for testing purposes.
         $tree['properties']['foo'] =
         $tree['at-rules']['foo'] =
         $tree['functions']['foo'] = array('-webkit-foo', '-moz-foo', '-ms-foo');
