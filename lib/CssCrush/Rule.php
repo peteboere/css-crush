@@ -55,8 +55,7 @@ class Rule
             return "$stub{$this->selectors->join()}{{$this->declarations->join()}}";
         }
         else {
-            $formatter = $process->ruleFormatter;
-            return "$stub{$formatter($this)}";
+            return $stub . call_user_func($process->ruleFormatter, $this);
         }
     }
 
