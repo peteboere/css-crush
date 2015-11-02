@@ -96,7 +96,7 @@ class Options
                 if (is_string($value)) {
                     $value = Util::resolveUserPath($value, function ($path) use ($name) {
                         if (! @mkdir($path, 0755, true)) {
-                            notice("Could not create directory $path (setting `$name` option).");
+                            warning("Could not create directory $path (setting `$name` option).");
                         }
                         else {
                             debug("Created directory $path (setting `$name` option).");
