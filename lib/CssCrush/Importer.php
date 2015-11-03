@@ -76,8 +76,8 @@ class Importer
             // If unsuccessful getting import contents continue with the import line removed.
             $import->content = @file_get_contents($import->path);
             if ($import->content === false) {
-
-                notice("Import file '{$import->url->value}' not found");
+                notice("@import '{$import->url->value}' " .
+                    (! is_readable($import->path) ? 'is not readable' : 'does not exist'));
                 $str = substr_replace($str, '', $match_start, $match_len);
                 continue;
             }
