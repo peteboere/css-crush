@@ -34,24 +34,3 @@ For...in loops with lists and generator functions.
 .grid-23-of-24 { width: 95.83333%; }
 .grid-24-of-24 { width: 100%; }
 ```
-
-```crush
-/* The last argument to color-range() is an integer
-   specifying how many transition colors to generate
-   between the color arguments. */
-@for color in color-range(powderblue, deeppink, a-adjust(yellow, -80), 5) {
-  .foo-#(loop.counter) {
-    background-color: #(color);
-  }
-}
-```
-
-```css
-.foo-1 { background-color: #b0e0e6; }
-.foo-2 { background-color: #bdbed8; }
-/*
-    Intermediate steps ommited
-*/
-.foo-12 { background-color: rgba(255,216,25,.33); }
-.foo-13 { background-color: rgba(255,255,0,.2); }
-```

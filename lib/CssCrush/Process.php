@@ -183,7 +183,7 @@ class Process
                 'plugins' => implode(',', $this->plugins),
                 'version' => csscrush_version(),
                 'git_version' => function ()  {
-                    return csscrush_version(true);
+                    return csscrush_version();
                 },
                 'compile_time' => function () {
                     $now = microtime(true) - Crush::$process->stat['compile_start_time'];
@@ -653,33 +653,6 @@ class Process
 
 
     #############################
-    #  @in blocks.
-
-    protected function resolveInBlocks()
-    {
-        $matches = $this->string->matchAll('~@in\s+(?<selectors>[^{]+)\{~iS');
-
-        while ($match = array_pop($matches)) {
-
-            $selectorsMatch = trim($match['selectors'][0]);
-            $curlyMatch = new BalancedMatch($this->string, $match[0][1]);
-
-            if (! $curlyMatch->match || empty($selectorsMatch)) {
-                continue;
-            }
-
-            $rawSelectors = Util::splitDelimList($selectorsMatch);
-
-            foreach (Regex::matchAll(Regex::$patt->r_token, $curlyMatch->inside()) as $ruleMatch) {
-                Crush::$process->tokens->get($ruleMatch[0][0])->selectors->merge($rawSelectors);
-            }
-
-            $curlyMatch->unWrap();
-        }
-    }
-
-
-    #############################
     #  @-rule aliasing.
 
     protected function aliasAtRules()
@@ -924,8 +897,6 @@ class Process
         $this->hooks->run('capture_phase2', $this);
 
         $this->captureRules();
-
-        $this->resolveInBlocks();
 
         // Calling functions on media query lists.
         $process = $this;

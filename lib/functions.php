@@ -5,8 +5,6 @@
   *
   */
 use CssCrush\Crush;
-class_alias('CssCrush\Crush', 'CssCrush\CssCrush');
-
 
 /**
  * Process CSS file and return a new compiled file.
@@ -177,12 +175,9 @@ function csscrush_add_function($function_name = null, $callback = null) {
  *
  * @see docs/api/functions.md
  */
-function csscrush_version($use_git = false) {
+function csscrush_version() {
 
-    if ($use_git && $version = \CssCrush\Version::gitDescribe()) {
-        return $version;
-    }
-    return Crush::$config->version;
+    return \CssCrush\Version::gitDescribe();
 }
 
 

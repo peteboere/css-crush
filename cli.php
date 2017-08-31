@@ -10,7 +10,7 @@ define('STATUS_OK', 0);
 define('STATUS_ERROR', 1);
 
 $version = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
-$requiredVersion = 5.3;
+$requiredVersion = 5.6;
 
 if ($version < $requiredVersion) {
 
@@ -36,7 +36,7 @@ catch (Exception $ex) {
 
 if ($args->version) {
 
-    stdout((string) csscrush_version(true));
+    stdout((string) csscrush_version());
 
     exit(STATUS_OK);
 }

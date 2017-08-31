@@ -12,12 +12,10 @@ Plugin::register('loop', array(
     }
 ));
 
-
 define('CssCrush\LOOP_VAR_PATT',
     '~\#\( \s* (?<arg>[a-zA-Z][\.a-zA-Z0-9-_]*) \s* \)~x');
 define('CssCrush\LOOP_PATT',
     Regex::make('~(?<expression> @for \s+ (?<var>{{ident}}) \s+ in \s+ (?<list>[^{]+) ) \s* {{block}}~xiS'));
-
 
 function loop($process) {
 
@@ -58,7 +56,7 @@ function loop_resolve_list($list_text) {
     $items = array();
 
     $list_text = Crush::$process->functions->apply($list_text);
-    $generator_func_patt = Regex::make('~(?<func>range|color-range) {{parens}}~ix');
+    $generator_func_patt = Regex::make('~(?<func>range){{ parens }}~ix');
 
     if (preg_match($generator_func_patt, $list_text, $m)) {
         $func = strtolower($m['func']);
@@ -67,11 +65,6 @@ function loop_resolve_list($list_text) {
             case 'range':
                 $items = call_user_func_array('range', $args);
                 break;
-            default:
-                $func = str_replace('-', '_', $func);
-                if (function_exists("CssCrush\loop_$func")) {
-                    $items = call_user_func_array("CssCrush\loop_$func", $args);
-                }
         }
     }
     else {
@@ -104,44 +97,4 @@ function loop_apply_scope($str, $context) {
     }, $str);
 
     return str_replace(array_keys($child_scopes), array_values($child_scopes), $str);
-}
-
-function loop_color_range() {
-
-    $args = func_get_args();
-
-    $source_colors = array();
-    while ($args && $color = Color::parse($args[0])) {
-        $source_colors[] = $color;
-        array_shift($args);
-    }
-
-    $steps = max(1, isset($args[0]) ? (int) $args[0] : 1);
-
-    $generated_colors = array();
-    foreach ($source_colors as $index => $source_color) {
-
-        $generated_colors[] = new Color($source_color);
-
-        // Generate the in-between colors.
-        $next_source_color = isset($source_colors[$index + 1]) ? $source_colors[$index + 1] : null;
-        if (! $next_source_color) {
-            break;
-        }
-        for ($i = 0; $i < $steps; $i++) {
-            $rgba = array();
-            foreach ($source_color as $component_index => $component_value) {
-                if ($component_diff = $next_source_color[$component_index] - $component_value) {
-                    $component_step = $component_diff / ($steps+1);
-                    $rgba[] = min(round($component_value + ($component_step * ($i+1)), 2), 255);
-                }
-                else {
-                    $rgba[] = $component_value;
-                }
-            }
-            $generated_colors[] = new Color($rgba);
-        }
-    }
-
-    return $generated_colors;
 }

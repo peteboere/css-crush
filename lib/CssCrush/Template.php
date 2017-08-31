@@ -56,7 +56,6 @@ class Template
         };
 
         $templateFunctions->register['#'] = $captureCallback;
-        $templateFunctions->register['arg'] = $captureCallback;
 
         $this->string = $templateFunctions->apply($str);
     }

@@ -63,11 +63,7 @@ subsequent compilations within the duration of the script.
 
 Get the library version.
 
-`csscrush_version( [bool $use_git = false] )`
-
-### Parameters
-
- * `$use_git`  Return version as reported by shell command `git describe`.
+`csscrush_version()`
 
 
 ***************

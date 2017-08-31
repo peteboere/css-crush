@@ -58,14 +58,6 @@ class Options
 
         switch ($name) {
 
-            // Legacy option.
-            case 'debug':
-                if (! array_key_exists('minify', $this->inputOptions)) {
-                    $name = 'minify';
-                    $value = ! $value;
-                }
-                break;
-
             case 'formatter':
                 if (is_string($value) && isset(Crush::$config->formatters[$value])) {
                     $value = Crush::$config->formatters[$value];

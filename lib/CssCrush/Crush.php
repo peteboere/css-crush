@@ -8,8 +8,6 @@ namespace CssCrush;
 
 class Crush
 {
-    const VERSION = '2.4.0';
-
     // Global settings.
     public static $config;
 
@@ -26,7 +24,6 @@ class Crush
         self::$config = new \stdClass();
 
         self::$config->pluginDirs = array(self::$dir . '/plugins');
-        self::$config->version = new Version(self::VERSION);
         self::$config->scriptDir = dirname(realpath($_SERVER['SCRIPT_FILENAME']));
         self::$config->docRoot = self::resolveDocRoot();
         self::$config->logger = new Logger();
@@ -174,57 +171,6 @@ class Crush
 
         return $tree;
     }
-
-    /**
-     * Deprecated.
-     *
-     * @see csscrush_file().
-     */
-    public static function file($file, $options = array())
-    {
-        return csscrush_file($file, $options);
-    }
-
-    /**
-     * Deprecated.
-     *
-     * @see csscrush_tag().
-     */
-    public static function tag($file, $options = array(), $tag_attributes = array())
-    {
-        return csscrush_tag($file, $options, $tag_attributes);
-    }
-
-    /**
-     * Deprecated.
-     *
-     * @see csscrush_inline().
-     */
-    public static function inline($file, $options = array(), $tag_attributes = array())
-    {
-        return csscrush_inline($file, $options, $tag_attributes);
-    }
-
-    /**
-     * Deprecated.
-     *
-     * @see csscrush_string().
-     */
-    public static function string($string, $options = array())
-    {
-        return csscrush_string($string, $options);
-    }
-
-    /**
-     * Deprecated.
-     *
-     * @see csscrush_stat().
-     */
-    public static function stat()
-    {
-        return csscrush_stat();
-    }
-
 
     #############################
     #  Logging and stats.
