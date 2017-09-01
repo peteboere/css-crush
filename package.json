@@ -9,9 +9,12 @@
     "bugs": {
         "url": "https://github.com/peteboere/css-crush/issues"
     },
-    "bin" : {
-        "csscrush" : "./bin/csscrush"
+    "bin": {
+        "csscrush": "./bin/csscrush"
     },
     "homepage": "http://the-echoplex.net/csscrush",
-    "license": "MIT"
+    "license": "MIT",
+    "devDependencies": {
+        "eslint": "~4.5.0"
+    }
 }

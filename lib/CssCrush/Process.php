@@ -837,14 +837,16 @@ class Process
         }
     }
 
+    private $iniOriginal = [];
     public function preCompile()
     {
-        // Ensure relevant ini settings aren't too conservative.
-        if (ini_get('pcre.backtrack_limit') < 1000000) {
-            ini_set('pcre.backtrack_limit', 1000000);
-        }
-        if (preg_match('~^(\d+)M$~', ini_get('memory_limit'), $m) && $m[1] < 128) {
-            ini_set('memory_limit', '128M');
+        foreach ([
+            'pcre.backtrack_limit' => 1000000,
+            'pcre.jit' => 0, // Have run into PREG_JIT_STACKLIMIT_ERROR (issue #82).
+            'memory_limit' => '128M',
+        ] as $name => $value) {
+            $this->iniOriginal[$name] = ini_get($name);
+            ini_set($name, $value);
         }
 
         $this->filterPlugins();
@@ -864,6 +866,10 @@ class Process
         $this->release();
 
         Crush::runStat('compile_time');
+
+        foreach ($this->iniOriginal as $name => $value) {
+            ini_set($name, $value);
+        }
     }
 
     public function compile()
