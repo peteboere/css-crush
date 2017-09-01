@@ -451,6 +451,84 @@ class Process
         $this->settings = new Settings($this->options->settings + $captured_settings);
     }
 
+    #############################
+    #  @for..in blocks.
+
+    protected function resolveLoops()
+    {
+        $LOOP_VAR_PATT = '~\#\( \s* (?<arg>[a-zA-Z][\.a-zA-Z0-9-_]*) \s* \)~x';
+        $LOOP_PATT = Regex::make('~
+            (?<expression>
+                @for \s+ (?<var>{{ident}}) \s+ in \s+ (?<list>[^{]+)
+            ) \s*
+            {{ block }}
+        ~xiS');
+
+        $apply_scope = function ($str, $context) use ($LOOP_VAR_PATT, $LOOP_PATT) {
+            // Need to temporarily hide child block scopes.
+            $child_scopes = [];
+            $str = preg_replace_callback($LOOP_PATT, function ($m) use (&$child_scopes) {
+                $label = '?B' . count($child_scopes) . '?';
+                $child_scopes[$label] = $m['block'];
+                return $m['expression'] . $label;
+            }, $str);
+
+            $str = preg_replace_callback($LOOP_VAR_PATT, function ($m) use ($context) {
+                // Normalize casing of built-in loop variables.
+                // User variables are case-sensitive.
+                $arg = preg_replace_callback('~^loop\.(parent\.)?counter0?$~i', function ($m) {
+                    return strtolower($m[0]);
+                }, $m['arg']);
+
+                return isset($context[$arg]) ? $context[$arg] : '';
+            }, $str);
+
+            return str_replace(array_keys($child_scopes), array_values($child_scopes), $str);
+        };
+
+        $resolve_list = function ($list) {
+            // Resolve the list of items for iteration.
+            // Either a generator function or a plain list.
+            $items = [];
+            $list = $this->functions->apply($list);
+            if (preg_match(Regex::make('~(?<func>range){{ parens }}~ix'), $list, $m)) {
+                $func = strtolower($m['func']);
+                $args = Functions::parseArgs($m['parens_content']);
+                switch ($func) {
+                    case 'range':
+                        $items = range(...$args);
+                        break;
+                }
+            }
+            else {
+                $items = Util::splitDelimList($list);
+            }
+
+            return $items;
+        };
+
+        $unroll = function ($str, $context = []) use (&$unroll, $LOOP_PATT, $apply_scope, $resolve_list) {
+            $str = $apply_scope($str, $context);
+            while (preg_match($LOOP_PATT, $str, $m, PREG_OFFSET_CAPTURE)) {
+                $str = substr_replace($str, '', $m[0][1], strlen($m[0][0]));
+                $context['loop.parent.counter'] = isset($context['loop.counter']) ? $context['loop.counter'] : -1;
+                $context['loop.parent.counter0'] = isset($context['loop.counter0']) ? $context['loop.counter0'] : -1;
+                foreach ($resolve_list($m['list'][0]) as $index => $value) {
+                    $str .= $unroll($m['block_content'][0], [
+                        $m['var'][0] => $value,
+                        'loop.counter' => $index + 1,
+                        'loop.counter0' => $index,
+                    ] + $context);
+                }
+            }
+
+            return $str;
+        };
+
+        $this->string->pregReplaceCallback($LOOP_PATT, function ($m) use ($unroll) {
+            return Template::tokenize($unroll(Template::unTokenize($m[0])));
+        });
+    }
 
     #############################
     #  @ifdefine blocks.
@@ -889,6 +967,8 @@ class Process
         $this->resolveIfDefines();
 
         $this->resolveSettings();
+
+        $this->resolveLoops();
 
         // Capture phase 1 hook: After all variables and settings have resolved.
         $this->hooks->run('capture_phase1', $this);

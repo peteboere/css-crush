@@ -30,13 +30,13 @@ namespace CssCrush\UnitTest
         return $temporary_file;
     }
 
-    function stdout($message, $prepend_newline = false)
+    function stdout($message, $prepend_newline = false, $append_newline = true)
     {
         if (! is_string($message)) {
             ob_start();
             print_r($message);
             $message = ob_get_clean();
         }
-        fwrite(STDOUT, ($prepend_newline ? "\n" : '') . $message . "\n");
+        fwrite(STDOUT, ($prepend_newline ? "\n" : '') . $message . ($append_newline ? "\n" : ''));
     }
 }
