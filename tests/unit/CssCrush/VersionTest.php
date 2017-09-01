@@ -36,7 +36,15 @@ class VersionTest extends \PHPUnit_Framework_TestCase
     public function testGitDescribe()
     {
         if ($version = Version::gitDescribe()) {
-            $this->assertRegExp('~^v\d+\.\d+\.\d+-\d+-g.+$~', $version->__toString());
+            $this->assertRegExp('~^
+                v
+                \d+\.
+                \d+\.
+                \d+
+                (-(?:alpha|beta)\.\d+)?
+                -\d+
+                -g.+
+            $~x', $version->__toString());
         }
         else {
             $this->markTestSkipped('Returned null');

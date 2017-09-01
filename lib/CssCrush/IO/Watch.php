@@ -18,14 +18,14 @@ class Watch extends IO
         $process = $this->process;
         $options = $process->options;
 
-        $output_basename = basename($process->input->filename, '.css');
+        $input_basename = $output_basename = basename($process->input->filename, '.css');
 
         if (! empty($options->output_file)) {
             $output_basename = basename($options->output_file, '.css');
         }
 
         $suffix = '.crush';
-        if ($process->input->dir !== $process->output->dir) {
+        if (($process->input->dir !== $process->output->dir) || ($input_basename !== $output_basename)) {
             $suffix = '';
         }
 

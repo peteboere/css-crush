@@ -65,41 +65,46 @@ class Importer
             }
 
             // Resolve import path information.
+            $import->path = null;
             if ($import->url->isRooted) {
                 $import->path = realpath($process->docRoot . $import->url->value);
             }
             else {
-                $import->path = realpath("$input->dir/{$import->url->value}");
+                $searchPaths = array_merge([$input->dir], $options->import_path ?: []);
+                foreach ($searchPaths as $searchPath) {
+                    $candidate = "$searchPath/{$import->url->value}";
+                    if (file_exists($candidate)) {
+                        $import->path = realpath($candidate);
+                        break;
+                    }
+                }
             }
-            $import->dir = dirname($import->path);
 
             // If unsuccessful getting import contents continue with the import line removed.
-            $import->content = @file_get_contents($import->path);
+            $import->content = $import->path ? @file_get_contents($import->path) : false;
             if ($import->content === false) {
-                notice("@import '{$import->url->value}' " .
-                    (! is_readable($import->path) ? 'is not readable' : 'does not exist'));
+                $errDesc = 'was not found';
+                if ($import->path && ! is_readable($import->path)) {
+                    $errDesc = 'is not readable';
+                }
+                notice("@import '{$import->url->value}' $errDesc");
                 $str = substr_replace($str, '', $match_start, $match_len);
                 continue;
             }
 
+            $import->dir = dirname($import->path);
+            $import->relativeDir = Util::getLinkBetweenPaths($input->dir, $import->dir);
+
             // Import file exists so register it.
             $process->sources[] = $import->path;
             $mtimes[] = filemtime($import->path);
-            $filenames[] = $import->url->value;
+            $filenames[] = $import->relativeDir . basename($import->path);
 
             // If the import content doesn't pass syntax validation skip to next import.
             if (! $this->prepareImport($import->content)) {
 
                 $str = substr_replace($str, '', $match_start, $match_len);
                 continue;
-            }
-
-            // Resolve a relative link between the import file and the host-file.
-            if ($import->url->isRooted) {
-                $import->relativeDir = Util::getLinkBetweenPaths($import->dir, $input->dir);
-            }
-            else {
-                $import->relativeDir = dirname($import->url->value);
             }
 
             // Alter all embedded import URLs to be relative to the host-file.
@@ -137,7 +142,6 @@ class Importer
                 'datem_sum' => array_sum($mtimes) + $input->mtime,
                 'options' => $options->get(),
             );
-
             $process->io->saveCacheData();
         }
 

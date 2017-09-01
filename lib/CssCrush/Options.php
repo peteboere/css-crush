@@ -19,6 +19,7 @@ class Options
         'vars' => array(),
         'cache' => true,
         'context' => null,
+        'import_path' => null,
         'output_file' => null,
         'output_dir' => null,
         'asset_dir' => null,
@@ -103,6 +104,17 @@ class Options
             case 'doc_root':
                 if (is_string($value)) {
                     $value = Util::normalizePath(realpath($value));
+                }
+                break;
+
+            case 'import_path':
+                if ($value) {
+                    if (is_string($value)) {
+                        $value = preg_split('~\s*,\s*~', trim($value));
+                    }
+                    $value = array_filter(array_map(function ($path) {
+                        return Util::normalizePath(realpath($path));
+                    }, $value));
                 }
                 break;
 

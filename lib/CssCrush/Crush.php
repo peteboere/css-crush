@@ -236,7 +236,7 @@ function warning($message, $context = array()) {
     Crush::$process->errors[] = $message;
     $logger = Crush::$config->logger;
     if ($logger instanceof Logger) {
-        $message = "[[CssCrush]] - $message";
+        $message = "[CssCrush] $message";
     }
     $logger->warning($message, $context);
 }
@@ -245,7 +245,7 @@ function notice($message, $context = array()) {
     Crush::$process->warnings[] = $message;
     $logger = Crush::$config->logger;
     if ($logger instanceof Logger) {
-        $message = "[[CssCrush]] - $message";
+        $message = "[CssCrush] $message";
     }
     $logger->notice($message, $context);
 }

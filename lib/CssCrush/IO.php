@@ -84,7 +84,7 @@ class IO
         $path = "$dir/$filename";
 
         if (! file_exists($path)) {
-            debug('No file cached.');
+            debug("File '$path' not cached.");
 
             return false;
         }

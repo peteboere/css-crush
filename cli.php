@@ -100,7 +100,8 @@ if ($args->pretty) {
     $options['minify'] = false;
 }
 
-foreach (array('boilerplate', 'formatter', 'newlines', 'stat_dump', 'source_map') as $option) {
+foreach (['boilerplate', 'formatter', 'newlines',
+    'stat_dump', 'source_map', 'import_path'] as $option) {
     if ($args->$option) {
         $options[$option] = $args->$option;
     }
@@ -426,6 +427,7 @@ function parse_args() {
         'formatter',
         'vendor-target',
         'context',
+        'import-path',
         'newlines',
     );
 
@@ -497,9 +499,10 @@ function parse_args() {
     // Arguments that require a value but accept multiple values.
     $args->enable_plugins = pick($opts, 'E', 'enable', 'plugins');
     $args->vendor_target = pick($opts, 'vendor-target');
+    $args->import_path = pick($opts, 'import-path');
 
     // Run multiple value arguments through array cast.
-    foreach (array('enable_plugins', 'vendor_target') as $arg) {
+    foreach (['enable_plugins', 'vendor_target'] as $arg) {
         if ($args->$arg) {
             $args->$arg = (array) $args->$arg;
         }
@@ -578,8 +581,12 @@ function manpage() {
         to a custom boilerplate template.
 
     <g>--context</>
-        Filepath context for resolving relative URLs. Only meaningful when
-        taking raw input from STDIN.
+        Filepath context for resolving relative import URLs.
+        Only meaningful when taking raw input from STDIN.
+
+    <g>--import-path</>
+        Comma separated list of additional paths to search when resolving
+        relative import URLs.
 
     <g>--formatter</>
         Possible values:
