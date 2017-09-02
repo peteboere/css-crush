@@ -190,8 +190,7 @@ class IO
 
         debug('Saving config.');
 
-        $flags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
-        Util::filePutContents($process->cacheFile, json_encode($process->cacheData, $flags), __METHOD__);
+        Util::filePutContents($process->cacheFile, json_encode($process->cacheData, JSON_PRETTY_PRINT), __METHOD__);
     }
 
     public function write(StringObject $string)
@@ -208,11 +207,9 @@ class IO
 
         if (Util::filePutContents("$dir/$filename", $string, __METHOD__)) {
 
-            $jsonFlags = defined('JSON_PRETTY_PRINT') ? JSON_PRETTY_PRINT : 0;
-
             if ($process->sourceMap) {
                 Util::filePutContents("$dir/$sourcemapFilename",
-                    json_encode($process->sourceMap, $jsonFlags), __METHOD__);
+                    json_encode($process->sourceMap, JSON_PRETTY_PRINT), __METHOD__);
             }
 
             if ($process->options->stat_dump) {
@@ -220,7 +217,7 @@ class IO
                     $process->options->stat_dump : "$dir/$filename.json";
 
                 $GLOBALS['CSSCRUSH_STAT_FILE'] = $statFile;
-                Util::filePutContents($statFile, json_encode(csscrush_stat(), $jsonFlags), __METHOD__);
+                Util::filePutContents($statFile, json_encode(csscrush_stat(), JSON_PRETTY_PRINT), __METHOD__);
             }
 
             return true;

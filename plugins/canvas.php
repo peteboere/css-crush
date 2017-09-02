@@ -10,7 +10,7 @@ use stdClass;
 
 Plugin::register('canvas', array(
     'enable' => function ($process) {
-        $process->hooks->add('capture_phase2', 'CssCrush\canvas_capture');
+        $process->on('capture_phase2', 'CssCrush\canvas_capture');
         $process->functions->add('canvas', 'CssCrush\canvas_generator');
         $process->functions->add('canvas-data', 'CssCrush\canvas_generator');
     }

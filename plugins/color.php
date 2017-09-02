@@ -9,8 +9,8 @@ namespace CssCrush;
 Plugin::register('color', array(
     'enable' => function ($process) {
         $GLOBALS['CSSCRUSH_COLOR_PATT'] = null;
-        $process->hooks->add('capture_phase1', 'CssCrush\color_capture');
-        $process->hooks->add('declaration_preprocess', 'CssCrush\color');
+        $process->on('capture_phase1', 'CssCrush\color_capture');
+        $process->on('declaration_preprocess', 'CssCrush\color');
     }
 ));
 

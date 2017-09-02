@@ -8,6 +8,8 @@ namespace CssCrush;
 
 class Process
 {
+    use EventEmitter;
+
     public function __construct($user_options = array(), $context = array())
     {
         $config = Crush::$config;
@@ -30,7 +32,6 @@ class Process
         $this->output = new \stdClass();
         $this->tokens = new Tokens();
         $this->functions = new Functions();
-        $this->hooks = new Hooks();
         $this->sourceMap = null;
         $this->selectorAliases = array();
         $this->selectorAliasesPatt = null;
@@ -713,18 +714,18 @@ class Process
             $rule->declarations->flatten();
             $rule->declarations->process();
 
-            $this->hooks->run('rule_prealias', $rule);
+            $this->emit('rule_prealias', $rule);
 
             $rule->declarations->aliasProperties($rule->vendorContext);
             $rule->declarations->aliasFunctions($rule->vendorContext);
             $rule->declarations->aliasDeclarations($rule->vendorContext);
 
-            $this->hooks->run('rule_postalias', $rule);
+            $this->emit('rule_postalias', $rule);
 
             $rule->selectors->expand();
             $rule->applyExtendables();
 
-            $this->hooks->run('rule_postprocess', $rule);
+            $this->emit('rule_postprocess', $rule);
         }
     }
 
@@ -957,7 +958,7 @@ class Process
         $this->string = new StringObject($importer->collate());
 
         // Capture phase 0 hook: Before all variables and settings have resolved.
-        $this->hooks->run('capture_phase0', $this);
+        $this->emit('capture_phase0', $this);
 
         $this->captureVars();
 
@@ -970,7 +971,7 @@ class Process
         $this->resolveLoops();
 
         // Capture phase 1 hook: After all variables and settings have resolved.
-        $this->hooks->run('capture_phase1', $this);
+        $this->emit('capture_phase1', $this);
 
         $this->resolveSelectorAliases();
 
@@ -979,7 +980,7 @@ class Process
         $this->resolveFragments();
 
         // Capture phase 2 hook: After most built-in directives have resolved.
-        $this->hooks->run('capture_phase2', $this);
+        $this->emit('capture_phase2', $this);
 
         $this->captureRules();
 

@@ -8,7 +8,7 @@ namespace CssCrush;
 
 Plugin::register('svg', array(
     'enable' => function ($process) {
-        $process->hooks->add('capture_phase2', 'CssCrush\svg_capture');
+        $process->on('capture_phase2', 'CssCrush\svg_capture');
         $process->functions->add('svg', 'CssCrush\fn__svg');
         $process->functions->add('svg-data', 'CssCrush\fn__svg_data');
         $process->functions->add('svg-linear-gradient', 'CssCrush\fn__svg_linear_gradient');

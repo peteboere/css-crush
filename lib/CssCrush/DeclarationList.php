@@ -406,7 +406,7 @@ class DeclarationList extends Iterator
                 }
 
                 if ($options['apply_hooks']) {
-                    Crush::$process->hooks->run('declaration_preprocess', array(
+                    Crush::$process->emit('declaration_preprocess', array(
                         'property' => &$property,
                         'value' => &$value,
                     ));

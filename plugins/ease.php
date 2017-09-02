@@ -8,7 +8,7 @@ namespace CssCrush;
 
 Plugin::register('ease', array(
     'enable' => function ($process) {
-        $process->hooks->add('rule_prealias', 'CssCrush\ease');
+        $process->on('rule_prealias', 'CssCrush\ease');
     }
 ));
 
