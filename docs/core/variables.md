@@ -30,7 +30,7 @@ Variables can also be injected at runtime with the [vars option](#api--options).
 *******
 
 ```css
-/* String interpolation */
+/* Interpolation */
 .username::before {
   content: "$(greeting)";
 }

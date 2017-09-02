@@ -181,8 +181,7 @@ class Process
                 'year' => @date('Y'),
                 'command' => $commandArgs,
                 'plugins' => implode(',', $this->plugins),
-                'version' => csscrush_version(),
-                'git_version' => function ()  {
+                'version' => function ()  {
                     return csscrush_version();
                 },
                 'compile_time' => function () {

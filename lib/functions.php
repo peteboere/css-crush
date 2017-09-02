@@ -177,7 +177,7 @@ function csscrush_add_function($function_name = null, $callback = null) {
  */
 function csscrush_version() {
 
-    return \CssCrush\Version::gitDescribe();
+    return \CssCrush\Version::detect();
 }
 
 

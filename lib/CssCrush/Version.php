@@ -75,6 +75,10 @@ class Version
         return $EQUAL;
     }
 
+    public static function detect() {
+        return self::gitDescribe() ?: self::packageDescribe();
+    }
+
     public static function gitDescribe()
     {
         static $attempted, $version;
@@ -84,6 +88,23 @@ class Version
             @exec($command, $lines);
             if ($lines) {
                 $version = new Version(trim($lines[0]));
+                if (is_null($version->major)) {
+                    $version = null;
+                }
+            }
+        }
+
+        return $version;
+    }
+
+    public static function packageDescribe()
+    {
+        static $attempted, $version;
+        if (! $attempted && file_exists(Crush::$dir . '/package.json')) {
+            $attempted = true;
+            $package = json_decode(file_get_contents(Crush::$dir . '/package.json'));
+            if ($package->version) {
+                $version = new Version($package->version);
                 if (is_null($version->major)) {
                     $version = null;
                 }
