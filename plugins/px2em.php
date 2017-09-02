@@ -6,13 +6,10 @@
  */
 namespace CssCrush;
 
-Plugin::register('px2em', array(
-    'enable' => function ($process) {
-        $process->functions->add('px2em', 'CssCrush\fn__px2em');
-        $process->functions->add('px2rem', 'CssCrush\fn__px2rem');
-    }
-));
-
+\csscrush_plugin('px2em', function ($process) {
+    $process->functions->add('px2em', 'CssCrush\fn__px2em');
+    $process->functions->add('px2rem', 'CssCrush\fn__px2rem');
+});
 
 function fn__px2em($input) {
 

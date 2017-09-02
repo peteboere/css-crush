@@ -6,15 +6,12 @@
  */
 namespace CssCrush;
 
-Plugin::register('aria', array(
-    'enable' => function ($process) {
-        foreach (aria() as $name => $handler) {
-            $type = is_callable($handler) ? 'callback' : 'alias';
-            $process->addSelectorAlias($name, $handler, $type);
-        }
+\csscrush_plugin('aria', function ($process) {
+    foreach (aria() as $name => $handler) {
+        $type = is_callable($handler) ? 'callback' : 'alias';
+        $process->addSelectorAlias($name, $handler, $type);
     }
-));
-
+});
 
 function aria() {
 

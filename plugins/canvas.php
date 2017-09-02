@@ -8,14 +8,11 @@ namespace CssCrush;
 
 use stdClass;
 
-Plugin::register('canvas', array(
-    'enable' => function ($process) {
-        $process->on('capture_phase2', 'CssCrush\canvas_capture');
-        $process->functions->add('canvas', 'CssCrush\canvas_generator');
-        $process->functions->add('canvas-data', 'CssCrush\canvas_generator');
-    }
-));
-
+\csscrush_plugin('canvas', function ($process) {
+    $process->on('capture_phase2', 'CssCrush\canvas_capture');
+    $process->functions->add('canvas', 'CssCrush\canvas_generator');
+    $process->functions->add('canvas-data', 'CssCrush\canvas_generator');
+});
 
 function canvas_capture($process) {
 

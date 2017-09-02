@@ -10,37 +10,37 @@ class Process
 {
     use EventEmitter;
 
-    public function __construct($user_options = array(), $context = array())
+    public function __construct($user_options = [], $context = [])
     {
         $config = Crush::$config;
 
         Crush::loadAssets();
 
         // Initialize properties.
-        $this->cacheData = array();
-        $this->mixins = array();
-        $this->fragments = array();
-        $this->references = array();
-        $this->absoluteImports = array();
+        $this->cacheData = [];
+        $this->mixins = [];
+        $this->fragments = [];
+        $this->references = [];
+        $this->absoluteImports = [];
         $this->charset = null;
-        $this->sources = array();
-        $this->vars = array();
-        $this->plugins = array();
-        $this->settings = array();
+        $this->sources = [];
+        $this->vars = [];
+        $this->plugins = [];
+        $this->settings = [];
         $this->misc = new \stdClass();
         $this->input = new \stdClass();
         $this->output = new \stdClass();
         $this->tokens = new Tokens();
         $this->functions = new Functions();
         $this->sourceMap = null;
-        $this->selectorAliases = array();
+        $this->selectorAliases = [];
         $this->selectorAliasesPatt = null;
         $this->io = new Crush::$config->io($this);
 
-        $this->errors = array();
-        $this->warnings = array();
-        $this->debugLog = array();
-        $this->stat = array();
+        $this->errors = [];
+        $this->warnings = [];
+        $this->debugLog = [];
+        $this->stat = [];
 
         // Copy config values.
         $this->aliases = $config->aliases;
@@ -49,7 +49,7 @@ class Process
         $this->options = new Options($user_options, $config->options);
 
         // Context options.
-        $context += array('type' => 'filter', 'data' => '');
+        $context += ['type' => 'filter', 'data' => ''];
         $this->ioContext = $context['type'];
 
         // Keep track of global vars to maintain cache integrity.
@@ -177,7 +177,7 @@ class Process
                 $commandArgs = 'csscrush ' . implode(' ', $argv);
             }
 
-            $tags = array(
+            $tags = [
                 'datetime' => @date('Y-m-d H:i:s O'),
                 'year' => @date('Y'),
                 'command' => $commandArgs,
@@ -189,7 +189,7 @@ class Process
                     $now = microtime(true) - Crush::$process->stat['compile_start_time'];
                     return round($now, 4) . ' seconds';
                 },
-            );
+            ];
 
             foreach (array_keys($boilerplateMatches[0]) as $index) {
                 $tagName = trim($boilerplateMatches[1][$index]);
@@ -321,7 +321,7 @@ class Process
                         continue;
                     }
 
-                    $result = array();
+                    $result = [];
 
                     foreach ($prefix_array as $prefix) {
                         if (preg_match($vendor_patt, $prefix)) {
@@ -350,7 +350,7 @@ class Process
         $this->plugins = array_unique($this->options->plugins);
 
         foreach ($this->plugins as $plugin) {
-            Plugin::enable($plugin);
+            Crush::enablePlugin($plugin);
         }
     }
 
@@ -360,10 +360,10 @@ class Process
 
     protected function captureVars()
     {
-        Crush::$process->vars = Crush::$process->string->captureDirectives(array('set', 'define'), array(
+        Crush::$process->vars = Crush::$process->string->captureDirectives(['set', 'define'], [
             'singles' => true,
             'lowercase_keys' => false,
-        )) + Crush::$process->vars;
+        ]) + Crush::$process->vars;
 
         // For convenience adding a runtime variable for cache busting linked resources.
         $this->vars['timestamp'] = (int) $this->stat['compile_start_time'];
@@ -407,7 +407,7 @@ class Process
         static $varFunction, $varFunctionSimple;
         if (! $varFunction) {
             $varFunctionSimple = Regex::make('~\$\( \s* ({{ ident }}) \s* \)~xS');
-            $varFunction = new Functions(array('$' => function ($rawArgs) {
+            $varFunction = new Functions(['$' => function ($rawArgs) {
                 list($name, $defaultValue) = Functions::parseArgsSimple($rawArgs);
                 if (isset(Crush::$process->vars[$name])) {
                     return Crush::$process->vars[$name];
@@ -415,7 +415,7 @@ class Process
                 else {
                     return $defaultValue;
                 }
-            }));
+            }]);
         }
 
         // Variables with no default value.
@@ -446,7 +446,7 @@ class Process
 
     protected function resolveSettings()
     {
-        $captured_settings = $this->string->captureDirectives('settings', array('singles' => true));
+        $captured_settings = $this->string->captureDirectives('settings', ['singles' => true]);
 
         $this->settings = new Settings($this->options->settings + $captured_settings);
     }
@@ -594,7 +594,7 @@ class Process
         $this->string->pregReplaceCallback(Regex::$patt->fragmentCapture, function ($m) use (&$fragments) {
             $fragments[$m['name']] = new Fragment(
                     $m['block_content'],
-                    array('name' => strtolower($m['name']))
+                    ['name' => strtolower($m['name'])]
                 );
             return '';
         });
@@ -602,7 +602,7 @@ class Process
         $this->string->pregReplaceCallback(Regex::$patt->fragmentInvoke, function ($m) use (&$fragments) {
             $fragment = isset($fragments[$m['name']]) ? $fragments[$m['name']] : null;
             if ($fragment) {
-                $args = array();
+                $args = [];
                 if (isset($m['parens'])) {
                     $args = Functions::parseArgs($m['parens_content']);
                 }
@@ -689,7 +689,7 @@ class Process
     protected function processRules()
     {
         // Create table of name/selector to rule references.
-        $namedReferences = array();
+        $namedReferences = [];
 
         $previousRule = null;
         foreach ($this->tokens->store->r as $rule) {
@@ -759,7 +759,7 @@ class Process
 
                 // Build up string with aliased blocks for splicing.
                 $original_block = $curly_match->whole();
-                $new_blocks = array();
+                $new_blocks = [];
 
                 foreach ($at_rule_aliases as $alias) {
 
@@ -774,8 +774,8 @@ class Process
                     // Duplicate rules.
                     if (preg_match_all($regex->r_token, $copy_block, $copy_matches)) {
 
-                        $originals = array();
-                        $replacements = array();
+                        $originals = [];
+                        $replacements = [];
 
                         foreach ($copy_matches[0] as $rule_label) {
 
@@ -818,7 +818,7 @@ class Process
 
         // Formatting replacements.
         // Strip newlines added during processing.
-        $regex_replacements = array();
+        $regex_replacements = [];
         $regex_replacements['~\n+~'] = '';
 
         if ($minify) {
@@ -846,7 +846,7 @@ class Process
 
         // Record stats then drop rule objects to reclaim memory.
         Crush::runStat('selector_count', 'rule_count', 'vars');
-        $this->tokens->store->r = array();
+        $this->tokens->store->r = [];
 
         // If specified, apply advanced minification.
         if (is_array($minify)) {
@@ -908,7 +908,7 @@ class Process
             $this->string->prepend("@charset \"$this->charset\";$EOL");
         }
 
-        $this->string->restore(array('u', 's'));
+        $this->string->restore(['u', 's']);
 
         if ($this->generateMap) {
             $this->generateSourceMap();
@@ -937,10 +937,6 @@ class Process
 
     public function postCompile()
     {
-        foreach ($this->plugins as $plugin) {
-            Plugin::disable($plugin);
-        }
-
         $this->release();
 
         Crush::runStat('compile_time');
@@ -1007,17 +1003,17 @@ class Process
 
     public function generateSourceMap()
     {
-        $this->sourceMap = array(
+        $this->sourceMap = [
             'version' => '3',
             'file' => $this->output->filename,
-            'sources' => array(),
-        );
+            'sources' => [],
+        ];
         foreach ($this->sources as $source) {
             $this->sourceMap['sources'][] = Util::getLinkBetweenPaths($this->output->dir, $source, false);
         }
 
         $token_patt = Regex::make('~\?[tm]{{token_id}}\?~S');
-        $mappings = array();
+        $mappings = [];
         $lines = preg_split(Regex::$patt->newline, $this->string->raw);
         $tokens =& $this->tokens->store;
 
@@ -1029,7 +1025,7 @@ class Process
 
         foreach ($lines as &$line_text) {
 
-            $line_segments = array();
+            $line_segments = [];
 
             while (preg_match($token_patt, $line_text, $m, PREG_OFFSET_CAPTURE)) {
 
@@ -1066,7 +1062,7 @@ class Process
 
     protected function decruft()
     {
-        return $this->string->pregReplaceHash(array(
+        return $this->string->pregReplaceHash([
 
             // Strip leading zeros on floats.
             '~([: \(,])(-?)0(\.\d+)~S' => '$1$2$3',
@@ -1086,7 +1082,7 @@ class Process
 
             // Compress hex codes.
             Regex::$patt->cruftyHex => '#$1$2$3',
-        ));
+        ]);
     }
 
 

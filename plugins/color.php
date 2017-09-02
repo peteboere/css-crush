@@ -6,14 +6,11 @@
  */
 namespace CssCrush;
 
-Plugin::register('color', array(
-    'enable' => function ($process) {
-        $GLOBALS['CSSCRUSH_COLOR_PATT'] = null;
-        $process->on('capture_phase1', 'CssCrush\color_capture');
-        $process->on('declaration_preprocess', 'CssCrush\color');
-    }
-));
-
+\csscrush_plugin('color', function ($process) {
+    $GLOBALS['CSSCRUSH_COLOR_PATT'] = null;
+    $process->on('capture_phase1', 'CssCrush\color_capture');
+    $process->on('declaration_preprocess', 'CssCrush\color');
+});
 
 function color(&$declaration) {
     if (isset($GLOBALS['CSSCRUSH_COLOR_PATT'])) {

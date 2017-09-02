@@ -97,6 +97,33 @@ class Crush
         }
     }
 
+    public static function plugin($name = null, callable $callback = null)
+    {
+        static $plugins = [];
+
+        if (! $callback) {
+            return isset($plugins[$name]) ? $plugins[$name] : null;
+        }
+
+        $plugins[$name] = $callback;
+    }
+
+    public static function enablePlugin($name)
+    {
+        $plugin = self::plugin($name);
+        if (! $plugin) {
+            $path = self::$dir . "/plugins/$name.php";
+            if (! file_exists($path)) {
+                notice("Plugin '$name' not found.");
+                return;
+            }
+            require_once $path;
+            $plugin = self::plugin($name);
+        }
+
+        $plugin(self::$process);
+    }
+
     public static function parseAliasesFile($file)
     {
         if (! ($tree = Util::parseIni($file, true))) {

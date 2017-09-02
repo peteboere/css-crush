@@ -171,6 +171,17 @@ function csscrush_add_function($function_name = null, $callback = null) {
 
 
 /**
+ * Add plugin.
+ *
+ * @see docs/api/functions.md
+ */
+function csscrush_plugin($name, callable $callback) {
+
+    Crush::plugin($name, $callback);
+}
+
+
+/**
  * Get version information.
  *
  * @see docs/api/functions.md

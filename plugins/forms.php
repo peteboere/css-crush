@@ -6,18 +6,15 @@
  */
 namespace CssCrush;
 
-Plugin::register('forms', array(
-    'enable' => function ($process) {
-        foreach (forms() as $name => $handler) {
-            if (is_array($handler)) {
-                $type = $handler['type'];
-                $handler = $handler['handler'];
-            }
-            $process->addSelectorAlias($name, $handler, $type);
+\csscrush_plugin('forms', function ($process) {
+    foreach (forms() as $name => $handler) {
+        if (is_array($handler)) {
+            $type = $handler['type'];
+            $handler = $handler['handler'];
         }
+        $process->addSelectorAlias($name, $handler, $type);
     }
-));
-
+});
 
 function forms() {
     return array(

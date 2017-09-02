@@ -46,15 +46,6 @@ elseif ($args->help) {
 
     exit(STATUS_OK);
 }
-elseif ($args->list) {
-
-    foreach (CssCrush\Plugin::info() as $name => $docs) {
-        $headline = isset($docs[0]) ? $docs[0] : '';
-        stdout(message(array($name => $headline), array('color'=>'g')));
-    }
-
-    exit(STATUS_OK);
-}
 
 
 ##################################################################
@@ -439,7 +430,6 @@ function parse_args() {
     $flag_opts = array(
         'p|pretty',
         'w|watch',
-        'list',
         'help',
         'version',
         'source-map',
@@ -473,7 +463,6 @@ function parse_args() {
     // Information options.
     $args->help = isset($opts['h']) ?: isset($opts['help']);
     $args->version = isset($opts['version']);
-    $args->list = isset($opts['l']) ?: isset($opts['list']);
 
     // File arguments.
     $args->input_file = pick($opts, 'i', 'input', 'f', 'file');
@@ -599,9 +588,6 @@ function manpage() {
 
     <g>--help</>
         Display this help message.
-
-    <g>--list</>
-        Show plugins.
 
     <g>--newlines</>
         Force newline style on output css. Defaults to the current platform

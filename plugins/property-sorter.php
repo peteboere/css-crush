@@ -6,12 +6,9 @@
  */
 namespace CssCrush {
 
-    Plugin::register('property-sorter', array(
-        'enable' => function ($process) {
-            $process->on('rule_prealias', 'CssCrush\property_sorter');
-        }
-    ));
-
+    \csscrush_plugin('property-sorter', function ($process) {
+        $process->on('rule_prealias', 'CssCrush\property_sorter');
+    });
 
     function property_sorter(Rule $rule) {
 

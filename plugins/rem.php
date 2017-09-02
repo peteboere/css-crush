@@ -6,12 +6,9 @@
  */
 namespace CssCrush;
 
-Plugin::register('rem', array(
-    'enable' => function ($process) {
-        $process->on('rule_prealias', 'CssCrush\rem');
-    }
-));
-
+\csscrush_plugin('rem', function ($process) {
+    $process->on('rule_prealias', 'CssCrush\rem');
+});
 
 function rem(Rule $rule) {
 

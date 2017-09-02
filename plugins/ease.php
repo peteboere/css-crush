@@ -6,12 +6,9 @@
  */
 namespace CssCrush;
 
-Plugin::register('ease', array(
-    'enable' => function ($process) {
-        $process->on('rule_prealias', 'CssCrush\ease');
-    }
-));
-
+\csscrush_plugin('ease', function ($process) {
+    $process->on('rule_prealias', 'CssCrush\ease');
+});
 
 function ease(Rule $rule) {
 
