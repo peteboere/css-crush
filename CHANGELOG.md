@@ -7,10 +7,11 @@
 * Added `import_path` option. Additional paths to search when resolving relative imports.
 * Updated vendor aliases.
 * Moved loop plugin to core.
-* Remove `@in` directive.
-* Remove legacy IE plugins.
-* Remove hsl2hex, initial, noise and text-align plugins.
+* Removed `@in` directive.
+* Removed legacy IE plugins.
+* Removed hsl2hex, initial, noise and text-align plugins.
 * Combined svg plugins (svg-gradients and svg).
+* Removed `percent` function.
 
 
 ********************************************************************

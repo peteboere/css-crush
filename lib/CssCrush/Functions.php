@@ -15,8 +15,6 @@ class Functions
 
         // These functions can be any order.
         'math' => 'CssCrush\fn__math',
-        'percent' => 'CssCrush\fn__percent',
-        'pc' => 'CssCrush\fn__percent',
         'hsla-adjust' => 'CssCrush\fn__hsla_adjust',
         'hsl-adjust' => 'CssCrush\fn__hsl_adjust',
         'h-adjust' => 'CssCrush\fn__h_adjust',
@@ -199,48 +197,6 @@ function fn__math($input) {
     }
 
     return ($result === false ? 0 : round($result, 5)) . $unit;
-}
-
-function fn__percent($input) {
-
-    // Strip non-numeric and non delimiter characters
-    $input = preg_replace('~[^\d\.\s,]~S', '', $input);
-
-    $args = preg_split(Regex::$patt->argListSplit, $input, -1, PREG_SPLIT_NO_EMPTY);
-
-    // Use precision argument if it exists, use default otherwise
-    $precision = isset($args[2]) ? $args[2] : 5;
-
-    // Output zero on failure
-    $result = 0;
-
-    // Need to check arguments or we may see divide by zero errors
-    if (count($args) > 1 && ! empty($args[0]) && ! empty($args[1])) {
-
-        // Use bcmath if it's available for higher precision
-
-        // Arbitary high precision division
-        if (function_exists('bcdiv')) {
-            $div = bcdiv($args[0], $args[1], 25);
-        }
-        else {
-            $div = $args[0] / $args[1];
-        }
-
-        // Set precision percentage value
-        if (function_exists('bcmul')) {
-            $result = bcmul((string) $div, '100', $precision);
-        }
-        else {
-            $result = round($div * 100, $precision);
-        }
-
-        // Trim unnecessary zeros and decimals
-        $result = trim((string) $result, '0');
-        $result = rtrim($result, '.');
-    }
-
-    return $result . '%';
 }
 
 function fn__hsla_adjust($input) {
