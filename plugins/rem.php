@@ -40,7 +40,7 @@ function rem(Rule $rule) {
     // Select the length match pattern depending on mode.
     $length_patt = $mode === 'rem-fallback' ? $rem_patt : $px_patt;
 
-    $new_set = array();
+    $new_set = [];
     $rule_updated = false;
     foreach ($rule->declarations as $declaration) {
         if (
@@ -54,7 +54,7 @@ function rem(Rule $rule) {
 
         // Value has matching length components.
         $find = $m[0];
-        $replace = array();
+        $replace = [];
         $numbers = $m[1];
 
         switch ($mode) {

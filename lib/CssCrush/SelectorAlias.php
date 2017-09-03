@@ -39,7 +39,7 @@ class SelectorAlias
             case 'splat':
                 $handler = $tokens->restore($handler, 's');
                 if ($args) {
-                    $list = array();
+                    $list = [];
                     foreach ($args as $arg) {
                         $list[] = SelectorAlias::wrap(
                             $tokens->capture(preg_replace($splat_arg_patt, $arg, $handler), 's')

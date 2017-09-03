@@ -84,7 +84,7 @@ if (file_exists($configFile)) {
     $options = CssCrush\Util::readConfigFile($configFile);
 }
 else {
-    $options = array();
+    $options = [];
 }
 
 if ($args->pretty) {
@@ -234,7 +234,7 @@ function get_stdin_contents() {
 
 function parse_list(array $option) {
 
-    $out = array();
+    $out = [];
     foreach ($option as $arg) {
         if (is_string($arg)) {
             foreach (preg_split('~\s*,\s*~', $arg) as $item) {
@@ -248,7 +248,7 @@ function parse_list(array $option) {
     return $out;
 }
 
-function message($messages, $options = array()) {
+function message($messages, $options = []) {
 
     $defaults = array(
         'color' => 'b',
@@ -285,7 +285,7 @@ function message($messages, $options = array()) {
     }
     extract($options + $defaults);
 
-    $out = array();
+    $out = [];
     foreach ((array) $messages as $_label => $value) {
         $_label = $label ?: $_label;
         if ($format_label) {
@@ -372,19 +372,19 @@ function get_trailing_io_args($required_value_opts) {
     $other_opt_patt = "~^-{1,2}([a-z0-9\-]+)?(=|$)~ix";
 
     // Step through the args.
-    $filtered = array();
+    $filtered = [];
     for ($i = 0; $i < count($trailing_args); $i++) {
 
         $current = $trailing_args[$i];
 
         // If tests as a required value option, reset and skip next.
         if (preg_match($value_opt_patt, $current)) {
-            $filtered = array();
+            $filtered = [];
             $i++;
         }
         // If it looks like any other kind of flag, or optional value option, reset.
         elseif (preg_match($other_opt_patt, $current)) {
-            $filtered = array();
+            $filtered = [];
         }
         else {
             $filtered[] = $current;
@@ -438,8 +438,8 @@ function parse_args() {
     );
 
     // Create option strings for getopt().
-    $short_opts = array();
-    $long_opts = array();
+    $short_opts = [];
+    $long_opts = [];
     $join_opts = function ($opts_list, $modifier) use (&$short_opts, &$long_opts) {
         foreach ($opts_list as $opt) {
             foreach (explode('|', $opt) as $arg) {

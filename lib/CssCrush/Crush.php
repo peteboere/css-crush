@@ -30,15 +30,15 @@ class Crush
         self::$config->io = 'CssCrush\IO';
 
         // Shared resources.
-        self::$config->vars = array();
+        self::$config->vars = [];
         self::$config->aliasesFile = self::$dir . '/aliases.ini';
-        self::$config->aliases = array();
+        self::$config->aliases = [];
         self::$config->bareAliases = array(
-            'properties' => array(),
-            'functions' => array(),
-            'function_groups' => array(),
-            'declarations' => array(),
-            'at-rules' => array(),
+            'properties' => [],
+            'functions' => [],
+            'function_groups' => [],
+            'declarations' => [],
+            'at-rules' => [],
         );
         self::$config->options = new Options();
 
@@ -138,7 +138,7 @@ class Crush
 
             if ($section === 'declarations') {
 
-                $store = array();
+                $store = [];
                 foreach ($items as $prop_val => $aliases) {
 
                     list($prop, $value) = array_map('trim', explode(':', $prop_val));
@@ -167,7 +167,7 @@ class Crush
 
                 $group = substr($section, strlen('functions'));
 
-                $vendor_grouped_aliases = array();
+                $vendor_grouped_aliases = [];
                 foreach ($items as $func_name => $aliases) {
 
                     // Assign group name to the aliasable function.
@@ -207,7 +207,7 @@ class Crush
         if (! empty(self::$process->debugLog)) {
 
             if (PHP_SAPI !== 'cli') {
-                $out = array();
+                $out = [];
                 foreach (self::$process->debugLog as $item) {
                     $out[] = '<pre>' . htmlspecialchars($item) . '</pre>';
                 }
@@ -259,7 +259,7 @@ class Crush
     }
 }
 
-function warning($message, $context = array()) {
+function warning($message, $context = []) {
     Crush::$process->errors[] = $message;
     $logger = Crush::$config->logger;
     if ($logger instanceof Logger) {
@@ -268,7 +268,7 @@ function warning($message, $context = array()) {
     $logger->warning($message, $context);
 }
 
-function notice($message, $context = array()) {
+function notice($message, $context = []) {
     Crush::$process->warnings[] = $message;
     $logger = Crush::$config->logger;
     if ($logger instanceof Logger) {
@@ -277,11 +277,11 @@ function notice($message, $context = array()) {
     $logger->notice($message, $context);
 }
 
-function debug($message, $context = array()) {
+function debug($message, $context = []) {
     Crush::$config->logger->debug($message, $context);
 }
 
-function log($message, $context = array(), $type = 'debug') {
+function log($message, $context = [], $type = 'debug') {
     Crush::$config->logger->$type($message, $context);
 }
 

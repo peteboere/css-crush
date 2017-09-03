@@ -11,7 +11,7 @@ use CssCrush\IO;
 
 class Watch extends IO
 {
-    public static $cacheData = array();
+    public static $cacheData = [];
 
     public function getOutputFileName()
     {
@@ -36,7 +36,7 @@ class Watch extends IO
     {
         // Clear results from earlier processes.
         clearstatcache();
-        $this->process->cacheData = array();
+        $this->process->cacheData = [];
 
         return self::$cacheData;
     }

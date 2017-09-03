@@ -90,7 +90,7 @@ class Regex
 
     public static function make($pattern)
     {
-        static $cache = array();
+        static $cache = [];
 
         if (isset($cache[$pattern])) {
             return $cache[$pattern];
@@ -105,7 +105,7 @@ class Regex
     {
         $count = preg_match_all($patt, $subject, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $offset);
 
-        return $count ? $matches : array();
+        return $count ? $matches : [];
     }
 }
 

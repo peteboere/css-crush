@@ -12,14 +12,14 @@ class DeclarationList extends Iterator
     public $processed = false;
     protected $rule;
 
-    public $properties = array();
-    public $canonicalProperties = array();
+    public $properties = [];
+    public $canonicalProperties = [];
 
     // Declarations hash table for inter-rule this() referencing.
-    public $data = array();
+    public $data = [];
 
     // Declarations hash table for external query() referencing.
-    public $queryData = array();
+    public $queryData = [];
 
     public function __construct($declarationsString, Rule $rule)
     {
@@ -104,8 +104,8 @@ class DeclarationList extends Iterator
 
     public function updateIndex()
     {
-        $this->properties = array();
-        $this->canonicalProperties = array();
+        $this->properties = [];
+        $this->canonicalProperties = [];
 
         foreach ($this->store as $declaration) {
             $this->index($declaration);
@@ -134,7 +134,7 @@ class DeclarationList extends Iterator
             return;
         }
 
-        $stack = array();
+        $stack = [];
         $rule_updated = false;
         $regex = Regex::$patt;
 
@@ -199,7 +199,7 @@ class DeclarationList extends Iterator
         $function_alias_groups =& Crush::$process->aliases['function_groups'];
 
         // The new modified set of declarations.
-        $new_set = array();
+        $new_set = [];
         $rule_updated = false;
 
         // Shim in aliased functions.
@@ -219,12 +219,12 @@ class DeclarationList extends Iterator
             }
 
             // Keep record of which groups have been applied.
-            $processed_groups = array();
+            $processed_groups = [];
 
             foreach (array_keys($intersect) as $fn_name) {
 
                 // Store for all the duplicated declarations.
-                $prefixed_copies = array();
+                $prefixed_copies = [];
 
                 // Grouped function aliases.
                 if ($function_aliases[$fn_name][0] === '.') {
@@ -323,7 +323,7 @@ class DeclarationList extends Iterator
         }
 
         $intersect = array_flip(array_keys($intersect));
-        $new_set = array();
+        $new_set = [];
         $rule_updated = false;
 
         foreach ($this->store as $declaration) {
@@ -365,7 +365,7 @@ class DeclarationList extends Iterator
         }
     }
 
-    public static function parse($str, $options = array())
+    public static function parse($str, $options = [])
     {
         $str = Util::stripCommentTokens($str);
         $lines = preg_split('~\s*;\s*~', $str, null, PREG_SPLIT_NO_EMPTY);
@@ -379,7 +379,7 @@ class DeclarationList extends Iterator
             'apply_hooks' => false,
         );
 
-        $pairs = array();
+        $pairs = [];
 
         foreach ($lines as $line) {
 
@@ -443,10 +443,10 @@ class DeclarationList extends Iterator
             return;
         }
 
-        $newSet = array();
+        $newSet = [];
         foreach ($this->store as $declaration) {
             if (is_array($declaration) && $declaration[0] === 'mixin') {
-                foreach (Mixin::merge(array(), $declaration[1], array('context' => $this->rule)) as $mixable) {
+                foreach (Mixin::merge([], $declaration[1], array('context' => $this->rule)) as $mixable) {
                     if ($mixable instanceof Declaration) {
                         $clone = clone $mixable;
                         $clone->index = count($newSet);
@@ -552,7 +552,7 @@ class DeclarationList extends Iterator
         }
         if ($trbl_fmt) {
             $parts = explode(' ', $value);
-            $placeholders = array();
+            $placeholders = [];
 
             // 4 values.
             if (isset($parts[3])) {

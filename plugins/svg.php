@@ -150,18 +150,18 @@ function svg_generator($input, $fn_name) {
     $element = (object) array(
         'tag' => $schemas[$type]['tag'],
         'fills' => array(
-            'gradients' => array(),
-            'patterns' => array(),
+            'gradients' => [],
+            'patterns' => [],
         ),
-        'filters' => array(),
-        'data' => array(),
-        'attrs' => array(),
-        'styles' => array(),
+        'filters' => [],
+        'data' => [],
+        'attrs' => [],
+        'styles' => [],
         'svg_attrs' => array(
             'xmlns' => 'http://www.w3.org/2000/svg',
         ),
-        'svg_styles' => array(),
-        'face_styles' => array(),
+        'svg_styles' => [],
+        'face_styles' => [],
     );
 
     // Filter off prefixed properties that are for the svg element or @font-face.
@@ -471,7 +471,7 @@ function svg_text($element) {
 */
 function svg_starpath($cx, $cy, $points, $outer_r, $inner_r = null, $twist = 0, $orient = 'point') {
 
-    $d = array();
+    $d = [];
 
     // Enforce minimum number of points.
     $points = max(3, $points);
@@ -664,7 +664,7 @@ function svg_render($element) {
     );
     foreach ($styles_data as $selector => $declarations) {
         if ($declarations) {
-            $out = array();
+            $out = [];
             foreach ($declarations as $property => $value) {
                 $out[] = "$property:$value";
             }
@@ -1027,8 +1027,8 @@ function create_svg_radial_gradient($input) {
 
 function parse_gradient_color_stops(array $color_stop_args) {
 
-    $offsets = array();
-    $colors = array();
+    $offsets = [];
+    $colors = [];
     $offset_patt = '~ +([\d\.]+%)$~';
     $last_index = count($color_stop_args) - 1;
 

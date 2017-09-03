@@ -80,7 +80,7 @@ class UtilTest extends \PHPUnit_Framework_TestCase
     public function testSplitDelimList()
     {
         $this->assertEquals(array('foo(1,2)','3','4'), Util::splitDelimList("foo(1,2), 3,4"));
-        $this->assertEquals(array(), Util::splitDelimList(" ; ; ", array('delim' => ';')));
+        $this->assertEquals([], Util::splitDelimList(" ; ; ", array('delim' => ';')));
         $this->assertEquals(array('', ''), Util::splitDelimList(" , ", array('allow_empty_strings' => true)));
     }
 

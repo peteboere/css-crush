@@ -118,7 +118,7 @@ class StringObject
         return $this;
     }
 
-    public function captureDirectives($directive, $parse_options = array())
+    public function captureDirectives($directive, $parse_options = [])
     {
         if (is_array($directive)) {
             $directive = '(?:' . implode('|', $directive) . ')';
@@ -139,7 +139,7 @@ class StringObject
             $patt = Regex::make('~@(?i)' . $directive . '(?-i)\s*{{ block }}~S');
         }
 
-        $captured_directives = array();
+        $captured_directives = [];
         $this->pregReplaceCallback($patt, function ($m) use (&$captured_directives, $parse_options) {
             if (isset($m['name'])) {
                 $name = $parse_options['lowercase_keys'] ? strtolower($m['name']) : $m['name'];

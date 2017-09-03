@@ -14,7 +14,7 @@ namespace {
 namespace CssCrush\UnitTest
 {
 
-    function bootstrap_process($options = array())
+    function bootstrap_process($options = [])
     {
         $process = \CssCrush\Crush::$process = new \CssCrush\Process($options);
         $process->preCompile();

@@ -55,7 +55,7 @@ class Mixin
         }
         elseif ($mixable instanceof Mixin) {
 
-            $args = array();
+            $args = [];
             $raw_args = isset($message_match['parens_content']) ? trim($message_match['parens_content']) : null;
             if ($raw_args) {
                 $args = Util::splitDelimList($raw_args);
@@ -72,11 +72,11 @@ class Mixin
         }
     }
 
-    public static function merge(array $input, $message_list, $options = array())
+    public static function merge(array $input, $message_list, $options = [])
     {
         $context = isset($options['context']) ? $options['context'] : null;
 
-        $mixables = array();
+        $mixables = [];
         foreach (Util::splitDelimList($message_list) as $message) {
             if ($result = self::call($message, $context)) {
                 $mixables = array_merge($mixables, $result);

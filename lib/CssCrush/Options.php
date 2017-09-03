@@ -8,15 +8,15 @@ namespace CssCrush;
 
 class Options
 {
-    protected $computedOptions = array();
-    protected $inputOptions = array();
+    protected $computedOptions = [];
+    protected $inputOptions = [];
 
     protected static $standardOptions = array(
         'minify' => true,
         'formatter' => null,
         'versioning' => true,
         'boilerplate' => true,
-        'vars' => array(),
+        'vars' => [],
         'cache' => true,
         'context' => null,
         'import_path' => null,
@@ -27,13 +27,13 @@ class Options
         'vendor_target' => 'all',
         'rewrite_import_urls' => true,
         'plugins' => null,
-        'settings' => array(),
+        'settings' => [],
         'stat_dump' => false,
         'source_map' => false,
         'newlines' => 'use-platform',
     );
 
-    public function __construct(array $options = array(), Options $defaults = null)
+    public function __construct(array $options = [], Options $defaults = null)
     {
         $options = array_change_key_case($options, CASE_LOWER);
 

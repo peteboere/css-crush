@@ -234,7 +234,7 @@ function canvas_fn_linear_gradient($input, $context) {
 
     // Create fill object.
     $fill = new stdClass();
-    $fill->stops = array();
+    $fill->stops = [];
     $fill->direction = $direction;
 
     canvas_set_fill_dims($fill, $context->canvas);
@@ -631,7 +631,7 @@ function canvas_requirements() {
 */
 class Canvas
 {
-    public $image, $fills = array(), $filters = array();
+    public $image, $fills = [], $filters = [];
 
     public function __destruct()
     {

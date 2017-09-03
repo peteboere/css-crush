@@ -25,13 +25,13 @@ class Functions
         'a-adjust' => 'CssCrush\fn__a_adjust',
     );
 
-    public $register = array();
+    public $register = [];
 
     protected $pattern;
 
     protected $patternOptions;
 
-    public function __construct($register = array())
+    public function __construct($register = [])
     {
         $this->register = $register;
     }
@@ -116,7 +116,7 @@ class Functions
 
     public static function parseArgs($input, $allowSpaceDelim = false)
     {
-        $options = array();
+        $options = [];
         if ($allowSpaceDelim) {
             $options['regex'] = Regex::$patt->argListSplit;
         }
@@ -135,8 +135,8 @@ class Functions
 
     public static function makePattern($functionNames)
     {
-        $idents = array();
-        $nonIdents = array();
+        $idents = [];
+        $nonIdents = [];
 
         foreach ($functionNames as $functionName) {
             if (preg_match(Regex::$patt->ident, $functionName[0])) {

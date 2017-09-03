@@ -158,7 +158,7 @@ class IO
 
         $cache_data_exists = file_exists($process->cacheFile);
         $cache_data_file_is_writable = $cache_data_exists ? is_writable($process->cacheFile) : false;
-        $cache_data = array();
+        $cache_data = [];
 
         if (
             $cache_data_exists &&
@@ -178,7 +178,7 @@ class IO
             else {
                 debug('Creating cache data file.');
             }
-            Util::filePutContents($process->cacheFile, json_encode(array()), __METHOD__);
+            Util::filePutContents($process->cacheFile, json_encode([]), __METHOD__);
         }
 
         return $cache_data;

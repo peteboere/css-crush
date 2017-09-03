@@ -9,7 +9,7 @@ namespace CssCrush;
 class Template
 {
     // Positional argument default values.
-    public $defaults = array();
+    public $defaults = [];
 
     // The number of expected arguments.
     public $argCount = 0;
@@ -107,8 +107,8 @@ class Template
     public function prepare(array $args, $persist = true)
     {
         // Create table of substitutions.
-        $find = array();
-        $replace = array();
+        $find = [];
+        $replace = [];
 
         if ($this->argCount) {
 

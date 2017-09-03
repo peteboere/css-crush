@@ -114,7 +114,7 @@ class Color
             )~ixS');
         }
 
-        $color_test = array();
+        $color_test = [];
         $str = strtolower(trim($str));
 
         // First match a hex value or the start of a function.
@@ -299,7 +299,7 @@ class Color
 
         // Handle shortened format.
         if (strlen($hex) === 3) {
-            $long_hex = array();
+            $long_hex = [];
             foreach (str_split($hex) as $val) {
                 $long_hex[] = $val . $val;
             }
@@ -391,7 +391,7 @@ class Color
         }
 
         // R, G and B components must be integers.
-        $components = array();
+        $components = [];
         foreach (($this->hslColorSpace ? $this->getRgb() : $this->value) as $index => $component) {
             $components[] = ($index === 3) ? $component : min(round($component), 255);
         }

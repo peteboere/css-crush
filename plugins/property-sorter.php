@@ -106,7 +106,7 @@ namespace CssCrush {
             return $GLOBALS['CSSCRUSH_PROPERTY_SORT_ORDER_CACHE'];
         }
 
-        $table = array();
+        $table = [];
 
         // Nothing cached, check for a user-defined table.
         if (isset($GLOBALS['CSSCRUSH_PROPERTY_SORT_ORDER'])) {

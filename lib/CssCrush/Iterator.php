@@ -10,7 +10,7 @@ class Iterator implements \IteratorAggregate, \ArrayAccess, \Countable
 {
     public $store;
 
-    public function __construct($items = array())
+    public function __construct($items = [])
     {
         $this->store = $items;
     }

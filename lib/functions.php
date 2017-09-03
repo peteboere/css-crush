@@ -11,7 +11,7 @@ use CssCrush\Crush;
  *
  * @see docs/api/functions.md
  */
-function csscrush_file($file, $options = array()) {
+function csscrush_file($file, $options = []) {
 
     try {
         Crush::$process = new CssCrush\Process($options, array('type' => 'file', 'data' => $file));
@@ -31,7 +31,7 @@ function csscrush_file($file, $options = array()) {
  *
  * @see docs/api/functions.md
  */
-function csscrush_tag($file, $options = array(), $tag_attributes = array()) {
+function csscrush_tag($file, $options = [], $tag_attributes = []) {
 
     $file = csscrush_file($file, $options);
     if ($file && $file->url) {
@@ -52,10 +52,10 @@ function csscrush_tag($file, $options = array(), $tag_attributes = array()) {
  *
  * @see docs/api/functions.md
  */
-function csscrush_inline($file, $options = array(), $tag_attributes = array()) {
+function csscrush_inline($file, $options = [], $tag_attributes = []) {
 
     if (! is_array($options)) {
-        $options = array();
+        $options = [];
     }
     if (! isset($options['boilerplate'])) {
         $options['boilerplate'] = false;
@@ -80,7 +80,7 @@ function csscrush_inline($file, $options = array(), $tag_attributes = array()) {
  *
  * @see docs/api/functions.md
  */
-function csscrush_string($string, $options = array()) {
+function csscrush_string($string, $options = []) {
 
     if (! isset($options['boilerplate'])) {
         $options['boilerplate'] = false;

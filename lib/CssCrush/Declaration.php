@@ -117,7 +117,7 @@ class Declaration
     public function indexFunctions()
     {
         // Create an index of all regular functions in the value.
-        $functions = array();
+        $functions = [];
         if (preg_match_all(Regex::$patt->functionTest, $this->value, $m)) {
             foreach ($m['func_name'] as $fn_name) {
                 $functions[strtolower($fn_name)] = true;

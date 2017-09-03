@@ -25,8 +25,8 @@ class Importer
         $str = '';
 
         // Keep track of all import file info for cache data.
-        $mtimes = array();
-        $filenames = array();
+        $mtimes = [];
+        $filenames = [];
 
         // Resolve main input; a string of css or a file.
         if (isset($input->string)) {

@@ -8,9 +8,9 @@ namespace CssCrush;
 
 class Settings
 {
-    protected $store = array();
+    protected $store = [];
 
-    public function __construct($pairs = array())
+    public function __construct($pairs = [])
     {
         foreach ($pairs as $name => $value) {
             $this->set($name, $value);

@@ -81,7 +81,7 @@ class Selector
 
             $start = $alias_call[0][1];
             $length = strlen($alias_call[0][0]);
-            $args = array();
+            $args = [];
 
             // It's a function alias if a start paren is matched.
             if (isset($alias_call[2])) {

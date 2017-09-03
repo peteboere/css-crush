@@ -23,8 +23,8 @@ class Rule
     public $declarations;
 
     // Arugments passed via @extend.
-    public $extendArgs = array();
-    public $extendSelectors = array();
+    public $extendArgs = [];
+    public $extendSelectors = [];
 
     public function __construct($selectorString, $declarationsString, $traceToken = null)
     {
@@ -88,7 +88,7 @@ class Rule
             $references =& Crush::$process->references;
 
             // Filter the extendArgs list to usable references.
-            $filtered = array();
+            $filtered = [];
             foreach ($this->extendArgs as $extendArg) {
 
                 if (isset($references[$extendArg->name])) {
@@ -114,7 +114,7 @@ class Rule
         }
 
         // Create a stack of all parent rule args.
-        $parentExtendArgs = array();
+        $parentExtendArgs = [];
         foreach ($this->extendArgs as $extendArg) {
             $parentExtendArgs += $extendArg->pointer->extendArgs;
         }
@@ -132,7 +132,7 @@ class Rule
             // If there is a pseudo class extension create a new set accordingly.
             if ($extendArg->pseudo) {
 
-                $extendSelectors = array();
+                $extendSelectors = [];
                 foreach ($this->selectors->store as $selector) {
                     $newSelector = clone $selector;
                     $newReadable = $newSelector->appendPseudo($extendArg->pseudo);

@@ -25,7 +25,7 @@ class Tokens
         $this->ids = new \stdClass;
 
         foreach ($types as $type) {
-            $this->store->$type = array();
+            $this->store->$type = [];
             $this->ids->$type = 0;
         }
     }

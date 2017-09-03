@@ -88,9 +88,9 @@ TPL;
         $this->assertEquals(2, $stats['rule_count']);
         $this->assertArrayHasKey('timestamp', $stats['vars']);
         unset($stats['vars']['timestamp']);
-        $this->assertEquals(array(), $stats['vars']);
-        $this->assertEquals(array(), $stats['vars']);
-        $this->assertEquals(array(), $stats['errors']);
+        $this->assertEquals([], $stats['vars']);
+        $this->assertEquals([], $stats['vars']);
+        $this->assertEquals([], $stats['errors']);
         $this->assertTrue(isset($stats['compile_time']));
     }
 
@@ -114,6 +114,6 @@ TPL;
 
         $this->assertContains('property-sorter', csscrush_get('options', 'enable'));
 
-        csscrush_set('options', array('enable' => array()));
+        csscrush_set('options', array('enable' => []));
     }
 }

@@ -75,7 +75,7 @@ class Util
         return $path;
     }
 
-    public static function resolveUserPath($path, $recovery = null, $docRoot = null)
+    public static function resolveUserPath($path, callable $recovery = null, $docRoot = null)
     {
         // System path.
         if ($realpath = realpath($path)) {
@@ -98,7 +98,7 @@ class Util
                 $path = Crush::$config->scriptDir . '/' . $path;
             }
 
-            if (! file_exists($path) && is_callable($recovery)) {
+            if (! file_exists($path) && $recovery) {
                 $path = $recovery($path);
             }
             $path = realpath($path);
@@ -131,7 +131,7 @@ class Util
         return preg_replace($find, $replace, $str);
     }
 
-    public static function splitDelimList($str, $options = array())
+    public static function splitDelimList($str, $options = [])
     {
         extract($options + array(
             'delim' => ',',
@@ -142,11 +142,11 @@ class Util
         $str = trim($str);
 
         if (! $regex && strpos($str, $delim) === false) {
-            return ! $allow_empty_strings && ! strlen($str) ? array() : array($str);
+            return ! $allow_empty_strings && ! strlen($str) ? [] : array($str);
         }
 
         if ($match_count = preg_match_all(Regex::$patt->parens, $str, $matches)) {
-            $keys = array();
+            $keys = [];
             foreach ($matches[0] as $index => &$value) {
                 $keys[] = "?$index?";
             }

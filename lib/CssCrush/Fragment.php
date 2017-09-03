@@ -10,7 +10,7 @@ class Fragment extends Template
 {
     public $name;
 
-    public function __construct($str, $options = array())
+    public function __construct($str, $options = [])
     {
         parent::__construct($str, $options);
         $this->name = $options['name'];
@@ -32,7 +32,7 @@ class Fragment extends Template
 
             // Skip over same named fragments to avoid infinite recursion.
             if ($fragment && $name !== $this->name) {
-                $args = array();
+                $args = [];
                 if (isset($m['parens'][1])) {
                     $args = Functions::parseArgs($m['parens_content'][0]);
                 }

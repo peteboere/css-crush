@@ -27,7 +27,7 @@ function color_capture($process) {
     if ($captured_keywords) {
 
         $native_keywords = Color::getKeywords();
-        $custom_keywords = array();
+        $custom_keywords = [];
         $process->colorKeywords = $native_keywords;
 
         foreach ($captured_keywords as $key => $value) {

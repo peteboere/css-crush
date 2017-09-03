@@ -50,7 +50,7 @@ class SelectorList extends Iterator
                     list($full_match, $full_match_offset) = $m[0];
                     $before = substr($selector_string, 0, $full_match_offset);
                     $after = substr($selector_string, strlen($full_match) + $full_match_offset);
-                    $selectors = array();
+                    $selectors = [];
 
                     // Allowing empty strings for more expansion possibilities.
                     foreach (Util::splitDelimList($m['parens_content'][0], array('allow_empty_strings' => true)) as $segment) {
@@ -69,9 +69,9 @@ class SelectorList extends Iterator
             {
                 if ($running_stack = $expand($selector_string))  {
 
-                    $flattened_stack = array();
+                    $flattened_stack = [];
                     do {
-                        $loop_stack = array();
+                        $loop_stack = [];
                         foreach ($running_stack as $selector => $bool) {
                             $selectors = $expand($selector);
                             if (! $selectors) {
@@ -92,7 +92,7 @@ class SelectorList extends Iterator
             };
         }
 
-        $expanded_set = array();
+        $expanded_set = [];
 
         foreach ($this->store as $original_selector) {
             if (stripos($original_selector->value, ':any(') !== false) {
@@ -111,7 +111,7 @@ class SelectorList extends Iterator
 
     public function merge($rawSelectors)
     {
-        $stack = array();
+        $stack = [];
 
         foreach ($rawSelectors as $rawParentSelector) {
             foreach ($this->store as $selector) {
