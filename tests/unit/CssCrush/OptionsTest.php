@@ -3,6 +3,7 @@
 namespace CssCrush\UnitTest;
 
 use CssCrush\Options;
+use CssCrush\Version;
 
 class OptionsTest extends \PHPUnit_Framework_TestCase
 {
@@ -42,7 +43,7 @@ TPL;
             'newlines' => 'unix',
         ));
 
-        $this->assertContains(' * ' . csscrush_version(), (string) $result);
+        $this->assertContains(' * ' . Version::detect(), (string) $result);
         $this->assertContains(" * Line breaks\n * preserved\n *", (string) $result);
     }
 

@@ -40,34 +40,6 @@ Compile a raw string of CSS string and return it.
 
 ***************
 
-## csscrush\_add_function()
-
-Add custom CSS functions.
-
-Custom functions added this way are stored on a stack and used by any
-subsequent compilations within the duration of the script.
-
-`csscrush_add_function( string $function_name, callable $callback = null )`
-
-### Parameters
-
- * `$function_name`  Name of CSS function, or `null` to clear all functions added with `csscrush_add_function()`.
- * `$callback`  CSS function callback, or `null` to remove function named `$function_name`.
-
-`callback ( array $arguments, stdClass $context )`
-
-
-***************
-
-## csscrush_version()
-
-Get the library version.
-
-`csscrush_version()`
-
-
-***************
-
 ## csscrush_get()
 
 Retrieve a config setting or option default.
@@ -92,6 +64,15 @@ Set a config setting or option default.
 
  * `$object_name`  Name of object you want to modify: 'config' or 'options'.
  * `$settings`  Associative array of keys and values to set, or callable which argument is the object specified in `$object_name`.
+
+
+***************
+
+## csscrush_plugin()
+
+Register a plugin.
+
+`csscrush_plugin( string $name, callable $callback )`
 
 
 ***************

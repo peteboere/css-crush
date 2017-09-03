@@ -49,7 +49,7 @@ class Functions
     public function setPattern($useAll = false)
     {
         if ($useAll) {
-            $this->register = self::$builtins + $this->register + csscrush_add_function();
+            $this->register = self::$builtins + $this->register;
         }
 
         $this->pattern = Functions::makePattern(array_keys($this->register));

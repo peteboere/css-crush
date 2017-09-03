@@ -138,39 +138,6 @@ function csscrush_get($object_name, $property = null) {
 
 
 /**
- * Add custom CSS functions.
- *
- * @see docs/api/functions.md
- */
-function csscrush_add_function($function_name = null, $callback = null) {
-
-    static $stack = array();
-
-    if (! func_num_args()) {
-        return $stack;
-    }
-
-    if (! $function_name) {
-        $stack = array();
-        return;
-    }
-
-    $function_name = strtolower($function_name);
-    if (! $callback) {
-        if (isset($stack[$function_name])) {
-            unset($stack[$function_name]);
-        }
-    }
-    else {
-        $stack[$function_name] = array(
-            'callback' => $callback,
-            'parse_args' => true,
-        );
-    }
-}
-
-
-/**
  * Add plugin.
  *
  * @see docs/api/functions.md
@@ -178,17 +145,6 @@ function csscrush_add_function($function_name = null, $callback = null) {
 function csscrush_plugin($name, callable $callback) {
 
     Crush::plugin($name, $callback);
-}
-
-
-/**
- * Get version information.
- *
- * @see docs/api/functions.md
- */
-function csscrush_version() {
-
-    return \CssCrush\Version::detect();
 }
 
 

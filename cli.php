@@ -36,7 +36,7 @@ catch (Exception $ex) {
 
 if ($args->version) {
 
-    stdout((string) csscrush_version());
+    stdout((string) CssCrush\Version::detect());
 
     exit(STATUS_OK);
 }

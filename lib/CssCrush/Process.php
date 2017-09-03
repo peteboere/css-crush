@@ -183,7 +183,7 @@ class Process
                 'command' => $commandArgs,
                 'plugins' => implode(',', $this->plugins),
                 'version' => function ()  {
-                    return csscrush_version();
+                    return Version::detect();
                 },
                 'compile_time' => function () {
                     $now = microtime(true) - Crush::$process->stat['compile_start_time'];

@@ -116,24 +116,4 @@ TPL;
 
         csscrush_set('options', array('enable' => array()));
     }
-
-    public function testAddFunction()
-    {
-        csscrush_add_function(null);
-
-        $this->assertEquals(array(), csscrush_add_function());
-
-        csscrush_add_function('baz', function ($arguments) {return implode('-', $arguments);});
-
-        $result = (string) csscrush_string('.foo {bar: baz(one, two, three);}');
-        $this->assertEquals('.foo{bar:one-two-three}', $result);
-
-        $functions = csscrush_add_function();
-        $this->assertTrue(is_callable($functions['baz']['callback']));
-
-        csscrush_add_function('baz', null);
-
-        $functions = csscrush_add_function();
-        $this->assertFalse(isset($functions['baz']));
-    }
 }
