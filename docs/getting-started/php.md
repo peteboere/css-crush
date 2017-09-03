@@ -1,8 +1,9 @@
 <!--{
 
-"title": "Download"
+"title": "PHP"
 
 }-->
+
 If you're using [Composer](http://getcomposer.org) you can use Crush in your project with the following line in your terminal:
 
 ```shell
@@ -14,4 +15,3 @@ If you're not using Composer yet just download the library  ([zip](http://github
 ```php
 <?php require_once 'path/to/CssCrush.php'; ?>
 ```
-

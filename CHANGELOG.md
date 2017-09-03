@@ -1,12 +1,25 @@
-## 3.0.0-beta (2017-08)
+## 3.0.0-prerelease
 
+* Raise php requirement to >= 5.6
+* Removed `csscrush_version()`
+* Removed `csscrush_add_function()` (can use plugin instead).
+* Added `csscrush_plugin()` with simplified plugin api.
+* Added `import_path` option. Additional paths to search when resolving relative imports.
+* Updated vendor aliases.
+* Moved loop plugin to core.
+* Remove `@in` directive.
+* Remove legacy IE plugins.
+* Remove hsl2hex, initial, noise and text-align plugins.
+* Combined svg plugins (svg-gradients and svg).
+
+
+********************************************************************
 
 ## 2.4.0 (2015-07-30)
 
 * Added simple value checking to `@ifset`.
 * Updated vendor aliases.
 * Various fixes and under the hood improvements.
-
 
 ## 2.3.0 (2015-02-16)
 
@@ -19,7 +32,6 @@
 * Color functions now return nothing if the color argument is invalid.
 * Improvements to logging and error reporting.
 * Various bug fixes.
-
 
 ## 2.2.0 (2014-06-17)
 
