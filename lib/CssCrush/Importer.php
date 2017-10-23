@@ -70,9 +70,17 @@ class Importer
                 $import->path = realpath($process->docRoot . $import->url->value);
             }
             else {
-                $searchPaths = array_merge([$input->dir], $options->import_path ?: []);
-                foreach ($searchPaths as $searchPath) {
-                    $candidate = "$searchPath/{$import->url->value}";
+                $url =& $import->url;
+                $candidates = ["$input->dir/$url->value"];
+
+                // If `import_path` option is set implicit relative urls
+                // are additionally searched under specified import path(s).
+                if (is_array($options->import_path) && $url->isRelativeImplicit()) {
+                    foreach ($options->import_path as $importPath) {
+                        $candidates[] = "$importPath/$url->originalValue";
+                    }
+                }
+                foreach ($candidates as $candidate) {
                     if (file_exists($candidate)) {
                         $import->path = realpath($candidate);
                         break;
@@ -86,6 +94,9 @@ class Importer
                 $errDesc = 'was not found';
                 if ($import->path && ! is_readable($import->path)) {
                     $errDesc = 'is not readable';
+                }
+                if (! empty($process->sources)) {
+                    $errDesc .= " (from within {$process->sources[0]})";
                 }
                 notice("@import '{$import->url->value}' $errDesc");
                 $str = substr_replace($str, '', $match_start, $match_len);

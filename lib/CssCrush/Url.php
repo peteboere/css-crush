@@ -18,6 +18,7 @@ class Url
     public $noRewrite;
     public $convertToData;
     public $value;
+    public $originalValue;
 
     public function __construct($raw_value)
     {
@@ -28,6 +29,7 @@ class Url
             $this->value = $raw_value;
         }
 
+        $this->originalValue = $this->value;
         $this->evaluate();
     }
 
@@ -92,6 +94,11 @@ class Url
         $this->setType($type);
 
         return $this;
+    }
+
+    public function isRelativeImplicit()
+    {
+        return $this->isRelative && preg_match('~^([\w$-]|\.[^\/.])~', $this->originalValue);
     }
 
     public function getAbsolutePath()
