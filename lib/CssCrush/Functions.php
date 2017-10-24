@@ -180,6 +180,14 @@ function fn__math($input) {
         array(M_PI),
         $expression);
 
+    // If no unit is specified scan expression.
+    if (! $unit) {
+        $numPatt = Regex::$classes->number;
+        if (preg_match("~\b{$numPatt}(?<unit>[A-Za-z]{2,4}\b|%)~", $expression, $m)) {
+            $unit = $m['unit'];
+        }
+    }
+
     // Filter expression so it's just characters necessary for simple math.
     $expression = preg_replace("~[^.0-9/*()+-]~S", '', $expression);
 

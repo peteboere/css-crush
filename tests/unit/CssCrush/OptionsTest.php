@@ -83,7 +83,7 @@ TPL;
         csscrush_file($this->testFile, array('source_map' => true));
         $source_map_contents = file_get_contents("$this->testFile.crush.css.map");
 
-        $this->assertRegExp('~"version": ?"3",~', $source_map_contents);
+        $this->assertRegExp('~"version": ?3,~', $source_map_contents);
     }
 
     public function testAdvancedMinify()

@@ -1004,7 +1004,7 @@ class Process
     public function generateSourceMap()
     {
         $this->sourceMap = [
-            'version' => '3',
+            'version' => 3,
             'file' => $this->output->filename,
             'sources' => [],
         ];
