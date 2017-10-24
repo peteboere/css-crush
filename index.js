@@ -31,9 +31,26 @@ class Process extends EventEmitter {
         options.watch = true;
         const command = this.assembleCommand(options);
         const proc = childProcess.exec(command);
+
+        // Emitting 'error' events from EventEmitter without
+        // any error listener will throw uncaught exception.
+        this.on('error', () => {});
+
         proc.stderr.on('data', msg => {
-            process.stderr.write(msg.toString());
-            this.emit('data', msg.toString());
+            msg = msg.toString();
+            process.stderr.write(msg);
+
+            let errorText = msg.replace(/\x1B\[[^m]*m/g, '').trim();
+            let errorMatch = /^(WARNING|ERROR)\:\s*(.+)/i.exec(errorText);
+            if (errorMatch) {
+                let [, severity, message] = errorMatch;
+                let error = new Error(message);
+                error.severity = severity.toLowerCase();
+                this.emit('error', error);
+            }
+            else {
+                this.emit('data', msg);
+            }
         });
         return this;
     }
