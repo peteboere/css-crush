@@ -12,10 +12,13 @@
     "bin": {
         "csscrush": "./bin/csscrush"
     },
+    "scripts": {
+        "lint": "eslint --fix index.js"
+    },
     "homepage": "http://the-echoplex.net/csscrush",
     "license": "MIT",
     "devDependencies": {
-        "eslint": "~4.5.0",
+        "eslint": "~4.12.1",
         "normalize.css": "7.0.0"
     }
 }

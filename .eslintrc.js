@@ -4,7 +4,10 @@ module.exports = {
         "node": true
     },
     "parserOptions": {
-        "ecmaVersion": 8
+        "ecmaVersion": 8,
+        "ecmaFeatures": {
+            "experimentalObjectRestSpread": true,
+        },
     },
     "extends": "eslint:recommended",
     "rules": {
@@ -18,6 +21,7 @@ module.exports = {
         "no-else-return": 2,
         "no-useless-call": 2,
         "no-useless-return": 2,
+        "no-control-regex": 0,
         "no-unused-expressions": [2, {"allowShortCircuit": true}],
         "no-lonely-if": 2,
         "arrow-parens": [2, "as-needed"],

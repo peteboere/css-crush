@@ -39,17 +39,25 @@ class Process extends EventEmitter {
         proc.stderr.on('data', msg => {
             msg = msg.toString();
             process.stderr.write(msg);
+            msg = msg.replace(/\x1B\[[^m]*m/g, '').trim();
 
-            let errorText = msg.replace(/\x1B\[[^m]*m/g, '').trim();
-            let errorMatch = /^(WARNING|ERROR)\:\s*(.+)/i.exec(errorText);
-            if (errorMatch) {
-                let [, severity, message] = errorMatch;
-                let error = new Error(message);
-                error.severity = severity.toLowerCase();
+            let [, signal, detail] = /^([A-Z]+):\s*(.+)/i.exec(msg) || [];
+            let {input, output} = options;
+            let eventData = {
+                signal,
+                options: {
+                    input: input ? path.resolve(input) : null,
+                    output: output ? path.resolve(output) : null,
+                },
+            };
+
+            if (/^(WARNING|ERROR)$/.test(signal)) {
+                let error = new Error(detail);
+                Object.assign(error, eventData, {severity: signal.toLowerCase()});
                 this.emit('error', error);
             }
             else {
-                this.emit('data', msg);
+                this.emit('data', {message: detail, ...eventData});
             }
         });
         return this;
