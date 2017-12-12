@@ -1,7 +1,7 @@
 const childProcess = require('child_process');
 const path = require('path');
 const EventEmitter = require('events');
-const cliPath = path.resolve(__dirname, './bin/csscrush');
+const cliPath = path.resolve(__dirname, './cli.php');
 
 const self = module.exports = {};
 
@@ -64,7 +64,7 @@ class Process extends EventEmitter {
     }
 
     assembleCommand(options) {
-        return `${cliPath} ${this.stringifyOptions(options)}`;
+        return `${self.phpBin || 'php'} ${cliPath} ${this.stringifyOptions(options)}`;
     }
 
     stringifyOptions(options) {

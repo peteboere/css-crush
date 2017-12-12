@@ -14,8 +14,8 @@ $requiredVersion = 5.6;
 
 if ($version < $requiredVersion) {
 
-    stderr(array("PHP version $requiredVersion or higher is required to use this tool.",
-        "You are currently running PHP $version"));
+    stderr(["PHP version $requiredVersion or higher is required to use this tool.",
+        "You are currently running PHP $version"]);
 
     exit(STATUS_ERROR);
 }
@@ -25,7 +25,7 @@ try {
 }
 catch (Exception $ex) {
 
-    stderr(message($ex->getMessage(), array('type'=>'error')));
+    stderr(message($ex->getMessage(), ['type'=>'error']));
 
     exit($ex->getCode());
 }
@@ -70,7 +70,7 @@ else {
 
 if ($args->watch && ! $args->input_file) {
 
-    stderr(message('Watch mode requires an input file.', array('type'=>'error')));
+    stderr(message('Watch mode requires an input file.', ['type'=>'error']));
 
     exit(STATUS_ERROR);
 }
@@ -116,10 +116,10 @@ if ($args->output_file) {
     $options['output_file'] = basename($args->output_file);
 }
 
-$options += array(
+$options += [
     'doc_root' => getcwd(),
     'context' => $args->context,
-);
+];
 
 
 ##################################################################
@@ -129,7 +129,7 @@ error_reporting(0);
 
 if ($args->watch) {
 
-    csscrush_set('config', array('io' => 'CssCrush\IO\Watch'));
+    csscrush_set('config', ['io' => 'CssCrush\IO\Watch']);
 
     stdout('CONTROL-C to quit.');
 
@@ -148,20 +148,20 @@ if ($args->watch) {
         if ($errors) {
             if ($showErrors) {
                 $outstandingErrors = $errors;
-                stderr(message($errors, array('type'=>'error')));
+                stderr(message($errors, ['type'=>'error']));
             }
         }
         elseif ($changed) {
             $outstandingErrors = false;
-            stderr(message(fmt_fileinfo($stats, 'output'), array('type'=>'write')));
+            stderr(message(fmt_fileinfo($stats, 'output'), ['type'=>'write']));
         }
 
         if (($showErrors || $changed) && $warnings) {
-            stderr(message($warnings, array('type'=>'warning')));
+            stderr(message($warnings, ['type'=>'warning']));
         }
 
         if ($changed && $args->stats) {
-            stderr(message($stats, array('type'=>'stats')));
+            stderr(message($stats, ['type'=>'stats']));
         }
 
         sleep(1);
@@ -184,20 +184,20 @@ else {
     $warnings = $stats['warnings'];
 
     if ($errors) {
-        stderr(message($errors, array('type'=>'error')));
+        stderr(message($errors, ['type'=>'error']));
 
         exit(STATUS_ERROR);
     }
     elseif ($args->input_file && ! empty($stats['output_filename'])) {
-        stderr(message(fmt_fileinfo($stats, 'output'), array('type'=>'write')));
+        stderr(message(fmt_fileinfo($stats, 'output'), ['type'=>'write']));
     }
 
     if ($warnings) {
-        stderr(message($warnings, array('type'=>'warning')));
+        stderr(message($warnings, ['type'=>'warning']));
     }
 
     if ($args->stats) {
-        stderr(message($stats, array('type'=>'stats')));
+        stderr(message($stats, ['type'=>'stats']));
     }
 
     if ($stdOutput) {
@@ -250,12 +250,12 @@ function parse_list(array $option) {
 
 function message($messages, $options = []) {
 
-    $defaults = array(
+    $defaults = [
         'color' => 'b',
         'label' => null,
         'indent' => false,
         'format_label' => false,
-    );
+    ];
     $preset = ! empty($options['type']) ? $options['type'] : null;
     switch ($preset) {
         case 'error':
@@ -274,8 +274,8 @@ function message($messages, $options = []) {
             // Making stats concise and readable.
             $messages['input_file'] = $messages['input_path'];
             $messages['compile_time'] = round($messages['compile_time'], 5) . ' seconds';
-            foreach (array('input_filename', 'input_path', 'output_filename',
-                'output_path', 'vars', 'errors', 'warnings') as $key) {
+            foreach (['input_filename', 'input_path', 'output_filename',
+                'output_path', 'vars', 'errors', 'warnings'] as $key) {
                 unset($messages[$key]);
             }
             ksort($messages);
@@ -301,7 +301,8 @@ function message($messages, $options = []) {
 }
 
 function fmt_fileinfo($stats, $type) {
-    return $stats[$type . '_filename'] . ' ' . '(' . $stats[$type . '_path'] . ')';
+    $time = round($stats['compile_time'], 3);
+    return $stats[$type . '_path'] . " ({$time}s)";
 }
 
 function pick(array &$arr) {
@@ -321,7 +322,7 @@ function pick(array &$arr) {
 function colorize($str) {
 
     static $color_support;
-    static $tags = array(
+    static $tags = [
         '<b>' => "\033[0;30m",
         '<r>' => "\033[0;31m",
         '<g>' => "\033[0;32m",
@@ -341,7 +342,7 @@ function colorize($str) {
         '<W>' => "\033[1;37m",
 
         '</>' => "\033[m",
-    );
+    ];
 
     if (! isset($color_support)) {
         $color_support = defined('TESTMODE') && TESTMODE ? false : true;
@@ -404,12 +405,12 @@ function get_trailing_io_args($required_value_opts) {
             break;
     }
 
-    return array($trailing_input_file, $trailing_output_file);
+    return [$trailing_input_file, $trailing_output_file];
 }
 
 function parse_args() {
 
-    $required_value_opts = array(
+    $required_value_opts = [
         'i|input|f|file', // Input file. Defaults to STDIN.
         'o|output', // Output file. Defaults to STDOUT.
         'E|enable|plugins',
@@ -420,14 +421,14 @@ function parse_args() {
         'context',
         'import-path',
         'newlines',
-    );
+    ];
 
-    $optional_value_opts = array(
+    $optional_value_opts = [
         'b|boilerplate',
         'stat-dump',
-    );
+    ];
 
-    $flag_opts = array(
+    $flag_opts = [
         'p|pretty',
         'w|watch',
         'help',
@@ -435,7 +436,7 @@ function parse_args() {
         'source-map',
         'stats',
         'test',
-    );
+    ];
 
     // Create option strings for getopt().
     $short_opts = [];
