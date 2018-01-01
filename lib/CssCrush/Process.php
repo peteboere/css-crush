@@ -447,8 +447,13 @@ class Process
     protected function resolveSettings()
     {
         $captured_settings = $this->string->captureDirectives('settings', ['singles' => true]);
+        $combined_settings = $this->options->settings + $captured_settings;
 
-        $this->settings = new Settings($this->options->settings + $captured_settings);
+        foreach ($combined_settings as $name => &$value) {
+            $this->placeVars($value);
+        }
+
+        $this->settings = new Settings($combined_settings);
     }
 
     #############################
@@ -490,6 +495,7 @@ class Process
             // Resolve the list of items for iteration.
             // Either a generator function or a plain list.
             $items = [];
+            $this->placeVars($list);
             $list = $this->functions->apply($list);
             if (preg_match(Regex::make('~(?<func>range){{ parens }}~ix'), $list, $m)) {
                 $func = strtolower($m['func']);
@@ -958,13 +964,13 @@ class Process
 
         $this->captureVars();
 
-        $this->placeAllVars();
-
         $this->resolveIfDefines();
 
         $this->resolveSettings();
 
         $this->resolveLoops();
+
+        $this->placeAllVars();
 
         // Capture phase 1 hook: After all variables and settings have resolved.
         $this->emit('capture_phase1', $this);
