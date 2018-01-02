@@ -449,7 +449,7 @@ class Process
         $captured_settings = $this->string->captureDirectives('settings', ['singles' => true]);
         $combined_settings = $this->options->settings + $captured_settings;
 
-        foreach ($combined_settings as $name => &$value) {
+        foreach ($combined_settings as &$value) {
             $this->placeVars($value);
         }
 
