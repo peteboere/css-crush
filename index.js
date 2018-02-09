@@ -1,7 +1,16 @@
-const childProcess = require('child_process');
 const path = require('path');
 const EventEmitter = require('events');
 const cliPath = path.resolve(__dirname, './cli.php');
+
+const processes = [];
+const processExec = (...args) => {
+    processes.push(require('child_process').exec(...args));
+    return processes[processes.length-1];
+};
+
+process.on('exit', () => {
+    processes.filter(it => it).forEach(proc => proc.kill());
+});
 
 const self = module.exports = {};
 
@@ -13,7 +22,7 @@ class Process extends EventEmitter {
             if (stdIn) {
                 command = `echo '${stdIn.replace(/'/g, "\\'")}' | ${command}`;
             }
-            childProcess.exec(command, (error, stdout, stderr) => {
+            processExec(command, (error, stdout, stderr) => {
                 process.stderr.write(stderr.toString());
                 if (error) {
                     return resolve(false);
@@ -30,7 +39,7 @@ class Process extends EventEmitter {
     watch(options) {
         options.watch = true;
         const command = this.assembleCommand(options);
-        const proc = childProcess.exec(command);
+        const proc = processExec(command);
 
         // Emitting 'error' events from EventEmitter without
         // any error listener will throw uncaught exception.
