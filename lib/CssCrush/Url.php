@@ -61,8 +61,8 @@ class Url
 
     public function evaluate()
     {
-        // Protocol or protocol-relative (//) based URL.
-        if (preg_match('~^(?: (?<protocol>[a-z]+)\: | \/{2} )~ix', $this->value, $m)) {
+        // Protocol, protocol-relative (//) or fragment URL.
+        if (preg_match('~^(?: (?<protocol>[a-z]+)\: | \/{2} | \# )~ix', $this->value, $m)) {
 
             $this->protocol = ! empty($m['protocol']) ? strtolower($m['protocol']) : 'relative';
 
