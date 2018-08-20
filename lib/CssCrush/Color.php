@@ -283,7 +283,9 @@ class Color
     public static function rgbToHex(array $rgba)
     {
         // Drop alpha component.
-        array_pop($rgba);
+        if (isset($rgba[3])) {
+            array_pop($rgba);
+        }
 
         $hex_out = '#';
         foreach ($rgba as $val) {
