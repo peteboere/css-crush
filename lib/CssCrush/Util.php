@@ -263,12 +263,12 @@ class Util
 
         $encoded = "";
         do {
-          $digit = $vlq & $VLQ_BASE_MASK;
-          $vlq >>= $VLQ_BASE_SHIFT;
-          if ($vlq > 0) {
-            $digit |= $VLQ_CONTINUATION_BIT;
-          }
-          $encoded .= $BASE64_MAP[$digit];
+            $digit = $vlq & $VLQ_BASE_MASK;
+            $vlq >>= $VLQ_BASE_SHIFT;
+            if ($vlq > 0) {
+                $digit |= $VLQ_CONTINUATION_BIT;
+            }
+            $encoded .= $BASE64_MAP[$digit];
 
         } while ($vlq > 0);
 

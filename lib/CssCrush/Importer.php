@@ -320,7 +320,7 @@ class Importer
 
             // Source maps require column index too.
             if ($process->generateMap) {
-                $pointData[] = strlen($before) - strrpos($before, "\n") - 1;
+                $pointData[] = strlen($before) - (strrpos($before, "\n") ?: 0);
             }
 
             // Splice in marker token (packing point_data into string is more memory efficient).
