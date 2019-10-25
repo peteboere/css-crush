@@ -18,7 +18,7 @@
     "homepage": "http://the-echoplex.net/csscrush",
     "license": "MIT",
     "devDependencies": {
-        "eslint": "~5.3.0",
+        "eslint": "~6.5.1",
         "normalize.css": "7.0.0"
     }
 }

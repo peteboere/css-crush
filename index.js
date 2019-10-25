@@ -1,3 +1,5 @@
+/*eslint no-control-regex: 0*/
+
 const path = require('path');
 const EventEmitter = require('events');
 const cliPath = path.resolve(__dirname, './cli.php');
