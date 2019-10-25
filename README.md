@@ -87,7 +87,7 @@ csscrush.watch('./styles.css');
 
 If you think you've found a bug please create an [issue](https://github.com/peteboere/css-crush/issues) explaining the problem and expected result.
 
-Likewise, if you'd like to request a feature please create an [issue](https://github.com/peteboere/css-crush/issues) with some explaination of the requested feature and use-cases.
+Likewise, if you'd like to request a feature please create an [issue](https://github.com/peteboere/css-crush/issues) with some explanation of the requested feature and use-cases.
 
 [Pull requests](https://help.github.com/articles/using-pull-requests) are welcome, though please keep coding style consistent with the project (which is based on [PSR-2](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-2-coding-style-guide.md)).
 
