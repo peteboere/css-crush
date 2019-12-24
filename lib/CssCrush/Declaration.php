@@ -16,12 +16,19 @@ class Declaration
     public $index;
     public $skip = false;
     public $important = false;
+    public $custom = false;
     public $valid = true;
 
     public function __construct($property, $value, $contextIndex = 0)
     {
-        // Normalize the property name.
-        $property = strtolower($property);
+        // Normalize, but preserve case if a custom property.
+        if (strpos($property, '--') === 0) {
+            $this->custom = true;
+            $this->skip = true;
+        }
+        else {
+            $property = strtolower($property);
+        }
 
         if ($this->skip = strpos($property, '~') === 0) {
             $property = substr($property, 1);
