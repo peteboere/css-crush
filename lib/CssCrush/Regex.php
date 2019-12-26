@@ -74,7 +74,7 @@ class Regex
         $patt->string = '~(\'|")(?:\\\\\1|[^\1])*?\1~xS';
         $patt->commentAndString = '~
             # Quoted string (to EOF if unmatched).
-            (\'|")(?:\\\\\1|[^\1])*?(?:\1|$)
+            (\'|"|`)(?:\\\\\1|[^\1])*?(?:\1|$)
             |
             # Block comment (to EOF if unmatched).
             /\*(?:[^*]*\*+(?:[^/*][^*]*\*+)*/|.*)

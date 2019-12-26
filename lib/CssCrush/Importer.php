@@ -361,6 +361,12 @@ class Importer
                 if ($fullMatch[0] !== $fullMatch[strlen($fullMatch)-1]) {
                     $fullMatch .= $fullMatch[0];
                 }
+
+                // Backticked literals may have been used for custom property values.
+                if ($fullMatch[0] === '`') {
+                    $fullMatch = preg_replace('~\x5c`~', '`', trim($fullMatch, '`'));
+                }
+
                 $label = $process->tokens->add($fullMatch, 's');
             }
 
