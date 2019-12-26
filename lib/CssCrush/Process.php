@@ -1102,7 +1102,7 @@ class Process
         $minified_keywords = Color::getMinifyableKeywords();
 
         if (! $keywords_patt) {
-            $keywords_patt = '~(?<![\w-\.#])(' . implode('|', array_keys($minified_keywords)) . ')(?![\w-\.#\]])~iS';
+            $keywords_patt = '~(?<![\w\.#-])(' . implode('|', array_keys($minified_keywords)) . ')(?![\w\.#\]-])~iS';
             $functions_patt = Regex::make('~{{ LB }}(rgb|hsl)\(([^\)]{5,})\)~iS');
         }
 
