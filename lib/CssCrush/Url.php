@@ -43,9 +43,13 @@ class Url
             $this->simplify();
         }
 
+        if ($this->isData) {
+            return 'url("' . preg_replace('~(?<!\x5c)"~', '\\"', $this->value) . '")';
+        }
+
         // Only wrap url with quotes if it contains tricky characters.
         $quote = '';
-        if ($this->isData || preg_match('~[()*\s]~S', $this->value)) {
+        if (preg_match('~[()*\s]~S', $this->value)) {
             $quote = '"';
         }
 

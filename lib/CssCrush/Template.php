@@ -140,7 +140,7 @@ class Template
 
     public static function unTokenize($str)
     {
-        $str = Crush::$process->tokens->restore($str, array('u', 's'), true);
+        $str = Crush::$process->tokens->restore($str, ['u', 's']);
 
         return $str;
     }
