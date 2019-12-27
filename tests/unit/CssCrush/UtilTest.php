@@ -66,7 +66,8 @@ class UtilTest extends \PHPUnit_Framework_TestCase
         $original_path = getcwd();
         chdir(__DIR__);
         $this_filename = basename(__FILE__);
-        $this->assertEquals(__FILE__, Util::resolveUserPath($this_filename));
+        // Case-insensitive file systems may normalize case.
+        $this->assertEquals(strtolower(__FILE__), strtolower(Util::resolveUserPath($this_filename)));
         chdir($original_path);
     }
 

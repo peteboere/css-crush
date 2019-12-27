@@ -408,12 +408,12 @@ class Process
         if (! $varFunction) {
             $varFunctionSimple = Regex::make('~\$\( \s* ({{ ident }}) \s* \)~xS');
             $varFunction = new Functions(['$' => function ($rawArgs) {
-                list($name, $defaultValue) = Functions::parseArgsSimple($rawArgs);
-                if (isset(Crush::$process->vars[$name])) {
-                    return Crush::$process->vars[$name];
+                $args = Functions::parseArgsSimple($rawArgs);
+                if (isset(Crush::$process->vars[$args[0]])) {
+                    return Crush::$process->vars[$args[0]];
                 }
                 else {
-                    return $defaultValue;
+                    return isset($args[1]) ? $args[1] : '';
                 }
             }]);
         }
