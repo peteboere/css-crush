@@ -51,7 +51,7 @@ class Declaration
             $this->important = true;
         }
 
-        Crush::$process->emit('declaration_preprocess', array('property' => &$property, 'value' => &$value));
+        Crush::$process->emit('declaration_preprocess', ['property' => &$property, 'value' => &$value]);
 
         // Reject declarations with empty CSS values.
         if ($value === false || $value === '') {
@@ -86,25 +86,25 @@ class Declaration
     {
         static $thisFunction;
         if (! $thisFunction) {
-            $thisFunction = new Functions(array('this' => 'CssCrush\fn__this'));
+            $thisFunction = new Functions(['this' => 'CssCrush\fn__this']);
         }
 
         if (! $this->skip) {
 
             // this() function needs to be called exclusively because it is self referencing.
-            $context = (object) array(
+            $context = (object) [
                 'rule' => $parentRule
-            );
+            ];
             $this->value = $thisFunction->apply($this->value, $context);
 
             if (isset($parentRule->declarations->data)) {
-                $parentRule->declarations->data += array($this->property => $this->value);
+                $parentRule->declarations->data += [$this->property => $this->value];
             }
 
-            $context = (object) array(
+            $context = (object) [
                 'rule' => $parentRule,
                 'property' => $this->property
-            );
+            ];
             $this->value = Crush::$process->functions->apply($this->value, $context);
         }
 

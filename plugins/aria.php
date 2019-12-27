@@ -22,7 +22,7 @@ function aria() {
                 return $args ? "[$property=\"#(0)\"]" : "[$property]";
             };
         };
-        $aria = array(
+        $aria = [
 
             // Roles.
             'role' => $optional_value('role'),
@@ -63,7 +63,7 @@ function aria() {
             'aria-valuemin' => $optional_value('aria-valuemin'),
             'aria-valuenow' => $optional_value('aria-valuenow'),
             'aria-valuetext' => $optional_value('aria-valuetext'),
-        );
+        ];
     }
 
     return $aria;

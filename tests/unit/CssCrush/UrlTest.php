@@ -9,7 +9,7 @@ class UrlTest extends \PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
-        bootstrap_process(array('minify' => false));
+        bootstrap_process(['minify' => false]);
     }
 
     public function testConstruct()

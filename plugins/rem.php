@@ -16,12 +16,12 @@ function rem(Rule $rule) {
     if (! $modes) {
         $rem_patt = Regex::make('~{{LB}}({{number}})rem{{RB}}~iS');
         $px_patt = Regex::make('~{{LB}}({{number}})px{{RB}}~iS');
-        $font_props = array(
+        $font_props = [
             'font' => true,
             'font-size' => true,
             'line-height' => true,
-        );
-        $modes = array('rem-fallback', 'px-fallback', 'convert');
+        ];
+        $modes = ['rem-fallback', 'px-fallback', 'convert'];
     }
 
     // Determine which properties are touched; all, or just font related.

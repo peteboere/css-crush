@@ -14,7 +14,7 @@ use CssCrush\Crush;
 function csscrush_file($file, $options = []) {
 
     try {
-        Crush::$process = new CssCrush\Process($options, array('type' => 'file', 'data' => $file));
+        Crush::$process = new CssCrush\Process($options, ['type' => 'file', 'data' => $file]);
     }
     catch (\Exception $e) {
         CssCrush\warning($e->getMessage());
@@ -36,11 +36,11 @@ function csscrush_tag($file, $options = [], $tag_attributes = []) {
     $file = csscrush_file($file, $options);
     if ($file && $file->url) {
         $tag_attributes['href'] = $file->url;
-        $tag_attributes += array(
+        $tag_attributes += [
             'rel' => 'stylesheet',
             'media' => 'all',
-        );
-        $attrs = CssCrush\Util::htmlAttributes($tag_attributes, array('rel', 'href', 'media'));
+        ];
+        $attrs = CssCrush\Util::htmlAttributes($tag_attributes, ['rel', 'href', 'media']);
 
         return "<link$attrs />\n";
     }
@@ -86,7 +86,7 @@ function csscrush_string($string, $options = []) {
         $options['boilerplate'] = false;
     }
 
-    Crush::$process = new CssCrush\Process($options, array('type' => 'filter', 'data' => $string));
+    Crush::$process = new CssCrush\Process($options, ['type' => 'filter', 'data' => $string]);
 
     return Crush::$process->compile()->__toString();
 }
@@ -99,7 +99,7 @@ function csscrush_string($string, $options = []) {
  */
 function csscrush_set($object_name, $modifier) {
 
-    if (in_array($object_name, array('options', 'config'))) {
+    if (in_array($object_name, ['options', 'config'])) {
 
         $pointer = $object_name === 'options' ? Crush::$config->options : Crush::$config;
 
@@ -122,7 +122,7 @@ function csscrush_set($object_name, $modifier) {
  */
 function csscrush_get($object_name, $property = null) {
 
-    if (in_array($object_name, array('options', 'config'))) {
+    if (in_array($object_name, ['options', 'config'])) {
 
         $pointer = $object_name === 'options' ? Crush::$config->options : Crush::$config;
 
@@ -161,7 +161,7 @@ function csscrush_stat() {
     // Get logged errors as late as possible.
     $stats['errors'] = $process->errors;
     $stats['warnings'] = $process->warnings;
-    $stats += array('compile_time' => 0);
+    $stats += ['compile_time' => 0];
 
     return $stats;
 }

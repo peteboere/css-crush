@@ -10,7 +10,7 @@ class TokensTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->process = bootstrap_process(array('minify' => false));
+        $this->process = bootstrap_process(['minify' => false]);
 
         $this->tokens = $this->process->tokens;
         $this->tokens->add('"foo"', 's');
@@ -22,7 +22,7 @@ class TokensTest extends \PHPUnit_Framework_TestCase
     {
         $this->assertEmpty(
             array_diff_key(
-                array_flip(array('s', 'c', 'r', 'u', 't')),
+                array_flip(['s', 'c', 'r', 'u', 't']),
                 (array) $this->tokens->store
             )
         );

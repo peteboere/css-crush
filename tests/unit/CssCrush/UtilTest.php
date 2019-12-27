@@ -10,7 +10,7 @@ class UtilTest extends \PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
-        $this->process = bootstrap_process(array('minify' => false));
+        $this->process = bootstrap_process(['minify' => false]);
         $this->tokens = $this->process->tokens;
     }
 
@@ -23,18 +23,18 @@ class UtilTest extends \PHPUnit_Framework_TestCase
 
     public function testHtmlAttributes()
     {
-        $attributes = array(
+        $attributes = [
             'rel' => 'stylesheet',
             'id' => 'foo',
             'media' => 'screen',
-        );
+        ];
 
         $this->assertEquals(
             ' rel="stylesheet" id="foo" media="screen"',
              Util::htmlAttributes($attributes));
         $this->assertEquals(
             ' id="foo" media="screen" rel="stylesheet"',
-             Util::htmlAttributes($attributes, array('id', 'media', 'rel')));
+             Util::htmlAttributes($attributes, ['id', 'media', 'rel']));
     }
 
     public function testSimplifyPath()
@@ -80,9 +80,9 @@ class UtilTest extends \PHPUnit_Framework_TestCase
 
     public function testSplitDelimList()
     {
-        $this->assertEquals(array('foo(1,2)','3','4'), Util::splitDelimList("foo(1,2), 3,4"));
-        $this->assertEquals([], Util::splitDelimList(" ; ; ", array('delim' => ';')));
-        $this->assertEquals(array('', ''), Util::splitDelimList(" , ", array('allow_empty_strings' => true)));
+        $this->assertEquals(['foo(1,2)','3','4'], Util::splitDelimList("foo(1,2), 3,4"));
+        $this->assertEquals([], Util::splitDelimList(" ; ; ", ['delim' => ';']));
+        $this->assertEquals(['', ''], Util::splitDelimList(" , ", ['allow_empty_strings' => true]));
     }
 
     public function testGetLinkBetweenPaths()
@@ -122,7 +122,7 @@ class UtilTest extends \PHPUnit_Framework_TestCase
         $contents = <<<'NOW_DOC'
 <?php
 
-$plugins = array('svg', 'px2em');
+$plugins = ['svg', 'px2em'];
 $boilerplate = true;
 $unrecognised_option = true;
 

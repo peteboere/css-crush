@@ -22,7 +22,7 @@ class OptionsTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals($standardOptions, $options->get());
 
-        $testOptions = array('plugins' => array('foo', 'bar'), 'minify' => false);
+        $testOptions = ['plugins' => ['foo', 'bar'], 'minify' => false];
         $options = new Options($testOptions);
 
         $initialOptionsCopy = $testOptions + $standardOptions;
@@ -38,10 +38,10 @@ preserved
 {{version}}
 TPL;
 
-        $result = csscrush_string('foo { bar: baz; }', array(
+        $result = csscrush_string('foo { bar: baz; }', [
             'boilerplate' => temp_file($boilerplate),
             'newlines' => 'unix',
-        ));
+        ]);
 
         $this->assertContains(' * ' . Version::detect(), (string) $result);
         $this->assertContains(" * Line breaks\n * preserved\n *", (string) $result);
@@ -56,7 +56,7 @@ TPL;
 foo { bar: baz; }
 
 TPL;
-        $single_line = csscrush_string($sample, array('formatter' => 'single-line'));
+        $single_line = csscrush_string($sample, ['formatter' => 'single-line']);
         $this->assertEquals($single_line_expected, $single_line);
 
         $padded_expected = <<<TPL
@@ -64,7 +64,7 @@ TPL;
 foo                                      { bar: baz; }
 
 TPL;
-        $padded = csscrush_string($sample, array('formatter' => 'padded'));
+        $padded = csscrush_string($sample, ['formatter' => 'padded']);
         $this->assertEquals($padded_expected, $padded);
 
         $block_expected = <<<TPL
@@ -74,13 +74,13 @@ foo {
     }
 
 TPL;
-        $block = csscrush_string($sample, array('formatter' => 'block'));
+        $block = csscrush_string($sample, ['formatter' => 'block']);
         $this->assertEquals($block_expected, $block);
     }
 
     public function testSourceMaps()
     {
-        csscrush_file($this->testFile, array('source_map' => true));
+        csscrush_file($this->testFile, ['source_map' => true]);
         $source_map_contents = file_get_contents("$this->testFile.crush.css.map");
 
         $this->assertRegExp('~"version": ?3,~', $source_map_contents);
@@ -89,7 +89,7 @@ TPL;
     public function testAdvancedMinify()
     {
         $sample = "foo { color: papayawhip; color: #cccccc;}";
-        $output = csscrush_string($sample, array('minify' => array('colors')));
+        $output = csscrush_string($sample, ['minify' => ['colors']]);
 
         $this->assertEquals('foo{color:#ffefd5;color:#ccc}', $output);
     }

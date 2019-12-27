@@ -60,7 +60,7 @@ class Version
 
         $test = new Version($version_string);
 
-        foreach (array('major', 'minor', 'patch') as $level) {
+        foreach (['major', 'minor', 'patch'] as $level) {
 
             if ($this->{$level} < $test->{$level}) {
 

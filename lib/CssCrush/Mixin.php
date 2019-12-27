@@ -61,10 +61,10 @@ class Mixin
                 $args = Util::splitDelimList($raw_args);
             }
 
-            return DeclarationList::parse($mixable->template->__invoke($args), array(
+            return DeclarationList::parse($mixable->template->__invoke($args), [
                 'flatten' => true,
                 'context' => $mixable,
-            ));
+            ]);
         }
         elseif ($mixable instanceof Rule) {
 
@@ -96,7 +96,7 @@ class Mixin
                     $input[$property] = $value;
                 }
                 else {
-                    $input[] = array($property, $value);
+                    $input[] = [$property, $value];
                 }
             }
         }

@@ -16,7 +16,7 @@ class Color
         if (! isset($namedColors)) {
             if ($colors = Util::parseIni(Crush::$dir . '/misc/color-keywords.ini')) {
                 foreach ($colors as $name => $rgb) {
-                    $namedColors[$name] = array_map('floatval', explode(',', $rgb)) + array(0,0,0,1);
+                    $namedColors[$name] = array_map('floatval', explode(',', $rgb)) + [0, 0, 0, 1];
                 }
             }
         }
@@ -192,7 +192,7 @@ class Color
             $h /= 6;
         }
 
-        return array($h, $s, $l, $a);
+        return [$h, $s, $l, $a];
     }
 
     /**
@@ -226,7 +226,7 @@ class Color
             $b = self::hueToRgb($p, $q, $h - 1 / 3);
         }
 
-        return array(round($r * 255), round($g * 255), round($b * 255), $a);
+        return [round($r * 255), round($g * 255), round($b * 255), $a];
     }
 
     // Convert percentages to points (0-255).
@@ -267,7 +267,7 @@ class Color
         }
         list($s, $l) = $hsla;
 
-        return self::hslToRgb(array($h, $s, $l, $a));
+        return self::hslToRgb([$h, $s, $l, $a]);
     }
 
     public static function hueToRgb($p, $q, $t)
@@ -338,9 +338,9 @@ class Color
         }
 
         // If non-alpha color return early.
-        if (! in_array($type, array('hsla', 'rgba'))) {
+        if (! in_array($type, ['hsla', 'rgba'])) {
 
-            return array($color, 1);
+            return [$color, 1];
         }
 
         // Strip all whitespace.
@@ -357,8 +357,7 @@ class Color
             $color = "$m[1]($m[2])";
         }
 
-        // Return color value and alpha component seperated.
-        return array($color, $opacity);
+        return [$color, $opacity];
     }
 
 
@@ -367,12 +366,12 @@ class Color
 
     protected $value;
     protected $hslColorSpace;
-    protected $namedComponents = array(
+    protected $namedComponents = [
         'red' => 0,
         'green' => 1,
         'blue' => 2,
         'alpha' => 3,
-    );
+    ];
     public $isValid;
 
     public function __construct($color, $useHslColorSpace = false)

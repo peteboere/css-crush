@@ -14,7 +14,7 @@ class DeclarationTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->process = bootstrap_process(array('minify' => false));
+        $this->process = bootstrap_process(['minify' => false]);
         $this->rule = new Rule('.foo', '-fOo-BAR: math(10 + 10, px) !important');
         $this->declaration = new Declaration('-fOo-BAR', 'baz !important');
     }
@@ -47,6 +47,6 @@ class DeclarationTest extends \PHPUnit_Framework_TestCase
     {
         $declaration = new Declaration('color', 'rgba(0,0,0,.5), calc(100px)');
         $declaration->indexFunctions();
-        $this->assertEquals(array('rgba' => true, 'calc' => true), $declaration->functions);
+        $this->assertEquals(['rgba' => true, 'calc' => true], $declaration->functions);
     }
 }

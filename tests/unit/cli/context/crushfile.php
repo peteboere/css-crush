@@ -2,4 +2,4 @@
 
 $context = __DIR__;
 
-$plugins = array('color');
+$plugins = ['color'];

@@ -30,21 +30,21 @@ class ApiTest extends \PHPUnit_Framework_TestCase
     public function testInline()
     {
         $this->assertEquals("<style>$this->sampleExpected</style>\n", csscrush_inline($this->sampleFile));
-        $this->assertEquals("<style type=\"text/css\" id=\"foo\">$this->sampleExpected</style>\n", csscrush_inline($this->sampleFile, null, array(
+        $this->assertEquals("<style type=\"text/css\" id=\"foo\">$this->sampleExpected</style>\n", csscrush_inline($this->sampleFile, null, [
             'type' => 'text/css',
             'id' => 'foo',
-        )));
+        ]));
     }
 
     public function testFile()
     {
         $test_dir = dirname($this->sampleFile);
-        $test_file = csscrush_file($this->sampleFile, array(
+        $test_file = csscrush_file($this->sampleFile, [
             'versioning' => false,
             'cache' => false,
             'doc_root' => $test_dir,
             'boilerplate' => false,
-        ));
+        ]);
         $filepath = "$test_dir$test_file";
 
         $this->assertEquals($this->sampleExpected, file_get_contents($filepath));
@@ -53,19 +53,19 @@ class ApiTest extends \PHPUnit_Framework_TestCase
     public function testTag()
     {
         $test_dir = dirname($this->sampleFile);
-        $base_options = array(
+        $base_options = [
             'versioning' => false,
             'cache' => false,
             'doc_root' => $test_dir,
             'boilerplate' => false,
-        );
+        ];
 
         $url = '/' . basename($this->sampleFile) . '.crush.css';
         $test_tag = csscrush_tag($this->sampleFile, $base_options);
 
         $this->assertEquals("<link rel=\"stylesheet\" href=\"$url\" media=\"all\" />\n", $test_tag);
 
-        $test_tag = csscrush_tag($this->sampleFile, $base_options, array('media' => 'print', 'id' => 'foo'));
+        $test_tag = csscrush_tag($this->sampleFile, $base_options, ['media' => 'print', 'id' => 'foo']);
 
         $this->assertEquals("<link rel=\"stylesheet\" href=\"$url\" media=\"print\" id=\"foo\" />\n", $test_tag);
     }
@@ -78,9 +78,9 @@ class ApiTest extends \PHPUnit_Framework_TestCase
 one, two, three, four, five {color: purple;}
 TPL;
 
-        csscrush_string($sample, array(
+        csscrush_string($sample, [
             'minify' => false,
-        ));
+        ]);
 
         $stats = csscrush_stat();
 
@@ -101,19 +101,19 @@ TPL;
         });
         $this->assertEquals('bar', csscrush_get('config', 'foo'));
 
-        csscrush_set('config', array(
+        csscrush_set('config', [
             'hello' => 'world',
-        ));
+        ]);
         $this->assertEquals('world', csscrush_get('config', 'hello'));
 
         $this->assertInstanceOf('stdClass', csscrush_get('config'));
 
         $this->assertInstanceOf('CssCrush\Options', csscrush_get('options'));
 
-        csscrush_set('options', array('enable' => 'property-sorter'));
+        csscrush_set('options', ['enable' => 'property-sorter']);
 
         $this->assertContains('property-sorter', csscrush_get('options', 'enable'));
 
-        csscrush_set('options', array('enable' => []));
+        csscrush_set('options', ['enable' => []]);
     }
 }

@@ -22,7 +22,7 @@ function color(&$declaration) {
 
 function color_capture($process) {
 
-    $captured_keywords = $process->string->captureDirectives('color', array('singles' => true));
+    $captured_keywords = $process->string->captureDirectives('color', ['singles' => true]);
 
     if ($captured_keywords) {
 

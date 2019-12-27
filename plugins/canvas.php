@@ -60,18 +60,18 @@ function canvas_generator($input, $context) {
     // Apply args to template.
     $block = $canvas_defs[$name]($args);
 
-    $raw = DeclarationList::parse($block, array(
+    $raw = DeclarationList::parse($block, [
         'keyed' => true,
         'lowercase_keys' => true,
         'flatten' => true,
         'apply_hooks' => true,
-    ));
+    ]);
 
     // Create canvas object.
     $canvas = new Canvas();
 
     // Parseable canvas attributes with default values.
-    static $schema = array(
+    static $schema = [
         'fill' => null,
         'background-fill' => null,
         'src' => null,
@@ -79,7 +79,7 @@ function canvas_generator($input, $context) {
         'width' => null,
         'height' => null,
         'margin' => 0,
-    );
+    ];
 
     // Resolve properties, set defaults if not present.
     $canvas->raw = array_intersect_key($raw, $schema) + $schema;
@@ -161,7 +161,7 @@ function canvas_generator($input, $context) {
             // Set defaults.
             $canvas->width = isset($canvas->width) ? intval($canvas->width) : 100;
             $canvas->height = isset($canvas->height) ? intval($canvas->height) : 100;
-            $canvas->fills += array('fill' => 'black');
+            $canvas->fills += ['fill' => 'black'];
 
             // Create base.
             canvas_create($canvas);
@@ -211,18 +211,16 @@ function canvas_generator($input, $context) {
 
 function canvas_fn_linear_gradient($input, $context) {
 
-    $args = Functions::parseArgs($input) + array(
-        'white', 'black',
-    );
+    $args = Functions::parseArgs($input) + ['white', 'black'];
 
     $first_arg = strtolower($args[0]);
 
-    static $directions = array(
-        'to top' => array('vertical', true),
-        'to right' => array('horizontal', false),
-        'to bottom' => array('vertical', false),
-        'to left' => array('horizontal', true),
-    );
+    static $directions = [
+        'to top' => ['vertical', true],
+        'to right' => ['horizontal', false],
+        'to bottom' => ['vertical', false],
+        'to left' => ['horizontal', true],
+    ];
 
     if (isset($directions[$first_arg])) {
         list($direction, $flip) = $directions[$first_arg];
@@ -241,11 +239,11 @@ function canvas_fn_linear_gradient($input, $context) {
 
     // Start color.
     $color = Color::parse($args[0]);
-    $fill->stops[] = $color ? $color : array(0,0,0,1);
+    $fill->stops[] = $color ? $color : [0, 0, 0, 1];
 
     // End color.
     $color = Color::parse($args[1]);
-    $fill->stops[] = $color ? $color : array(255,255,255,1);
+    $fill->stops[] = $color ? $color : [255, 255, 255, 1];
 
     if ($flip) {
         $fill->stops = array_reverse($fill->stops);
@@ -258,7 +256,7 @@ function canvas_fn_filter($input, $context) {
 
     $args = Functions::parseArgs($input);
 
-    array_unshift($context->canvas->filters, array($context->function, $args));
+    array_unshift($context->canvas->filters, [$context->function, $args]);
 }
 
 
@@ -282,12 +280,12 @@ function canvas_apply_filters($canvas, $src) {
                 break;
 
             case 'colorize':
-                $rgb = $args + array('black');
+                $rgb = $args + ['black'];
                 if (count($rgb) === 1) {
                     // If only one argument parse it as a CSS color value.
                     $rgb = Color::parse($rgb[0]);
                     if (! $rgb) {
-                        $rgb = array(0,0,0);
+                        $rgb = [0, 0, 0];
                     }
                 }
                 imagefilter($src->image, IMG_FILTER_COLORIZE, $rgb[0], $rgb[1], $rgb[2]);
@@ -333,11 +331,11 @@ function canvas_apply_css_funcs($canvas) {
     if (! $functions) {
         $functions = new stdClass();
 
-        $functions->fill = new Functions(array('canvas-linear-gradient' => 'CssCrush\canvas_fn_linear_gradient'));
+        $functions->fill = new Functions(['canvas-linear-gradient' => 'CssCrush\canvas_fn_linear_gradient']);
 
         $functions->generic = new Functions(array_diff_key(Crush::$process->functions->register, $functions->fill->register));
 
-        $functions->filter = new Functions(array(
+        $functions->filter = new Functions([
             'contrast' => 'CssCrush\canvas_fn_filter',
             'opacity' => 'CssCrush\canvas_fn_filter',
             'colorize' => 'CssCrush\canvas_fn_filter',
@@ -346,7 +344,7 @@ function canvas_apply_css_funcs($canvas) {
             'brightness' => 'CssCrush\canvas_fn_filter',
             'invert' => 'CssCrush\canvas_fn_filter',
             'blur' => 'CssCrush\canvas_fn_filter',
-        ));
+        ]);
     }
 
     $context = new stdClass();
@@ -360,7 +358,7 @@ function canvas_apply_css_funcs($canvas) {
         $value = $functions->generic->apply($value);
         $context->canvas = $canvas;
 
-        if (in_array($property, array('fill', 'background-fill'))) {
+        if (in_array($property, ['fill', 'background-fill'])) {
             $context->currentProperty = $property;
             $value = $functions->fill->apply($value, $context);
         }
@@ -377,34 +375,34 @@ function canvas_preprocess($canvas) {
         $parts = canvas_parselist($canvas->raw['margin']);
         $count = count($parts);
         if ($count === 1) {
-            $margin = array($parts[0], $parts[0], $parts[0], $parts[0]);
+            $margin = [$parts[0], $parts[0], $parts[0], $parts[0]];
         }
         elseif ($count === 2) {
-            $margin = array($parts[0], $parts[1], $parts[0], $parts[1]);
+            $margin = [$parts[0], $parts[1], $parts[0], $parts[1]];
         }
         elseif ($count === 3) {
-            $margin = array($parts[0], $parts[1], $parts[2], $parts[1]);
+            $margin = [$parts[0], $parts[1], $parts[2], $parts[1]];
         }
         else {
             $margin = $parts;
         }
     }
     else {
-        $margin = array(0,0,0,0);
+        $margin = [0, 0, 0, 0];
     }
 
-    foreach (array('fill', 'background-fill') as $fill_name) {
+    foreach (['fill', 'background-fill'] as $fill_name) {
         if (isset($canvas->raw[$fill_name])) {
             $canvas->fills[$fill_name] = $canvas->raw[$fill_name];
         }
     }
 
-    $canvas->margin = (object) array(
+    $canvas->margin = (object) [
         'top' => $margin[0],
         'right' => $margin[1],
         'bottom' => $margin[2],
         'left' => $margin[3],
-    );
+    ];
     $canvas->width = $canvas->raw['width'];
     $canvas->height = $canvas->raw['height'];
 }
@@ -437,13 +435,13 @@ function canvas_fetch_src($url_token) {
                     break;
             }
             if ($image) {
-                return (object) array(
+                return (object) [
                     'file' => $file,
                     'info' => $info,
                     'width' => $info[0],
                     'height' => $info[1],
                     'image' => $image,
-                );
+                ];
             }
         }
     }
@@ -614,7 +612,7 @@ function canvas_requirements() {
     else {
         $gd_info = implode('|', array_keys(array_filter(gd_info())));
 
-        foreach (array('jpe?g' => 'JPG', 'png' => 'PNG') as $file_ext_patt => $file_ext) {
+        foreach (['jpe?g' => 'JPG', 'png' => 'PNG'] as $file_ext_patt => $file_ext) {
             if (! preg_match("~\b(?<ext>$file_ext_patt) support\b~i", $gd_info)) {
                 $requirements_met = false;
                 warning("GD extension has no $file_ext support.");

@@ -148,11 +148,11 @@ class Importer
         // Save only if caching is on and the hostfile object is associated with a real file.
         if ($input->path && $options->cache) {
 
-            $process->cacheData[$process->output->filename] = array(
+            $process->cacheData[$process->output->filename] = [
                 'imports' => $filenames,
                 'datem_sum' => array_sum($mtimes) + $input->mtime,
                 'options' => $options->get(),
-            );
+            ];
             $process->io->saveCacheData();
         }
 
@@ -316,7 +316,7 @@ class Importer
                 $line = substr_count($before, "\n");
             }
 
-            $pointData = array($currentFileIndex, $line);
+            $pointData = [$currentFileIndex, $line];
 
             // Source maps require column index too.
             if ($process->generateMap) {

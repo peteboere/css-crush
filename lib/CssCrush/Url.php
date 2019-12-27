@@ -153,7 +153,7 @@ class Url
         $file_ext = pathinfo($file, PATHINFO_EXTENSION);
 
         // Only allow certain extensions
-        static $allowed_file_extensions = array(
+        static $allowed_file_extensions = [
             'woff' => 'application/x-font-woff;charset=utf-8',
             'ttf'  => 'font/truetype;charset=utf-8',
             'svg'  => 'image/svg+xml',
@@ -162,7 +162,7 @@ class Url
             'jpeg' => 'image/jpg',
             'jpg'  => 'image/jpg',
             'png'  => 'image/png',
-        );
+        ];
 
         if (! isset($allowed_file_extensions[$file_ext])) {
 

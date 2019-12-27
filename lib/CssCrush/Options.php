@@ -11,7 +11,7 @@ class Options
     protected $computedOptions = [];
     protected $inputOptions = [];
 
-    protected static $standardOptions = array(
+    protected static $standardOptions = [
         'minify' => true,
         'formatter' => null,
         'versioning' => true,
@@ -31,7 +31,7 @@ class Options
         'stat_dump' => false,
         'source_map' => false,
         'newlines' => 'use-platform',
-    );
+    ];
 
     public function __construct(array $options = [], Options $defaults = null)
     {

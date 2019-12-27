@@ -98,7 +98,7 @@ class IO
         $data =& $process->cacheData[$filename];
 
         // Make stack of file mtimes starting with the input file.
-        $file_sums = array($input->mtime);
+        $file_sums = [$input->mtime];
         foreach ($data['imports'] as $import_file) {
 
             // Check if this is docroot relative or input dir relative.

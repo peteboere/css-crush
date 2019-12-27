@@ -13,13 +13,13 @@ class Tokens
 
     public function __construct(array $types = null)
     {
-        $types = $types ?: array(
+        $types = $types ?: [
             's', // strings.
             'c', // comments.
             'r', // rules.
             'u', // URLs.
             't', // traces.
-        );
+        ];
 
         $this->store = new \stdClass;
         $this->ids = new \stdClass;

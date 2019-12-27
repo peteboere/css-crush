@@ -27,7 +27,7 @@ class Settings
         $value = isset($this->store[$name]) ? $this->store[$name] : null;
 
         // Backwards compat for variable based settings.
-        if (! $value && in_array($name, array('rem-all', 'rem-mode', 'rem-base', 'px2rem-base', 'px2em-base'))) {
+        if (! $value && in_array($name, ['rem-all', 'rem-mode', 'rem-base', 'px2rem-base', 'px2em-base'])) {
 
             $var_setting = function ($var_name) {
                 return isset(Crush::$process->vars[$var_name]) ?

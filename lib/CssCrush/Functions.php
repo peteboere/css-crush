@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class Functions
 {
-    protected static $builtins = array(
+    protected static $builtins = [
 
         // These functions must come first in this order.
         'query' => 'CssCrush\fn__query',
@@ -21,7 +21,7 @@ class Functions
         's-adjust' => 'CssCrush\fn__s_adjust',
         'l-adjust' => 'CssCrush\fn__l_adjust',
         'a-adjust' => 'CssCrush\fn__a_adjust',
-    );
+    ];
 
     public $register = [];
 
@@ -176,8 +176,8 @@ function fn__math($input) {
 
     // Swap in math constants.
     $expression = preg_replace(
-        array('~\bpi\b~i'),
-        array(M_PI),
+        ['~\bpi\b~i'],
+        [M_PI],
         $expression);
 
     // If no unit is specified scan expression.
@@ -209,32 +209,32 @@ function fn__math($input) {
 
 function fn__hsla_adjust($input) {
     list($color, $h, $s, $l, $a) = array_pad(Functions::parseArgs($input, true), 5, 0);
-    return Color::test($color) ? Color::colorAdjust($color, array($h, $s, $l, $a)) : '';
+    return Color::test($color) ? Color::colorAdjust($color, [$h, $s, $l, $a]) : '';
 }
 
 function fn__hsl_adjust($input) {
     list($color, $h, $s, $l) = array_pad(Functions::parseArgs($input, true), 4, 0);
-    return Color::test($color) ? Color::colorAdjust($color, array($h, $s, $l, 0)) : '';
+    return Color::test($color) ? Color::colorAdjust($color, [$h, $s, $l, 0]) : '';
 }
 
 function fn__h_adjust($input) {
     list($color, $h) = array_pad(Functions::parseArgs($input, true), 2, 0);
-    return Color::test($color) ? Color::colorAdjust($color, array($h, 0, 0, 0)) : '';
+    return Color::test($color) ? Color::colorAdjust($color, [$h, 0, 0, 0]) : '';
 }
 
 function fn__s_adjust($input) {
     list($color, $s) = array_pad(Functions::parseArgs($input, true), 2, 0);
-    return Color::test($color) ? Color::colorAdjust($color, array(0, $s, 0, 0)) : '';
+    return Color::test($color) ? Color::colorAdjust($color, [0, $s, 0, 0]) : '';
 }
 
 function fn__l_adjust($input) {
     list($color, $l) = array_pad(Functions::parseArgs($input, true), 2, 0);
-    return Color::test($color) ? Color::colorAdjust($color, array(0, 0, $l, 0)) : '';
+    return Color::test($color) ? Color::colorAdjust($color, [0, 0, $l, 0]) : '';
 }
 
 function fn__a_adjust($input) {
     list($color, $a) = array_pad(Functions::parseArgs($input, true), 2, 0);
-    return Color::test($color) ? Color::colorAdjust($color, array(0, 0, 0, $a)) : '';
+    return Color::test($color) ? Color::colorAdjust($color, [0, 0, 0, $a]) : '';
 }
 
 function fn__this($input, $context) {
@@ -273,7 +273,7 @@ function fn__query($input, $context) {
         return '';
     }
 
-    list($target, $property, $fallback) = $args + array(null, $context->property, null);
+    list($target, $property, $fallback) = $args + [null, $context->property, null];
 
     if (strtolower($property) === 'default') {
         $property = $context->property;

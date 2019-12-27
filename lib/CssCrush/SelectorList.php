@@ -53,7 +53,7 @@ class SelectorList extends Iterator
                     $selectors = [];
 
                     // Allowing empty strings for more expansion possibilities.
-                    foreach (Util::splitDelimList($m['parens_content'][0], array('allow_empty_strings' => true)) as $segment) {
+                    foreach (Util::splitDelimList($m['parens_content'][0], ['allow_empty_strings' => true]) as $segment) {
                         if ($selector = trim("$before$segment$after")) {
                             $selectors[$selector] = true;
                         }
@@ -75,7 +75,7 @@ class SelectorList extends Iterator
                         foreach ($running_stack as $selector => $bool) {
                             $selectors = $expand($selector);
                             if (! $selectors) {
-                                $flattened_stack += array($selector => true);
+                                $flattened_stack += [$selector => true];
                             }
                             else {
                                 $loop_stack += $selectors;
@@ -88,7 +88,7 @@ class SelectorList extends Iterator
                     return $flattened_stack;
                 }
 
-                return array($selector_string => true);
+                return [$selector_string => true];
             };
         }
 

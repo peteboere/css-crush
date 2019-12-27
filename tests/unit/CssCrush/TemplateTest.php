@@ -34,24 +34,24 @@ TPL;
 
     public function testGetArgValue()
     {
-        $args = array('default');
+        $args = ['default'];
         $this->assertEquals('100%', $this->template->getArgValue(0, $args));
 
-        $args = array('foo', 'bar');
+        $args = ['foo', 'bar'];
         $this->assertEquals('bar', $this->template->getArgValue(1, $args));
     }
 
     public function testPrepare()
     {
-        $this->template->prepare(array('one', 'two'));
+        $this->template->prepare(['one', 'two']);
         $this->assertEquals(
-            array(array('?a0?', '?a1?'), array('one', 'two')),
+            [['?a0?', '?a1?'], ['one', 'two']],
             $this->template->substitutions);
     }
 
     public function testApply()
     {
-        $actual = $this->template->__invoke(array('one', 'two'));
+        $actual = $this->template->__invoke(['one', 'two']);
         $expected = <<<TPL
 foo: one;
 bar: one;
@@ -59,7 +59,7 @@ baz: two;
 TPL;
         $this->assertEquals($expected, $actual);
 
-        $actual = $this->template->__invoke(array('default', 'colanut'));
+        $actual = $this->template->__invoke(['default', 'colanut']);
         $expected = <<<TPL
 foo: 100%;
 bar: 100%;

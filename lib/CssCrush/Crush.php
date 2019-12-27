@@ -23,7 +23,7 @@ class Crush
 
         self::$config = new \stdClass();
 
-        self::$config->pluginDirs = array(self::$dir . '/plugins');
+        self::$config->pluginDirs = [self::$dir . '/plugins'];
         self::$config->scriptDir = dirname(realpath($_SERVER['SCRIPT_FILENAME']));
         self::$config->docRoot = self::resolveDocRoot();
         self::$config->logger = new Logger();
@@ -33,13 +33,13 @@ class Crush
         self::$config->vars = [];
         self::$config->aliasesFile = self::$dir . '/aliases.ini';
         self::$config->aliases = [];
-        self::$config->bareAliases = array(
+        self::$config->bareAliases = [
             'properties' => [],
             'functions' => [],
             'function_groups' => [],
             'declarations' => [],
             'at-rules' => [],
-        );
+        ];
         self::$config->options = new Options();
 
         require_once self::$dir . '/misc/formatters.php';
@@ -150,12 +150,12 @@ class Crush
 
                         // Try to detect the vendor from property and value in turn.
                         if (
-                            preg_match($regex->vendorPrefix, $p, $m) ||
-                            preg_match($regex->vendorPrefix, $v, $m)
+                            preg_match($regex->vendorPrefix, $p, $m)
+                            || preg_match($regex->vendorPrefix, $v, $m)
                         ) {
                             $vendor = $m[1];
                         }
-                        $alias = array($p, $v, $vendor);
+                        $alias = [$p, $v, $vendor];
                     }
                     $store[$prop][$value] = $aliases;
                 }
@@ -194,7 +194,7 @@ class Crush
         // Persisting dummy aliases for testing purposes.
         $tree['properties']['foo'] =
         $tree['at-rules']['foo'] =
-        $tree['functions']['foo'] = array('-webkit-foo', '-moz-foo', '-ms-foo');
+        $tree['functions']['foo'] = ['-webkit-foo', '-moz-foo', '-ms-foo'];
 
         return $tree;
     }
@@ -235,7 +235,7 @@ class Crush
 
                 case 'vars':
                     $process->stat['vars'] = array_map(function ($item) use ($process) {
-                        return $process->tokens->restore($process->functions->apply($item), array('s', 'u', 'p'));
+                        return $process->tokens->restore($process->functions->apply($item), ['s', 'u', 'p']);
                     }, $process->vars);
                     break;
 

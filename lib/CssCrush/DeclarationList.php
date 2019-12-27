@@ -370,14 +370,14 @@ class DeclarationList extends Iterator
         $str = Util::stripCommentTokens($str);
         $lines = preg_split('~\s*;\s*~', $str, null, PREG_SPLIT_NO_EMPTY);
 
-        $options += array(
+        $options += [
             'keyed' => false,
             'ignore_directives' => false,
             'lowercase_keys' => false,
             'context' => null,
             'flatten' => false,
             'apply_hooks' => false,
-        );
+        ];
 
         $pairs = [];
 
@@ -406,10 +406,10 @@ class DeclarationList extends Iterator
                 }
 
                 if ($options['apply_hooks']) {
-                    Crush::$process->emit('declaration_preprocess', array(
+                    Crush::$process->emit('declaration_preprocess', [
                         'property' => &$property,
                         'value' => &$value,
-                    ));
+                    ]);
                 }
             }
             else {
@@ -421,16 +421,16 @@ class DeclarationList extends Iterator
             }
 
             if ($property === 'mixin' && $options['flatten']) {
-                $pairs = Mixin::merge($pairs, $value, array(
+                $pairs = Mixin::merge($pairs, $value, [
                     'keyed' => $options['keyed'],
                     'context' => $options['context'],
-                ));
+                ]);
             }
             elseif ($options['keyed']) {
                 $pairs[$property] = $value;
             }
             else {
-                $pairs[] = array($property, $value);
+                $pairs[] = [$property, $value];
             }
         }
 
@@ -446,7 +446,7 @@ class DeclarationList extends Iterator
         $newSet = [];
         foreach ($this->store as $declaration) {
             if (is_array($declaration) && $declaration[0] === 'mixin') {
-                foreach (Mixin::merge([], $declaration[1], array('context' => $this->rule)) as $mixable) {
+                foreach (Mixin::merge([], $declaration[1], ['context' => $this->rule]) as $mixable) {
                     if ($mixable instanceof Declaration) {
                         $clone = clone $mixable;
                         $clone->index = count($newSet);
@@ -497,7 +497,7 @@ class DeclarationList extends Iterator
     {
         // Expand shorthand properties to make them available
         // as data for this() and query().
-        static $expandables = array(
+        static $expandables = [
             'margin-top' => 'margin',
             'margin-right' => 'margin',
             'margin-bottom' => 'margin',
@@ -518,7 +518,7 @@ class DeclarationList extends Iterator
             'border-right-color' => 'border-color',
             'border-bottom-color' => 'border-color',
             'border-left-color' => 'border-color',
-        );
+        ];
 
         $dataset =& $this->{$dataset};
         $property_group = isset($expandables[$property]) ? $expandables[$property] : null;
@@ -560,11 +560,11 @@ class DeclarationList extends Iterator
             }
             // 3 values.
             elseif (isset($parts[2])) {
-                $placeholders = array($parts[0], $parts[1], $parts[2], $parts[1]);
+                $placeholders = [$parts[0], $parts[1], $parts[2], $parts[1]];
             }
             // 2 values.
             elseif (isset($parts[1])) {
-                $placeholders = array($parts[0], $parts[1], $parts[0], $parts[1]);
+                $placeholders = [$parts[0], $parts[1], $parts[0], $parts[1]];
             }
             // 1 value.
             else {
@@ -573,25 +573,25 @@ class DeclarationList extends Iterator
 
             // Set positional variants.
             if ($property_group === 'border-radius') {
-                $positions = array(
+                $positions = [
                     'top-left',
                     'top-right',
                     'bottom-right',
                     'bottom-left',
-                );
+                ];
             }
             else {
-                $positions = array(
+                $positions = [
                     'top',
                     'right',
                     'bottom',
                     'left',
-               );
+               ];
             }
 
             foreach ($positions as $index => $position) {
                 $prop = sprintf($trbl_fmt, $position);
-                $dataset += array($prop => $placeholders[$index]);
+                $dataset += [$prop => $placeholders[$index]];
             }
         }
     }

@@ -16,10 +16,10 @@ class RegexTest extends \PHPUnit_Framework_TestCase
 
     public function testMatchAll()
     {
-        $expected = array(
-            array(array('foo', 0)),
-            array(array('foo', 12)),
-        );
+        $expected = [
+            [['foo', 0]],
+            [['foo', 12]],
+        ];
         $matches = Regex::matchAll('~foo~', 'foo bar baz foo bar baz');
 
         $this->assertEquals($expected, $matches);

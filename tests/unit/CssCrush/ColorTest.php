@@ -21,14 +21,14 @@ class ColorTest extends \PHPUnit_Framework_TestCase
     public function testAdjust()
     {
         $color = new Color('rgb(255,0,0)');
-        $color->toHsl()->adjust(array(0,0,0,-20));
+        $color->toHsl()->adjust([0, 0, 0, -20]);
         $this->assertEquals('rgba(255,0,0,0.8)', (string) $color);
     }
 
     public function testGetHsl()
     {
         $color = new Color('red');
-        $this->assertEquals(array(0, 1, .5, 1), $color->getHsl());
+        $this->assertEquals([0, 1, .5, 1], $color->getHsl());
     }
 
     public function testGetHex()
@@ -40,7 +40,7 @@ class ColorTest extends \PHPUnit_Framework_TestCase
     public function testGetRgb()
     {
         $color = new Color('red');
-        $this->assertEquals(array(255, 0, 0, 1), $color->getRgb());
+        $this->assertEquals([255, 0, 0, 1], $color->getRgb());
     }
 
     public function testGetComponent()

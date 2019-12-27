@@ -68,7 +68,7 @@ class Regex
 
         // Functions.
         $patt->functionTest = Regex::make('~{{ LB }} (?<func_name>{{ ident }}) \(~xS');
-        $patt->thisFunction = Functions::makePattern(array('this'));
+        $patt->thisFunction = Functions::makePattern(['this']);
 
         // Strings and comments.
         $patt->string = '~(\'|")(?:\\\\\1|[^\1])*?\1~xS';

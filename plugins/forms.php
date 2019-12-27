@@ -17,11 +17,11 @@ namespace CssCrush;
 });
 
 function forms() {
-    return array(
-        'input' => array(
+    return [
+        'input' => [
             'type' => 'splat',
             'handler' => 'input[type=#(text)]',
-        ),
+        ],
         'checkbox' => 'input[type="checkbox"]',
         'radio' => 'input[type="radio"]',
         'file' => 'input[type="file"]',
@@ -29,5 +29,5 @@ function forms() {
         'password' => 'input[type="password"]',
         'submit' => 'input[type="submit"]',
         'text' => 'input[type="text"]',
-    );
+    ];
 }

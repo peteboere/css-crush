@@ -6,11 +6,11 @@
   */
 namespace CssCrush;
 
-Crush::$config->formatters = array(
+Crush::$config->formatters = [
     'single-line' => 'CssCrush\fmtr_single',
     'padded' => 'CssCrush\fmtr_padded',
     'block' => 'CssCrush\fmtr_block',
-);
+];
 
 function fmtr_single($rule) {
 

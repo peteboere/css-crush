@@ -124,13 +124,13 @@ class StringObject
             $directive = '(?:' . implode('|', $directive) . ')';
         }
 
-        $parse_options += array(
+        $parse_options += [
             'keyed' => true,
             'lowercase_keys' => true,
             'ignore_directives' => true,
             'singles' => false,
             'flatten' => false,
-        );
+        ];
 
         if ($parse_options['singles']) {
             $patt = Regex::make('~@(?i)' . $directive . '(?-i)(?:\s*{{ block }}|\s+(?<name>{{ ident }})\s+(?<value>[^;]+)\s*;)~S');

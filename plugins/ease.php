@@ -14,7 +14,7 @@ function ease(Rule $rule) {
 
     static $find, $replace, $easing_properties;
     if (! $find) {
-        $easings = array(
+        $easings = [
             'ease-in-out-back' => 'cubic-bezier(.680,-0.550,.265,1.550)',
             'ease-in-out-circ' => 'cubic-bezier(.785,.135,.150,.860)',
             'ease-in-out-expo' => 'cubic-bezier(1,0,0,1)',
@@ -39,12 +39,12 @@ function ease(Rule $rule) {
             'ease-in-quart' => 'cubic-bezier(.895,.030,.685,.220)',
             'ease-in-cubic' => 'cubic-bezier(.550,.055,.675,.190)',
             'ease-in-quad' => 'cubic-bezier(.550,.085,.680,.530)',
-        );
+        ];
 
-        $easing_properties = array(
+        $easing_properties = [
             'transition' => true,
             'transition-timing-function' => true,
-        );
+        ];
 
         foreach ($easings as $property => $value) {
             $patt = Regex::make("~{{ LB }}$property{{ RB }}~i");
@@ -57,7 +57,7 @@ function ease(Rule $rule) {
         return;
     }
 
-    foreach ($rule->declarations->filter(array('skip' => false)) as $declaration) {
+    foreach ($rule->declarations->filter(['skip' => false]) as $declaration) {
         if (isset($easing_properties[$declaration->canonicalProperty])) {
             $declaration->value = preg_replace($find, $replace, $declaration->value);
         }

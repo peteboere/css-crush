@@ -23,7 +23,7 @@ function fn__px2rem($input) {
 
 function px2em($input, $unit, $default_base) {
 
-    list($px, $base) = Functions::parseArgsSimple($input) + array(16, $default_base);
+    list($px, $base) = Functions::parseArgsSimple($input) + [16, $default_base];
 
     return round($px / $base, 5) . $unit;
 }

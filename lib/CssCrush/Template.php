@@ -120,7 +120,7 @@ class Template
             }
         }
 
-        $substitutions = array($find, $replace);
+        $substitutions = [$find, $replace];
 
         // Persist substitutions by default.
         if ($persist) {

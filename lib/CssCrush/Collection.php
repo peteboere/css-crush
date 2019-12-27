@@ -40,7 +40,7 @@ class Collection extends Iterator
     {
         if (is_array($filterer)) {
 
-            $ops = array(
+            $ops = [
                 '===' => function ($item) use ($filterer) {
                     foreach ($filterer as $property => $value) {
                         if (Collection::value($item, $property) !== $value) {
@@ -57,7 +57,7 @@ class Collection extends Iterator
                     }
                     return true;
                 },
-            );
+            ];
 
             $callback = $ops[$op];
         }
