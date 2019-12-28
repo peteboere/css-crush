@@ -2,4 +2,4 @@
 
 $context = __DIR__;
 
-$plugins = ['color'];
+$plugins = ['ease'];

@@ -69,7 +69,7 @@ class CliTest extends \PHPUnit_Framework_TestCase
         $currentDirectory = getcwd();
         chdir(__DIR__ . '/context');
 
-        $sample = '@import "import.css"; @color dark #111; baz {color: dark;}';
+        $sample = '@import "import.css"; baz {color: #111;}';
         exec("echo '$sample' | php \"$this->path\"", $lines);
 
         $this->assertEquals('foo{bar:baz}baz{color:#111}', implode('', $lines));
