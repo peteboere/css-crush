@@ -34,7 +34,6 @@ Vendor prefixes for properties, functions, @-rules and declarations are **automa
 }
 @keyframes bounce {
   50% {-webkit-transform: scale(1.4);
-           -ms-transform: scale(1.4);
                transform: scale(1.4);}
 }
 ```

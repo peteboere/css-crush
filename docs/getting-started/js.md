@@ -4,6 +4,8 @@
 
 }-->
 
+This preprocessor is written in PHP, so as prerequisite you will need to have PHP installed on your system to use the JS api.
+
 ```shell
 npm install csscrush
 ```

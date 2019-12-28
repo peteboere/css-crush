@@ -32,7 +32,7 @@ Rules can be nested to avoid repetitive typing when scoping to a common parent s
 
 You can use the parent reference symbol `&` for placing the parent selector explicitly.
 
-```crush2
+```crush
 .homepage {
   .no-js & {
     p {

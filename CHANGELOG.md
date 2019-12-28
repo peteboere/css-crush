@@ -1,15 +1,18 @@
-## 3.0.0-prerelease
+## 3.0.0
 
-* Raise php requirement to >= 5.6
+* Raised php requirement to >= 5.6
 * Removed `csscrush_version()`
 * Removed `csscrush_add_function()` (can use plugin instead).
 * Added `csscrush_plugin()` with simplified plugin api.
 * Added `import_path` option. Additional paths to search when resolving relative imports.
+* Added support for non-CSS declaration values via backticks (for custom property values).
+* Custom properties `--*` now preserve case.
 * Updated vendor aliases.
 * Moved loop plugin to core.
 * Removed `@in` directive.
+* Removed `@settings` directive and its api.
 * Removed legacy IE plugins.
-* Removed hsl2hex, initial, noise and text-align plugins.
+* Removed hsl2hex, initial, noise, rem, px2em, color and text-align plugins.
 * Combined svg plugins (svg-gradients and svg).
 * Removed `percent` function.
 
