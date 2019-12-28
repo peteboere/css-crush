@@ -100,9 +100,4 @@
     <td class="values">Path
     <td>Specify an alternative server document root for situations where the CSS is being served behind an alias or url rewritten path.
 </tr>
-<tr>
-    <td class="option">settings
-    <td class="values">Array
-    <td>An associative array of plugin and environment settings. Used primarily for plugin configuration.
-</tr>
 </table>
