@@ -28,7 +28,7 @@ Expanded easing keywords for transitions.
 
 See [easing demos](http://easings.net) for live examples.
 
-```css
+```crush
 transition: .2s ease-in-quad;
 ```
 

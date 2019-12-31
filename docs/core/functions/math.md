@@ -10,7 +10,7 @@ Evaluate a raw mathematical expression.
 
 ## Examples
 
-```css
+```crush
 font-size: math( 12 / 16, em );
 ```
 

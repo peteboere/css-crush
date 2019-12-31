@@ -6,7 +6,7 @@
 
 Selector grouping with the `:any` pseudo class (modelled after CSS4 :matches) simplifies the creation of complex selector chains.
 
-```css
+```crush
 :any( .sidebar, .block ) a:any( :hover, :focus ) {
   color: lemonchiffon;
 }

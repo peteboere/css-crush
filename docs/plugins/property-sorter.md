@@ -4,7 +4,7 @@ Property sorting.
 Examples use the predefined property sorting table. To define a custom sorting order pass an array to `csscrush_set_property_sort_order()`
 
 
-```css
+```crush
 color: red;
 background: #000;
 opacity: .5;

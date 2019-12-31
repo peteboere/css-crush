@@ -24,7 +24,7 @@ The created data-uri as a string inside a CSS url().
 
 ## Examples
 
-```css
+```crush
 background: silver data-uri(../images/stripe.png);
 ```
 

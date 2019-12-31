@@ -1,7 +1,7 @@
 
 Composite :hover/:focus/:active pseudo classes.
 
-```css
+```crush
 a:hocus { color: red; }
 a:pocus { color: red; }
 ```

@@ -1,7 +1,7 @@
 
 Pseudo classes for working with forms.
 
-```css
+```crush
 :input(date, search, email) {...}
 :checkbox {...}
 :radio {...}

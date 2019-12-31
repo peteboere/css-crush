@@ -2,7 +2,7 @@
 
 <img src="http://the-echoplex.net/csscrush/images/css-crush-external.svg?v=2" alt="Logo"/>
 
-CSS-Crush is a standards inspired preprocessor designed to enable a modern and uncluttered CSS workflow.
+A CSS preprocessor designed to enable a modern and uncluttered CSS workflow.
 
 * Automatic vendor prefixing
 * Variables
