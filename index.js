@@ -1,7 +1,8 @@
 /*eslint no-control-regex: 0*/
 
 const path = require('path');
-const EventEmitter = require('events');
+const querystring = require('querystring');
+const {EventEmitter} = require('events');
 const cliPath = path.resolve(__dirname, './cli.php');
 
 const processes = [];
@@ -126,8 +127,12 @@ class Process extends EventEmitter {
                         args.push(`--${name}="${value}"`);
                     }
                     break;
+                case 'vars':
+                    args.push(`--${name}="${querystring.stringify(value)}"`);
+                    break;
             }
         }
+
         return args.join(' ');
     }
 }
