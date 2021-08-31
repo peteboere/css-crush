@@ -913,6 +913,9 @@ class Process
             'memory_limit' => '128M',
         ] as $name => $value) {
             $this->iniOriginal[$name] = ini_get($name);
+            if ($name === 'memory_limit' && intval(ini_get($name)) > intval($value)) {
+                continue;
+            }
             ini_set($name, $value);
         }
 
