@@ -913,6 +913,9 @@ class Process
             'memory_limit' => '128M',
         ] as $name => $value) {
             $this->iniOriginal[$name] = ini_get($name);
+            if ($name === 'memory_limit' && $this->returnBytes(ini_get($name)) > $this->returnBytes($value)) {
+                continue;
+            }
             ini_set($name, $value);
         }
 
@@ -922,6 +925,23 @@ class Process
         $this->functions->setPattern(true);
 
         $this->stat['compile_start_time'] = microtime(true);
+    }
+    
+    private function returnBytes(string $value)
+    {
+        $value = trim($value);
+        $last = strtolower($value[strlen($value) - 1]);
+        switch ($last) {
+            // The 'G' modifier is available
+            case 'g':
+                $value *= 1024;
+            case 'm':
+                $value *= 1024;
+            case 'k':
+                $value *= 1024;
+        }
+
+        return $value;
     }
 
     public function postCompile()
