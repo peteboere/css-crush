@@ -173,13 +173,14 @@ class Url
         
         if('svg' == $file_ext) {
 
-          $string = str_replace(['"','#','<'], ['\'','%23','%3C'], file_get_contents($file));
-          $this->value = "data:$mime_type;utf8,$string";
+            $string = preg_replace('/\v|\s{2,}/', ' ', file_get_contents($file));
+            $string = str_replace(['"','#','<'], ['\'','%23','%3C'], $string);
+            $this->value = "data:$mime_type;utf8,$string";
         }
         else {
 
-          $base64 = base64_encode(file_get_contents($file));
-          $this->value = "data:$mime_type;base64,$base64";
+            $base64 = base64_encode(file_get_contents($file));
+            $this->value = "data:$mime_type;base64,$base64";
         }
 
         $this->setType('data')->protocol = 'data';
