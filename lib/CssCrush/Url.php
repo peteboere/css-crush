@@ -173,8 +173,8 @@ class Url
         
         if('svg' == $file_ext) {
 
-            $string = preg_replace('/\v|\s{2,}/', ' ', file_get_contents($file));
-            $string = str_replace(['"','#','<'], ['\'','%23','%3C'], $string);
+            $string = preg_replace('/\v+|\s{2,}/', ' ', file_get_contents($file));
+            $string = str_replace(['"','#','<','}'], ['\'','%23','%3C','%7D'], $string);
             $this->value = "data:$mime_type;utf8,$string";
         }
         else {
