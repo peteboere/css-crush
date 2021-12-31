@@ -1,5 +1,6 @@
 _*
 .tm_properties
+.phpunit.result.cache
 phpunit.xml
 composer.lock
 vendor

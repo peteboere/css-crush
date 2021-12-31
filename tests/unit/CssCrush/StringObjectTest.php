@@ -4,7 +4,7 @@ namespace CssCrush\UnitTest;
 
 use CssCrush\StringObject;
 
-class StringObjectTest extends \PHPUnit_Framework_TestCase
+class StringObjectTest extends \PHPUnit\Framework\TestCase
 {
     protected $sample = " Lorem ipsum dolor sit amet ";
 

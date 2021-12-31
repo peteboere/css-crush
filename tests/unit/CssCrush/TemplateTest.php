@@ -4,13 +4,13 @@ namespace CssCrush\UnitTest;
 
 use CssCrush\Template;
 
-class TemplateTest extends \PHPUnit_Framework_TestCase
+class TemplateTest extends \PHPUnit\Framework\TestCase
 {
     protected $template;
     protected $template_raw;
     protected $template_string;
 
-    public function setUp()
+    public function setUp(): void
     {
         bootstrap_process();
 
@@ -74,8 +74,8 @@ TPL;
 [foo="bar"] {baz: url(image.png);}
 TPL;
         $sample = Template::tokenize($original_sample);
-        $this->assertContains('[foo=?s', $sample);
-        $this->assertContains('{baz: ?u', $sample);
+        $this->assertStringContainsStringIgnoringCase('[foo=?s', $sample);
+        $this->assertStringContainsStringIgnoringCase('{baz: ?u', $sample);
 
         $sample = Template::unTokenize($sample);
         $this->assertEquals($original_sample, $sample);

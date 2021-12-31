@@ -4,9 +4,9 @@ namespace CssCrush\UnitTest;
 
 use CssCrush\Selector;
 
-class SelectorTest extends \PHPUnit_Framework_TestCase
+class SelectorTest extends \PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         $this->process = bootstrap_process();
     }

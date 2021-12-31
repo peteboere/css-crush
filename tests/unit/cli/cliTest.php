@@ -4,12 +4,12 @@ namespace CssCrush\UnitTest;
 
 use CssCrush\Crush;
 
-class CliTest extends \PHPUnit_Framework_TestCase
+class CliTest extends \PHPUnit\Framework\TestCase
 {
     protected $path;
     protected $sample;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->path = Crush::$dir . '/cli.php';
         $this->sample = 'p {color: red; position: absolute; opacity: 1;}';
@@ -20,7 +20,7 @@ class CliTest extends \PHPUnit_Framework_TestCase
         exec("php \"$this->path\"", $lines);
         $help_text = implode("\n", $lines);
 
-        $this->assertContains('USAGE:', $help_text);
+        $this->assertStringContainsStringIgnoringCase('USAGE:', $help_text);
     }
 
     public function testPlugin()
@@ -40,7 +40,7 @@ class CliTest extends \PHPUnit_Framework_TestCase
         exec("php \"$this->path\" -i '$in_path' -o '$out_path' --enable property-sorter --test");
         $expected = 'p{position:absolute;opacity:1;color:red}';
 
-        $this->assertContains($expected, file_get_contents($out_path));
+        $this->assertStringContainsStringIgnoringCase($expected, file_get_contents($out_path));
     }
 
     public function testStats()
@@ -48,10 +48,10 @@ class CliTest extends \PHPUnit_Framework_TestCase
         exec("echo '$this->sample' | php \"$this->path\" --stats --test", $lines);
         $output = implode('', $lines);
 
-        $this->assertContains('Selector count: 1', $output);
-        $this->assertContains('Rule count: 1', $output);
-        $this->assertContains('Compile time:', $output);
-        $this->assertContains('p{color:red;position:absolute;opacity:1}', $output);
+        $this->assertStringContainsStringIgnoringCase('Selector count: 1', $output);
+        $this->assertStringContainsStringIgnoringCase('Rule count: 1', $output);
+        $this->assertStringContainsStringIgnoringCase('Compile time:', $output);
+        $this->assertStringContainsStringIgnoringCase('p{color:red;position:absolute;opacity:1}', $output);
     }
 
     public function testContext()

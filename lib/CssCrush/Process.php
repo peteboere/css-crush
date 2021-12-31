@@ -268,7 +268,7 @@ class Process
         foreach ($vendor_names as &$vendor_name) {
             $vendor_name = trim($vendor_name, '-');
         }
-        $vendor_patt = '~^\-(' . implode($vendor_names, '|') . ')\-~i';
+        $vendor_patt = '~^\-(' . implode('|', $vendor_names) . ')\-~i';
 
 
         // Loop the aliases array, filter down to the target vendor.

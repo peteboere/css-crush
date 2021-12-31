@@ -4,7 +4,7 @@ namespace CssCrush\UnitTest;
 
 use CssCrush\Color;
 
-class ColorTest extends \PHPUnit_Framework_TestCase
+class ColorTest extends \PHPUnit\Framework\TestCase
 {
     public function testConstruct()
     {

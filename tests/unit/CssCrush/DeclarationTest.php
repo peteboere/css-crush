@@ -6,13 +6,13 @@ use CssCrush\Crush;
 use CssCrush\Declaration;
 use CssCrush\Rule;
 
-class DeclarationTest extends \PHPUnit_Framework_TestCase
+class DeclarationTest extends \PHPUnit\Framework\TestCase
 {
     protected $process;
     protected $rule;
     protected $declaration;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->process = bootstrap_process(['minify' => false]);
         $this->rule = new Rule('.foo', '-fOo-BAR: math(10 + 10, px) !important');

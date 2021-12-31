@@ -4,11 +4,11 @@ namespace CssCrush\UnitTest;
 
 use CssCrush\Tokens;
 
-class TokensTest extends \PHPUnit_Framework_TestCase
+class TokensTest extends \PHPUnit\Framework\TestCase
 {
     protected $tokens;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->process = bootstrap_process(['minify' => false]);
 
@@ -69,10 +69,10 @@ class TokensTest extends \PHPUnit_Framework_TestCase
         $sample = '[class="foo"] {bar: url(baz.png);}';
 
         $sample = $this->tokens->capture($sample, 'u');
-        $this->assertContains('?u', $sample);
+        $this->assertStringContainsStringIgnoringCase('?u', $sample);
 
         $sample = $this->tokens->capture($sample, 's');
-        $this->assertContains('?s', $sample);
+        $this->assertStringContainsStringIgnoringCase('?s', $sample);
     }
 
     public function testCaptureUrls()
@@ -80,7 +80,7 @@ class TokensTest extends \PHPUnit_Framework_TestCase
         $sample = '[class="foo"] {bar: url(baz.png);}';
 
         $sample = $this->tokens->captureUrls($sample);
-        $this->assertContains('?u', $sample);
+        $this->assertStringContainsStringIgnoringCase('?u', $sample);
     }
 
     public function testRestore()
@@ -88,13 +88,13 @@ class TokensTest extends \PHPUnit_Framework_TestCase
         $sample = '[class="foo"] {bar: url(baz.png);}';
 
         $modified = $this->tokens->captureUrls($sample);
-        $this->assertContains('?u', $modified);
+        $this->assertStringContainsStringIgnoringCase('?u', $modified);
 
         $modified = $this->tokens->restore($modified, 'u');
         $this->assertEquals($sample, $modified);
 
         $modified = $this->tokens->capture($sample, 's');
-        $this->assertContains('?s', $modified);
+        $this->assertStringContainsStringIgnoringCase('?s', $modified);
 
         $modified = $this->tokens->restore($modified, 's');
         $this->assertEquals($sample, $modified);

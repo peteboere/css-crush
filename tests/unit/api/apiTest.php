@@ -2,13 +2,13 @@
 
 namespace CssCrush\UnitTest;
 
-class ApiTest extends \PHPUnit_Framework_TestCase
+class ApiTest extends \PHPUnit\Framework\TestCase
 {
     protected $sample;
     protected $sampleFile;
     protected $sampleExpected;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->sample = ".foo {bar: baz;}";
         $this->sampleExpected = ".foo{bar:baz}";
@@ -17,7 +17,7 @@ class ApiTest extends \PHPUnit_Framework_TestCase
         chdir(dirname($this->sampleFile));
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         chdir($this->originalWd);
     }
@@ -112,7 +112,7 @@ TPL;
 
         csscrush_set('options', ['enable' => 'property-sorter']);
 
-        $this->assertContains('property-sorter', csscrush_get('options', 'enable'));
+        $this->assertStringContainsStringIgnoringCase('property-sorter', csscrush_get('options', 'enable'));
 
         csscrush_set('options', ['enable' => []]);
     }

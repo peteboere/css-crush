@@ -4,11 +4,11 @@ namespace CssCrush\UnitTest;
 
 use CssCrush\BalancedMatch;
 
-class BalancedMatchTest extends \PHPUnit_Framework_TestCase
+class BalancedMatchTest extends \PHPUnit\Framework\TestCase
 {
     public $process;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->process = bootstrap_process();
         $sample = '@foo; @bar {color: orange;} @baz';

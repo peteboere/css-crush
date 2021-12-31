@@ -7,7 +7,7 @@ use Psr\Log\LoggerInterface;
 
 class LoggerDummy extends Logger implements LoggerInterface {}
 
-class LoggerTest extends \PHPUnit_Framework_TestCase
+class LoggerTest extends \PHPUnit\Framework\TestCase
 {
     public function testInterface()
     {

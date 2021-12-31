@@ -13,9 +13,9 @@ namespace {
 
 namespace CssCrush\UnitTest
 {
-
     function bootstrap_process($options = [])
     {
+        error_reporting(E_ALL ^ E_DEPRECATED);
         $process = \CssCrush\Crush::$process = new \CssCrush\Process($options);
         $process->preCompile();
         return $process;

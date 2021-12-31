@@ -6,9 +6,9 @@ use CssCrush\Util;
 use CssCrush\Tokens;
 use CssCrush\Url;
 
-class UtilTest extends \PHPUnit_Framework_TestCase
+class UtilTest extends \PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         $this->process = bootstrap_process(['minify' => false]);
         $this->tokens = $this->process->tokens;

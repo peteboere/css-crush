@@ -4,7 +4,7 @@ namespace CssCrush\UnitTest;
 
 use CssCrush\Regex;
 
-class RegexTest extends \PHPUnit_Framework_TestCase
+class RegexTest extends \PHPUnit\Framework\TestCase
 {
     public function testMake()
     {

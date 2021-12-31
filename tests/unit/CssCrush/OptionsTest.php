@@ -5,11 +5,11 @@ namespace CssCrush\UnitTest;
 use CssCrush\Options;
 use CssCrush\Version;
 
-class OptionsTest extends \PHPUnit_Framework_TestCase
+class OptionsTest extends \PHPUnit\Framework\TestCase
 {
     public $testFile;
 
-    public function setUp()
+    public function setUp(): void
     {
         bootstrap_process();
         $this->testFile = temp_file("\n foo {bar: baz;} \n\n baz {bar: foo;}");
@@ -43,8 +43,8 @@ TPL;
             'newlines' => 'unix',
         ]);
 
-        $this->assertContains(' * ' . Version::detect(), (string) $result);
-        $this->assertContains(" * Line breaks\n * preserved\n *", (string) $result);
+        $this->assertStringContainsStringIgnoringCase(' * ' . Version::detect(), (string) $result);
+        $this->assertStringContainsStringIgnoringCase(" * Line breaks\n * preserved\n *", (string) $result);
     }
 
     public function testFormatters()

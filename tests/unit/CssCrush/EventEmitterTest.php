@@ -4,7 +4,7 @@ namespace CssCrush\UnitTest;
 
 use CssCrush\EventEmitter;
 
-class EventEmitterTest extends \PHPUnit_Framework_TestCase
+class EventEmitterTest extends \PHPUnit\Framework\TestCase
 {
     public function testAll()
     {

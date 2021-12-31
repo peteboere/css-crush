@@ -5,9 +5,9 @@ namespace CssCrush\UnitTest;
 use CssCrush\Url;
 use CssCrush\Crush;
 
-class UrlTest extends \PHPUnit_Framework_TestCase
+class UrlTest extends \PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         bootstrap_process(['minify' => false]);
     }

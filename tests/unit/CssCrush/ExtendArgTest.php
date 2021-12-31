@@ -4,7 +4,7 @@ namespace CssCrush\UnitTest;
 
 use CssCrush\ExtendArg;
 
-class ExtendArgTest extends \PHPUnit_Framework_TestCase
+class ExtendArgTest extends \PHPUnit\Framework\TestCase
 {
     public function test__construct()
     {
