@@ -926,11 +926,13 @@ class Process
 
         $this->stat['compile_start_time'] = microtime(true);
     }
-    
+
     private function returnBytes(string $value)
     {
         $value = trim($value);
         $last = strtolower($value[strlen($value) - 1]);
+        $value = (float) $value;
+
         switch ($last) {
             // The 'G' modifier is available
             case 'g':

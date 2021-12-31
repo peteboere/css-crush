@@ -100,7 +100,7 @@ class UrlTest extends \PHPUnit_Framework_TestCase
             unlink($test_filepath);
 
             $this->assertEquals(
-                'data:image/svg+xml;base64,PHN2Zz48cGF0aCBkPSJNMCwwIGgxMCBsLTEwLDEweiIvPjwvc3ZnPg==',
+                'data:image/svg+xml;utf8,<svg><path d="M0,0 h10 l-10,10z"/></svg>',
                 $url->value);
         }
         else {
