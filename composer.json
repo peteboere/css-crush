@@ -5,6 +5,9 @@
     "keywords": ["css", "preprocessor"],
     "homepage": "http://the-echoplex.net/csscrush",
     "license": "MIT",
+    "scripts": {
+        "test": "vendor/bin/phpunit tests"
+    },
     "authors": [
         {
             "name": "Pete Boere",

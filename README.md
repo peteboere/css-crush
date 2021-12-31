@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/peteboere/css-crush.svg)](https://travis-ci.org/peteboere/css-crush)
-
 <img src="http://the-echoplex.net/csscrush/images/css-crush-external.svg?v=2" alt="Logo"/>
 
 A CSS preprocessor designed to enable a modern and uncluttered CSS workflow.
