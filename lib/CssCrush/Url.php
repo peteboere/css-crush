@@ -170,16 +170,14 @@ class Url
         }
 
         $mime_type = $allowed_file_extensions[$file_ext];
-        
-        if('svg' == $file_ext) {
+        $file_contents = file_get_contents($file);
 
-            $string = preg_replace('/\v+|\s{2,}/', ' ', file_get_contents($file));
-            $string = str_replace(['"','#','<','}'], ['\'','%23','%3C','%7D'], $string);
+        if ($file_ext === 'svg') {
+            $string = preg_replace('/\R/', '%0A', trim($file_contents));
             $this->value = "data:$mime_type;utf8,$string";
         }
         else {
-
-            $base64 = base64_encode(file_get_contents($file));
+            $base64 = base64_encode($file_contents);
             $this->value = "data:$mime_type;base64,$base64";
         }
 
