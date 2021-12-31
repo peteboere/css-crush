@@ -106,6 +106,12 @@ class UrlTest extends \PHPUnit_Framework_TestCase
         else {
             $this->markTestSkipped('Cannot write test SVG file to disk.');
         }
+
+        $url = new Url('/tests/unit/dummy-data/tiny.png');
+        $url->toData();
+        $this->assertStringStartsWith(
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASoAAAEqCAMAAACV5O0dAAAA',
+            $url->value);
     }
 
     public function testSetType()

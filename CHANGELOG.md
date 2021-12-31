@@ -1,4 +1,10 @@
-## 3.0.0
+## 3.1.0 (2021-12-31)
+
+* Added support for utf-8 markup in data-uri *.svg files. (@xerc)
+* Fixed issue with phpini.memory_limit (@GalileoWebagentur)
+* Updated vendor aliases.
+
+## 3.0.0 (2019-12-31)
 
 * Raised php requirement to >= 5.6
 * Removed `csscrush_version()`
