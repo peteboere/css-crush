@@ -18,7 +18,7 @@ class Iterator implements \IteratorAggregate, \ArrayAccess, \Countable
     /*
         IteratorAggregate implementation.
     */
-    public function getIterator()
+    public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->store);
     }
@@ -26,22 +26,22 @@ class Iterator implements \IteratorAggregate, \ArrayAccess, \Countable
     /*
         ArrayAccess implementation.
     */
-    public function offsetExists($index)
+    public function offsetExists($index): bool
     {
         return array_key_exists($index, $this->store);
     }
 
-    public function offsetGet($index)
+    public function offsetGet($index): mixed
     {
         return isset($this->store[$index]) ? $this->store[$index] : null;
     }
 
-    public function offsetSet($index, $value)
+    public function offsetSet($index, $value): void
     {
         $this->store[$index] = $value;
     }
 
-    public function offsetUnset($index)
+    public function offsetUnset($index): void
     {
         unset($this->store[$index]);
     }
@@ -54,7 +54,7 @@ class Iterator implements \IteratorAggregate, \ArrayAccess, \Countable
     /*
         Countable implementation.
     */
-    public function count()
+    public function count(): int
     {
         return count($this->store);
     }

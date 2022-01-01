@@ -107,7 +107,7 @@ class Process
         }
 
         $this->input->dir = $input_dir ?: $this->docRoot;
-        $this->input->dirUrl = substr($input_dir, strlen($this->docRoot));
+        $this->input->dirUrl = substr($this->input->dir, strlen($this->docRoot));
 
         $this->output->dir = $this->io->getOutputDir();
         $this->output->filename = $this->io->getOutputFileName();
@@ -623,7 +623,7 @@ class Process
 
             $traceOffset = $traceMatches[0][$count][1];
 
-            preg_match($rulePatt, $this->string->raw, $ruleMatch, null, $traceOffset);
+            preg_match($rulePatt, $this->string->raw, $ruleMatch, PREG_UNMATCHED_AS_NULL, $traceOffset);
 
             $selector = trim($ruleMatch['selector']);
             $block = trim($ruleMatch['block_content']);
