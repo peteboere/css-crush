@@ -1,3 +1,5 @@
+![CI](https://github.com/peteboere/css-crush/actions/workflows/php.yml/badge.svg)
+
 <img src="http://the-echoplex.net/csscrush/images/css-crush-external.svg?v=2" alt="Logo"/>
 
 A CSS preprocessor designed to enable a modern and uncluttered CSS workflow.
