@@ -1,8 +1,12 @@
-## 3.1.0 (2021-12-31)
+## 4.0.0 (2022-01-01)
 
+* Raised php requirement to >= 7
 * Added support for utf-8 markup in data-uri *.svg files. (@xerc)
 * Fixed issue with phpini.memory_limit (@GalileoWebagentur)
 * Updated vendor aliases.
+
+
+********************************************************************
 
 ## 3.0.0 (2019-12-31)
 
