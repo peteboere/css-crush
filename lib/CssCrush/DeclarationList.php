@@ -368,7 +368,7 @@ class DeclarationList extends Iterator
     public static function parse($str, $options = [])
     {
         $str = Util::stripCommentTokens($str);
-        $lines = preg_split('~\s*;\s*~', $str, null, PREG_SPLIT_NO_EMPTY);
+        $lines = preg_split('~\s*;\s*~', $str, -1, PREG_SPLIT_NO_EMPTY);
 
         $options += [
             'keyed' => false,

@@ -90,7 +90,7 @@ class UtilTest extends \PHPUnit\Framework\TestCase
         $path1 = __DIR__;
         $path2 = realpath(__DIR__ . '/../../');
         $this->assertEquals('../../', Util::getLinkBetweenPaths($path1, $path2));
-        $this->assertEquals('Unit/CssCrush/', Util::getLinkBetweenPaths($path2, $path1));
+        $this->assertEqualsIgnoringCase('Unit/CssCrush/', Util::getLinkBetweenPaths($path2, $path1));
     }
 
     public function testFilePutContents()

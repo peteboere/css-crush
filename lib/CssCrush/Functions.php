@@ -102,7 +102,9 @@ class Functions
                 }
             }
 
-            $str = substr_replace($str, $returns, $offset, $closingParen - $offset);
+            if (! is_null($returns)) {
+                $str = substr_replace($str, $returns, $offset, $closingParen - $offset);
+            }
         }
 
         return $str;
