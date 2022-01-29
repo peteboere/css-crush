@@ -96,7 +96,7 @@ class Importer
                     $errDesc = 'is not readable';
                 }
                 if (! empty($process->sources)) {
-                    $errDesc .= " (from within {$process->sources[0]})";
+                    $errDesc .= " (from within {$process->input->dir})";
                 }
                 notice("@import '{$import->url->value}' $errDesc");
                 $str = substr_replace($str, '', $match_start, $match_len);

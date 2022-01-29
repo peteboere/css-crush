@@ -9,7 +9,8 @@ module.exports = {
     },
     extends: 'eslint:recommended',
     parserOptions: {
-        ecmaVersion: 9,
+        ecmaVersion: 'latest',
+        sourceType: 'module',
     },
     rules: {
         'array-bracket-spacing': [2, 'never'],

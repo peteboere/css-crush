@@ -121,7 +121,9 @@ class Url
     public function prepend($path_fragment)
     {
         if ($this->isRelative) {
-            $this->value = $path_fragment . $this->value;
+            $this->value = rtrim($path_fragment, DIRECTORY_SEPARATOR)
+                . DIRECTORY_SEPARATOR
+                . ltrim($this->value, DIRECTORY_SEPARATOR);
         }
 
         return $this;

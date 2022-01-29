@@ -61,16 +61,22 @@ class Process
         $this->minifyOutput = $this->options->__get('minify');
         $this->newline = $this->options->__get('newlines');
 
+        $useContextOption = ! empty($this->options->context)
+            && (php_sapi_name() === 'cli' || $context['type'] === 'filter');
+
         if ($context['type'] === 'file') {
             $file = $context['data'];
             $this->input->raw = $file;
             if (! ($inputFile = Util::resolveUserPath($file, null, $this->docRoot))) {
                 throw new \Exception('Input file \'' . basename($file) . '\' not found.');
             }
-            $this->resolveContext(dirname($inputFile), $inputFile);
+            $inputDir = $useContextOption
+                ? $this->options->context
+                : dirname($inputFile);
+            $this->resolveContext($inputDir, $inputFile);
         }
         elseif ($context['type'] === 'filter') {
-            if (! empty($this->options->context)) {
+            if ($useContextOption) {
                 $this->resolveContext($this->options->context);
             }
             else {
@@ -108,7 +114,6 @@ class Process
 
         $this->input->dir = $input_dir ?: $this->docRoot;
         $this->input->dirUrl = substr($this->input->dir, strlen($this->docRoot));
-
         $this->output->dir = $this->io->getOutputDir();
         $this->output->filename = $this->io->getOutputFileName();
         $this->output->dirUrl = substr($this->output->dir, strlen($this->docRoot));

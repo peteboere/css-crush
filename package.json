@@ -18,7 +18,14 @@
     "homepage": "http://the-echoplex.net/csscrush",
     "license": "MIT",
     "devDependencies": {
-        "eslint": "~8.5.0",
+        "eslint": "~8.8.0",
         "normalize.css": "7.0.0"
+    },
+    "dependencies": {
+        "node-glob": "~1.2.0"
+    },
+    "type": "module",
+    "engines": {
+        "node": ">=16"
     }
 }

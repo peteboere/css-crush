@@ -1,21 +1,33 @@
 /*eslint no-control-regex: 0*/
+import os from 'os';
+import fs from 'fs';
+import pathUtil from 'path';
+import {fileURLToPath} from 'url';
+import querystring from 'querystring';
+import {EventEmitter} from 'events';
+import {exec} from 'child_process';
+import {createHash} from 'crypto';
+import glob from 'glob';
 
-const path = require('path');
-const querystring = require('querystring');
-const {EventEmitter} = require('events');
-const cliPath = path.resolve(__dirname, './cli.php');
+const cliPath = pathUtil
+    .resolve(pathUtil
+        .dirname(fileURLToPath(import.meta.url)), './cli.php');
 
 const processes = [];
 const processExec = (...args) => {
-    processes.push(require('child_process').exec(...args));
-    return processes[processes.length-1];
+    processes.push(exec(...args));
+    return processes.at(-1);
 };
 
-process.on('exit', () => {
-    processes.filter(it => it).forEach(proc => proc.kill());
-});
-
-const self = module.exports = {};
+for (const event of ['exit', 'SIGINT', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'SIGTERM']) {
+    process.on(event, () => {
+        let proc;
+        while ((proc = processes.pop())) {
+            proc?.kill();
+        }
+        process.exit();
+    });
+}
 
 class Process extends EventEmitter {
 
@@ -61,8 +73,8 @@ class Process extends EventEmitter {
             const eventData = {
                 signal,
                 options: {
-                    input: input ? path.resolve(input) : null,
-                    output: output ? path.resolve(output) : null,
+                    input: input ? pathUtil.resolve(input) : null,
+                    output: output ? pathUtil.resolve(output) : null,
                 },
             };
 
@@ -79,7 +91,7 @@ class Process extends EventEmitter {
     }
 
     assembleCommand(options) {
-        return `${self.phpBin || 'php'} ${cliPath} ${this.stringifyOptions(options)}`;
+        return `${process.env.CSSCRUSH_PHP_BIN || 'php'} ${cliPath} ${this.stringifyOptions(options)}`;
     }
 
     stringifyOptions(options) {
@@ -96,9 +108,9 @@ class Process extends EventEmitter {
             let value = options[name];
             switch (name) {
                 // Booleans.
-                case 'watch': // fallthrough
-                case 'source-map': // fallthrough
-                case 'boilerplate': // fallthrough
+                case 'watch':
+                case 'source-map':
+                case 'boilerplate':
                     if (value) {
                         args.push(`--${name}`);
                     }
@@ -109,8 +121,8 @@ class Process extends EventEmitter {
                     }
                     break;
                 // Array/list values.
-                case 'vendor-target': // fallthrough
-                case 'plugins': // fallthrough
+                case 'vendor-target':
+                case 'plugins':
                 case 'import-path':
                     if (value) {
                         value = (Array.isArray(value) ? value : [value]).join(',');
@@ -118,10 +130,10 @@ class Process extends EventEmitter {
                     }
                     break;
                 // String values.
-                case 'newlines': // fallthrough
-                case 'formatter': // fallthrough
-                case 'input': // fallthrough
-                case 'context': // fallthrough
+                case 'newlines':
+                case 'formatter':
+                case 'input':
+                case 'context':
                 case 'output':
                     if (value) {
                         args.push(`--${name}="${value}"`);
@@ -137,17 +149,110 @@ class Process extends EventEmitter {
     }
 }
 
-self.watch = (file, options={}) => {
-    options.input = file;
+export default {
+    watch,
+    file,
+    string,
+};
+
+export function watch(file, options={}) {
+    ({file: options.input, context: options.context} = resolveFile(file));
     return (new Process()).watch(options);
-};
+}
 
-self.file = (file, options={}) => {
-    options.input = file;
+export function file(file, options={}) {
+    ({file: options.input, context: options.context} = resolveFile(file));
     return (new Process()).exec(options);
-};
+}
 
-self.string = (string, options={}) => {
+export function string(string, options={}) {
     options.stdIn = string;
     return (new Process()).exec(options);
+}
+
+const resolveFile = input => {
+
+    if (Array.isArray(input)) {
+
+        let initial;
+        let previous;
+
+        /*
+         * Generate temporary file containing entrypoints.
+         * Poll to update on additions and deletions.
+         */
+        const poller = () => {
+            const result = resolveInputs(input);
+
+            if (result.fingerprint !== previous?.fingerprint) {
+                fs.writeFileSync(initial?.file || result.file, result.content, {
+                    mode: 0o777,
+                });
+            }
+
+            initial ||= result;
+            previous = result;
+
+            setTimeout(poller, 2000);
+
+            return result;
+        };
+
+        return poller();
+    }
+
+    return {
+        file: input,
+    };
+};
+
+const resolveInputs = fileGlobs => {
+
+    const result = {};
+
+    let files = new Set();
+    for (const it of fileGlobs) {
+        for (const path of (glob.sync(it) || []).sort()) {
+            files.add(path);
+        }
+    }
+
+    if (! files.size) {
+        return result;
+    }
+
+    files = [...files];
+
+    const rootPath = files
+        .shift();
+    const context = pathUtil
+        .dirname(rootPath);
+    const rootFile = pathUtil
+        .basename(rootPath);
+
+    const content = [rootFile]
+        .concat(files
+            .map(it => pathUtil
+                .relative(context, it)))
+        .map(it => `@import "./${it}";`)
+        .join('\n');
+
+    const fingerprint = createHash('md5')
+        .update(content)
+        .digest('hex');
+
+    const outputDir = `${os.tmpdir()}/csscrush`;
+    if (! fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, {
+            mode: 0o777,
+        });
+    }
+
+    return Object
+        .assign(result, {
+            context,
+            content,
+            fingerprint,
+            file: `${outputDir}/${fingerprint}.css`,
+        });
 };

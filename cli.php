@@ -10,7 +10,7 @@ define('STATUS_OK', 0);
 define('STATUS_ERROR', 1);
 
 $version = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
-$requiredVersion = 5.6;
+$requiredVersion = 7.1;
 
 if ($version < $requiredVersion) {
 
