@@ -137,6 +137,11 @@ if ($args->watch) {
 
     while (true) {
 
+        if (! file_exists($args->input_file)) {
+            stderr(message(['Input file was not found'], ['type'=>'error']));
+            exit(STATUS_ERROR);
+        }
+
         csscrush_file($args->input_file, $options);
         $stats = csscrush_stat();
 

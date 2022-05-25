@@ -18,15 +18,16 @@ const processExec = (...args) => {
     processes.push(exec(...args));
     return processes.at(-1);
 };
+const exit = () => {
+    let proc;
+    while ((proc = processes.pop())) {
+        proc?.kill();
+    }
+    process.exit();
+};
 
 for (const event of ['exit', 'SIGINT', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'SIGTERM']) {
-    process.on(event, () => {
-        let proc;
-        while ((proc = processes.pop())) {
-            proc?.kill();
-        }
-        process.exit();
-    });
+    process.on(event, exit);
 }
 
 class Process extends EventEmitter {
@@ -87,6 +88,9 @@ class Process extends EventEmitter {
                 this.emit('data', {message: detail, ...eventData});
             }
         });
+
+        proc.on('exit', exit);
+
         return this;
     }
 

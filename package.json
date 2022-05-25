@@ -2,6 +2,7 @@
     "name": "csscrush",
     "version": "4.1.0",
     "description": "CSS-Crush, CSS preprocessor",
+    "main": "./index.js",
     "repository": {
         "type": "git",
         "url": "https://github.com/peteboere/css-crush.git"
