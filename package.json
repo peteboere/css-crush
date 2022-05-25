@@ -1,6 +1,6 @@
 {
     "name": "csscrush",
-    "version": "4.1.1",
+    "version": "4.1.2",
     "description": "CSS-Crush, CSS preprocessor",
     "main": "./index.js",
     "repository": {
