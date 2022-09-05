@@ -160,7 +160,7 @@ export default {
 };
 
 export function watch(file, options={}) {
-    ({file: options.input, context: options.context} = resolveFile(file));
+    ({file: options.input, context: options.context} = resolveFile(file, {watch: true}));
     return (new Process()).watch(options);
 }
 
@@ -174,7 +174,7 @@ export function string(string, options={}) {
     return (new Process()).exec(options);
 }
 
-const resolveFile = input => {
+const resolveFile = (input, {watch}={}) => {
 
     if (Array.isArray(input)) {
 
@@ -197,7 +197,9 @@ const resolveFile = input => {
             initial ||= result;
             previous = result;
 
-            setTimeout(poller, 2000);
+            if (watch) {
+                setTimeout(poller, 2000);
+            }
 
             return result;
         };
