@@ -630,8 +630,8 @@ class Process
 
             preg_match($rulePatt, $this->string->raw, $ruleMatch, PREG_UNMATCHED_AS_NULL, $traceOffset);
 
-            $selector = trim($ruleMatch['selector']);
-            $block = trim($ruleMatch['block_content']);
+            $selector = trim($ruleMatch['selector'] ?? null);
+            $block = trim($ruleMatch['block_content'] ?? null);
             $replace = '';
 
             // If rules are nested inside we set their parent property.
@@ -651,12 +651,12 @@ class Process
                 }
             }
             else  {
-                $rule = new Rule($selector, $block, $ruleMatch['trace_token']);
+                $rule = new Rule($selector, $block, $ruleMatch['trace_token'] ?? null);
             }
 
             $replace = $tokens->add($rule, 'r', $rule->label) . $replace;
 
-            $this->string->splice($replace, $traceOffset, strlen($ruleMatch[0]));
+            $this->string->splice($replace, $traceOffset, strlen($ruleMatch[0]) ?? null);
         }
 
         // Flip, since we just captured rules in reverse order.
