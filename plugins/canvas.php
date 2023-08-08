@@ -629,7 +629,14 @@ function canvas_requirements() {
 */
 class Canvas
 {
-    public $image, $fills = [], $filters = [];
+    public $currentProperty;
+    public $fills = [];
+    public $filters = [];
+    public $height;
+    public $image;
+    public $margin;
+    public $raw;
+    public $width;
 
     public function __destruct()
     {

@@ -4,9 +4,10 @@ namespace CssCrush\UnitTest;
 
 class ApiTest extends \PHPUnit\Framework\TestCase
 {
-    protected $sample;
-    protected $sampleFile;
-    protected $sampleExpected;
+    private $originalWd;
+    private $sample;
+    private $sampleExpected;
+    private $sampleFile;
 
     public function setUp(): void
     {
