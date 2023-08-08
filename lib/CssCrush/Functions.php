@@ -164,7 +164,7 @@ class Functions
             $patt = $nonIdents;
         }
 
-        return Regex::make("~$patt\(~iS");
+        return Regex::make("~$patt\(~iS"); // @phpstan-ignore-line variable.undefined
     }
 }
 

@@ -77,7 +77,9 @@ class Template
         }
 
         // Apply substitutions.
-        $str = isset($find) ? str_replace($find, $replace, $str) : $str;
+        if (isset($find) && isset($replace)) {
+            $str = str_replace($find, $replace, $str);
+        }
 
         return Template::tokenize($str);
     }

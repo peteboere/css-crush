@@ -230,6 +230,8 @@ class Process
                 },
             ];
 
+            $replacements = [];
+
             foreach (array_keys($boilerplateMatches[0]) as $index) {
                 $tagName = trim($boilerplateMatches[1][$index]);
                 $replacement = '?';

@@ -222,7 +222,7 @@ function svg_generator($input, $fn_name) {
             $generated_url = $generated_filename;
         }
 
-        Util::filePutContents($generated_filepath, $flattened_svg, __METHOD__);
+        Util::filePutContents($generated_filepath, $flattened_svg);
 
         $url = new Url($generated_url);
         $url->noRewrite = true;

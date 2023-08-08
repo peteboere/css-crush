@@ -12,7 +12,7 @@ class Fragment extends Template
 
     public function __construct($str, $options = [])
     {
-        parent::__construct($str, $options);
+        parent::__construct($str);
         $this->name = $options['name'];
     }
 

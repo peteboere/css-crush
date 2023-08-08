@@ -113,6 +113,7 @@ class Logger
     public function debug($message, array $context = [])
     {
         if (! empty($context['label'])) {
+            $label = $context['label'];
             $label = PHP_EOL . "$label" . PHP_EOL . str_repeat('=', strlen($label)) . PHP_EOL;
         }
         else {
