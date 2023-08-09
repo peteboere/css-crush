@@ -1,40 +1,64 @@
 /*eslint no-control-regex: 0*/
-import os from 'os';
-import fs from 'fs';
-import pathUtil from 'path';
-import {fileURLToPath} from 'url';
-import querystring from 'querystring';
-import {EventEmitter} from 'events';
-import {exec} from 'child_process';
-import {createHash} from 'crypto';
+import os from 'node:os';
+import fs from 'node:fs';
+import pathUtil from 'node:path';
+import {fileURLToPath} from 'node:url';
+import querystring from 'node:querystring';
+import {EventEmitter} from 'node:events';
+import {exec} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import glob from 'glob';
 
 const cliPath = pathUtil
     .resolve(pathUtil
-        .dirname(fileURLToPath(import.meta.url)), './cli.php');
+        .dirname(fileURLToPath(import.meta.url)), '../cli.php');
 
 const processes = [];
-const processExec = (...args) => {
-    processes.push(exec(...args));
-    return processes.at(-1);
-};
-const exit = () => {
-    let proc;
-    while ((proc = processes.pop())) {
-        proc?.kill();
-    }
-    process.exit();
-};
 
-for (const event of ['exit', 'SIGINT', 'SIGUSR1', 'SIGUSR2', 'uncaughtException', 'SIGTERM']) {
+for (const event of [
+    'exit',
+    'SIGINT',
+    'SIGTERM',
+    'SIGUSR1',
+    'SIGUSR2',
+    'uncaughtException',
+]) {
     process.on(event, exit);
 }
 
-class Process extends EventEmitter {
+/**
+ * @typedef {object} CSSCrushOptions
+ * @property {boolean} [sourceMap]
+ * @property {boolean} [boilerplate]
+ * @property {boolean} [minify=true]
+ * @property {('all' | 'none' | 'moz' | 'ms' | 'webkit')} [vendorTarget='all']
+ * @property {string | [string]} [plugins]
+ * @property {string | [string]} [importPath]
+ * @property {('use-platform' | 'windows' | 'unix')} [newlines='use-platform']
+ * @property {('block' | 'single-line' | 'padded')} [formatter]
+ * @property {string} [input]
+ * @property {string} [context]
+ * @property {string} [output]
+ * @property {object} [vars]
+ */
+/**
+ * @typedef {CSSCrushOptions & {
+ *     stdIn?: string;
+ *     watch?: boolean;
+ * }} CSSCrushProcessOptions
+ */
 
+class CSSCrushProcess extends EventEmitter {
+
+    #process;
+
+    /**
+     * @param {CSSCrushProcessOptions} options
+     * @returns {Promise<string | boolean>}
+     */
     exec(options) {
         return new Promise(resolve => {
-            let command = this.assembleCommand(options);
+            let command = this.#assembleCommand(options);
             const {stdIn} = options;
             if (stdIn) {
                 command = `echo '${stdIn.replace(/'/g, "\\'")}' | ${command}`;
@@ -53,10 +77,14 @@ class Process extends EventEmitter {
         });
     }
 
+    /**
+     * @param {CSSCrushProcessOptions} options
+     * @returns {CSSCrushProcess}
+     */
     watch(options) {
         options.watch = true;
-        const command = this.assembleCommand(options);
-        const proc = processExec(command);
+        const command = this.#assembleCommand(options);
+        this.#process = processExec(command);
 
         /*
          * Emitting 'error' events from EventEmitter without
@@ -64,7 +92,7 @@ class Process extends EventEmitter {
          */
         this.on('error', () => {});
 
-        proc.stderr.on('data', msg => {
+        this.#process.stderr.on('data', msg => {
             msg = msg.toString();
             process.stderr.write(msg);
             msg = msg.replace(/\x1B\[[^m]*m/g, '').trim();
@@ -89,16 +117,20 @@ class Process extends EventEmitter {
             }
         });
 
-        proc.on('exit', exit);
+        this.#process.on('exit', exit);
 
         return this;
     }
 
-    assembleCommand(options) {
-        return `${process.env.CSSCRUSH_PHP_BIN || 'php'} ${cliPath} ${this.stringifyOptions(options)}`;
+    kill() {
+        this.#process?.kill();
     }
 
-    stringifyOptions(options) {
+    #assembleCommand(options) {
+        return `${process.env.CSSCRUSH_PHP_BIN || 'php'} ${cliPath} ${this.#stringifyOptions(options)}`;
+    }
+
+    #stringifyOptions(options) {
         const args = [];
         options = {...options};
         for (let name in options) {
@@ -117,6 +149,9 @@ class Process extends EventEmitter {
                 case 'boilerplate':
                     if (value) {
                         args.push(`--${name}`);
+                    }
+                    else if (value === false) {
+                        args.push(`--${name}=false`);
                     }
                     break;
                 case 'minify':
@@ -159,22 +194,43 @@ export default {
     string,
 };
 
+/**
+ * @param {string} file - CSS file path
+ * @param {CSSCrushOptions} [options]
+ * @returns {CSSCrushProcess}
+ */
 export function watch(file, options={}) {
     ({file: options.input, context: options.context} = resolveFile(file, {watch: true}));
-    return (new Process()).watch(options);
+    return (new CSSCrushProcess()).watch(options);
 }
 
+/**
+ * @param {string} file - CSS file path
+ * @param {CSSCrushOptions} [options]
+ * @returns {Promise<string | boolean>}
+ */
 export function file(file, options={}) {
     ({file: options.input, context: options.context} = resolveFile(file));
-    return (new Process()).exec(options);
+    return (new CSSCrushProcess()).exec(options);
 }
 
+/**
+ * @param {string} string - CSS text
+ * @param {CSSCrushOptions} [options]
+ * @returns {Promise<string | boolean>}
+ */
 export function string(string, options={}) {
-    options.stdIn = string;
-    return (new Process()).exec(options);
+
+    /** @type {CSSCrushProcessOptions} */ (options).stdIn = string;
+    return (new CSSCrushProcess()).exec(options);
 }
 
-const resolveFile = (input, {watch}={}) => {
+/**
+ * @param {string} input
+ * @param {object} [options]
+ * @param {boolean} [options.watch]
+ */
+function resolveFile(input, {watch}={}) {
 
     if (Array.isArray(input)) {
 
@@ -210,13 +266,15 @@ const resolveFile = (input, {watch}={}) => {
     return {
         file: input,
     };
-};
+}
 
-const resolveInputs = fileGlobs => {
+function resolveInputs(fileGlobs) {
 
     const result = {};
 
+    /** @type {Set | array} */
     let files = new Set();
+
     for (const it of fileGlobs) {
         for (const path of (glob.sync(it) || []).sort()) {
             files.add(path);
@@ -261,4 +319,17 @@ const resolveInputs = fileGlobs => {
             fingerprint,
             file: `${outputDir}/${fingerprint}.css`,
         });
-};
+}
+
+function processExec(command, done) {
+    processes.push(exec(command, done));
+    return processes.at(-1);
+}
+
+function exit() {
+    let proc;
+    while ((proc = processes.pop())) {
+        proc?.kill();
+    }
+    process.exit();
+}

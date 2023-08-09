@@ -2,7 +2,8 @@
     "name": "csscrush",
     "version": "4.1.3",
     "description": "CSS-Crush, CSS preprocessor",
-    "main": "./index.js",
+    "main": "./js/index.js",
+    "types": "./js/index.d.ts",
     "repository": {
         "type": "git",
         "url": "https://github.com/peteboere/css-crush.git"
@@ -14,19 +15,23 @@
         "csscrush": "./bin/csscrush"
     },
     "scripts": {
-        "lint": "eslint --fix index.js"
+        "lint": "eslint --fix ./js/index.js",
+        "types": "npx -p typescript tsc -p jsconfig.json",
+        "test": "node ./js/tests/test.js"
     },
     "homepage": "http://the-echoplex.net/csscrush",
     "license": "MIT",
     "devDependencies": {
+        "@types/node": "~20.4.9",
         "eslint": "~8.16.0",
-        "normalize.css": "7.0.0"
+        "normalize.css": "7.0.0",
+        "typescript": "~5.1.6"
     },
     "dependencies": {
         "glob": "~8.0.3"
     },
     "type": "module",
     "engines": {
-        "node": ">=16"
+        "node": ">=18"
     }
 }
