@@ -144,7 +144,7 @@ class Util
         if (! $regex && strpos($str, $delim) === false) { // @phpstan-ignore-line variable.undefined
             return ! $allow_empty_strings && ! strlen($str) ? [] : [$str]; // @phpstan-ignore-line variable.undefined
         }
-        $foobar = 1;
+
         if ($match_count = preg_match_all(Regex::$patt->parens, $str, $matches)) {
             $keys = [];
             foreach ($matches[0] as $index => &$value) {

@@ -35,7 +35,7 @@ describe('csscrush.file', () => {
     });
 });
 
-describe('csscrush.watch', {only: true}, () => {
+describe('csscrush.watch', () => {
 
     it('should minify CSS text', async () => {
 
