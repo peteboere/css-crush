@@ -1,6 +1,6 @@
 {
     "name": "csscrush",
-    "version": "4.1.3",
+    "version": "4.2.0",
     "description": "CSS-Crush, CSS preprocessor",
     "main": "./js/index.js",
     "types": "./js/index.d.ts",
