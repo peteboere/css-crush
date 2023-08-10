@@ -6,7 +6,8 @@
     "homepage": "http://the-echoplex.net/csscrush",
     "license": "MIT",
     "scripts": {
-        "test": "vendor/bin/phpunit tests"
+        "test": "vendor/bin/phpunit tests",
+        "lint": "vendor/bin/phpstan"
     },
     "authors": [
         {
