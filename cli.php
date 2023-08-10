@@ -93,7 +93,7 @@ if ($args->pretty) {
 
 foreach (['boilerplate', 'formatter', 'newlines',
     'stat_dump', 'source_map', 'import_path'] as $option) {
-    if ($args->$option) {
+    if ($args->$option || $args->$option === false) {
         $options[$option] = $args->$option;
     }
 }
@@ -317,7 +317,7 @@ function pick(array &$arr) {
 
     foreach ($args as $key) {
         if (isset($arr[$key])) {
-            // Optional values return false but we want true is argument is present.
+            // Optional values return false but we want true if argument is present.
             return is_bool($arr[$key]) ? true : $arr[$key];
         }
     }
@@ -537,8 +537,12 @@ function parse_args() {
     else {
         $args->context = $args->input_file ? dirname($args->input_file) : getcwd();
     }
+
     if (is_string($args->boilerplate)) {
-        if (! ($args->boilerplate = realpath($args->boilerplate))) {
+        if ($args->boilerplate === 'false') {
+            $args->boilerplate = false;
+        }
+        else if (! ($args->boilerplate = realpath($args->boilerplate))) {
             throw new Exception('Boilerplate file does not exist.', STATUS_ERROR);
         }
     }
