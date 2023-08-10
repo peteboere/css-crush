@@ -72,6 +72,7 @@ declare class CSSCrushProcess extends EventEmitter {
      * @returns {CSSCrushProcess}
      */
     watch(options: CSSCrushProcessOptions): CSSCrushProcess;
+    kill(): void;
     #private;
 }
 import { EventEmitter } from 'node:events';

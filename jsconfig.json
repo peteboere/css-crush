@@ -1,6 +1,6 @@
 {
     "include": [
-        "./js/index.js",
+        "./js/index.js"
     ],
     "exclude": [
         "node_modules",
