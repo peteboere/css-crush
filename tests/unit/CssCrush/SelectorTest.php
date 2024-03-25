@@ -6,6 +6,8 @@ use CssCrush\Selector;
 
 class SelectorTest extends \PHPUnit\Framework\TestCase
 {
+    private $process;
+
     public function setUp(): void
     {
         $this->process = bootstrap_process();

@@ -141,8 +141,8 @@ class Util
 
         $str = trim($str);
 
-        if (! $regex && strpos($str, $delim) === false) {
-            return ! $allow_empty_strings && ! strlen($str) ? [] : [$str];
+        if (! $regex && strpos($str, $delim) === false) { // @phpstan-ignore-line variable.undefined
+            return ! $allow_empty_strings && ! strlen($str) ? [] : [$str]; // @phpstan-ignore-line variable.undefined
         }
 
         if ($match_count = preg_match_all(Regex::$patt->parens, $str, $matches)) {
@@ -153,6 +153,7 @@ class Util
             $str = str_replace($matches[0], $keys, $str);
         }
 
+        // @phpstan-ignore-next-line variable.undefined
         $list = $regex ? preg_split($regex, $str) : explode($delim, $str);
 
         if ($match_count) {
@@ -163,6 +164,7 @@ class Util
 
         $list = array_map('trim', $list);
 
+        // @phpstan-ignore-next-line variable.undefined
         return ! $allow_empty_strings ? array_filter($list, 'strlen') : $list;
     }
 

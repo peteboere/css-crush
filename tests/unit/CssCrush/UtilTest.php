@@ -8,6 +8,9 @@ use CssCrush\Url;
 
 class UtilTest extends \PHPUnit\Framework\TestCase
 {
+    private $process;
+    private $tokens;
+
     public function setUp(): void
     {
         $this->process = bootstrap_process(['minify' => false]);

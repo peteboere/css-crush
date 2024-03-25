@@ -311,7 +311,7 @@ function canvas_apply_filters($canvas, $src) {
                     // (min) -100 <- 0 -> +100 (max)
                     $level = intval($args[0]) * -1;
                 }
-                imagefilter($src->image, IMG_FILTER_CONTRAST, $level);
+                imagefilter($src->image, IMG_FILTER_CONTRAST, $level); // @phpstan-ignore-line variable.undefined
                 break;
 
             case 'brightness':
@@ -319,7 +319,7 @@ function canvas_apply_filters($canvas, $src) {
                     // -255 <- 0 -> +255
                     $level = intval($args[0]);
                 }
-                imagefilter($src->image, IMG_FILTER_BRIGHTNESS, $level);
+                imagefilter($src->image, IMG_FILTER_BRIGHTNESS, $level); // @phpstan-ignore-line variable.undefined
                 break;
         }
     }
@@ -491,7 +491,7 @@ function canvas_gradient($canvas, $fill) {
                     $fill->y1,
                     $fill->x1 + $line,
                     $fill->y2,
-                    $color);
+                    $color); // @phpstan-ignore-line variable.undefined
 
                 break;
             case 'vertical':
@@ -501,7 +501,7 @@ function canvas_gradient($canvas, $fill) {
                     $fill->y1 + $line,
                     $fill->x2,
                     $fill->y1 + $line,
-                    $color);
+                    $color); // @phpstan-ignore-line variable.undefined
                 break;
         }
         imagealphablending($image, true);
@@ -629,7 +629,14 @@ function canvas_requirements() {
 */
 class Canvas
 {
-    public $image, $fills = [], $filters = [];
+    public $currentProperty;
+    public $fills = [];
+    public $filters = [];
+    public $height;
+    public $image;
+    public $margin;
+    public $raw;
+    public $width;
 
     public function __destruct()
     {

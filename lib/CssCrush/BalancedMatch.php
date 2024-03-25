@@ -8,6 +8,15 @@ namespace CssCrush;
 
 class BalancedMatch
 {
+    public $match;
+    public $string;
+
+    private $length;
+    private $matchEnd;
+    private $matchLength;
+    private $matchStart;
+    private $offset;
+
     public function __construct(StringObject $string, $offset, $brackets = '{}')
     {
         $this->string = $string;

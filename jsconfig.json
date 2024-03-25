@@ -1,0 +1,21 @@
+{
+    "include": [
+        "./js/index.js"
+    ],
+    "exclude": [
+        "node_modules",
+    ],
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "baseUrl": ".",
+        "checkJs": true,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "maxNodeModuleJsDepth": 0,
+        "module": "esnext",
+        "moduleResolution": "nodenext",
+        "noEmit": false,
+        "outDir": "./js",
+        "target": "esnext",
+    },
+}

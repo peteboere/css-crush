@@ -6,7 +6,8 @@
     "homepage": "http://the-echoplex.net/csscrush",
     "license": "MIT",
     "scripts": {
-        "test": "vendor/bin/phpunit tests"
+        "test": "vendor/bin/phpunit tests",
+        "lint": "vendor/bin/phpstan"
     },
     "authors": [
         {
@@ -22,9 +23,10 @@
         "php": ">=7.1"
     },
     "require-dev": {
-        "phpunit/phpunit": "8.*",
+        "phpunit/phpunit": "8.5.*",
         "psr/log": "1.0.*@dev",
-        "twig/twig": "1.*"
+        "twig/twig": "3.7.*",
+        "phpstan/phpstan": "^1.10"
     },
     "bin": [
         "bin/csscrush"

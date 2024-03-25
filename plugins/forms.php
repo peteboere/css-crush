@@ -12,7 +12,7 @@ namespace CssCrush;
             $type = $handler['type'];
             $handler = $handler['handler'];
         }
-        $process->addSelectorAlias($name, $handler, $type);
+        $process->addSelectorAlias($name, $handler, $type); // @phpstan-ignore-line variable.undefined
     }
 });
 

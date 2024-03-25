@@ -10,6 +10,41 @@ class Process
 {
     use EventEmitter;
 
+    public $absoluteImports;
+    public $aliases;
+    public $cacheData;
+    public $cacheFile;
+    public $charset;
+    public $docRoot;
+    public $fragments;
+    public $functions;
+    public $generateMap;
+    public $input;
+    public $io;
+    public $ioContext;
+    public $minifyOutput;
+    public $misc;
+    public $mixins;
+    public $newline;
+    public $options;
+    public $output;
+    public $references;
+    public $ruleFormatter;
+    public $selectorAliases;
+    public $selectorAliasesPatt;
+    public $sourceMap;
+    public $sources;
+    public $string;
+    public $tokens;
+    public $vars;
+
+    public $debugLog;
+    public $errors;
+    public $stat;
+    public $warnings;
+
+    private $plugins;
+
     public function __construct($user_options = [], $context = [])
     {
         $config = Crush::$config;
@@ -194,6 +229,8 @@ class Process
                     return round($now, 4) . ' seconds';
                 },
             ];
+
+            $replacements = [];
 
             foreach (array_keys($boilerplateMatches[0]) as $index) {
                 $tagName = trim($boilerplateMatches[1][$index]);

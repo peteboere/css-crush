@@ -181,7 +181,7 @@ class IO
             else {
                 debug('Creating cache data file.');
             }
-            Util::filePutContents($process->cacheFile, json_encode([]), __METHOD__);
+            Util::filePutContents($process->cacheFile, json_encode([]));
         }
 
         return $cache_data;
@@ -193,7 +193,7 @@ class IO
 
         debug('Saving config.');
 
-        Util::filePutContents($process->cacheFile, json_encode($process->cacheData, JSON_PRETTY_PRINT), __METHOD__);
+        Util::filePutContents($process->cacheFile, json_encode($process->cacheData, JSON_PRETTY_PRINT));
     }
 
     public function write(StringObject $string)
@@ -208,11 +208,11 @@ class IO
             $string->append($process->newline . "/*# sourceMappingURL=$sourcemapFilename */");
         }
 
-        if (Util::filePutContents("$dir/$filename", $string, __METHOD__)) {
+        if (Util::filePutContents("$dir/$filename", $string)) {
 
             if ($process->sourceMap) {
                 Util::filePutContents("$dir/$sourcemapFilename",
-                    json_encode($process->sourceMap, JSON_PRETTY_PRINT), __METHOD__);
+                    json_encode($process->sourceMap, JSON_PRETTY_PRINT));
             }
 
             if ($process->options->stat_dump) {
@@ -220,7 +220,7 @@ class IO
                     $process->options->stat_dump : "$dir/$filename.json";
 
                 $GLOBALS['CSSCRUSH_STAT_FILE'] = $statFile;
-                Util::filePutContents($statFile, json_encode(csscrush_stat(), JSON_PRETTY_PRINT), __METHOD__);
+                Util::filePutContents($statFile, json_encode(csscrush_stat(), JSON_PRETTY_PRINT));
             }
 
             return true;

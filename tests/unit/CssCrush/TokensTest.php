@@ -6,7 +6,8 @@ use CssCrush\Tokens;
 
 class TokensTest extends \PHPUnit\Framework\TestCase
 {
-    protected $tokens;
+    private $process;
+    private $tokens;
 
     public function setUp(): void
     {
