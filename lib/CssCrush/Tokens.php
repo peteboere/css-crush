@@ -11,7 +11,7 @@ class Tokens
     public $store;
     protected $ids;
 
-    public function __construct(array $types = null)
+    public function __construct(?array $types = null)
     {
         $types = $types ?: [
             's', // strings.
