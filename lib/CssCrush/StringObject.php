@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class StringObject
 {
-    public $raw;
+    public string|null $raw = null;
 
     public function __construct($str)
     {
