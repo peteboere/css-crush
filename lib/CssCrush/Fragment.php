@@ -16,7 +16,7 @@ class Fragment extends Template
         $this->name = $options['name'];
     }
 
-    public function __invoke(array $args = null, $str = null)
+    public function __invoke(?array $args = null, $str = null)
     {
         $str = parent::__invoke($args);
 

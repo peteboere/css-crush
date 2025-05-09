@@ -97,7 +97,7 @@ class Crush
         }
     }
 
-    public static function plugin($name = null, callable|null $callback = null)
+    public static function plugin($name = null, ?callable $callback = null)
     {
         static $plugins = [];
 

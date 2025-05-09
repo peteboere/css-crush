@@ -36,7 +36,7 @@ class VersionTest extends \PHPUnit\Framework\TestCase
     public function testGitDescribe()
     {
         if ($version = Version::gitDescribe()) {
-            $this->assertRegExp('~^
+            $this->assertMatchesRegularExpression('~^
                 v
                 \d+\.
                 \d+\.
