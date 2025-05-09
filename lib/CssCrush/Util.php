@@ -8,7 +8,7 @@ namespace CssCrush;
 
 class Util
 {
-    public static function htmlAttributes(array $attributes, array $sort_order = null)
+    public static function htmlAttributes(array $attributes, ?array $sort_order = null)
     {
         // Optionally sort attributes (for better readability).
         if ($sort_order) {
@@ -75,7 +75,7 @@ class Util
         return $path;
     }
 
-    public static function resolveUserPath($path, callable $recovery = null, $docRoot = null)
+    public static function resolveUserPath($path, ?callable $recovery = null, $docRoot = null)
     {
         // System path.
         if ($realpath = realpath($path)) {

@@ -33,7 +33,7 @@ class Options
         'newlines' => 'use-platform',
     ];
 
-    public function __construct(array $options = [], Options $defaults = null)
+    public function __construct(array $options = [], ?Options $defaults = null)
     {
         $options = array_change_key_case($options, CASE_LOWER);
 
@@ -169,7 +169,7 @@ class Options
         return $computed ? $this->computedOptions : self::filter($this->inputOptions);
     }
 
-    public static function filter(array $optionsArray = null)
+    public static function filter(?array $optionsArray = null)
     {
         return $optionsArray ? array_intersect_key($optionsArray, self::$standardOptions) : self::$standardOptions;
     }
