@@ -60,7 +60,7 @@ class Template
         $this->string = $templateFunctions->apply($str);
     }
 
-    public function __invoke(array $args = null, $str = null)
+    public function __invoke(?array $args = null, $str = null)
     {
         $str = isset($str) ? $str : $this->string;
 

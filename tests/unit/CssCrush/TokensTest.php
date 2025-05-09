@@ -32,7 +32,7 @@ class TokensTest extends \PHPUnit\Framework\TestCase
     public function testCreateLabel()
     {
         $type = 's';
-        $this->assertRegExp("~^\?{$type}[a-z0-9]+\?$~", $this->tokens->createLabel($type));
+        $this->assertMatchesRegularExpression("~^\?{$type}[a-z0-9]+\?$~", $this->tokens->createLabel($type));
     }
 
     public function testAdd()
