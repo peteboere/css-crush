@@ -7,7 +7,7 @@ import querystring from 'node:querystring';
 import {EventEmitter} from 'node:events';
 import {exec} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import glob from 'glob';
+import {glob} from 'glob';
 
 const cliPath = pathUtil
     .resolve(pathUtil
